@@ -1,0 +1,1 @@
+"""bic capability tests (scaffold)."""

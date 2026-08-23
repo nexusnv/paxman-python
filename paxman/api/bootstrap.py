@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from paxman.capabilities import (
+    BIC,
     IBAN,
     IP,
     ISBN,
@@ -25,6 +26,7 @@ from paxman.core.errors import CapabilityError
 # Fixed, documented order (alphabetical by capability registry name) —
 # bootstrap is deterministic. D2: literal tuple, no dynamic enumeration.
 _SHIPPED: tuple[type[Capability[Any]], ...] = (
+    BIC,
     Country,
     Currency,
     Date,

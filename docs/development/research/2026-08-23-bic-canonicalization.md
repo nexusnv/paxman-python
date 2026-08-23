@@ -79,6 +79,7 @@ Recommended file layout, rule set, notation, and contract are specified in §6, 
 ```python
 # python-stdnum pattern - strip separators, upper, then structure check
 import re
+
 compact = re.sub(r"[^A-Za-z0-9]", "", raw).upper()  # strip separators
 # or more narrowly, mirroring stdnum clean(number,' -'):
 compact = re.sub(r"[ \-]", "", raw).strip().upper()  # spaces + hyphens only
@@ -106,6 +107,7 @@ Paxman resolves **one mention per `canonicalize()` call** (ARCHITECTURE.md, segm
 ```python
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class BICNotation:
     """BIC notation - grammar-normalized compact form.
@@ -120,11 +122,11 @@ class BICNotation:
     rules own that (grammar/rule boundary per HOW_TO_ADD_NEW_GRAMMAR.md).
     """
 
-    bank_code: str      # e.g. "DEUT", "BNPA" - always length 4, A-Z0-9 (pre-2014 A-Z only)
-    country_code: str   # e.g. "DE", "FR" - always length 2, A-Z
+    bank_code: str  # e.g. "DEUT", "BNPA" - always length 4, A-Z0-9 (pre-2014 A-Z only)
+    country_code: str  # e.g. "DE", "FR" - always length 2, A-Z
     location_code: str  # e.g. "FF", "PP" - always length 2, A-Z0-9
-    branch_code: str    # e.g. "500", "XXX", "" - length 0 or 3, A-Z0-9
-    compact: str        # e.g. "DEUTDEFF" or "DEUTDEFF500" - 8 or 11, equals bank+country+location+branch
+    branch_code: str  # e.g. "500", "XXX", "" - length 0 or 3, A-Z0-9
+    compact: str  # e.g. "DEUTDEFF" or "DEUTDEFF500" - 8 or 11, equals bank+country+location+branch
 ```
 
 **Considered alternative - single field `compact` only:** `MoneyNotation` style with multi-field validation in `__post_init__`, and `PhoneNotation` `value`-only shape. A single `compact` field would suffice for the generic structure rule (which operates on the whole 8 or 11 string via regex), and country-specific branch handling can be derived via slicing `compact[4:6]`. However the five-field decomposition is preferred because:
@@ -164,12 +166,20 @@ Per HOW_TO_ADD_NEW_GRAMMAR.md and HOW_TO_ADD_NEW_CAPABILITY.md Step 4, every shi
 ISSN precedent (`paxman/capabilities/ISSN/grammar/issn_recognition.py`):
 ```python
 _ISSN_BODY = r"(?:ISSN(?:-L|-H)?[\s:-]+)?(?P<body>\d{4}-?\d{3}[0-9Xx])"
-_ISSN_PATTERN = BoundaryGuard.word_only().lookbehind + _ISSN_BODY + BoundaryGuard.word_only().lookahead
+_ISSN_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _ISSN_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 IBAN precedent (this report §4.2, single grammar with paper tolerance):
 ```python
 _IBAN_BODY = r"(?:IBAN[\s:-]+)?(?P<compact>[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30})"
-_IBAN_PATTERN = BoundaryGuard.word_only().lookbehind + _IBAN_BODY + BoundaryGuard.word_only().lookahead
+_IBAN_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _IBAN_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 
 **Proposed BIC pattern (single grammar, staged pipeline):**
@@ -186,7 +196,12 @@ _BIC_BODY = r"(?:(?:BIC|SWIFT)[\s:-]+)?(?P<compact>[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2
 # 8 chars = 4+2+2; 11 chars = 8+3 branch; only 8 or 11 via optional group, never 9 or 10
 # Wrapped with word-boundary guards - BIC is [A-Z0-9] glued, so word_only prevents
 # carving a valid run out of a longer token like "XDEUTDEFF" or "DEUTDEFFY"
-_BIC_PATTERN = BoundaryGuard.word_only().lookbehind + _BIC_BODY + BoundaryGuard.word_only().lookahead
+_BIC_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _BIC_BODY
+    + BoundaryGuard.word_only().lookahead
+)
+
 
 def _bic_notation(match: re.Match[str]) -> BICNotation:
     raw_compact = match.group("compact")
@@ -203,6 +218,7 @@ def _bic_notation(match: re.Match[str]) -> BICNotation:
         branch_code=branch_code,
         compact=compact,
     )
+
 
 class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
     """BIC recognition - 8 or 11 alphanum with optional BIC/SWIFT label."""
@@ -421,7 +437,9 @@ from paxman.core.contract import CapabilityContract
 class BICContract(CapabilityContract):
     """User-facing contract for BIC capability."""
 
-    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "bic"  # cf. ISSN "hyphenated" / IBAN "electronic"
+    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = (
+        "bic"  # cf. ISSN "hyphenated" / IBAN "electronic"
+    )
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"grouped", "bic11"})
 
     capability_name: str = field(default="bic", init=False)
@@ -462,6 +480,7 @@ from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 from paxman.capabilities.BIC.notation import BICNotation
 
+
 class BICCapability(Capability[BICNotation]):
     name = "bic"  # lowercase identifier - what users pass to registry
 
@@ -469,7 +488,10 @@ class BICCapability(Capability[BICNotation]):
         return [BICRecognitionGrammar()]  # single grammar; 8 and 11 handled together
 
     def get_rules(self) -> list[Rule[BICNotation]]:
-        return [Section5BICStructure(), SectionCountryCode()]  # plus optional directory rule
+        return [
+            Section5BICStructure(),
+            SectionCountryCode(),
+        ]  # plus optional directory rule
 
     @staticmethod
     def create_contract(
@@ -646,19 +668,21 @@ Per-country directory data module shape (parallel to `paxman/capabilities/ISBN/r
 # File format: monthly full plus daily delta; this snapshot is point-in-time.
 # Generated or hand-curated; update via tools/regenerate_bic_directory_data.py if automated.
 
-BIC_DIRECTORY: frozenset[str] = frozenset({
-    "DEUTDEFF",
-    "DEUTDEFF500",
-    "BNPAFRPP",
-    "BNPAFRPPXXX",
-    "CHASUS33",
-    "BARCGB22",
-    "NEDSZAJJ",
-    "NEDSZAJJXXX",
-    "SOGEFRPPBRE",
-    "DSBACNBXSHA",
-    # ... 107k+ BICs (connected plus non-connected), 227 countries point-in-time
-})
+BIC_DIRECTORY: frozenset[str] = frozenset(
+    {
+        "DEUTDEFF",
+        "DEUTDEFF500",
+        "BNPAFRPP",
+        "BNPAFRPPXXX",
+        "CHASUS33",
+        "BARCGB22",
+        "NEDSZAJJ",
+        "NEDSZAJJXXX",
+        "SOGEFRPPBRE",
+        "DSBACNBXSHA",
+        # ... 107k+ BICs (connected plus non-connected), 227 countries point-in-time
+    }
+)
 # Plus liveness flag if needed: dict[str, dict[str, object]] with connected flag, but set suffices for membership.
 # Completeness invariant: every SWIFT-registered BIC present; non-registered BIC absent.
 ```

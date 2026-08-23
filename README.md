@@ -54,22 +54,23 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twelve built-in capabilities:
+Paxman ships with thirteen built-in capabilities:
 
 | Capability | Domain | Grammars | Rules | Description |
-|------------|--------|----------|-------|-------------|
-| **Email** | Email addresses | 3 (standard, obfuscated, localhost) | 2 | RFC 5322, RFC 6761 |
-| **Date** | Dates | 4 (ISO, US, European, slash-ISO) | 3 | ISO 8601, US federal, EN 50160 |
-| **Country** | Country codes/names | 4 (alpha-2, alpha-3, numeric, name) | 6 | ISO 3166, CLDR |
+|---|---|---|---|---|
+| **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
+| **Country** | Country codes/names | 4 (alpha2, alpha3, numeric, name) | 6 | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
-| **IBAN** | Bank account numbers | 1 (iban_recognition) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
-| **IP** | IP addresses | 2 (IPv4, IPv6) | 2 | RFC 791, RFC 5952 |
+| **Date** | Dates | 4 (iso8601, us, european, slash_iso) | 3 | ISO 8601, US federal, EN 50160 |
+| **Email** | Email addresses | 3 (standard, obfuscated, localhost) | 2 | RFC 5322, RFC 6761 |
+| **IBAN** | Bank account numbers | 1 (iban) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
+| **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
-| **ISSN** | Serial identifiers | 1 (issn_recognition) | 1 | ISO 3297:2022 |
+| **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
-| **Phone** | Phone numbers | 4 (E.164, tel-URI, 00-prefix, national) | 5 | ITU-T E.164, RFC 3966, NANP |
+| **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
-| **URL** | URLs | 1 (absolute-uri) | 1 | WHATWG URL Standard |
+| **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
 
 > **Note:** Table generated from `paxman/api/bootstrap.py:_SHIPPED` (alphabetical by registry name). To regenerate, run `uv run python tools/generate_readme_table.py`.
 

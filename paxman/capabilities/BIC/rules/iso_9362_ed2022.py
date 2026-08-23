@@ -1,0 +1,320 @@
+"""ISO 9362:2022 Section 5 — BIC structure plus country lookup."""
+
+from __future__ import annotations
+
+import re
+
+from paxman.capabilities.BIC.notation import BICNotation
+from paxman.core.contract import Contract
+from paxman.core.domain import Provenance, Rule, RuleStrategy
+
+PUBLICATION = Provenance(
+    authority="ISO",
+    specification_name="ISO 9362:2022",
+    kind="specification",
+    reference_url="https://www.iso.org/standard/84108.html",
+    version="2022",
+    lifecycle="active",
+    publication_year=2022,
+)
+
+# ISO 3166-1 alpha-2 plus XK (Kosovo user assigned).
+# 249 ISO assigned plus XK = 250 entries.
+COUNTRY_CODES: frozenset[str] = frozenset(
+    {
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "XK",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW",
+    }
+)
+
+# Mirrors grammar charset r"[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?" — intentional
+# defense-in-depth (rule must not trust grammar); not shared via import.
+_BIC_RE = re.compile(r"^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$")
+
+
+class Section5BICStructureCountry(Rule[BICNotation]):
+    """ISO 9362:2022 Section 5 — BIC structure plus country lookup.
+
+    Validates length 8 or 11, charset per position, and country_code in
+    ISO 3166-1 plus XK. Location second char 0/1/2 informative only.
+    Branch XXX preserved, not coalesced. No checksum.
+    """
+
+    name = "Section 5-bic-structure-country"
+    strategy = RuleStrategy.PARSER
+    provenance = PUBLICATION
+    citation = "Section 5 (BIC structure)"
+    target_semantics = frozenset({"bic_recognition"})
+    requires_features = frozenset()
+
+    def matches(self, notation: BICNotation, contract: Contract) -> bool:
+        c = notation.compact
+        if len(c) not in (8, 11):
+            return False
+        if not c.isascii():
+            return False
+        if not c.isalnum():
+            return False
+        if not c.isupper():
+            return False
+        if _BIC_RE.match(c) is None:
+            return False
+        if notation.country_code not in COUNTRY_CODES:
+            return False
+        return c == (
+            notation.bank_code
+            + notation.country_code
+            + notation.location_code
+            + notation.branch_code
+        )
+
+    def normalize(self, notation: BICNotation, contract: Contract) -> str:
+        return notation.compact

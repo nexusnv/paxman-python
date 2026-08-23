@@ -102,8 +102,15 @@ from paxman.capabilities.BIC.notation import BICNotation
 
 pytestmark = [pytest.mark.capability]
 
+
 def test_frozen_slots_hash():
-    n = BICNotation(bank_code="DEUT", country_code="DE", location_code="FF", branch_code="", compact="DEUTDEFF")
+    n = BICNotation(
+        bank_code="DEUT",
+        country_code="DE",
+        location_code="FF",
+        branch_code="",
+        compact="DEUTDEFF",
+    )
     assert n.bank_code == "DEUT"
     assert n.country_code == "DE"
     assert n.location_code == "FF"
@@ -114,19 +121,50 @@ def test_frozen_slots_hash():
     with pytest.raises(FrozenInstanceError):
         n.compact = "X"  # type: ignore[misc]
 
+
 def test_compact_is_concatenation():
-    n8 = BICNotation(bank_code="BNPA", country_code="FR", location_code="PP", branch_code="", compact="BNPAFRPP")
-    assert n8.compact == n8.bank_code + n8.country_code + n8.location_code + n8.branch_code
+    n8 = BICNotation(
+        bank_code="BNPA",
+        country_code="FR",
+        location_code="PP",
+        branch_code="",
+        compact="BNPAFRPP",
+    )
+    assert (
+        n8.compact == n8.bank_code + n8.country_code + n8.location_code + n8.branch_code
+    )
     assert len(n8.compact) == 8
-    n11 = BICNotation(bank_code="DEUT", country_code="DE", location_code="FF", branch_code="500", compact="DEUTDEFF500")
-    assert n11.compact == n11.bank_code + n11.country_code + n11.location_code + n11.branch_code
+    n11 = BICNotation(
+        bank_code="DEUT",
+        country_code="DE",
+        location_code="FF",
+        branch_code="500",
+        compact="DEUTDEFF500",
+    )
+    assert (
+        n11.compact
+        == n11.bank_code + n11.country_code + n11.location_code + n11.branch_code
+    )
     assert len(n11.compact) == 11
 
+
 def test_branch_empty_when_8():
-    n = BICNotation(bank_code="CHAS", country_code="US", location_code="33", branch_code="", compact="CHASUS33")
+    n = BICNotation(
+        bank_code="CHAS",
+        country_code="US",
+        location_code="33",
+        branch_code="",
+        compact="CHASUS33",
+    )
     assert n.branch_code == ""
     assert len(n.compact) == 8
-    n2 = BICNotation(bank_code="BNPA", country_code="FR", location_code="PP", branch_code="XXX", compact="BNPAFRPPXXX")
+    n2 = BICNotation(
+        bank_code="BNPA",
+        country_code="FR",
+        location_code="PP",
+        branch_code="XXX",
+        compact="BNPAFRPPXXX",
+    )
     assert n2.branch_code == "XXX"
     assert len(n2.compact) == 11
 ```
@@ -200,6 +238,7 @@ from paxman.capabilities.BIC.contract import BICContract
 
 pytestmark = [pytest.mark.capability]
 
+
 def test_default_output_format_resolves():
     c = BICContract()
     assert c.output_format == "bic"
@@ -207,18 +246,22 @@ def test_default_output_format_resolves():
     assert BICContract.DEFAULT_OUTPUT_FORMAT == "bic"
     assert BICContract.OFFERED_OUTPUT_FORMATS == frozenset({"grouped", "bic11"})
 
+
 def test_grouped_offered():
     c = BICContract(output_format="grouped")
     assert c.output_format == "grouped"
+
 
 def test_bic11_offered():
     c = BICContract(output_format="bic11")
     assert c.output_format == "bic11"
 
+
 def test_default_alias_via_none_and_default_string():
     for alias in (None, "default", "bic"):
         c = BICContract(output_format=alias)
         assert c.output_format == "bic"
+
 
 def test_invalid_output_format_raises():
     with pytest.raises(ContractError):
@@ -227,6 +270,7 @@ def test_invalid_output_format_raises():
         BICContract(output_format="paper")  # IBAN ism, not BIC
     with pytest.raises(ContractError):
         BICContract(output_format="compact")  # not offered
+
 
 def test_frozen_contract():
     c = BICContract()
@@ -296,7 +340,11 @@ Research section 4.2 and 4.3: Single `PipelineGrammar` with `StandardPre(empty_g
 
 ```python
 _BIC_BODY = r"(?ai:(?:(?:BIC|SWIFT)[\s:-]+)?(?P<compact>[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?))"
-_BIC_PATTERN = BoundaryGuard.word_only().lookbehind + _BIC_BODY + BoundaryGuard.word_only().lookahead
+_BIC_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _BIC_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 
 Design points verbatim in code comments:
@@ -318,6 +366,7 @@ pytestmark = [pytest.mark.capability]
 
 GRAMMAR = BICRecognitionGrammar()
 
+
 def test_valid_electronic():
     for compact in ["DEUTDEFF", "BNPAFRPP", "CHASUS33", "BARCGB22", "NEDSZAJJ"]:
         m = GRAMMAR.recognize(compact)
@@ -330,12 +379,19 @@ def test_valid_electronic():
         assert n.branch_code == ""
         assert m[0].raw_text == compact
         assert m[0].end - m[0].start == len(m[0].raw_text)
-    for compact in ["DEUTDEFF500", "BNPAFRPPXXX", "SOGEFRPPBRE", "DSBACNBXSHA", "NEDSZAJJXXX"]:
+    for compact in [
+        "DEUTDEFF500",
+        "BNPAFRPPXXX",
+        "SOGEFRPPBRE",
+        "DSBACNBXSHA",
+        "NEDSZAJJXXX",
+    ]:
         m = GRAMMAR.recognize(compact)
         assert len(m) == 1, compact
         assert m[0].notation.compact == compact
         assert m[0].notation.branch_code == compact[8:11]
         assert len(m[0].notation.compact) == 11
+
 
 def test_case_insensitive_and_label():
     for txt, expected in [
@@ -352,6 +408,7 @@ def test_case_insensitive_and_label():
         assert len(m) == 1, txt
         assert m[0].notation.compact == expected, txt
 
+
 def test_word_guard_blocks_left_and_label_glue():
     # Left glue: (?<!\w) lookbehind rejects carving out of longer token
     assert GRAMMAR.recognize("XDEUTDEFF") == []
@@ -361,6 +418,7 @@ def test_word_guard_blocks_left_and_label_glue():
     assert GRAMMAR.recognize("BICDEUTDEFF") == []
     assert GRAMMAR.recognize("SWIFTDEUTDEFF500") == []
     assert GRAMMAR.recognize("BICDEUTDEFF500") == []
+
 
 def test_length_bounds():
     # Only 8 or 11 valid, 7/9/10/12 must not be recognized as BIC
@@ -374,6 +432,7 @@ def test_length_bounds():
     # 7 plus valid 8 needs word guard: XDEUTDEF is not valid anyway
     assert GRAMMAR.recognize("DEUTDEFF50000") == []  # 13 alnum glued, no word break
 
+
 def test_multiple_matches():
     txt = "DEUTDEFF / BNPAFRPPXXX"
     m = GRAMMAR.recognize(txt)
@@ -383,16 +442,18 @@ def test_multiple_matches():
     txt2 = "BICs: DEUTDEFF500, CHASUS33"
     assert len(GRAMMAR.recognize(txt2)) == 2
 
+
 def test_semantics_and_name():
     assert GRAMMAR.name == "bic_recognition"
     assert GRAMMAR.semantics == "bic_recognition"
     assert GRAMMAR.single_value is True
 
+
 def test_span_invariants():
     txt = "Please remit to BIC DEUTDEFF (Deutsche Bank)"
     m = GRAMMAR.recognize(txt)
     assert len(m) == 1
-    assert txt[m[0].start:m[0].end] == m[0].raw_text
+    assert txt[m[0].start : m[0].end] == m[0].raw_text
     assert 0 <= m[0].start < m[0].end <= len(txt)
     # raw_text includes label when present
     assert m[0].raw_text == "BIC DEUTDEFF"
@@ -400,6 +461,7 @@ def test_span_invariants():
     # bare without label
     m2 = GRAMMAR.recognize("Pay to DEUTDEFF now")[0]
     assert m2.raw_text == "DEUTDEFF"
+
 
 def test_empty_and_quoted():
     assert GRAMMAR.recognize("") == []
@@ -435,7 +497,11 @@ from paxman.core.grammar.stages import RegexStage, StandardPre
 # (?ai:) ASCII restriction plus isascii filter rejects non ASCII like K.
 _BIC_BODY = r"(?ai:(?:(?:BIC|SWIFT)[\s:-]+)?(?P<compact>[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?))"
 # word_only guards block left glue XDEUTDEFF and right glue DEUTDEFFY
-_BIC_PATTERN = BoundaryGuard.word_only().lookbehind + _BIC_BODY + BoundaryGuard.word_only().lookahead
+_BIC_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _BIC_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 
 
 def _bic_notation(match: re.Match[str]) -> BICNotation:
@@ -515,16 +581,27 @@ import pytest
 
 from paxman.capabilities.BIC.contract import BICContract
 from paxman.capabilities.BIC.notation import BICNotation
-from paxman.capabilities.BIC.rules.iso_9362_ed2022 import PUBLICATION, Section5BICStructureCountry
+from paxman.capabilities.BIC.rules.iso_9362_ed2022 import (
+    PUBLICATION,
+    Section5BICStructureCountry,
+)
 
 pytestmark = [pytest.mark.capability]
 
 RULE = Section5BICStructureCountry()
 CONTRACT = BICContract()
 
+
 def n(compact: str) -> BICNotation:
     c = compact.upper()
-    return BICNotation(bank_code=c[0:4], country_code=c[4:6], location_code=c[6:8], branch_code=c[8:11] if len(c) == 11 else "", compact=c)
+    return BICNotation(
+        bank_code=c[0:4],
+        country_code=c[4:6],
+        location_code=c[6:8],
+        branch_code=c[8:11] if len(c) == 11 else "",
+        compact=c,
+    )
+
 
 def test_provenance_metadata():
     assert PUBLICATION.authority == "ISO"
@@ -539,6 +616,7 @@ def test_provenance_metadata():
     assert RULE.target_semantics == frozenset({"bic_recognition"})
     assert RULE.requires_features == frozenset()
     assert "Section 5" in RULE.citation
+
 
 def test_valid_vectors():
     for compact in [
@@ -558,6 +636,7 @@ def test_valid_vectors():
         assert RULE.matches(n(compact), CONTRACT) is True, compact
         assert RULE.normalize(n(compact), CONTRACT) == compact
 
+
 def test_invalid_country_and_charset():
     # invalid country XX, QQ, ZZ not in ISO 3166-1 plus XK
     for bad in ["DEUTXXFF", "BNPAQQPP", "CHASZZ33", "DEUTQQFF"]:
@@ -566,17 +645,43 @@ def test_invalid_country_and_charset():
     assert RULE.matches(n("DEUT1EFF"), CONTRACT) is False
     assert RULE.matches(n("DEUT12FF"), CONTRACT) is False
     # lowercase compact fails isupper check (grammar uppercases, but rule defends)
-    assert RULE.matches(BICNotation(bank_code="deut", country_code="de", location_code="ff", branch_code="", compact="deutdeff"), CONTRACT) is False
+    assert (
+        RULE.matches(
+            BICNotation(
+                bank_code="deut",
+                country_code="de",
+                location_code="ff",
+                branch_code="",
+                compact="deutdeff",
+            ),
+            CONTRACT,
+        )
+        is False
+    )
     # wrong length 7/9/10/12
-    assert RULE.matches(BICNotation(bank_code="DEUT", country_code="DE", location_code="F", branch_code="", compact="DEUTDEF"), CONTRACT) is False
+    assert (
+        RULE.matches(
+            BICNotation(
+                bank_code="DEUT",
+                country_code="DE",
+                location_code="F",
+                branch_code="",
+                compact="DEUTDEF",
+            ),
+            CONTRACT,
+        )
+        is False
+    )
     assert RULE.matches(n("DEUTDEFF5"), CONTRACT) is False
     assert RULE.matches(n("DEUTDEFF50"), CONTRACT) is False
     assert RULE.matches(n("DEUTDEFF5000"), CONTRACT) is False
+
 
 def test_location_second_char_not_rejected():
     # 0 test, 1 passive, 2 reverse billing, informative only, must not reject
     for compact in ["DEUTDE0F", "BARCGB1L", "CHASGB2L", "DEUTDEFF", "BARCGB22"]:
         assert RULE.matches(n(compact), CONTRACT) is True, compact
+
 
 def test_branch_xxx_preserved():
     assert RULE.matches(n("NEDSZAJJXXX"), CONTRACT) is True
@@ -619,34 +724,259 @@ PUBLICATION = Provenance(
 # Source: https://www.iso.org/iso-3166-country-codes.html plus RA landing
 # https://www.iso.org/cms/live/live/en/sites/isoorg/home/developing-standards/who-develops-standards/maintenance_agencies.html
 # This set mirrors python-stdnum bic.py _country_codes including XK and AQ.
-COUNTRY_CODES: frozenset[str] = frozenset({
-    "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ",
-    "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ",
-    "CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CY", "CZ",
-    "DE", "DJ", "DK", "DM", "DO", "DZ",
-    "EC", "EE", "EG", "EH", "ER", "ES", "ET",
-    "FI", "FJ", "FK", "FM", "FO", "FR",
-    "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY",
-    "HK", "HM", "HN", "HR", "HT", "HU",
-    "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
-    "JE", "JM", "JO", "JP",
-    "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ",
-    "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY",
-    "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ",
-    "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ",
-    "OM",
-    "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY",
-    "QA",
-    "RE", "RO", "RS", "RU", "RW",
-    "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ",
-    "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ",
-    "UA", "UG", "UM", "US", "UY", "UZ",
-    "VA", "VC", "VE", "VG", "VI", "VN", "VU",
-    "WF", "WS",
-    "XK",
-    "YE", "YT",
-    "ZA", "ZM", "ZW",
-})
+COUNTRY_CODES: frozenset[str] = frozenset(
+    {
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "XK",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW",
+    }
+)
 
 _BIC_RE = re.compile(r"^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$")
 
@@ -677,7 +1007,13 @@ class Section5BICStructureCountry(Rule[BICNotation]):
         if notation.country_code not in COUNTRY_CODES:
             return False
         # Defensive field agreement, compact must equal concatenation
-        if c != notation.bank_code + notation.country_code + notation.location_code + notation.branch_code:
+        if (
+            c
+            != notation.bank_code
+            + notation.country_code
+            + notation.location_code
+            + notation.branch_code
+        ):
             return False
         return True
 
@@ -732,6 +1068,7 @@ pytestmark = [pytest.mark.capability]
 
 CAP = BICCapability()
 
+
 def test_wiring_counts():
     assert CAP.name == "bic"
     assert CAP.version == "1.0.0"
@@ -740,12 +1077,14 @@ def test_wiring_counts():
     assert len(CAP.get_rules()) == 1
     assert CAP.get_rules()[0].name == "Section 5-bic-structure-country"
 
+
 def test_create_contract_defaults():
     c = CAP.create_contract()
     assert c.output_format == "bic"
     assert c.capability_name == "bic"
     assert c.excluded_rules == ()
     assert c.pinned_rules is None
+
 
 def test_format_value_grouped():
     cases = {
@@ -757,24 +1096,60 @@ def test_format_value_grouped():
         "NEDSZAJJXXX": "NEDS ZA JJ XXX",
     }
     for bic, grouped in cases.items():
-        n = BICNotation(bank_code=bic[0:4], country_code=bic[4:6], location_code=bic[6:8], branch_code=bic[8:11] if len(bic) == 11 else "", compact=bic)
+        n = BICNotation(
+            bank_code=bic[0:4],
+            country_code=bic[4:6],
+            location_code=bic[6:8],
+            branch_code=bic[8:11] if len(bic) == 11 else "",
+            compact=bic,
+        )
         assert CAP.format_value(bic, "grouped", n) == grouped
         assert CAP.format_value(bic, None, n) == bic
         assert CAP.format_value(bic, "bic", n) == bic
 
+
 def test_format_value_bic11():
     # Always 11, append XXX when branch absent, lossy expansion documented
-    for bic8, bic11 in [("DEUTDEFF", "DEUTDEFFXXX"), ("BNPAFRPP", "BNPAFRPPXXX"), ("NEDSZAJJ", "NEDSZAJJXXX")]:
-        n = BICNotation(bank_code=bic8[0:4], country_code=bic8[4:6], location_code=bic8[6:8], branch_code="", compact=bic8)
+    for bic8, bic11 in [
+        ("DEUTDEFF", "DEUTDEFFXXX"),
+        ("BNPAFRPP", "BNPAFRPPXXX"),
+        ("NEDSZAJJ", "NEDSZAJJXXX"),
+    ]:
+        n = BICNotation(
+            bank_code=bic8[0:4],
+            country_code=bic8[4:6],
+            location_code=bic8[6:8],
+            branch_code="",
+            compact=bic8,
+        )
         assert CAP.format_value(bic8, "bic11", n) == bic11
     # Already 11 stays identity (notation must match value)
-    n2 = BICNotation(bank_code="DEUT", country_code="DE", location_code="FF", branch_code="500", compact="DEUTDEFF500")
+    n2 = BICNotation(
+        bank_code="DEUT",
+        country_code="DE",
+        location_code="FF",
+        branch_code="500",
+        compact="DEUTDEFF500",
+    )
     assert CAP.format_value("DEUTDEFF500", "bic11", n2) == "DEUTDEFF500"
-    n3 = BICNotation(bank_code="BNPA", country_code="FR", location_code="PP", branch_code="XXX", compact="BNPAFRPPXXX")
+    n3 = BICNotation(
+        bank_code="BNPA",
+        country_code="FR",
+        location_code="PP",
+        branch_code="XXX",
+        compact="BNPAFRPPXXX",
+    )
     assert CAP.format_value("BNPAFRPPXXX", "bic11", n3) == "BNPAFRPPXXX"
 
+
 def test_format_value_identity():
-    n = BICNotation(bank_code="DEUT", country_code="DE", location_code="FF", branch_code="", compact="DEUTDEFF")
+    n = BICNotation(
+        bank_code="DEUT",
+        country_code="DE",
+        location_code="FF",
+        branch_code="",
+        compact="DEUTDEFF",
+    )
     assert CAP.format_value("DEUTDEFF", "bic", n) == "DEUTDEFF"
     assert CAP.format_value("DEUTDEFF", None, n) == "DEUTDEFF"
 ```
@@ -833,7 +1208,9 @@ class BICCapability(Capability[BICNotation]):
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
         )
 
-    def format_value(self, value: str, output_format: str | None, notation: BICNotation) -> str:
+    def format_value(
+        self, value: str, output_format: str | None, notation: BICNotation
+    ) -> str:
         if output_format == "grouped":
             if len(value) == 11:
                 return f"{value[0:4]} {value[4:6]} {value[6:8]} {value[8:11]}"
@@ -893,6 +1270,7 @@ from paxman.capabilities import (
     URL,
 )
 
+
 # Add class mirroring TestISBNCapabilityExports and TestIBANCapabilityExports:
 class TestBICCapabilityExports:
     @pytest.mark.unit
@@ -904,6 +1282,7 @@ class TestBICCapabilityExports:
     def test_bic_capability_name(self) -> None:
         """BIC capability has correct name."""
         assert BIC.name == "bic"
+
 
 # In test_export_list_contains expected set, add "BIC" (alphabetically first — letter B). Use set comparison so file order does not matter:
 assert set(capabilities.__all__) == {
@@ -1042,17 +1421,27 @@ def test_success_electronic_and_label():
         assert r.candidates[0].recognition_rule == "bic_recognition"
         assert r.candidates[0].validation_rule == "Section 5-bic-structure-country"
 
+
 def test_grouped_and_bic11_output():
     _register_bic()
-    r = paxman.canonicalize("DEUTDEFF", BICCapability.create_contract(output_format="grouped"))
+    r = paxman.canonicalize(
+        "DEUTDEFF", BICCapability.create_contract(output_format="grouped")
+    )
     assert r.status == Resolution.SUCCESS
     assert r.canonicalized_value == "DEUT DE FF"
-    r2 = paxman.canonicalize("DEUTDEFF500", BICCapability.create_contract(output_format="grouped"))
+    r2 = paxman.canonicalize(
+        "DEUTDEFF500", BICCapability.create_contract(output_format="grouped")
+    )
     assert r2.canonicalized_value == "DEUT DE FF 500"
-    r3 = paxman.canonicalize("DEUTDEFF", BICCapability.create_contract(output_format="bic11"))
+    r3 = paxman.canonicalize(
+        "DEUTDEFF", BICCapability.create_contract(output_format="bic11")
+    )
     assert r3.canonicalized_value == "DEUTDEFFXXX"
-    r4 = paxman.canonicalize("DEUTDEFF500", BICCapability.create_contract(output_format="bic11"))
+    r4 = paxman.canonicalize(
+        "DEUTDEFF500", BICCapability.create_contract(output_format="bic11")
+    )
     assert r4.canonicalized_value == "DEUTDEFF500"
+
 
 def test_invalid_country_and_charset():
     _register_bic()
@@ -1061,13 +1450,17 @@ def test_invalid_country_and_charset():
     assert paxman.canonicalize("BNPAQQPP", contract).status == Resolution.INVALID
     assert paxman.canonicalize("DEUT1EFF", contract).status == Resolution.INVALID
 
+
 def test_missing_short_and_wrong_length():
     _register_bic()
     contract = BICCapability.create_contract()
     assert paxman.canonicalize("AB12", contract).status == Resolution.MISSING
     assert paxman.canonicalize("DEUTDEF", contract).status == Resolution.MISSING  # 7
-    assert paxman.canonicalize("DEUTDEFF50", contract).status == Resolution.MISSING  # 10
+    assert (
+        paxman.canonicalize("DEUTDEFF50", contract).status == Resolution.MISSING
+    )  # 10
     assert paxman.canonicalize("call me at noon", contract).status == Resolution.MISSING
+
 
 def test_two_distinct_bics_raise_multiple_mentions():
     # single_value=True: two separate mentions resolving to distinct values
@@ -1079,11 +1472,13 @@ def test_two_distinct_bics_raise_multiple_mentions():
     with pytest.raises(MultipleMentionsError):
         paxman.canonicalize("DEUTDEFF / BNPAFRPPXXX", contract)
 
+
 def test_span_word_guard():
     _register_bic()
     contract = BICCapability.create_contract()
     assert paxman.canonicalize("XDEUTDEFF", contract).status == Resolution.MISSING
     assert paxman.canonicalize("BICDEUTDEFF", contract).status == Resolution.MISSING
+
 
 def test_year_filter_excludes_rule():
     # year=2021 filters out 2022 rule (orchestrator _filter_rules), so input is
@@ -1093,11 +1488,13 @@ def test_year_filter_excludes_rule():
     r = paxman.canonicalize("DEUTDEFF", contract)
     assert r.status == Resolution.INVALID
 
+
 def test_location_second_char_not_rejected():
     _register_bic()
     contract = BICCapability.create_contract()
     for bic in ["DEUTDE0F", "BARCGB1L", "CHASGB2L"]:
         assert paxman.canonicalize(bic, contract).status == Resolution.SUCCESS, bic
+
 
 def test_identical_bics_coalesce_to_success():
     _register_bic()
@@ -1134,22 +1531,36 @@ from hypothesis import given, strategies as st
 
 from paxman.capabilities.BIC.contract import BICContract
 from paxman.capabilities.BIC.notation import BICNotation
-from paxman.capabilities.BIC.rules.iso_9362_ed2022 import Section5BICStructureCountry, COUNTRY_CODES
+from paxman.capabilities.BIC.rules.iso_9362_ed2022 import (
+    Section5BICStructureCountry,
+    COUNTRY_CODES,
+)
 
 RULE = Section5BICStructureCountry()
 CONTRACT = BICContract()
 COUNTRIES = sorted(COUNTRY_CODES)
 
+
 def make_bic(bank: str, country: str, location: str, branch: str = "") -> str:
     return bank + country + location + branch
 
-@given(st.text(min_size=8, max_size=11, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
+
+@given(
+    st.text(min_size=8, max_size=11, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+)
 def test_random_strings_usually_invalid_or_valid(s: str) -> None:
     # Smoke: matches() never raises on any 8 or 11 alnum string
     if len(s) not in (8, 11):
         return
-    n = BICNotation(bank_code=s[0:4], country_code=s[4:6], location_code=s[6:8], branch_code=s[8:11] if len(s) == 11 else "", compact=s)
+    n = BICNotation(
+        bank_code=s[0:4],
+        country_code=s[4:6],
+        location_code=s[6:8],
+        branch_code=s[8:11] if len(s) == 11 else "",
+        compact=s,
+    )
     assert RULE.matches(n, CONTRACT) in (True, False)
+
 
 def test_generated_valid_country_is_valid() -> None:
     bank = "DEUT"
@@ -1157,21 +1568,46 @@ def test_generated_valid_country_is_valid() -> None:
     location = "FF"
     branch = "500"
     compact = bank + country + location + branch
-    n = BICNotation(bank_code=bank, country_code=country, location_code=location, branch_code=branch, compact=compact)
+    n = BICNotation(
+        bank_code=bank,
+        country_code=country,
+        location_code=location,
+        branch_code=branch,
+        compact=compact,
+    )
     assert RULE.matches(n, CONTRACT) is True
 
-@given(st.sampled_from(COUNTRIES), st.text(min_size=4, max_size=4, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"), st.text(min_size=2, max_size=2, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
+
+@given(
+    st.sampled_from(COUNTRIES),
+    st.text(min_size=4, max_size=4, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    st.text(min_size=2, max_size=2, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
+)
 def test_all_countries_in_set_are_valid(country: str, bank: str, location: str) -> None:
     compact = bank + country + location
-    n = BICNotation(bank_code=bank, country_code=country, location_code=location, branch_code="", compact=compact)
+    n = BICNotation(
+        bank_code=bank,
+        country_code=country,
+        location_code=location,
+        branch_code="",
+        compact=compact,
+    )
     # generic structure plus country in set to valid, no exception
     assert RULE.matches(n, CONTRACT) is True
 
+
 def test_grouped_roundtrip_via_compact():
     from paxman.capabilities.BIC.capability import BICCapability
+
     cap = BICCapability()
     for bic in ["DEUTDEFF", "DEUTDEFF500", "BNPAFRPPXXX"]:
-        n = BICNotation(bank_code=bic[0:4], country_code=bic[4:6], location_code=bic[6:8], branch_code=bic[8:11] if len(bic) == 11 else "", compact=bic)
+        n = BICNotation(
+            bank_code=bic[0:4],
+            country_code=bic[4:6],
+            location_code=bic[6:8],
+            branch_code=bic[8:11] if len(bic) == 11 else "",
+            compact=bic,
+        )
         grouped = cap.format_value(bic, "grouped", n)
         # grouped detaches via compact pivot, re grouping is deterministic
         compact2 = grouped.replace(" ", "")
