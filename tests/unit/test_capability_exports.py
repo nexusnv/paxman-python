@@ -14,6 +14,7 @@ from paxman.capabilities import (  # isort: skip
     IP,
     ISBN,
     ISSN,
+    Language,
     Money,
     ORCID,
     Phone,
@@ -166,6 +167,18 @@ class TestORCIDCapabilityExports:
         assert ORCID.name == "orcid"
 
 
+class TestLanguageCapabilityExports:
+    @pytest.mark.unit
+    def test_language_capability_importable(self) -> None:
+        """Language capability is importable from paxman.capabilities."""
+        assert Language is not None
+
+    @pytest.mark.unit
+    def test_language_capability_name(self) -> None:
+        """Language capability has correct name."""
+        assert Language.name == "language"
+
+
 class TestSIUnitCapabilityExports:
     @pytest.mark.unit
     def test_si_unit_capability_importable(self) -> None:
@@ -204,6 +217,7 @@ class TestURLCapabilityExports:
             "IP",
             "ISBN",
             "ISSN",
+            "Language",
             "Money",
             "ORCID",
             "Phone",
