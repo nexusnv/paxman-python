@@ -66,6 +66,26 @@ def test_word_guard_blocks_left_and_label_glue():
     assert GRAMMAR.recognize("BICDEUTDEFF500") == []
 
 
+def test_bic_prefixed_bank_not_blocked():
+    # Regression for PR review: compact 11 with BIC-prefixed bank must remain
+    # recognized while glued labels stay blocked. Decomposition: BICX US 1A ABC.
+    m = GRAMMAR.recognize("BICXUS1AABC")
+    assert len(m) == 1, "BICXUS1AABC should be recognized as compact 11"
+    n = m[0].notation
+    assert n.compact == "BICXUS1AABC"
+    assert n.bank_code == "BICX"
+    assert n.country_code == "US"
+    assert n.location_code == "1A"
+    assert n.branch_code == "ABC"
+    assert m[0].raw_text == "BICXUS1AABC"
+    # sanity: short BIC-prefixed bank still works (B2 fix)
+    assert len(GRAMMAR.recognize("BICSDEFF")) == 1
+    assert len(GRAMMAR.recognize("BICXUS33XXX")) == 1
+    # glued labels must still be blocked
+    assert GRAMMAR.recognize("BICDEUTDEFF") == []
+    assert GRAMMAR.recognize("SWIFTDEUTDEFF") == []
+
+
 def test_length_bounds():
     # Only 8 or 11 valid, 7/9/10/12 must not be recognized as BIC
     assert GRAMMAR.recognize("DEUTDEF") == []  # 7
