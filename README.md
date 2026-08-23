@@ -54,7 +54,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with thirteen built-in capabilities:
+Paxman ships with fourteen built-in capabilities:
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -68,6 +68,7 @@ Paxman ships with thirteen built-in capabilities:
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
+| **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
@@ -325,6 +326,34 @@ result = paxman.canonicalize("USD500", contract)
 # → "USD500.00"
 ```
 
+### ORCID Capability
+
+Recognizes ORCID iDs (ISNI-compatible identifiers, ISO 27729:2024) with MOD 11-2 check-digit validation, canonicalizing to the hyphenated form.
+
+```python
+from paxman.capabilities import ORCID
+
+register_capability(ORCID())
+
+# Bare hyphenated iD
+contract = ORCID.create_contract()
+result = paxman.canonicalize("0000-0002-1825-0097", contract)
+# → "0000-0002-1825-0097"
+
+# URI input resolves to the same canonical value
+result = paxman.canonicalize("https://orcid.org/0000-0002-1694-233X", contract)
+# → "0000-0002-1694-233X"
+
+# Render as the storage URI
+contract = ORCID.create_contract(output_format="uri")
+result = paxman.canonicalize("0000-0002-1825-0097", contract)
+# → "https://orcid.org/0000-0002-1825-0097"
+
+# Bad check digit is INVALID
+result = paxman.canonicalize("0000-0002-1825-0098", ORCID.create_contract())
+# → Status: INVALID
+```
+
 ### Phone Capability
 
 Recognizes international (E.164, 00-prefix), tel-URI, and NANP national phone numbers.
@@ -485,7 +514,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with twelve built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with fourteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re

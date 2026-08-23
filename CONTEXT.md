@@ -63,7 +63,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships thirteen built-in capabilities, each wired to an authoritative specification:
+Paxman ships fourteen built-in capabilities, each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -77,6 +77,7 @@ Paxman ships thirteen built-in capabilities, each wired to an authoritative spec
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **BIC** | Bank identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Money** | Money amounts | ISO 4217, CLDR |
+| **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | BIPM SI Brochure, ISO 80000-1 |
 | **URL** | URLs | WHATWG URL Standard |
@@ -311,6 +312,33 @@ The Date capability has **4 grammars** and **3 validation rules**:
 | EN 50160 | European EN 50160 | `YYYY-MM-DD` |
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
+
+### ORCID
+
+The ORCID capability has **1 grammar** and **2 validation rules**:
+
+#### Notation
+
+`ORCIDNotation(compact, hyphenated, uri, check, is_uri)` — all `str`. `compact` is the 16-character hyphens-removed uppercase form (15 digits + check `0-9`/`X`), `hyphenated` is the `XXXX-XXXX-XXXX-XXXC` presentation (three hyphens, trailing `X` uppercase), `uri` is `https://orcid.org/XXXX-XXXX-XXXX-XXXC`, `check` is the final character `0-9` or `X`, `is_uri` is `"true"` when the raw input carried an `orcid.org` prefix else `"false"`.
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `orcid_recognition` | optional `ORCID`/`ISNI` label (`[\s:-]+`) and optional `https?://(www.)?orcid.org/` host, then hyphen-only `4-4-4-4` payload `\d{4}-\d{4}-\d{4}-\d{3}[\dX]` ending `[0-9X]` | `word_only` guards on both sides, inline `(?ai:)` ASCII flags on label/host/payload, case-insensitive `X` folded to uppercase |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 4-orcid-structure` | ISO 27729:2024 Section 4 | `XXXX-XXXX-XXXX-XXXC` (hyphenated) |
+| `Section A-mod11-2-check-character` | ISO 27729:2024 Annex A (MOD 11-2) | `XXXX-XXXX-XXXX-XXXC` (hyphenated) |
+
+Both rules validate the full conjunction (structure + MOD 11-2) and carry dual provenance; each produces the hyphenated canonical value.
+
+#### Formats
+
+Default `orcid` (hyphenated `XXXX-XXXX-XXXX-XXXC`); offered `uri` (`https://orcid.org/XXXX-XXXX-XXXX-XXXC`) and `compact` (16 chars, no hyphens). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Contract Rule Exclusion
 ```python
