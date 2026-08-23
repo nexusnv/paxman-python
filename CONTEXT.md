@@ -325,7 +325,7 @@ The ORCID capability has **1 grammar** and **2 validation rules**:
 
 | Grammar | Pattern | Notes |
 |---------|---------|-------|
-| `orcid_recognition` | optional `ORCID`/`ISNI` label (`[\s:-]+`) and optional `https?://(www.)?orcid.org/` host, then hyphen-only `4-4-4-4` payload `\d{4}-\d{4}-\d{4}-\d{3}[\dX]` ending `[0-9X]` | `word_only` guards on both sides, inline `(?ai:)` ASCII flags on label/host/payload, case-insensitive `X` folded to uppercase |
+| `orcid_recognition` | optional `ORCID`/`ISNI` label (`[\s:-]+`) and optional `https?://(www.)?orcid.org/` host, then hyphen-only `4-4-4-4` payload `\d{4}-\d{4}-\d{4}-\d{3}[\dX]` ending `[0-9X]` | `word_only` guards on both sides, inline `(?ai:)` ASCII flags on label/host/payload, case-insensitive `X` folded to uppercase; glued-label lookahead |
 
 #### Validation Rules
 
@@ -712,7 +712,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (13 capabilities), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (14 capabilities), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -865,7 +865,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (12 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (14 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy
