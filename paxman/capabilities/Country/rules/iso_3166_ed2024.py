@@ -1,8 +1,10 @@
-"""ISO 3166-1:2024 validation rules.
+"""ISO 3166-1:2020 validation rules (data snapshot 2024).
 
 All four sections (alpha-2, alpha-3, numeric, name) share the same
-publication and lookup tables. Rules are co-located in a single file
-to reflect this shared provenance.
+publication and lookup tables. The authoritative edition is ISO 3166-1:2020
+(second edition, 2020-08); the data tables are a 2024 snapshot of the
+ISO 3166-1 Online Browsing Platform (OBP) registry. Rules are co-located
+in a single file to reflect this shared provenance.
 
 All sections normalize to the default canonical alpha-2 representation;
 presentation in alpha-3, numeric, or name format is owned by
@@ -38,12 +40,12 @@ SYNONYM_TO_ALPHA2_NORMALIZED: dict[str, str] = {
 
 PUBLICATION = Provenance(
     authority="ISO",
-    specification_name="ISO 3166-1:2024",
+    specification_name="ISO 3166-1:2020",
     kind="registry",
     reference_url="https://www.iso.org/guest/en/ISO3166-1/RegistrationTable/Active%20country%20list.html",
-    version="2024",
+    version="2020",
     lifecycle="active",
-    publication_year=2024,
+    publication_year=2020,
 )
 
 

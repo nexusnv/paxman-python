@@ -1,4 +1,4 @@
-"""CLDR v45 localized country name validation rule."""
+"""CLDR v45 localized country name validation rule (released 2024-04-18)."""
 
 from __future__ import annotations
 
@@ -28,12 +28,12 @@ PUBLICATION = Provenance(
     reference_url="https://cldr.unicode.org/",
     version="45",
     lifecycle="active",
-    publication_year=2025,
+    publication_year=2024,
 )
 
 
 class SectionLocalizedNames(Rule[CountryNotation]):
-    """CLDR v45 Section: localized country names.
+    """CLDR v45 Section: localized country names (released 2024-04-18).
 
     Validates name shape against curated multilingual names (zh, es, fr).
     Activation is engine-owned: the engine runs this rule only when the

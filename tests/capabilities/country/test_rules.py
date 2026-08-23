@@ -75,8 +75,8 @@ class TestSectionAlpha2Codes:
     def test_provenance_attributes(self) -> None:
         """Verify authority, spec name, year, lifecycle."""
         assert self.rule.provenance.authority == "ISO"
-        assert self.rule.provenance.specification_name == "ISO 3166-1:2024"
-        assert self.rule.provenance.publication_year == 2024
+        assert self.rule.provenance.specification_name == "ISO 3166-1:2020"
+        assert self.rule.provenance.publication_year == 2020
         assert self.rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -134,8 +134,8 @@ class TestSectionAlpha3Codes:
     def test_provenance_attributes(self) -> None:
         """Verify authority, spec name, year, lifecycle."""
         assert self.rule.provenance.authority == "ISO"
-        assert self.rule.provenance.specification_name == "ISO 3166-1:2024"
-        assert self.rule.provenance.publication_year == 2024
+        assert self.rule.provenance.specification_name == "ISO 3166-1:2020"
+        assert self.rule.provenance.publication_year == 2020
         assert self.rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -199,8 +199,8 @@ class TestSectionNumericCodes:
     def test_provenance_attributes(self) -> None:
         """Verify authority, spec name, year, lifecycle."""
         assert self.rule.provenance.authority == "ISO"
-        assert self.rule.provenance.specification_name == "ISO 3166-1:2024"
-        assert self.rule.provenance.publication_year == 2024
+        assert self.rule.provenance.specification_name == "ISO 3166-1:2020"
+        assert self.rule.provenance.publication_year == 2020
         assert self.rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -361,8 +361,8 @@ class TestSectionNames:
     def test_provenance_attributes(self) -> None:
         """Verify authority, spec name, year, lifecycle."""
         assert self.rule.provenance.authority == "ISO"
-        assert self.rule.provenance.specification_name == "ISO 3166-1:2024"
-        assert self.rule.provenance.publication_year == 2024
+        assert self.rule.provenance.specification_name == "ISO 3166-1:2020"
+        assert self.rule.provenance.publication_year == 2020
         assert self.rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -642,7 +642,7 @@ class TestSectionLocalizedNames:
         """Verify authority, spec name, year, lifecycle."""
         assert self.rule.provenance.authority == "Unicode"
         assert self.rule.provenance.specification_name == "CLDR v45"
-        assert self.rule.provenance.publication_year == 2025
+        assert self.rule.provenance.publication_year == 2024
         assert self.rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
