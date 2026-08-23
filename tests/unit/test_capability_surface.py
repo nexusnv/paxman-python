@@ -51,6 +51,8 @@ from paxman.capabilities.ISSN.notation import ISSNNotation
 from paxman.capabilities.Money.capability import MoneyCapability
 from paxman.capabilities.Money.contract import MoneyContract
 from paxman.capabilities.Money.notation import MoneyNotation
+from paxman.capabilities.ORCID.capability import ORCIDCapability
+from paxman.capabilities.ORCID.contract import ORCIDContract
 from paxman.capabilities.Phone.capability import PhoneCapability
 from paxman.capabilities.Phone.contract import PhoneContract
 from paxman.capabilities.Phone.notation import PhoneNotation
@@ -125,6 +127,12 @@ _CAPABILITY_SURFACES = [
         MoneyContract,
         "code_amount",
         id="money",
+    ),
+    pytest.param(
+        ORCIDCapability,
+        ORCIDContract,
+        "orcid",
+        id="orcid",
     ),
     pytest.param(
         ISSNCapability,
