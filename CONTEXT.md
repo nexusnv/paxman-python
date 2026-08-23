@@ -814,6 +814,12 @@ paxman/
     │   ├── grammar/data/          # currency_symbols, currency_words
     │   ├── rules/                 # iso_4217_ed2015, cldr_currencies_ed2025
     │   └── rules/data/            # iso4217_list_one, cldr_currencies
+    ├── ORCID/                     # grammar/ (1) + rules/ (2) — ISO 27729:2024, MOD 11-2 check
+    │   ├── capability.py          # ORCIDCapability
+    │   ├── contract.py            # ORCIDContract (orcid/uri/compact output formats)
+    │   ├── notation.py            # ORCIDNotation (compact, hyphenated, uri, check, is_uri)
+    │   ├── grammar/               # orcid_recognition
+    │   └── rules/                 # iso_27729_ed2024 (structure + Annex A MOD 11-2)
     ├── Phone/                     # grammar/ (4) + rules/ (3) + rules/data/ — E.164, RFC 3966, NANP
     │   ├── capability.py          # PhoneCapability
     │   ├── contract.py            # PhoneContract (default_country)
@@ -882,8 +888,9 @@ tests/
 │   ├── ip/                        # test_grammar, test_rules, test_capability
 │   ├── isbn/                      # + test_contract, test_notation, test_data
 │   ├── issn/                      # test_grammar, test_rules, test_capability, test_contract, test_notation
-│   ├── money/                     # + test_contract, test_notation, test_data, test_parsing
-│   ├── phone/                     # + test_data
+│   ├── money/                      # + test_contract, test_notation, test_data, test_parsing
+│   ├── orcid/                      # test_grammar, test_rules, test_capability, test_notation
+│   ├── phone/                      # + test_data
 │   ├── si_unit/                   # test_grammar, test_rules, test_capability, test_contract, test_notation, test_data, test_data_consistency
 │   └── url/                       # + test_contract, test_notation, test_data, test_parsing, test_rule
 ├── integration/                   # -m integration pipeline, ambiguity, temporal,

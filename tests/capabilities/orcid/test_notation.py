@@ -43,7 +43,21 @@ class TestORCIDNotation:
         assert len({a, b}) == 1
 
     def test_slots(self) -> None:
-        assert ORCIDNotation.__dataclass_params__.slots is True
+        assert set(ORCIDNotation.__slots__) == {
+            "compact",
+            "hyphenated",
+            "uri",
+            "check",
+            "is_uri",
+        }
+        notation = ORCIDNotation(
+            compact="0000000218250097",
+            hyphenated="0000-0002-1825-0097",
+            uri="https://orcid.org/0000-0002-1825-0097",
+            check="7",
+            is_uri="false",
+        )
+        assert not hasattr(notation, "__dict__")
 
     def test_all_fields_are_str(self) -> None:
         for field in dataclasses.fields(ORCIDNotation):

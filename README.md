@@ -331,9 +331,10 @@ result = paxman.canonicalize("USD500", contract)
 Recognizes ORCID iDs (ISNI-compatible identifiers, ISO 27729:2024) with MOD 11-2 check-digit validation, canonicalizing to the hyphenated form.
 
 ```python
+import paxman
 from paxman.capabilities import ORCID
 
-register_capability(ORCID())
+paxman.register_capability(ORCID())
 
 # Bare hyphenated iD
 contract = ORCID.create_contract()
