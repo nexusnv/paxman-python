@@ -58,7 +58,7 @@ Paxman ships with thirteen built-in capabilities:
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
-| **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, SWIFT Registry |
+| **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Country** | Country codes/names | 4 (alpha2, alpha3, numeric, name) | 6 | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **Date** | Dates | 4 (iso8601, us, european, slash_iso) | 3 | ISO 8601, US federal, EN 50160 |

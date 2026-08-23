@@ -25,7 +25,10 @@ from paxman.core.domain import Grammar
 # Domain + spec per capability (registry name -> (domain, description)).
 # Hardcoded here and in README; keep in sync until metadata owns it.
 _DESCRIPTIONS: dict[str, tuple[str, str]] = {
-    "bic": ("Business identifier codes", "ISO 9362:2022, SWIFT Registry"),
+    "bic": (
+        "Business identifier codes",
+        "ISO 9362:2022, ISO 3166-1 (country codes plus XK)",
+    ),
     "country": ("Country codes/names", "ISO 3166, CLDR"),
     "currency": ("Currency identifiers", "ISO 4217, CLDR"),
     "date": ("Dates", "ISO 8601, US federal, EN 50160"),

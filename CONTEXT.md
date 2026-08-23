@@ -684,7 +684,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (12 capabilities), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (13 capabilities), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -704,6 +704,13 @@ paxman/
 │   └── orchestrator.py            # run_capability() pipeline orchestrator + ExecutionResult
 └── capabilities/
     ├── __init__.py                # Acronym alias exports (Email, Date, Country, ...) + __all__
+    ├── BIC/                       # grammar/ (1) + rules/ (1) — ISO 9362:2022, ISO 3166-1
+    │   ├── __init__.py
+    │   ├── capability.py          # BICCapability
+    │   ├── contract.py            # BICContract
+    │   ├── notation.py            # BICNotation (bank_code, country_code, location_code, branch_code, compact)
+    │   ├── grammar/               # bic_recognition
+    │   └── rules/                 # iso_9362_ed2022 (structure + country lookup, 250 codes incl. XK)
     ├── Email/                     # grammar/ (3) + rules/ (2) — RFC 5322, RFC 6761
     │   ├── __init__.py
     │   ├── capability.py          # EmailCapability
