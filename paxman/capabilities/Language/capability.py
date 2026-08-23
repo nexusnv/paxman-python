@@ -16,20 +16,59 @@ from paxman.capabilities.Language.grammar.language_name_recognition import (
 )
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.bcp47_rfc5646_ed2009 import (
-    SectionBCP47Syntax as LanguageRule,
+    SectionBCP47Syntax,
 )
+from paxman.capabilities.Language.rules.cldr_language_display_name_ed2025 import (
+    SectionLocalizedNames,
+)
+from paxman.capabilities.Language.rules.data.english_language_map import (
+    NAME_TO_CANONICAL,
+)
+from paxman.capabilities.Language.rules.data.iso_639_1 import ISO6391_CODES
+from paxman.capabilities.Language.rules.data.iso_639_2 import (
+    ISO6392_BIB_TO_TERM,
+    ISO6392_T_TO_ALPHA2,
+)
+from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (
+    SectionIANARegistry,
+)
+from paxman.capabilities.Language.rules.iso_639_1_ed2002 import (
+    SectionAlpha2Code,
+    SectionEnglishNameMapping,
+)
+from paxman.capabilities.Language.rules.iso_639_2_ed1998 import SectionAlpha3Code
+from paxman.capabilities.Language.rules.iso_639_3_ed2007 import (
+    SectionComprehensiveAlpha3,
+)
+from paxman.capabilities.Language.rules.iso_639_5_ed2008 import SectionCollectiveCode
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
+__all__ = ["LanguageCapability", "LanguageContract", "LanguageNotation"]
+
+# Reverse mappings for format_value — derived from rule data, not hard-coded.
+_ALPHA2_TO_T: dict[str, str] = {v: k for k, v in ISO6392_T_TO_ALPHA2.items()}
+_TERM_TO_BIB: dict[str, str] = {v: k for k, v in ISO6392_BIB_TO_TERM.items()}
+_CANONICAL_TO_ENGLISH: dict[str, str] = {v: k for k, v in NAME_TO_CANONICAL.items()}
+
+
+def _primary_language(value: str) -> str:
+    """Extract primary language subtag lower (before first hyphen)."""
+    if not value:
+        return ""
+    return value.split("-")[0].lower()
+
 
 class LanguageCapability(Capability[LanguageNotation]):
-    """Language canonicalization capability (scaffold).
+    """Language canonicalization capability.
 
-    TODO(scaffold): describe what this capability recognizes and the
-    authoritative specification(s) it validates against.
+    Canonicalizes language identifiers (bare codes, BCP 47 tags, display names)
+    to BCP 47 canonical tag with full provenance. Alternative output formats
+    via ``format_value``: alpha2, alpha3, alpha3-bib, name.
     """
 
     name = "language"
+    version = "1.0.0"
 
     def get_grammars(self) -> list[Grammar[LanguageNotation]]:
         """Return the default grammar instances."""
@@ -41,7 +80,16 @@ class LanguageCapability(Capability[LanguageNotation]):
 
     def get_rules(self) -> list[Rule[LanguageNotation]]:
         """Return the default validation rule instances."""
-        return [LanguageRule()]
+        return [
+            SectionAlpha2Code(),
+            SectionEnglishNameMapping(),
+            SectionAlpha3Code(),
+            SectionComprehensiveAlpha3(),
+            SectionCollectiveCode(),
+            SectionBCP47Syntax(),
+            SectionIANARegistry(),
+            SectionLocalizedNames(),
+        ]
 
     @staticmethod
     def create_contract(
@@ -51,6 +99,10 @@ class LanguageCapability(Capability[LanguageNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        include_localized: bool = False,
+        include_collective: bool = False,
+        include_private: bool = False,
+        include_grandfathered: bool = True,
     ) -> LanguageContract:
         """Factory method for creating contracts with proper defaults.
 
@@ -64,6 +116,10 @@ class LanguageCapability(Capability[LanguageNotation]):
             extra_grammars: Community grammar names (opt-in) to run
                 alongside the shipped grammars, in order (SEAM — the
                 surface guard's common block ends with this parameter).
+            include_localized: Enable CLDR localized names.
+            include_collective: Enable ISO 639-5 collective codes.
+            include_private: Enable private-use language codes.
+            include_grandfathered: Enable grandfathered tags.
 
         Returns:
             Configured LanguageContract instance.
@@ -74,9 +130,88 @@ class LanguageCapability(Capability[LanguageNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            include_localized=include_localized,
+            include_collective=include_collective,
+            include_private=include_private,
+            include_grandfathered=include_grandfathered,
         )
 
-    # format_value: NOT overridden — the canonical value IS the default
-    # format, and there are no offered alternatives. The Capability base
-    # provides the identity formatter. TODO(scaffold): override if you offer
-    # alternative output formats.
+    def format_value(
+        self,
+        value: str,
+        output_format: str | None,
+        notation: LanguageNotation,
+    ) -> str:
+        """Render a default canonical value in the requested format.
+
+        The default ``"bcp47"`` path is identity (rule-produced canonical tag
+        unchanged). ``"alpha2"`` maps via ISO 639-1 else T→alpha2 else term
+        itself (``ger``→``de``). ``"alpha3"`` returns Term lower (``deu``),
+        ``"alpha3-bib"`` returns Bib lower (``ger``), ``"name"`` returns
+        English Description title.
+
+        Args:
+            value: The default canonical value produced by ``Rule.normalize()``
+                (BCP 47 canonical tag or bare lower code).
+            output_format: The contract's resolved output format.
+            notation: The original language notation (retained for interface
+                compatibility; not used for formatting beyond value).
+
+        Returns:
+            The value rendered in the requested format.
+        """
+        if (
+            output_format is None
+            or output_format == "bcp47"
+            or output_format == "default"
+        ):
+            return value
+
+        primary = _primary_language(value)
+
+        if output_format == "alpha2":
+            if primary in ISO6391_CODES:
+                return primary
+            term = ISO6392_BIB_TO_TERM.get(primary, primary)
+            mapped = ISO6392_T_TO_ALPHA2.get(term)
+            if mapped is not None:
+                return mapped
+            return term
+
+        if output_format == "alpha3":
+            if len(primary) == 2:
+                mapped = _ALPHA2_TO_T.get(primary)
+                if mapped is not None:
+                    return mapped
+                return ISO6392_BIB_TO_TERM.get(primary, primary)
+            return ISO6392_BIB_TO_TERM.get(primary, primary)
+
+        if output_format == "alpha3-bib":
+            if len(primary) == 2:
+                term = _ALPHA2_TO_T.get(primary, primary)
+                return _TERM_TO_BIB.get(term, term)
+            term = ISO6392_BIB_TO_TERM.get(primary, primary)
+            return _TERM_TO_BIB.get(term, term)
+
+        if output_format == "name":
+            # Normalize primary to canonical code for name lookup
+            if primary in ISO6391_CODES:
+                canonical = primary
+            else:
+                term = ISO6392_BIB_TO_TERM.get(primary, primary)
+                alpha2 = ISO6392_T_TO_ALPHA2.get(term)
+                canonical = alpha2 if alpha2 is not None else term
+            # Reverse lookup: canonical lower -> English normalized key -> Title
+            raw = _CANONICAL_TO_ENGLISH.get(canonical)
+            if raw is None:
+                # Try term fallback
+                term_fb = ISO6392_BIB_TO_TERM.get(primary, primary)
+                raw = _CANONICAL_TO_ENGLISH.get(term_fb)
+            if raw is None:
+                raw = _CANONICAL_TO_ENGLISH.get(primary)
+            if raw is not None:
+                # raw is normalized lower with spaces; title-case each word
+                return raw.title()
+            return value
+
+        return value
