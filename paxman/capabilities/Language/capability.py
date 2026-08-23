@@ -5,8 +5,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from paxman.capabilities.Language.contract import LanguageContract
-from paxman.capabilities.Language.grammar.language_recognition import (
-    LanguageRecognition,
+from paxman.capabilities.Language.grammar.bcp47_tag_recognition import (
+    BCP47TagGrammar,
+)
+from paxman.capabilities.Language.grammar.language_code_recognition import (
+    LanguageCodeGrammar,
+)
+from paxman.capabilities.Language.grammar.language_name_recognition import (
+    LanguageNameGrammar,
 )
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.ietf_ed2009 import LanguageRule
@@ -25,7 +31,11 @@ class LanguageCapability(Capability[LanguageNotation]):
 
     def get_grammars(self) -> list[Grammar[LanguageNotation]]:
         """Return the default grammar instances."""
-        return [LanguageRecognition()]
+        return [
+            BCP47TagGrammar(),
+            LanguageCodeGrammar(),
+            LanguageNameGrammar(),
+        ]
 
     def get_rules(self) -> list[Rule[LanguageNotation]]:
         """Return the default validation rule instances."""
