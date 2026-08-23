@@ -1,28 +1,60 @@
-"""ORCID recognition grammar — scaffolded placeholder.
-
-TODO(scaffold): replace the placeholder pattern with a real recognizer that
-emits span-bearing RecognitionMatch objects.
-"""
+"""ORCID recognition grammar — regex structural pattern matching."""
 
 from __future__ import annotations
 
 import re
 
 from paxman.capabilities.ORCID.notation import ORCIDNotation
-from paxman.core.domain import Grammar, RecognitionMatch
+from paxman.core.grammar.boundary import BoundaryGuard
+from paxman.core.grammar.pipeline import PipelineGrammar
+from paxman.core.grammar.stages import RegexStage, StandardPre
 
-# Placeholder pattern: never matches NON-EMPTY text (it matches only the empty
-# string). TODO(scaffold): replace with the real recognition pattern.
-_PATTERN = re.compile(r"$^")
+# Label separator is [\s:-]+ one or more, never zero width: a glued
+# "ORCID0000-..." must not fuse into a mention (BIC precedent).
+# Host tolerance mirrors ORCID XSD orcid-uri plus ecosystem practice:
+# https://orcid.org/ (canonical v2.1), http:// (v2.0 legacy),
+# orcid.org/, www.orcid.org/.
+# Payload is ASCII-only via inline (?ai:) — fullwidth digits never match;
+# the i flag folds lowercase x into [X] before .upper() normalization.
+_ORCID_LABEL = r"(?:(?ai:ORCID|ISNI)[\s:-]+)?"
+_ORCID_HOST = r"(?:(?ai:(?:https?://)?(?:www\.)?orcid\.org)/)?"
+_ORCID_GLUED_GUARD = r"(?!(?ai:(?:ORCID|ISNI)[0-9]))"
+_ORCID_BODY = (
+    rf"{_ORCID_LABEL}{_ORCID_HOST}{_ORCID_GLUED_GUARD}"
+    r"(?P<hyphenated>(?ai:\d{4}-\d{4}-\d{4}-\d{3}[\dX]))"
+)
+# word_only guards block left glue X0000-... and right glue ...0097Y.
+# The negative lookahead blocks glued label without separator.
+_ORCID_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _ORCID_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 
 
-class ORCIDRecognition(Grammar[ORCIDNotation]):
-    """Scaffolded grammar: orcid_recognition."""
+def _orcid_notation(match: re.Match[str]) -> ORCIDNotation:
+    hyphenated = match.group("hyphenated").upper()
+    compact = hyphenated.replace("-", "")
+    return ORCIDNotation(
+        compact=compact,
+        hyphenated=hyphenated,
+        uri=f"https://orcid.org/{hyphenated}",
+        check=compact[-1],
+        is_uri="true" if "orcid.org" in match.group(0).lower() else "false",
+    )
+
+
+class ORCIDRecognitionGrammar(PipelineGrammar[ORCIDNotation]):
+    """ORCID recognition — hyphenated 4-4-4-4 with optional label and URI host."""
 
     name = "orcid_recognition"
-    semantics = "orcid_recognition"  # TODO(scaffold): coalesce if sharing a meaning
-    single_value = False  # TODO(scaffold): opt in when one mention per call
+    semantics = "orcid_recognition"
+    single_value = True
+    pre = StandardPre[ORCIDNotation](empty_guard=True)
+    regex = RegexStage[ORCIDNotation](
+        pattern=_ORCID_PATTERN, notation_fn=_orcid_notation
+    )
 
-    def recognize(self, text: str) -> list[RecognitionMatch[ORCIDNotation]]:
-        """TODO(scaffold): return span-bearing matches for ORCID input."""
-        return []
+
+# Alias for scaffold capability import.
+ORCIDRecognition = ORCIDRecognitionGrammar
