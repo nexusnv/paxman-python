@@ -583,7 +583,7 @@ ISO6392_BIB_TO_TERM: dict[str, str] = {
 ISO6392_T_TO_ALPHA2: dict[str, str] = {
     "eng": "en",
     "deu": "de",
-    "fra": "fra",  # via fre→fra
+    "fra": "fr",
     "zho": "zh",
     "ces": "cs",
     "nld": "nl",
@@ -611,7 +611,4 @@ ISO6392_T_TO_ALPHA2: dict[str, str] = {
     "rus": "ru",
     "spa": "es",
     "ita": "it",
-    "mis": "mis",
-    "chr": "chr",
-    "cmn": "cmn",
 }
