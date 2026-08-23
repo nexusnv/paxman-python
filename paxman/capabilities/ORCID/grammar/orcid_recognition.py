@@ -54,7 +54,3 @@ class ORCIDRecognitionGrammar(PipelineGrammar[ORCIDNotation]):
     regex = RegexStage[ORCIDNotation](
         pattern=_ORCID_PATTERN, notation_fn=_orcid_notation
     )
-
-
-# Alias for scaffold capability import.
-ORCIDRecognition = ORCIDRecognitionGrammar
