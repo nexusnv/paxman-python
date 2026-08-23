@@ -32,6 +32,8 @@ from paxman.capabilities.ISBN.notation import ISBNNotation
 from paxman.capabilities.ISSN.capability import ISSNCapability
 from paxman.capabilities.ISSN.contract import ISSNContract
 from paxman.capabilities.ISSN.notation import ISSNNotation
+from paxman.capabilities.Language.capability import LanguageCapability
+from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Money.capability import MoneyCapability
 from paxman.capabilities.Money.contract import MoneyContract
 from paxman.capabilities.Money.notation import MoneyNotation
@@ -111,6 +113,12 @@ _CAPABILITY_SURFACES = [
         MoneyContract,
         "code_amount",
         id="money",
+    ),
+    pytest.param(
+        LanguageCapability,
+        LanguageContract,
+        "bcp47",
+        id="language",
     ),
     pytest.param(
         ORCIDCapability,
