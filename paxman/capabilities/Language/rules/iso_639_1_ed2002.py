@@ -9,6 +9,7 @@ from paxman.capabilities.Language.notation import LanguageNotation, normalize_na
 from paxman.capabilities.Language.rules.data.english_language_map import (
     NAME_TO_CANONICAL,
 )
+from paxman.capabilities.Language.rules.data.iana_deprecated_map import DEPRECATED_MAP
 from paxman.capabilities.Language.rules.data.iso_639_1 import ISO6391_CODES
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
@@ -40,16 +41,20 @@ class SectionAlpha2Code(Rule[LanguageNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
-        """Check bare alpha-2 membership."""
+        """Check bare alpha-2 membership, including deprecated Preferred-Value."""
         # Bare code grammar ensures 2-3 letters; this rule validates 2-letter ISO 639-1
         lang = notation.language.lower()
         if len(lang) != 2:
             return False
-        return lang in ISO6391_CODES
+        if lang in ISO6391_CODES:
+            return True
+        # Deprecated codes like iw→he are accepted via ISO 639-1 lifecycle
+        return lang in DEPRECATED_MAP
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
-        """Return lower canonical alpha-2."""
-        return notation.language.lower()
+        """Return lower canonical alpha-2, resolving deprecated."""
+        lang = notation.language.lower()
+        return DEPRECATED_MAP.get(lang, lang)
 
 
 class SectionEnglishNameMapping(Rule[LanguageNotation]):
