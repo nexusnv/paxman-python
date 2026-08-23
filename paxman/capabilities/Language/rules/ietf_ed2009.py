@@ -39,5 +39,5 @@ class LanguageRule(Rule[LanguageNotation]):
         return True
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
-        """TODO(scaffold): return the canonical form of notation.value."""
-        return notation.value
+        """TODO(scaffold): return the canonical form of notation.compact."""
+        return notation.compact
