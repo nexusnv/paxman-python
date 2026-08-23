@@ -24,7 +24,7 @@ def _clean_registry() -> Iterator[None]:
 
 
 @pytest.mark.unit
-def test_registers_all_ten_shipped(_clean_registry) -> None:
+def test_registers_all_shipped(_clean_registry) -> None:
     names = paxman.register_all_shipped()
     expected = (
         "bic",
