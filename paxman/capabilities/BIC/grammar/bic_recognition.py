@@ -19,9 +19,11 @@ _BIC_BODY = (
 )
 # word_only guards block left glue XDEUTDEFF and right glue DEUTDEFFY
 # Negative lookahead blocks glued label without separator (BICDEUTDEFF, SWIFTDEUTDEFF)
+# Narrow to BIC-shaped payload (4 alnum + 2 letters) so valid bank codes
+# like BICS/BICX (BIC + S + DE...) are not falsely blocked (audit B2).
 _BIC_PATTERN = (
     BoundaryGuard.word_only().lookbehind
-    + r"(?!(?ai:(?:BIC|SWIFT)[A-Z0-9]))"
+    + r"(?!(?ai:(?:BIC|SWIFT)[A-Z0-9]{4}[A-Z]{2}))"
     + _BIC_BODY
     + BoundaryGuard.word_only().lookahead
 )

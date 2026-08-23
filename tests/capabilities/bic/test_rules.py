@@ -134,10 +134,10 @@ def test_invalid_length_and_charset() -> None:
         )
         is False
     )
-    # bank code must be 4 letters per GOAL; digits invalid
-    # regex [A-Z]{4} catches digits in bank, so DE1T etc invalid
-    assert RULE.matches(n("DE1TDEFF"), CONTRACT) is False
-    assert RULE.matches(n("12UTDEFF"), CONTRACT) is False
+    # bank code is 4 alphanumeric per ISO 9362:2022 (4!c since 2014) — digits valid
+    # matches grammar [A-Z0-9]{4}; audit B1 fix mirrors grammar charset
+    assert RULE.matches(n("DE1TDEFF"), CONTRACT) is True
+    assert RULE.matches(n("12UTDEFF"), CONTRACT) is True
 
 
 def test_invalid_country() -> None:

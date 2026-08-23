@@ -277,7 +277,7 @@ COUNTRY_CODES: frozenset[str] = frozenset(
 
 # Mirrors grammar charset r"[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?" — intentional
 # defense-in-depth (rule must not trust grammar); not shared via import.
-_BIC_RE = re.compile(r"^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$")
+_BIC_RE = re.compile(r"^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$")
 
 
 class Section5BICStructureCountry(Rule[BICNotation]):
