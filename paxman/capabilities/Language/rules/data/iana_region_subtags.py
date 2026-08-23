@@ -290,7 +290,5 @@ IANA_REGION_SUBTAGS: frozenset[str] = frozenset(
         "154",
         "155",
         "419",
-        # Added test vectors
-        "latn",
     }
 )
