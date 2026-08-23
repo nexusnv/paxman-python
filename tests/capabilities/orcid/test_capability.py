@@ -1,51 +1,93 @@
-"""Tests for the ORCID capability wiring (scaffold)."""
+"""ORCID capability wiring — ORCIDCapability + format_value seam."""
 
 import pytest
 
-from paxman.api import canonicalize
 from paxman.capabilities.ORCID.capability import ORCIDCapability
-from paxman.capabilities.ORCID.contract import ORCIDContract
-from paxman.core.discovery import register_capability, reset_registry
-from paxman.core.domain import Resolution
+from paxman.capabilities.ORCID.notation import ORCIDNotation
+from paxman.core.errors import ContractError
 
 
 @pytest.mark.capability
 class TestORCIDCapability:
-    """Capability wiring — grammars, rules, factory."""
-
-    def setup_method(self) -> None:
-        self.capability = ORCIDCapability()
-
-    def test_metadata(self) -> None:
-        assert self.capability.name == "orcid"
+    def test_capability_name_version(self) -> None:
+        assert ORCIDCapability.name == "orcid"
+        assert ORCIDCapability.version == "1.0.0"
 
     def test_get_grammars(self) -> None:
-        names = {g.name for g in self.capability.get_grammars()}
-        assert names == {"orcid_recognition"}
+        grammars = ORCIDCapability().get_grammars()
+        assert len(grammars) == 1
+        assert {g.name for g in grammars} == {"orcid_recognition"}
 
     def test_get_rules(self) -> None:
-        names = {r.name for r in self.capability.get_rules()}
-        assert names == {"Section 1-overview"}
+        rules = ORCIDCapability().get_rules()
+        assert len(rules) == 2
+        assert {r.name for r in rules} == {
+            "Section 4-orcid-structure",
+            "Section A-mod11-2-check-character",
+        }
 
     def test_create_contract_defaults(self) -> None:
-        contract = self.capability.create_contract()
-        assert isinstance(contract, ORCIDContract)
-        assert contract.output_format == "orcid"
+        c = ORCIDCapability.create_contract()
+        assert c.output_format == "orcid"
+        assert c.capability_name == "orcid"
+        assert c.excluded_rules == ()
+        assert c.pinned_rules is None
+        assert c.year is None
+        assert c.extra_grammars == ()
+        assert c.active_grammars is None  # no gating: engine runs all shipped
 
+    def test_create_contract_output_formats(self) -> None:
+        assert (
+            ORCIDCapability.create_contract(output_format="uri").output_format == "uri"
+        )
+        assert (
+            ORCIDCapability.create_contract(output_format="compact").output_format
+            == "compact"
+        )
+        with pytest.raises(ContractError):
+            ORCIDCapability.create_contract(output_format="isni")
 
-@pytest.mark.capability
-class TestORCIDCapabilityPipeline:
-    """End-to-end: scaffold probe resolves to MISSING."""
+    def test_format_value_default_identity(self) -> None:
+        cap = ORCIDCapability()
+        notation = ORCIDNotation(
+            compact="0000000218250097",
+            hyphenated="0000-0002-1825-0097",
+            uri="https://orcid.org/0000-0002-1825-0097",
+            check="7",
+            is_uri="false",
+        )
+        assert cap.format_value("0000-0002-1825-0097", None, notation) == (
+            "0000-0002-1825-0097"
+        )
+        assert cap.format_value("0000-0002-1825-0097", "default", notation) == (
+            "0000-0002-1825-0097"
+        )
+        assert cap.format_value("0000-0002-1825-0097", "orcid", notation) == (
+            "0000-0002-1825-0097"
+        )
 
-    @pytest.fixture(autouse=True)
-    def _clean_registry(self) -> None:
-        reset_registry()
-        yield
-        reset_registry()
+    def test_format_value_uri_always_https(self) -> None:
+        cap = ORCIDCapability()
+        notation = ORCIDNotation(
+            compact="000000021694233X",
+            hyphenated="0000-0002-1694-233X",
+            uri="https://orcid.org/0000-0002-1694-233X",
+            check="X",
+            is_uri="true",
+        )
+        assert cap.format_value("0000-0002-1694-233X", "uri", notation) == (
+            "https://orcid.org/0000-0002-1694-233X"
+        )
 
-    def test_scaffold_probe_missing(self) -> None:
-        register_capability(ORCIDCapability())
-        contract = ORCIDCapability.create_contract()
-        result = canonicalize("scaffold probe", contract)
-        assert result.status == Resolution.MISSING
-        assert result.canonicalized_value is None
+    def test_format_value_compact(self) -> None:
+        cap = ORCIDCapability()
+        notation = ORCIDNotation(
+            compact="0000000218250097",
+            hyphenated="0000-0002-1825-0097",
+            uri="https://orcid.org/0000-0002-1825-0097",
+            check="7",
+            is_uri="false",
+        )
+        assert cap.format_value("0000-0002-1825-0097", "compact", notation) == (
+            "0000000218250097"
+        )

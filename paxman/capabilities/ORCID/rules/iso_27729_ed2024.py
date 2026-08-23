@@ -6,6 +6,8 @@ a partial validator would let checksum-invalid input resolve SUCCESS. The two
 classes mirror ISBN's iso_2108 pair and exist for dual provenance on SUCCESS.
 """
 
+from __future__ import annotations
+
 from paxman.capabilities.ORCID.notation import ORCIDNotation
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
@@ -22,7 +24,10 @@ PUBLICATION = Provenance(
 
 
 def _mod_11_2_check(base15: str) -> str:
-    """Compute the MOD 11-2 check char for 15 ASCII digits (X = 10)."""
+    """Compute the MOD 11-2 check char for 15 ASCII digits (X = 10).
+
+    Precondition: base15 must be 15 ASCII digits (guarded by ``_is_valid_orcid``).
+    """
     total = 0
     for ch in base15:
         total = (total + int(ch)) * 2
