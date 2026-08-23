@@ -1,20 +1,4 @@
-"""Guard tests for the unanimous capability contract & rule surface.
-
-These tests lock the homogeneity mandate so it cannot regress: every one of
-the ten built-in capabilities (Country, Currency, Date, Email, IP, ISBN,
-Money, Phone, SI Unit, URL) must
-
-- inherit :class:`CapabilityContract` (item 1),
-- satisfy the :class:`ContractFactory` protocol (item 2),
-- expose a keyword-only ``create_contract`` whose parameters begin with the
-  unanimous common block ``excluded_rules, pinned_rules, year, output_format,
-  extra_grammars`` (item 3 — guards the signature itself, which the
-  runtime_checkable protocol cannot),
-- keep ``output_format`` optional and resolving to the concrete default
-  (item 4),
-- default ``extra_grammars`` to the empty tuple on every concrete contract
-  and forward any provided value through ``create_contract`` (item 5).
-"""
+"""Every exported capability exposes the unanimous contract/capability surface."""
 
 from __future__ import annotations
 
