@@ -106,6 +106,10 @@ def _create_contract(normalized: str) -> CapabilityContract:
         from paxman.capabilities import Money
 
         return Money.create_contract()
+    if normalized == "orcid":
+        from paxman.capabilities import ORCID
+
+        return ORCID.create_contract()
     if normalized == "phone":
         from paxman.capabilities import Phone
 
