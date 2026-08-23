@@ -57,9 +57,11 @@ flowchart TB
 # Example: collect provenance for a methods section
 for c in result.candidates:
     p = c.provenance[0]
-    print(f"Validated by {p.authority} {p.specification_name} "
-          f"({p.version or 'unversioned'}), {c.validation_rule}, "
-          f"publication_year={p.publication_year}")
+    print(
+        f"Validated by {p.authority} {p.specification_name} "
+        f"({p.version or 'unversioned'}), {c.validation_rule}, "
+        f"publication_year={p.publication_year}"
+    )
 ```
 
 ---

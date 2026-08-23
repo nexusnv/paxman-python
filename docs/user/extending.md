@@ -51,6 +51,7 @@ from paxman.core.domain import Grammar, Provenance, RecognitionMatch, Rule, Rule
 # 1. Register the shipped capability you are extending — before the first call
 paxman.register_capability(Date())
 
+
 # 2. Grammar — pure syntax, span-bearing, no spec judgment
 class DotDateGrammar(Grammar[DateNotation]):
     name = "dot_date_recognition"
@@ -67,6 +68,7 @@ class DotDateGrammar(Grammar[DateNotation]):
             )
             for m in self._PATTERN.finditer(text)
         ]
+
 
 # 3. Rule — validation + canonicalization + provenance
 class DotDateRule(Rule[DateNotation]):
@@ -94,6 +96,7 @@ class DotDateRule(Rule[DateNotation]):
 
     def normalize(self, notation: DateNotation, contract: Contract) -> str:
         return f"{int(notation.N1):04d}-{int(notation.N2):02d}-{int(notation.N3):02d}"
+
 
 # 4. Register — also before the first call
 paxman.register_grammar("date", DotDateGrammar)
@@ -140,7 +143,9 @@ paxman.canonicalize("2024-01-01", Date.create_contract()).canonicalized_value
 # "2024-01-01"
 
 # Opted-in contract — dot dates participate
-paxman.canonicalize("2024.01.01", Date.create_contract(extra_grammars=("dot_date_recognition",))).canonicalized_value
+paxman.canonicalize(
+    "2024.01.01", Date.create_contract(extra_grammars=("dot_date_recognition",))
+).canonicalized_value
 # "2024-01-01"
 ```
 
@@ -163,7 +168,9 @@ A community grammar whose `name` collides with a shipped grammar name for that c
 ```python
 class LocalizedCountryRule(Rule[CountryNotation]):
     target_semantics = frozenset({"name_recognition"})
-    requires_features = frozenset({"include_localized"})  # only when contract.include_localized is True
+    requires_features = frozenset(
+        {"include_localized"}
+    )  # only when contract.include_localized is True
 ```
 
 ---
@@ -221,8 +228,10 @@ paxman.register_rule("date", DotDateRule)
 # app/processing.py — per call, opt in via contract
 from paxman.capabilities import Date
 
-contract_shipped = Date.create_contract()                                      # no dot dates
-contract_with_dot = Date.create_contract(extra_grammars=("dot_date_recognition",))  # with dot dates
+contract_shipped = Date.create_contract()  # no dot dates
+contract_with_dot = Date.create_contract(
+    extra_grammars=("dot_date_recognition",)
+)  # with dot dates
 
 # Notebook — run the startup cell once, then create contracts per cell as above
 ```

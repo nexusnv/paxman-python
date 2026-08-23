@@ -34,8 +34,8 @@ from paxman.capabilities import Currency
 import paxman
 
 paxman.register_all_shipped()
-Currency.create_contract().output_format                # "code"
-paxman.canonicalize("usd", Currency.create_contract()).canonicalized_value   # "USD"
+Currency.create_contract().output_format  # "code"
+paxman.canonicalize("usd", Currency.create_contract()).canonicalized_value  # "USD"
 paxman.canonicalize("euro", Currency.create_contract()).canonicalized_value  # "EUR"
 ```
 
@@ -45,8 +45,8 @@ paxman.canonicalize("euro", Currency.create_contract()).canonicalized_value  # "
 
 ```python
 contract = Currency.create_contract(
-    default_currency=None,   # str | None — uppercase alpha-3, e.g. "USD"
-    output_format=None,      # "code" (only format)
+    default_currency=None,  # str | None — uppercase alpha-3, e.g. "USD"
+    output_format=None,  # "code" (only format)
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -61,9 +61,13 @@ import paxman
 
 paxman.register_all_shipped()
 
-paxman.canonicalize("$", Currency.create_contract()).status.value                                    # "invalid"
-paxman.canonicalize("$", Currency.create_contract(default_currency="USD")).canonicalized_value       # "USD"
-paxman.canonicalize("$", Currency.create_contract(default_currency="MYR")).status.value              # "invalid" — MYR is not a $ candidate
+paxman.canonicalize("$", Currency.create_contract()).status.value  # "invalid"
+paxman.canonicalize(
+    "$", Currency.create_contract(default_currency="USD")
+).canonicalized_value  # "USD"
+paxman.canonicalize(
+    "$", Currency.create_contract(default_currency="MYR")
+).status.value  # "invalid" — MYR is not a $ candidate
 ```
 
 See [Contracts](../concepts/contracts.md) and the [API Reference](../api-reference.md#contracts--somecapabilitycreate_contract).
@@ -118,7 +122,9 @@ for text in ["usd", "euro", "€", "$", "US$", "notacurrency"]:
     print(f"{text!r:10} default → {tag:10} {val!r}")
     if text == "$":
         r2 = paxman.canonicalize(text, c_usd)
-        print(f"  with default_currency=USD → {r2.status.value:10} {r2.canonicalized_value!r}")
+        print(
+            f"  with default_currency=USD → {r2.status.value:10} {r2.canonicalized_value!r}"
+        )
 ```
 
 ---

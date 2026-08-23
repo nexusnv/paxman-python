@@ -466,7 +466,10 @@ import pytest
 from paxman.capabilities.SIUnit.rules.data.si_base_units import BASE_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_derived_units import DERIVED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_nonsi_units import NONSI_UNIT_SYMBOLS
-from paxman.capabilities.SIUnit.rules.data.si_prefixes import PREFIX_NAMES, PREFIX_SYMBOLS
+from paxman.capabilities.SIUnit.rules.data.si_prefixes import (
+    PREFIX_NAMES,
+    PREFIX_SYMBOLS,
+)
 from paxman.capabilities.SIUnit.rules.data.unit_names import NAME_TO_SYMBOL
 
 
@@ -488,8 +491,30 @@ class TestAuthorityTables:
         assert len(PREFIX_SYMBOLS) == 24
         assert PREFIX_SYMBOLS == frozenset(
             {
-                "da", "h", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q",
-                "d", "c", "m", "µ", "n", "p", "f", "a", "z", "y", "r", "q",
+                "da",
+                "h",
+                "k",
+                "M",
+                "G",
+                "T",
+                "P",
+                "E",
+                "Z",
+                "Y",
+                "R",
+                "Q",
+                "d",
+                "c",
+                "m",
+                "µ",
+                "n",
+                "p",
+                "f",
+                "a",
+                "z",
+                "y",
+                "r",
+                "q",
             }
         )
 
@@ -500,7 +525,20 @@ class TestAuthorityTables:
         assert PREFIX_NAMES["da"] == "deca"
 
     def test_non_si_units(self) -> None:
-        assert {"min", "h", "d", "°", "′", "″", "ha", "L", "l", "t", "Da", "eV"} <= NONSI_UNIT_SYMBOLS
+        assert {
+            "min",
+            "h",
+            "d",
+            "°",
+            "′",
+            "″",
+            "ha",
+            "L",
+            "l",
+            "t",
+            "Da",
+            "eV",
+        } <= NONSI_UNIT_SYMBOLS
 
     def test_name_to_symbol_locked_rows(self) -> None:
         assert NAME_TO_SYMBOL["kilogram"] == "kg"
@@ -536,17 +574,58 @@ from __future__ import annotations
 
 PREFIX_SYMBOLS: frozenset[str] = frozenset(
     {
-        "da", "h", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q",
-        "d", "c", "m", "µ", "n", "p", "f", "a", "z", "y", "r", "q",
+        "da",
+        "h",
+        "k",
+        "M",
+        "G",
+        "T",
+        "P",
+        "E",
+        "Z",
+        "Y",
+        "R",
+        "Q",
+        "d",
+        "c",
+        "m",
+        "µ",
+        "n",
+        "p",
+        "f",
+        "a",
+        "z",
+        "y",
+        "r",
+        "q",
     }
 )
 
 PREFIX_NAMES: dict[str, str] = {
-    "Q": "quetta", "R": "ronna", "Y": "yotta", "Z": "zetta", "E": "exa",
-    "P": "peta", "T": "tera", "G": "giga", "M": "mega", "k": "kilo",
-    "h": "hecto", "da": "deca", "d": "deci", "c": "centi", "m": "milli",
-    "µ": "micro", "n": "nano", "p": "pico", "f": "femto", "a": "atto",
-    "z": "zepto", "y": "yocto", "r": "ronto", "q": "quecto",
+    "Q": "quetta",
+    "R": "ronna",
+    "Y": "yotta",
+    "Z": "zetta",
+    "E": "exa",
+    "P": "peta",
+    "T": "tera",
+    "G": "giga",
+    "M": "mega",
+    "k": "kilo",
+    "h": "hecto",
+    "da": "deca",
+    "d": "deci",
+    "c": "centi",
+    "m": "milli",
+    "µ": "micro",
+    "n": "nano",
+    "p": "pico",
+    "f": "femto",
+    "a": "atto",
+    "z": "zepto",
+    "y": "yocto",
+    "r": "ronto",
+    "q": "quecto",
 }
 ```
 
@@ -589,7 +668,9 @@ import pytest
 
 from paxman.capabilities.SIUnit.grammar.data.unit_name_tokens import NAME_TOKENS
 from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
-from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import PREFIXED_NAME_TO_SYMBOL
+from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import (
+    PREFIXED_NAME_TO_SYMBOL,
+)
 from paxman.capabilities.SIUnit.rules.data.prefixed_units import PREFIXED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_base_units import BASE_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_derived_units import DERIVED_UNIT_SYMBOLS
@@ -681,7 +762,10 @@ from pathlib import Path
 from paxman.capabilities.SIUnit.rules.data.si_base_units import BASE_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_derived_units import DERIVED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_nonsi_units import NONSI_UNIT_SYMBOLS
-from paxman.capabilities.SIUnit.rules.data.si_prefixes import PREFIX_NAMES, PREFIX_SYMBOLS
+from paxman.capabilities.SIUnit.rules.data.si_prefixes import (
+    PREFIX_NAMES,
+    PREFIX_SYMBOLS,
+)
 from paxman.capabilities.SIUnit.rules.data.unit_names import NAME_TO_SYMBOL
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -698,9 +782,7 @@ def _prefixable_units() -> frozenset[str]:
     # BIPM §3.2 (D9): prefixes attach to the gram ("g"), not to the
     # kilogram — exclude "kg" so "kkg"/"Mkg"/"µkg" are never generated.
     return (
-        (BASE_UNIT_SYMBOLS - {"kg"})
-        | DERIVED_UNIT_SYMBOLS
-        | _PREFIXABLE_NONSI
+        (BASE_UNIT_SYMBOLS - {"kg"}) | DERIVED_UNIT_SYMBOLS | _PREFIXABLE_NONSI
     ) - _NO_PREFIX
 
 
@@ -754,7 +836,9 @@ def _prefixed_name_to_symbol() -> dict[str, str]:
 
 
 def _name_tokens() -> tuple[str, ...]:
-    return _longest_first(frozenset(NAME_TO_SYMBOL) | frozenset(_prefixed_name_to_symbol()))
+    return _longest_first(
+        frozenset(NAME_TO_SYMBOL) | frozenset(_prefixed_name_to_symbol())
+    )
 ```
 
 Then the emitters (`_emit_prefixed_units()`, `_emit_prefixed_unit_names()`,
@@ -819,13 +903,18 @@ class TestSectionBaseUnits:
 
     @pytest.mark.parametrize("text", ["Pa", "km", "pa", "m/s", "da"])
     def test_rejects(self, text: str) -> None:
-        assert not self.rule.matches(SIUnitNotation(text=text, shape="symbol"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text=text, shape="symbol"), CONTRACT
+        )
 
     def test_rejects_non_symbol_shape(self) -> None:
         assert not self.rule.matches(SIUnitNotation(text="kg", shape="name"), CONTRACT)
 
     def test_normalize_is_identity(self) -> None:
-        assert self.rule.normalize(SIUnitNotation(text="kg", shape="symbol"), CONTRACT) == "kg"
+        assert (
+            self.rule.normalize(SIUnitNotation(text="kg", shape="symbol"), CONTRACT)
+            == "kg"
+        )
 
     def test_temporal_gate(self) -> None:
         old = SIUnitContract(year=2018)
@@ -847,10 +936,15 @@ class TestSectionDerivedUnits:
 
     @pytest.mark.parametrize("text", ["m", "km", "pa", "Hzs"])
     def test_rejects(self, text: str) -> None:
-        assert not self.rule.matches(SIUnitNotation(text=text, shape="symbol"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text=text, shape="symbol"), CONTRACT
+        )
 
     def test_normalize_is_identity(self) -> None:
-        assert self.rule.normalize(SIUnitNotation(text="Pa", shape="symbol"), CONTRACT) == "Pa"
+        assert (
+            self.rule.normalize(SIUnitNotation(text="Pa", shape="symbol"), CONTRACT)
+            == "Pa"
+        )
 
 
 @pytest.mark.capability
@@ -861,17 +955,27 @@ class TestSectionNonSiUnits:
     def setup_method(self) -> None:
         self.rule = SectionNonSiUnits()
 
-    @pytest.mark.parametrize("text", ["min", "h", "d", "°", "ha", "L", "l", "t", "Da", "eV"])
+    @pytest.mark.parametrize(
+        "text", ["min", "h", "d", "°", "ha", "L", "l", "t", "Da", "eV"]
+    )
     def test_matches(self, text: str) -> None:
         assert self.rule.matches(SIUnitNotation(text=text, shape="symbol"), CONTRACT)
 
     def test_litre_canonicalization(self) -> None:
-        assert self.rule.normalize(SIUnitNotation(text="l", shape="symbol"), CONTRACT) == "L"
-        assert self.rule.normalize(SIUnitNotation(text="L", shape="symbol"), CONTRACT) == "L"
+        assert (
+            self.rule.normalize(SIUnitNotation(text="l", shape="symbol"), CONTRACT)
+            == "L"
+        )
+        assert (
+            self.rule.normalize(SIUnitNotation(text="L", shape="symbol"), CONTRACT)
+            == "L"
+        )
 
     def test_rejects(self) -> None:
         assert not self.rule.matches(SIUnitNotation(text="m", shape="symbol"), CONTRACT)
-        assert not self.rule.matches(SIUnitNotation(text="kelvin", shape="name"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text="kelvin", shape="name"), CONTRACT
+        )
 
 
 @pytest.mark.capability
@@ -882,16 +986,23 @@ class TestSectionPrefixes:
     def setup_method(self) -> None:
         self.rule = SectionPrefixes()
 
-    @pytest.mark.parametrize("text", ["km", "MHz", "µg", "mg", "hPa", "keV", "kDa", "dam"])
+    @pytest.mark.parametrize(
+        "text", ["km", "MHz", "µg", "mg", "hPa", "keV", "kDa", "dam"]
+    )
     def test_matches(self, text: str) -> None:
         assert self.rule.matches(SIUnitNotation(text=text, shape="symbol"), CONTRACT)
 
     @pytest.mark.parametrize("text", ["k", "da", "M", "µ", "m", "cd", "kg"])
     def test_bare_prefixes_and_official_do_not_match(self, text: str) -> None:
-        assert not self.rule.matches(SIUnitNotation(text=text, shape="symbol"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text=text, shape="symbol"), CONTRACT
+        )
 
     def test_normalize_is_identity(self) -> None:
-        assert self.rule.normalize(SIUnitNotation(text="MHz", shape="symbol"), CONTRACT) == "MHz"
+        assert (
+            self.rule.normalize(SIUnitNotation(text="MHz", shape="symbol"), CONTRACT)
+            == "MHz"
+        )
 
 
 @pytest.mark.capability
@@ -914,9 +1025,9 @@ class TestSectionNames:
         [
             ("kilogram", "kg"),
             ("kelvin", "K"),
-            ("megahertz", "MHz"),   # generated prefixed name
-            ("kilometre", "km"),    # generated prefixed name
-            ("microgram", "µg"),    # generated prefixed name
+            ("megahertz", "MHz"),  # generated prefixed name
+            ("kilometre", "km"),  # generated prefixed name
+            ("microgram", "µg"),  # generated prefixed name
             ("degree celsius", "°C"),
             ("litre", "L"),
         ],
@@ -931,8 +1042,12 @@ class TestSectionNames:
         assert not self.rule.matches(SIUnitNotation(text=text, shape="name"), CONTRACT)
 
     def test_rejects_non_name_shape(self) -> None:
-        assert not self.rule.matches(SIUnitNotation(text="kg", shape="symbol"), CONTRACT)
-        assert not self.rule.matches(SIUnitNotation(text="m/s", shape="compound"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text="kg", shape="symbol"), CONTRACT
+        )
+        assert not self.rule.matches(
+            SIUnitNotation(text="m/s", shape="compound"), CONTRACT
+        )
 
     def test_temporal_gate(self) -> None:
         old = SIUnitContract(year=2018)
@@ -963,7 +1078,9 @@ symbol and provide provenance.
 from __future__ import annotations
 
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
-from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import PREFIXED_NAME_TO_SYMBOL
+from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import (
+    PREFIXED_NAME_TO_SYMBOL,
+)
 from paxman.capabilities.SIUnit.rules.data.prefixed_units import PREFIXED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_base_units import BASE_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_derived_units import DERIVED_UNIT_SYMBOLS
@@ -1002,7 +1119,10 @@ class SectionBaseUnits(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a base-unit symbol."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "symbol":
             return False
@@ -1025,7 +1145,10 @@ class SectionDerivedUnits(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a derived-unit symbol."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "symbol":
             return False
@@ -1052,7 +1175,10 @@ class SectionNonSiUnits(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a non-SI unit symbol."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "symbol":
             return False
@@ -1083,7 +1209,10 @@ class SectionPrefixes(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a prefixed unit symbol."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "symbol":
             return False
@@ -1111,7 +1240,10 @@ class SectionNames(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a known unit name."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "name":
             return False
@@ -1162,17 +1294,32 @@ class TestSectionCompounds:
 
     @pytest.mark.parametrize(
         "text",
-        ["m/s²", "m/s2", "km/h", "N·m", "N⋅m", "kg·m/s²", "g/cm³", "m·s⁻²", "µg/mL", "m/°C"],
+        [
+            "m/s²",
+            "m/s2",
+            "km/h",
+            "N·m",
+            "N⋅m",
+            "kg·m/s²",
+            "g/cm³",
+            "m·s⁻²",
+            "µg/mL",
+            "m/°C",
+        ],
     )
     def test_matches(self, text: str) -> None:
         assert self.rule.matches(SIUnitNotation(text=text, shape="compound"), CONTRACT)
 
     @pytest.mark.parametrize("text", ["QQQ/zzz", "m/", "/s", "m s", "m/2", "/"])
     def test_rejects(self, text: str) -> None:
-        assert not self.rule.matches(SIUnitNotation(text=text, shape="compound"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text=text, shape="compound"), CONTRACT
+        )
 
     def test_rejects_non_compound_shape(self) -> None:
-        assert not self.rule.matches(SIUnitNotation(text="m/s", shape="symbol"), CONTRACT)
+        assert not self.rule.matches(
+            SIUnitNotation(text="m/s", shape="symbol"), CONTRACT
+        )
 
     @pytest.mark.parametrize(
         ("text", "canonical"),
@@ -1189,7 +1336,9 @@ class TestSectionCompounds:
         ],
     )
     def test_normalize(self, text: str, canonical: str) -> None:
-        result = self.rule.normalize(SIUnitNotation(text=text, shape="compound"), CONTRACT)
+        result = self.rule.normalize(
+            SIUnitNotation(text=text, shape="compound"), CONTRACT
+        )
         assert result == canonical
 
     def test_temporal_gate(self) -> None:
@@ -1235,12 +1384,26 @@ PUBLICATION = Provenance(
 )
 
 _FULL_SYMBOL_LEXICON = (
-    BASE_UNIT_SYMBOLS | DERIVED_UNIT_SYMBOLS | NONSI_UNIT_SYMBOLS | PREFIXED_UNIT_SYMBOLS
+    BASE_UNIT_SYMBOLS
+    | DERIVED_UNIT_SYMBOLS
+    | NONSI_UNIT_SYMBOLS
+    | PREFIXED_UNIT_SYMBOLS
 )
 _EXPONENT_SUFFIX = re.compile(r"[0-9⁻⁰¹²³⁴⁵⁶⁷⁸⁹\-]*$")
 _SUPERSCRIPT_TRANSLATE = str.maketrans(
-    {"⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4",
-     "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "-"}
+    {
+        "⁰": "0",
+        "¹": "1",
+        "²": "2",
+        "³": "3",
+        "⁴": "4",
+        "⁵": "5",
+        "⁶": "6",
+        "⁷": "7",
+        "⁸": "8",
+        "⁹": "9",
+        "⁻": "-",
+    }
 )
 _SEPARATOR_TRANSLATE = str.maketrans({"⋅": "·"})  # D3: U+22C5 dot → U+00B7
 
@@ -1262,7 +1425,10 @@ class SectionCompounds(Rule[SIUnitNotation]):
 
     def matches(self, notation: SIUnitNotation, contract: Contract) -> bool:
         """Check if the notation is a valid SI compound."""
-        if contract.year is not None and contract.year < self.provenance.publication_year:
+        if (
+            contract.year is not None
+            and contract.year < self.provenance.publication_year
+        ):
             return False
         if notation.shape != "compound":
             return False
@@ -1376,7 +1542,7 @@ class TestSymbolRecognition:
             ("°C", "°C"),
             ("µg", "µg"),
             ("min", "min"),
-            ("da", "da"),   # bare prefix is recognized (the rule rejects -> INVALID)
+            ("da", "da"),  # bare prefix is recognized (the rule rejects -> INVALID)
             ("k", "k"),
         ],
     )
@@ -1440,7 +1606,9 @@ class TestNameRecognition:
         assert match.start == 0
         assert match.end == len(text)
 
-    @pytest.mark.parametrize("text", ["kilograms", "kilogran", "kg", "kelvins", "xkelvin", "kelvinx"])
+    @pytest.mark.parametrize(
+        "text", ["kilograms", "kilogran", "kg", "kelvins", "xkelvin", "kelvinx"]
+    )
     def test_rejects(self, text: str) -> None:
         assert self.grammar.recognize(text) == []
 
@@ -1670,12 +1838,17 @@ import pytest
 
 from paxman.capabilities.SIUnit.grammar.data.unit_name_tokens import NAME_TOKENS
 from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
-from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import PREFIXED_NAME_TO_SYMBOL
+from paxman.capabilities.SIUnit.rules.data.prefixed_unit_names import (
+    PREFIXED_NAME_TO_SYMBOL,
+)
 from paxman.capabilities.SIUnit.rules.data.prefixed_units import PREFIXED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_base_units import BASE_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_derived_units import DERIVED_UNIT_SYMBOLS
 from paxman.capabilities.SIUnit.rules.data.si_nonsi_units import NONSI_UNIT_SYMBOLS
-from paxman.capabilities.SIUnit.rules.data.si_prefixes import PREFIX_NAMES, PREFIX_SYMBOLS
+from paxman.capabilities.SIUnit.rules.data.si_prefixes import (
+    PREFIX_NAMES,
+    PREFIX_SYMBOLS,
+)
 from paxman.capabilities.SIUnit.rules.data.unit_names import NAME_TO_SYMBOL
 
 pytestmark = [pytest.mark.capability, pytest.mark.si_unit]
@@ -1688,7 +1861,10 @@ class TestSymbolCoverage:
     """Every grammar symbol token is an authority symbol, and vice versa."""
 
     def test_token_set_equals_authority_symbols(self) -> None:
-        assert set(SYMBOL_TOKENS) == OFFICIAL_SYMBOLS | PREFIX_SYMBOLS | PREFIXED_UNIT_SYMBOLS
+        assert (
+            set(SYMBOL_TOKENS)
+            == OFFICIAL_SYMBOLS | PREFIX_SYMBOLS | PREFIXED_UNIT_SYMBOLS
+        )
 
     def test_generated_symbols_disjoint_from_official(self) -> None:
         assert PREFIXED_UNIT_SYMBOLS.isdisjoint(OFFICIAL_SYMBOLS)
@@ -1706,7 +1882,10 @@ class TestNameCoverage:
         assert set(NAME_TOKENS) == set(FULL_NAME_TO_SYMBOL)
 
     def test_names_resolve_to_known_symbols(self) -> None:
-        assert set(FULL_NAME_TO_SYMBOL.values()) <= OFFICIAL_SYMBOLS | PREFIXED_UNIT_SYMBOLS
+        assert (
+            set(FULL_NAME_TO_SYMBOL.values())
+            <= OFFICIAL_SYMBOLS | PREFIXED_UNIT_SYMBOLS
+        )
 
     def test_prefixed_names_disjoint_from_official_names(self) -> None:
         assert set(PREFIXED_NAME_TO_SYMBOL).isdisjoint(NAME_TO_SYMBOL)
@@ -2125,12 +2304,14 @@ now locked by the "run twice, byte-identical" convention in
 that parametrized class, mirroring the existing rows exactly:
 
 ```python
-pytest.param(
-    SIUnitCapability,
-    lambda: SIUnitCapability.create_contract(),
-    "megahertz",
-    id="si_unit-prefixed-name",
-),
+(
+    pytest.param(
+        SIUnitCapability,
+        lambda: SIUnitCapability.create_contract(),
+        "megahertz",
+        id="si_unit-prefixed-name",
+    ),
+)
 ```
 
 The row registers SIUnit, runs `run_capability("megahertz", contract)`

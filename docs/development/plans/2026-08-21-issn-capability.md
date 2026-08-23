@@ -345,7 +345,10 @@ from paxman.core.grammar.stages import RegexStage, StandardPre
 # word_only (shipped) strengthens isbn10_lead per Oracle P2 — see research rev. 2026-08-22.
 _ISSN_BODY = r"(?:ISSN(?:-L|-H)?[\s:-]*)?(?P<body>\d{4}-?\d{3}[0-9Xx])"
 _ISSN_PATTERN: str = (
-    BoundaryGuard.word_only().lookbehind + _ISSN_BODY + BoundaryGuard.digit().lookahead + r"\b"
+    BoundaryGuard.word_only().lookbehind
+    + _ISSN_BODY
+    + BoundaryGuard.digit().lookahead
+    + r"\b"
 )
 
 

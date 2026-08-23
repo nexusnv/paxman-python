@@ -345,9 +345,9 @@ shapes share one notation type and differ only in shape:
 ```python
 @dataclass(frozen=True, slots=True)
 class ISBNNotation:
-    shape: str        # "isbn10" | "isbn13"
-    digits: str       # digit string; "X" allowed only as the final
-                      # char of an "isbn10" shape
+    shape: str  # "isbn10" | "isbn13"
+    digits: str  # digit string; "X" allowed only as the final
+    # char of an "isbn10" shape
 
     def as_list(self) -> list[str]:
         return [self.shape, self.digits]
@@ -430,11 +430,11 @@ hyphenated display form lives in the capability (below).
 ```python
 @dataclass(frozen=True)
 class ISBNContract(CapabilityContract):
-    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "isbn13"        # bare 13 digits
+    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "isbn13"  # bare 13 digits
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"hyphenated"})
 
     capability_name: str = field(default="isbn", init=False)
-    include_isbn10: bool = True             # legacy input recognition
+    include_isbn10: bool = True  # legacy input recognition
     include_range_validation: bool = False  # gates the Range Message rule
 
     @property
@@ -468,10 +468,12 @@ class ISBNContract(CapabilityContract):
 one offered alternative:
 
 ```python
-def format_value(self, value: str, output_format: str | None, notation: ISBNNotation) -> str:
+def format_value(
+    self, value: str, output_format: str | None, notation: ISBNNotation
+) -> str:
     if output_format == "hyphenated":
         return hyphenate(value)  # Range Message longest-match, §4.3
-    return value                 # "isbn13" default is identity
+    return value  # "isbn13" default is identity
 ```
 
 This is a textbook presentational-only transform: it never changes candidate

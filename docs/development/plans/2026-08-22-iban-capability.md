@@ -102,16 +102,28 @@ from paxman.capabilities.IBAN.notation import IBANNotation
 
 pytestmark = [pytest.mark.capability]
 
+
 def test_frozen_slots_hash():
-    n = IBANNotation(country_code="DE", check_digits="89", bban="370400440532013000", compact="DE89370400440532013000")
+    n = IBANNotation(
+        country_code="DE",
+        check_digits="89",
+        bban="370400440532013000",
+        compact="DE89370400440532013000",
+    )
     assert n.country_code == "DE"
     assert hash(n) is not None
     assert hasattr(n, "__slots__")
     with pytest.raises(FrozenInstanceError):
         n.compact = "X"  # type: ignore[misc]
 
+
 def test_compact_is_concatenation():
-    n = IBANNotation(country_code="GB", check_digits="29", bban="NWBK60161331926819", compact="GB29NWBK60161331926819")
+    n = IBANNotation(
+        country_code="GB",
+        check_digits="29",
+        bban="NWBK60161331926819",
+        compact="GB29NWBK60161331926819",
+    )
     assert n.compact == n.country_code + n.check_digits + n.bban
     assert 15 <= len(n.compact) <= 34
 ```
@@ -145,8 +157,8 @@ class IBANNotation:
 
     country_code: str  # e.g. "DE" — length 2, A-Z
     check_digits: str  # e.g. "89" — length 2, 0-9
-    bban: str          # e.g. "370400440532013000" — 1-30 alphanum
-    compact: str       # e.g. "DE89370400440532013000" — 15-34
+    bban: str  # e.g. "370400440532013000" — 1-30 alphanum
+    compact: str  # e.g. "DE89370400440532013000" — 15-34
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -181,6 +193,7 @@ from paxman.capabilities.IBAN.contract import IBANContract
 
 pytestmark = [pytest.mark.capability]
 
+
 def test_default_output_format_resolves():
     c = IBANContract()
     assert c.output_format == "electronic"
@@ -188,23 +201,30 @@ def test_default_output_format_resolves():
     assert IBANContract.DEFAULT_OUTPUT_FORMAT == "electronic"
     assert IBANContract.OFFERED_OUTPUT_FORMATS == frozenset({"paper"})
 
+
 def test_paper_offered():
     c = IBANContract(output_format="paper")
     assert c.output_format == "paper"
+
 
 def test_default_alias_via_none_and_default_string():
     for alias in (None, "default", "electronic"):
         c = IBANContract(output_format=alias)
         assert c.output_format == "electronic"
 
+
 def test_invalid_output_format_raises():
     with pytest.raises(ContractError):
         IBANContract(output_format="hyphenated")  # ISSN-ism, not IBAN
     with pytest.raises(ContractError):
-        IBANContract(output_format="compact")  # alias not offered; must normalize outside
+        IBANContract(
+            output_format="compact"
+        )  # alias not offered; must normalize outside
+
 
 def test_frozen_contract():
     from dataclasses import FrozenInstanceError
+
     c = IBANContract()
     with pytest.raises(FrozenInstanceError):
         c.output_format = "paper"  # type: ignore[misc]
@@ -266,7 +286,11 @@ Research §4.2 (corrected per Oracle): **Single** `PipelineGrammar` with `Standa
 
 ```python
 _IBAN_BODY = r"(?:IBAN[\s:-]+)?(?P<compact>[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30})"
-_IBAN_PATTERN = BoundaryGuard.word_only().lookbehind + _IBAN_BODY + BoundaryGuard.word_only().lookahead
+_IBAN_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _IBAN_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 
 Key design points (verbatim in the code comments):
@@ -289,6 +313,7 @@ pytestmark = [pytest.mark.capability]
 
 GRAMMAR = IBANRecognitionGrammar()
 
+
 def test_valid_electronic():
     m = GRAMMAR.recognize("DE89370400440532013000")
     assert len(m) == 1
@@ -298,9 +323,11 @@ def test_valid_electronic():
     assert m[0].raw_text == "DE89370400440532013000"
     assert m[0].end - m[0].start == len(m[0].raw_text)
 
+
 def test_paper_groups_of_four():
     m = GRAMMAR.recognize("DE89 3704 0044 0532 0130 00")
     assert m[0].notation.compact == "DE89370400440532013000"
+
 
 def test_case_insensitive_and_label():
     for txt in [
@@ -312,15 +339,18 @@ def test_case_insensitive_and_label():
     ]:
         assert len(GRAMMAR.recognize(txt)) == 1
 
+
 def test_lowercase_label_and_compact():
     m = GRAMMAR.recognize("iban: gb29 nwbk 6016 1331 9268 19")
     assert m[0].notation.compact == "GB29NWBK60161331926819"
+
 
 def test_word_guard_blocks_left_and_label_glue():
     # Left glue: (?<!\w) lookbehind rejects carving out of a longer token.
     assert GRAMMAR.recognize("XDE89370400440532013000") == []
     # Glued label: separator is [\s:-]+ (ISBN-13 precedent), never zero-width.
     assert GRAMMAR.recognize("IBANDE89370400440532013000") == []
+
 
 def test_alnum_tail_absorbed_documented():
     # A <=30-char alnum tail is absorbed into the BBAN loop BY DESIGN (the
@@ -332,12 +362,14 @@ def test_alnum_tail_absorbed_documented():
     assert len(m) == 1
     assert m[0].notation.compact == "DE89370400440532013000Y"
 
+
 def test_min_and_max_length_bounds():
-    assert GRAMMAR.recognize("NO938601111794") == []       # 14 — below 15 min
+    assert GRAMMAR.recognize("NO938601111794") == []  # 14 — below 15 min
     assert len(GRAMMAR.recognize("NO93 8601 1117 947")) == 1  # 15 min (paper)
-    assert GRAMMAR.recognize("DE89" + "A" * 31) == []      # 35 — above 34 max
+    assert GRAMMAR.recognize("DE89" + "A" * 31) == []  # 35 — above 34 max
     # A >34 alnum run cannot be carved: every interior end position is
     # followed by a word char, so the trailing (?!\w) rejects all candidates.
+
 
 def test_multi_whitespace_rejected_narrow_tolerance():
     # Only single spaces are tolerated (paper groups-of-four). Double spaces
@@ -346,19 +378,22 @@ def test_multi_whitespace_rejected_narrow_tolerance():
     assert GRAMMAR.recognize("DE89  3704 0044 0532 0130 00") == []
     assert GRAMMAR.recognize("DE89\t3704 0044") == []
 
+
 def test_multiple_matches():
     txt = "DE89 3704 0044 0532 0130 00 / GB29 NWBK 6016 1331 9268 19"
     assert len(GRAMMAR.recognize(txt)) == 2
+
 
 def test_semantics_and_name():
     assert GRAMMAR.name == "iban_recognition"
     assert GRAMMAR.semantics == "iban_recognition"
     assert GRAMMAR.single_value is True
 
+
 def test_span_invariants():
     txt = "Pay to DE89 3704 0044 0532 0130 00 now"
     m = GRAMMAR.recognize(txt)[0]
-    assert txt[m.start:m.end] == m.raw_text
+    assert txt[m.start : m.end] == m.raw_text
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -389,7 +424,12 @@ _IBAN_BODY = r"(?:IBAN[\s:-]+)?(?P<compact>[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30})
 # end is followed by a word char). A <=30-char alnum tail is absorbed by
 # design — mod-97 rejects it downstream (INVALID); see
 # test_alnum_tail_absorbed_documented in the grammar tests.
-_IBAN_PATTERN = BoundaryGuard.word_only().lookbehind + _IBAN_BODY + BoundaryGuard.word_only().lookahead
+_IBAN_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _IBAN_BODY
+    + BoundaryGuard.word_only().lookahead
+)
+
 
 def _iban_notation(match: re.Match[str]) -> IBANNotation:
     raw_compact = match.group("compact")
@@ -397,7 +437,10 @@ def _iban_notation(match: re.Match[str]) -> IBANNotation:
     country_code = compact[0:2]
     check_digits = compact[2:4]
     bban = compact[4:]
-    return IBANNotation(country_code=country_code, check_digits=check_digits, bban=bban, compact=compact)
+    return IBANNotation(
+        country_code=country_code, check_digits=check_digits, bban=bban, compact=compact
+    )
+
 
 class IBANRecognitionGrammar(PipelineGrammar[IBANNotation]):
     """IBAN recognition — CCDD+BBAN with optional IBAN label and paper spacing."""
@@ -406,13 +449,16 @@ class IBANRecognitionGrammar(PipelineGrammar[IBANNotation]):
     semantics = "iban_recognition"
     single_value = True
     pre = StandardPre[IBANNotation](empty_guard=True)
-    regex = RegexStage[IBANNotation](pattern=_IBAN_PATTERN, notation_fn=_iban_notation, flags=re.IGNORECASE)
+    regex = RegexStage[IBANNotation](
+        pattern=_IBAN_PATTERN, notation_fn=_iban_notation, flags=re.IGNORECASE
+    )
 ```
 
 Expose in `grammar/__init__.py`:
 
 ```python
 from paxman.capabilities.IBAN.grammar.iban_recognition import IBANRecognitionGrammar
+
 __all__ = ["IBANRecognitionGrammar"]
 ```
 
@@ -458,7 +504,10 @@ git mv paxman/capabilities/IBAN/rules/iso_ed2020.py paxman/capabilities/IBAN/rul
 import pytest
 
 from paxman.capabilities.IBAN.notation import IBANNotation
-from paxman.capabilities.IBAN.rules.iso_13616_1_ed2020 import Section4IBANStructureMOD97, PUBLICATION
+from paxman.capabilities.IBAN.rules.iso_13616_1_ed2020 import (
+    Section4IBANStructureMOD97,
+    PUBLICATION,
+)
 from paxman.capabilities.IBAN.contract import IBANContract
 
 pytestmark = [pytest.mark.capability]
@@ -466,8 +515,15 @@ pytestmark = [pytest.mark.capability]
 RULE = Section4IBANStructureMOD97()
 CONTRACT = IBANContract()
 
+
 def n(compact: str) -> IBANNotation:
-    return IBANNotation(country_code=compact[:2], check_digits=compact[2:4], bban=compact[4:], compact=compact)
+    return IBANNotation(
+        country_code=compact[:2],
+        check_digits=compact[2:4],
+        bban=compact[4:],
+        compact=compact,
+    )
+
 
 def test_provenance_metadata():
     assert PUBLICATION.authority == "ISO"
@@ -481,6 +537,7 @@ def test_provenance_metadata():
     assert RULE.target_semantics == frozenset({"iban_recognition"})
     assert RULE.requires_features == frozenset()
 
+
 def test_valid_vectors():
     # Oracle-corrected vectors; LC/NI 32 are longest per R100
     for compact in [
@@ -488,7 +545,9 @@ def test_valid_vectors():
         "GB29NWBK60161331926819",  # GB22 4!a6!n8!n
         "FR1420041010050500013M02606",  # FR27
         "NO9386011117947",  # NO15 4!n6!n1!n (corrected per Oracle)
-        "MT84MALT011000012345MTLCAS T001S".replace(" ", ""),  # MT31 -> MT84MALT011000012345MTLCAST001S
+        "MT84MALT011000012345MTLCAS T001S".replace(
+            " ", ""
+        ),  # MT31 -> MT84MALT011000012345MTLCAST001S
         "SC18SSCB11010000000000001497USD",  # SC31 group 1497 (0149 fails mod97==60)
         "LC55HEMM000100010012001200023015",  # LC32 longest
         "NI92BAMC000000000000000003123123",  # NI32 longest
@@ -498,24 +557,38 @@ def test_valid_vectors():
         assert RULE.matches(n(compact), CONTRACT) is True, compact
         assert RULE.normalize(n(compact), CONTRACT) == compact
 
+
 def test_invalid_mod97_and_dd_range():
     assert RULE.matches(n("DE89370400440532013001"), CONTRACT) is False  # check flipped
-    for bad_dd in ["DE00370400440532013000", "DE01370400440532013000", "DE99370400440532013000"]:
+    for bad_dd in [
+        "DE00370400440532013000",
+        "DE01370400440532013000",
+        "DE99370400440532013000",
+    ]:
         # 00/01/99 never assigned — fast-reject before mod97 (generic still mod97-invalid for most)
         assert RULE.matches(n(bad_dd), CONTRACT) is False
-    assert RULE.matches(n("DE8937040044053201300"), CONTRACT) is False  # 21 vs DE22 too short (<15 still, but generic 15-34 path)
+    assert (
+        RULE.matches(n("DE8937040044053201300"), CONTRACT) is False
+    )  # 21 vs DE22 too short (<15 still, but generic 15-34 path)
     assert RULE.matches(n("AB12"), CONTRACT) is False
+
 
 def test_structure_edge_table():
     # Rule-level structural edges (the grammar normally prevents these shapes;
     # exercised directly so the rule's defensive branches stay covered — the
     # per-package 95% gate needs them):
-    assert RULE.matches(n("DE89" + "A" * 31), CONTRACT) is False       # 35 > 34
-    assert RULE.matches(n("NO938601111794"), CONTRACT) is False        # 14 < 15
+    assert RULE.matches(n("DE89" + "A" * 31), CONTRACT) is False  # 35 > 34
+    assert RULE.matches(n("NO938601111794"), CONTRACT) is False  # 14 < 15
     assert RULE.matches(n("1E89370400440532013000"), CONTRACT) is False  # CC not alpha
-    assert RULE.matches(n("DEAB3704004405320130000"), CONTRACT) is False  # DD not digits
-    assert RULE.matches(n("de89370400440532013000"), CONTRACT) is False   # lowercase (isupper)
-    assert RULE.matches(n("DE89 3704 0044 0532 0130 00"), CONTRACT) is False  # space inside compact
+    assert (
+        RULE.matches(n("DEAB3704004405320130000"), CONTRACT) is False
+    )  # DD not digits
+    assert (
+        RULE.matches(n("de89370400440532013000"), CONTRACT) is False
+    )  # lowercase (isupper)
+    assert (
+        RULE.matches(n("DE89 3704 0044 0532 0130 00"), CONTRACT) is False
+    )  # space inside compact
 ```
 
 (Adjust MT compact to `MT84MALT011000012345MTLCAST001S` — verify mod97 in Step 2.)
@@ -562,6 +635,7 @@ PUBLICATION = Provenance(
     publication_year=2020,
 )
 
+
 def _mod97(compact: str) -> int:
     # Input is grammar-normalized uppercase and matches() re-checks isupper(),
     # so only A-Z expansion is needed here — a lowercase fallback branch would
@@ -579,6 +653,7 @@ def _mod97(compact: str) -> int:
     for d in expanded:
         r = (r * 10 + int(d)) % 97
     return r
+
 
 class Section4IBANStructureMOD97(Rule[IBANNotation]):
     """ISO 13616-1 §4-5 + ISO/IEC 7064 MOD 97-10 — generic IBAN validation.
@@ -620,6 +695,7 @@ Expose in `rules/__init__.py`:
 
 ```python
 from paxman.capabilities.IBAN.rules.iso_13616_1_ed2020 import Section4IBANStructureMOD97
+
 __all__ = ["Section4IBANStructureMOD97"]
 ```
 
@@ -659,6 +735,7 @@ pytestmark = [pytest.mark.capability]
 
 CAP = IBANCapability()
 
+
 def test_wiring_counts():
     assert CAP.name == "iban"
     assert len(CAP.get_grammars()) == 1
@@ -666,11 +743,13 @@ def test_wiring_counts():
     assert len(CAP.get_rules()) == 1
     assert CAP.get_rules()[0].name == "Section 4-iban-structure-mod97"
 
+
 def test_create_contract_defaults():
     c = CAP.create_contract()
     assert c.output_format == "electronic"
     assert c.excluded_rules == ()
     assert c.pinned_rules is None
+
 
 def test_format_value_paper_roundtrip():
     cases = {
@@ -680,7 +759,12 @@ def test_format_value_paper_roundtrip():
         "LC55HEMM000100010012001200023015": "LC55 HEMM 0001 0001 0012 0012 0002 3015",  # 32
     }
     for electronic, paper in cases.items():
-        n = IBANNotation(country_code=electronic[:2], check_digits=electronic[2:4], bban=electronic[4:], compact=electronic)
+        n = IBANNotation(
+            country_code=electronic[:2],
+            check_digits=electronic[2:4],
+            bban=electronic[4:],
+            compact=electronic,
+        )
         assert CAP.format_value(electronic, "paper", n) == paper
         assert CAP.format_value(electronic, None, n) == electronic
         assert CAP.format_value(electronic, "electronic", n) == electronic
@@ -711,6 +795,7 @@ from paxman.core.domain import Grammar, Rule
 
 __all__ = ["IBANCapability", "IBANContract", "IBANNotation"]
 
+
 class IBANCapability(Capability[IBANNotation]):
     """IBAN canonicalization — electronic compact with paper presentation."""
 
@@ -740,9 +825,11 @@ class IBANCapability(Capability[IBANNotation]):
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
         )
 
-    def format_value(self, value: str, output_format: str | None, notation: IBANNotation) -> str:
+    def format_value(
+        self, value: str, output_format: str | None, notation: IBANNotation
+    ) -> str:
         if output_format == "paper":
-            return " ".join(value[i:i+4] for i in range(0, len(value), 4))
+            return " ".join(value[i : i + 4] for i in range(0, len(value), 4))
         return value
 ```
 
@@ -921,12 +1008,18 @@ def _register_iban() -> None:
 def test_success_electronic_and_paper_same_canonical():
     _register_iban()
     contract = IBANCapability.create_contract()
-    for txt in ["DE89370400440532013000", "DE89 3704 0044 0532 0130 00", "de89370400440532013000", "IBAN: DE89 3704 0044 0532 0130 00"]:
+    for txt in [
+        "DE89370400440532013000",
+        "DE89 3704 0044 0532 0130 00",
+        "de89370400440532013000",
+        "IBAN: DE89 3704 0044 0532 0130 00",
+    ]:
         r = paxman.canonicalize(txt, contract)
         assert r.status == Resolution.SUCCESS
         assert r.canonicalized_value == "DE89370400440532013000"
         assert r.candidates[0].provenance[0].specification_name == "ISO 13616-1:2020"
         assert r.span is not None
+
 
 def test_paper_output_format():
     _register_iban()
@@ -935,23 +1028,35 @@ def test_paper_output_format():
     assert r.status == Resolution.SUCCESS
     assert r.canonicalized_value == "DE89 3704 0044 0532 0130 00"
 
+
 def test_invalid_mod97():
     _register_iban()
     contract = IBANCapability.create_contract()
-    assert paxman.canonicalize("DE89370400440532013001", contract).status == Resolution.INVALID
+    assert (
+        paxman.canonicalize("DE89370400440532013001", contract).status
+        == Resolution.INVALID
+    )
+
 
 def test_tail_glue_absorbed_is_invalid():
     # Documented carve (grammar test test_alnum_tail_absorbed_documented):
     # the absorbed alnum tail is rejected by mod-97 -> INVALID, never SUCCESS.
     _register_iban()
     contract = IBANCapability.create_contract()
-    assert paxman.canonicalize("DE89370400440532013000Y", contract).status == Resolution.INVALID
+    assert (
+        paxman.canonicalize("DE89370400440532013000Y", contract).status
+        == Resolution.INVALID
+    )
+
 
 def test_missing_short_and_bban_only():
     _register_iban()
     contract = IBANCapability.create_contract()
     assert paxman.canonicalize("AB12", contract).status == Resolution.MISSING
-    assert paxman.canonicalize("370400440532013000", contract).status == Resolution.MISSING  # BBAN only
+    assert (
+        paxman.canonicalize("370400440532013000", contract).status == Resolution.MISSING
+    )  # BBAN only
+
 
 def test_two_distinct_ibans_raise_multiple_mentions():
     # single_value=True: two separate mentions resolving to distinct values
@@ -962,19 +1067,30 @@ def test_two_distinct_ibans_raise_multiple_mentions():
     _register_iban()
     contract = IBANCapability.create_contract()
     with pytest.raises(MultipleMentionsError):
-        paxman.canonicalize("DE89 3704 0044 0532 0130 00 / GB29 NWBK 6016 1331 9268 19", contract)
+        paxman.canonicalize(
+            "DE89 3704 0044 0532 0130 00 / GB29 NWBK 6016 1331 9268 19", contract
+        )
+
 
 def test_span_word_guard():
     _register_iban()
     contract = IBANCapability.create_contract()
-    assert paxman.canonicalize("XDE89370400440532013000", contract).status == Resolution.MISSING
+    assert (
+        paxman.canonicalize("XDE89370400440532013000", contract).status
+        == Resolution.MISSING
+    )
+
 
 def test_longest_vectors():
     _register_iban()
     contract = IBANCapability.create_contract()
-    for compact in ["LC55HEMM000100010012001200023015", "NI92BAMC000000000000000003123123"]:
+    for compact in [
+        "LC55HEMM000100010012001200023015",
+        "NI92BAMC000000000000000003123123",
+    ]:
         r = paxman.canonicalize(compact, contract)
         assert r.status == Resolution.SUCCESS, compact
+
 
 def test_year_filter_excludes_rule():
     # year=2019 filters out the 2020 rule (orchestrator _filter_rules), so the
@@ -1026,7 +1142,9 @@ def calc_check(country: str, bban: str) -> str:
     return f"{98 - r:02d}"
 
 
-@given(st.text(min_size=15, max_size=34, alphabet="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+@given(
+    st.text(min_size=15, max_size=34, alphabet="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+)
 def test_random_strings_usually_invalid(s: str) -> None:
     rule = Section4IBANStructureMOD97()
     n = IBANNotation(country_code=s[:2], check_digits=s[2:4], bban=s[4:], compact=s)

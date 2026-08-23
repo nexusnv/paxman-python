@@ -97,6 +97,7 @@ Paxman resolves **one mention per `canonicalize()` call** (ARCHITECTURE.md — s
 ```python
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class ISSNNotation:
     """ISSN notation — grammar-normalized digit string.
@@ -136,7 +137,10 @@ _ISBN13_PATTERN = r"\b(?:ISBN(?:-13)?[\s:-]+)?(?=((?:\d[ -]?){12}\d)(?![\d]))\1\
 ```
 ISBN-10 (`paxman/capabilities/ISBN/grammar/isbn10_recognition.py`):
 ```python
-_ISBN10_PATTERN = BoundaryGuard.isbn10_lead().lookbehind + r"(?:ISBN(?:-10)?[\s:-]+)?(?=((?:\d[ -]?){9}[0-9Xx])(?![\d]))\1\b"
+_ISBN10_PATTERN = (
+    BoundaryGuard.isbn10_lead().lookbehind
+    + r"(?:ISBN(?:-10)?[\s:-]+)?(?=((?:\d[ -]?){9}[0-9Xx])(?![\d]))\1\b"
+)
 ```
 
 **Proposed ISSN pattern (single grammar, staged pipeline):**
@@ -166,10 +170,12 @@ _ISSN_PATTERN: str = (
 # tolerant "1234 - 5679" / "1234 5679" are documented in §2.1 row 7 but normalized at a higher
 # layer or rejected as MISSING — see edge #4/§13#5 for the contradiction resolution.
 
+
 def _issn_notation(match: re.Match[str]) -> ISSNNotation:
     raw_body = match.group("body")
     digits = "".join(ch for ch in raw_body if ch in "0123456789Xx").upper()
     return ISSNNotation(digits=digits)
+
 
 class ISSNRecognitionGrammar(PipelineGrammar[ISSNNotation]):
     """ISSN recognition — 8-char identifier with optional label/hyphen tolerance."""
@@ -336,7 +342,9 @@ from paxman.core.contract import CapabilityContract
 class ISSNContract(CapabilityContract):
     """User-facing contract for ISSN capability."""
 
-    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "hyphenated"  # cf. ISBN "isbn13" / Date "ISO"
+    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = (
+        "hyphenated"  # cf. ISBN "isbn13" / Date "ISO"
+    )
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"compact", "urn"})
 
     capability_name: str = field(default="issn", init=False)
@@ -377,6 +385,7 @@ from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 from paxman.capabilities.ISSN.notation import ISSNNotation
 
+
 class ISSNCapability(Capability[ISSNNotation]):
     name = "issn"  # lowercase identifier — what users pass to registry
 
@@ -410,7 +419,9 @@ class ISSNCapability(Capability[ISSNNotation]):
             return value.replace("-", "")
         if output_format == "urn":
             return f"urn:issn:{value}"  # value is hyphenated; X already uppercase
-        return value  # hyphenated default is identity — normalize() must return XXXX-XXXX
+        return (
+            value  # hyphenated default is identity — normalize() must return XXXX-XXXX
+        )
 ```
 
 Registration (HOW_TO_ADD_NEW_CAPABILITY.md §9 / `tools/new_capability.py`):

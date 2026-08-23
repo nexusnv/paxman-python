@@ -37,6 +37,7 @@ All experiments were run via `uv run --project /tmp/paxman-fresh-test python ...
 
 ```python
 import paxman
+
 paxman.register_all_shipped()
 ```
 

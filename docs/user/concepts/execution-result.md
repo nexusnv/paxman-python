@@ -7,22 +7,22 @@
 ## The shape
 
 ```python
-result.status                # Resolution enum
-result.canonicalized_value   # str | None
-result.candidates            # tuple[Candidate, ...]
-result.span                  # tuple[int, int] | None
-result.version_stamp         # VersionStamp — which Paxman build produced this
-result.contract              # the contract you passed in, echoed back
+result.status  # Resolution enum
+result.canonicalized_value  # str | None
+result.candidates  # tuple[Candidate, ...]
+result.span  # tuple[int, int] | None
+result.version_stamp  # VersionStamp — which Paxman build produced this
+result.contract  # the contract you passed in, echoed back
 ```
 
 For each `Candidate`:
 
 ```python
-candidate.value              # canonical string this candidate proposes
-candidate.recognition_rule   # grammar name that spotted it (e.g. "standard_recognition")
-candidate.validation_rule    # rule name that validated it (e.g. "Section 3.4.1-addr-spec")
-candidate.span               # (start, end) of this candidate's match in the input, or None
-candidate.provenance         # tuple[Provenance, ...] — the spec(s) that vouched for it
+candidate.value  # canonical string this candidate proposes
+candidate.recognition_rule  # grammar name that spotted it (e.g. "standard_recognition")
+candidate.validation_rule  # rule name that validated it (e.g. "Section 3.4.1-addr-spec")
+candidate.span  # (start, end) of this candidate's match in the input, or None
+candidate.provenance  # tuple[Provenance, ...] — the spec(s) that vouched for it
 ```
 
 `version_stamp` is currently `VersionStamp(paxman_version="…")`; it records the installed build so results are auditable. `contract` is echoed back for logging and debugging.
@@ -59,7 +59,7 @@ stateDiagram-v2
 from paxman.core.domain import Resolution
 
 if result.status == Resolution.SUCCESS:
-    use(result.canonicalized_value)          # str
+    use(result.canonicalized_value)  # str
 elif result.status == Resolution.MISSING:
     # input does not contain this entity — skip or report
     ...
@@ -88,7 +88,7 @@ contract = Email.create_contract()
 result = paxman.canonicalize("Contact user@Example.com for info", contract)
 
 print(result.canonicalized_value)  # "user@example.com"
-print(result.span)                 # (8, 24)
+print(result.span)  # (8, 24)
 print("Contact user@Example.com for info"[8:24])  # "user@Example.com"
 ```
 
@@ -110,9 +110,11 @@ This makes highlighting in UIs, logging, and downstream span-aware processing st
 ```python
 for c in result.candidates:
     prov = c.provenance[0]
-    print(f"{c.value!r:20} via {c.validation_rule}  "
-          f"({prov.authority}: {prov.specification_name})  "
-          f"span={c.span}")
+    print(
+        f"{c.value!r:20} via {c.validation_rule}  "
+        f"({prov.authority}: {prov.specification_name})  "
+        f"span={c.span}"
+    )
 ```
 
 ---

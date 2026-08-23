@@ -28,7 +28,9 @@ import paxman
 
 paxman.register_all_shipped()
 contract = Email.create_contract()
-paxman.canonicalize("USER@Example.COM", contract).canonicalized_value  # "user@example.com"
+paxman.canonicalize(
+    "USER@Example.COM", contract
+).canonicalized_value  # "user@example.com"
 ```
 
 There are no offered alternatives for Email — `None`, `"default"`, and `"email"` all resolve to the same rendering; any other value raises `ContractError`.
@@ -39,8 +41,8 @@ There are no offered alternatives for Email — `None`, `"default"`, and `"email
 
 ```python
 contract = Email.create_contract(
-    include_obfuscated=False,   # bool, default False — recognize "user at example dot com"
-    include_localhost=True,     # bool, default True  — recognize admin@localhost
+    include_obfuscated=False,  # bool, default False — recognize "user at example dot com"
+    include_localhost=True,  # bool, default True  — recognize admin@localhost
     # plus every common field: excluded_rules / pinned_rules / year / output_format / extra_grammars
 )
 ```
@@ -128,7 +130,12 @@ Inspect `candidate.provenance` and `candidate.validation_rule` for the exact cit
 ```python
 for c in result.candidates:
     p = c.provenance[0]
-    print(c.value, "via", c.validation_rule, f"({p.authority}: {p.specification_name}, {p.publication_year})")
+    print(
+        c.value,
+        "via",
+        c.validation_rule,
+        f"({p.authority}: {p.specification_name}, {p.publication_year})",
+    )
 ```
 
 ---

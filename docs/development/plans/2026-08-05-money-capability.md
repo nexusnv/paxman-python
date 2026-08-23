@@ -542,10 +542,10 @@ class MoneyContract(CapabilityContract):
     def _extra_dict_fields(self) -> dict[str, object]:
         """Serialize capability-specific fields for replay hash.
 
-> **Note — replay-hash removed; do not use as a sample.** The `replay_hash` (replay-hash / byte-identical canonicalization) mechanism referenced in the paragraph above was **removed** from Paxman (see `docs/adr/0002-remove-replay-hash.md`). The text above reflects the pre-removal design and MUST NOT be copied, adapted, or used as a template for future work.
+        > **Note — replay-hash removed; do not use as a sample.** The `replay_hash` (replay-hash / byte-identical canonicalization) mechanism referenced in the paragraph above was **removed** from Paxman (see `docs/adr/0002-remove-replay-hash.md`). The text above reflects the pre-removal design and MUST NOT be copied, adapted, or used as a template for future work.
 
-        Returns:
-            Dictionary of precision and dollar_sign_currency fields.
+                Returns:
+                    Dictionary of precision and dollar_sign_currency fields.
         """
         return {
             "precision": self.precision,
@@ -3585,8 +3585,7 @@ class TestMoneyCapabilityFormatValue:
         """The default code_amount path returns the canonical value unchanged."""
         cap = MoneyCapability()
         assert (
-            cap.format_value("USD 500.00", "code_amount", self.NOTATION)
-            == "USD 500.00"
+            cap.format_value("USD 500.00", "code_amount", self.NOTATION) == "USD 500.00"
         )
 
     def test_default_format_is_identity(self) -> None:
@@ -3597,9 +3596,7 @@ class TestMoneyCapabilityFormatValue:
     def test_compact_removes_separator_space(self) -> None:
         """Compact rendering removes the single ASCII space between code and amount."""
         cap = MoneyCapability()
-        assert (
-            cap.format_value("USD 500.00", "compact", self.NOTATION) == "USD500.00"
-        )
+        assert cap.format_value("USD 500.00", "compact", self.NOTATION) == "USD500.00"
 
     def test_compact_zero_decimal_currency(self) -> None:
         """Compact rendering works for 0-decimal amounts (no fraction)."""
@@ -4935,7 +4932,7 @@ from paxman.capabilities.Money.capability import MoneyCapability
 4. Add the Money case to `CASES` (after `isbn`):
 
 ```python
-    ("money", MoneyCapability, "USD500"),
+(("money", MoneyCapability, "USD500"),)
 ```
 
 5. Update the module docstring: append a line after the ISBN line:

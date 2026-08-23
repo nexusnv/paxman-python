@@ -89,7 +89,9 @@ import re
 
 # strip URI prefix first, then hyphens/spaces
 uri_stripped = re.sub(r"(?i)^(?:https?://)?(?:www\.)?orcid\.org/", "", raw).strip()
-compact = re.sub(r"[ \-]", "", uri_stripped).strip().upper()  # 16 chars: 15 digits + [\dX], X only at 16
+compact = (
+    re.sub(r"[ \-]", "", uri_stripped).strip().upper()
+)  # 16 chars: 15 digits + [\dX], X only at 16
 # then validate: len==16 and regex ^\d{15}[\dX]$ + MOD 11-2
 ```
 
@@ -183,7 +185,11 @@ _ISSN_PATTERN = (
 BIC/IBAN precedent (BIC compact `8/11` with `BIC|SWIFT` label, IBAN `IBAN` label, both `[\s:-]+`):
 ```python
 _BIC_BODY = r"(?ai:(?:(?:BIC|SWIFT)[\s:-]+)?(?P<compact>[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?))"
-_BIC_PATTERN = BoundaryGuard.word_only().lookbehind + _BIC_BODY + BoundaryGuard.word_only().lookahead
+_BIC_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _BIC_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 
 **Proposed ORCID pattern (single grammar, staged pipeline):**
@@ -518,7 +524,9 @@ class ORCIDCapability(Capability[ORCIDNotation]):
     name = "orcid"  # lowercase identifier — what users pass to registry
 
     def get_grammars(self) -> list[Grammar[ORCIDNotation]]:
-        return [ORCIDRecognitionGrammar()]  # single grammar; hyphenated + URI handled together
+        return [
+            ORCIDRecognitionGrammar()
+        ]  # single grammar; hyphenated + URI handled together
 
     def get_rules(self) -> list[Rule[ORCIDNotation]]:
         return [
@@ -608,16 +616,17 @@ Verification: run same loop including check `c1` (value 10 if `X`); valid iff re
 ```python
 # Form 1 — iterative like Support page (the ORCID style)
 compact = re.sub(r"[ \-]", "", hyphenated).upper()
-assert len(compact)==16 and compact[:15].isdigit()
+assert len(compact) == 16 and compact[:15].isdigit()
 total = 0
 for ch in compact[:15]:
     total = (total + int(ch)) * 2
 check_expected = (12 - total % 11) % 11
-check_actual = 10 if compact[15]=="X" else int(compact[15])
+check_actual = 10 if compact[15] == "X" else int(compact[15])
 is_valid = check_expected == check_actual
 
 # Form 2 — stdnum iso7064 checksum == 1 (polynomial)
 from stdnum.iso7064 import mod_11_2
+
 is_valid = mod_11_2.checksum(compact) == 1
 ```
 
@@ -732,11 +741,13 @@ Per-registry data module shape (parallel to ISBN `rules/data/range_message.py`):
 
 ```python
 # rules/data/orcid_registry_snapshot.py
-ORCID_REGISTRY: frozenset[str] = frozenset({
-    # hyphenated or compact — pref hyphenated for direct check
-    "0000-0002-1825-0097",
-    # ...
-})
+ORCID_REGISTRY: frozenset[str] = frozenset(
+    {
+        # hyphenated or compact — pref hyphenated for direct check
+        "0000-0002-1825-0097",
+        # ...
+    }
+)
 ```
 
 Alternatives: keep data as TXT pipe-separated like `swift iban registry.txt` and load at import.

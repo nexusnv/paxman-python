@@ -300,7 +300,7 @@ class ISBNContract(CapabilityContract):
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"hyphenated"})
 
     capability_name: str = field(default="isbn", init=False)
-    include_isbn10: bool = True             # legacy input recognition
+    include_isbn10: bool = True  # legacy input recognition
     include_range_validation: bool = False  # gates the Range Message rule
 
     @property
@@ -712,7 +712,9 @@ class Section4RegistrantRange(Rule[ISBNNotation]):
             if not notation.digits[:9].isdigit():
                 return None
             base = "978" + notation.digits[:9]
-            weighted = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base))
+            weighted = sum(
+                int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base)
+            )
             return base + str((10 - weighted % 10) % 10)
         return None
 ```
@@ -1106,18 +1108,22 @@ Add a `TestISBNPipeline` class (mark every test `@pytest.mark.integration`):
 Also append two rows to the existing `TestReplayAndCandidateOrder.test_repeated_run_is_byte_identical` parametrize list:
 
 ```python
-            pytest.param(
-                ISBNCapability,
-                lambda: ISBNCapability.create_contract(output_format="hyphenated"),
-                "978-0-11-000222-4",
-                id="isbn-hyphenated",
-            ),
-            pytest.param(
-                ISBNCapability,
-                lambda: ISBNCapability.create_contract(),
-                "0306406152",
-                id="isbn10-default",
-            ),
+(
+    pytest.param(
+        ISBNCapability,
+        lambda: ISBNCapability.create_contract(output_format="hyphenated"),
+        "978-0-11-000222-4",
+        id="isbn-hyphenated",
+    ),
+)
+(
+    pytest.param(
+        ISBNCapability,
+        lambda: ISBNCapability.create_contract(),
+        "0306406152",
+        id="isbn10-default",
+    ),
+)
 ```
 
 - [ ] **Step 2: RED — `tests/integration/test_feature_gating.py`**

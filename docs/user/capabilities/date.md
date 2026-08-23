@@ -34,8 +34,12 @@ from paxman.capabilities import Date
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("2026-01-15", Date.create_contract()).canonicalized_value              # "2026-01-15"
-paxman.canonicalize("2026-01-15", Date.create_contract(output_format="US")).canonicalized_value  # "01/15/2026"
+paxman.canonicalize(
+    "2026-01-15", Date.create_contract()
+).canonicalized_value  # "2026-01-15"
+paxman.canonicalize(
+    "2026-01-15", Date.create_contract(output_format="US")
+).canonicalized_value  # "01/15/2026"
 ```
 
 The `two_digit_base_year` field is relevant only when the input contains a 2-digit year — e.g. with `two_digit_base_year=2000`, `"01/02/26"` expands relative to 2000. Otherwise omit it.
@@ -46,8 +50,8 @@ The `two_digit_base_year` field is relevant only when the input contains a 2-dig
 
 ```python
 contract = Date.create_contract(
-    two_digit_base_year=None,   # int | None — base year for 2-digit expansion, e.g. 2000
-    output_format=None,         # "ISO" (default) or "US"
+    two_digit_base_year=None,  # int | None — base year for 2-digit expansion, e.g. 2000
+    output_format=None,  # "ISO" (default) or "US"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -119,7 +123,12 @@ Validated values cite the calendar spec whose rule accepted the notation — e.g
 ```python
 for c in result.candidates:
     p = c.provenance[0]
-    print(c.value, "via", c.validation_rule, f"({p.specification_name}, {p.publication_year})")
+    print(
+        c.value,
+        "via",
+        c.validation_rule,
+        f"({p.specification_name}, {p.publication_year})",
+    )
 ```
 
 See also: [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md), [Segmentation](../../recipes/segmentation.md).

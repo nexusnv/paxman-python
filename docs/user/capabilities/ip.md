@@ -28,8 +28,12 @@ from paxman.capabilities import IP
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("192.168.1.1", IP.create_contract()).canonicalized_value                                          # "192.168.1.1"
-paxman.canonicalize("2001:0db8:0000:0000:0000:0000:0000:0001", IP.create_contract()).canonicalized_value               # "2001:db8::1"
+paxman.canonicalize(
+    "192.168.1.1", IP.create_contract()
+).canonicalized_value  # "192.168.1.1"
+paxman.canonicalize(
+    "2001:0db8:0000:0000:0000:0000:0000:0001", IP.create_contract()
+).canonicalized_value  # "2001:db8::1"
 ```
 
 ---
@@ -38,8 +42,8 @@ paxman.canonicalize("2001:0db8:0000:0000:0000:0000:0000:0001", IP.create_contrac
 
 ```python
 contract = IP.create_contract(
-    include_ipv6=True,      # bool, default True — recognize IPv6
-    output_format=None,     # "ip" (only format)
+    include_ipv6=True,  # bool, default True — recognize IPv6
+    output_format=None,  # "ip" (only format)
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -47,8 +51,12 @@ contract = IP.create_contract(
 - With `include_ipv6=True` (the default) both grammars run. With `False`, only `ipv4_recognition` runs — an IPv6 address is then `MISSING` (never seen), not `INVALID`.
 
 ```python
-paxman.canonicalize("2001:db8::1", IP.create_contract(include_ipv6=False)).status.value  # "missing"
-paxman.canonicalize("2001:db8::1", IP.create_contract()).canonicalized_value             # "2001:db8::1"
+paxman.canonicalize(
+    "2001:db8::1", IP.create_contract(include_ipv6=False)
+).status.value  # "missing"
+paxman.canonicalize(
+    "2001:db8::1", IP.create_contract()
+).canonicalized_value  # "2001:db8::1"
 ```
 
 ---
@@ -90,7 +98,12 @@ from paxman.core.domain import Resolution
 paxman.register_all_shipped()
 contract = IP.create_contract()
 
-for text in ["192.168.1.1", "2001:0db8:0000:0000:0000:0000:0000:0001", "999.999.999.999", "hello"]:
+for text in [
+    "192.168.1.1",
+    "2001:0db8:0000:0000:0000:0000:0000:0001",
+    "999.999.999.999",
+    "hello",
+]:
     r = paxman.canonicalize(text, contract)
     print(f"{text!r:45} → {r.status.value:10} {r.canonicalized_value!r}")
 ```

@@ -508,7 +508,9 @@ class ORCIDRecognitionGrammar(PipelineGrammar[ORCIDNotation]):
     semantics = "orcid_recognition"
     single_value = True
     pre = StandardPre[ORCIDNotation](empty_guard=True)
-    regex = RegexStage[ORCIDNotation](pattern=_ORCID_PATTERN, notation_fn=_orcid_notation)
+    regex = RegexStage[ORCIDNotation](
+        pattern=_ORCID_PATTERN, notation_fn=_orcid_notation
+    )
 ```
 
 Note: no `flags=` argument — case-insensitivity and ASCII restriction live in the inline `(?ai:)` groups (BIC precedent). If `RegexStage` requires `flags` as a keyword, pass nothing; it defaults to no flags. If pyright complains about a missing argument, check `paxman/core/grammar/stages.py` for the parameter default and rely on it.
@@ -668,9 +670,7 @@ class TestProvenanceAndConventions:
             assert isinstance(rule.citation, str) and rule.citation != ""
 
     def test_distinct_citations(self) -> None:
-        assert (
-            Section4OrcidStructure().citation != SectionAnnexAMod11Dash2().citation
-        )
+        assert Section4OrcidStructure().citation != SectionAnnexAMod11Dash2().citation
 
     @pytest.mark.parametrize(
         "rule_cls", [Section4OrcidStructure, SectionAnnexAMod11Dash2]
@@ -849,7 +849,9 @@ class TestORCIDCapability:
         assert c.active_grammars is None  # no gating: engine runs all shipped
 
     def test_create_contract_output_formats(self) -> None:
-        assert ORCIDCapability.create_contract(output_format="uri").output_format == "uri"
+        assert (
+            ORCIDCapability.create_contract(output_format="uri").output_format == "uri"
+        )
         assert (
             ORCIDCapability.create_contract(output_format="compact").output_format
             == "compact"

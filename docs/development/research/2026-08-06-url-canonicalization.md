@@ -285,6 +285,7 @@ paxman/capabilities/URL/
 @dataclass(frozen=True, slots=True)
 class URLNotation:
     """A span of text recognized as an absolute URI/IRI (shape-only)."""
+
     text: str
 
     def as_list(self) -> list[str]:

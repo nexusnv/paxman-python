@@ -32,7 +32,8 @@ Check the install:
 
 ```python
 import paxman
-print(paxman.__doc__)   # should not raise
+
+print(paxman.__doc__)  # should not raise
 ```
 
 ---
@@ -46,7 +47,7 @@ Registration is a one-time setup that must happen **before your first `canonical
 ```python
 import paxman
 
-paxman.register_all_shipped()   # loads every capability shipped in this release
+paxman.register_all_shipped()  # loads every capability shipped in this release
 ```
 
 **For production code** where you want to be explicit about what you depend on, register only what you need:
@@ -98,9 +99,9 @@ paxman.register_all_shipped()
 contract = Email.create_contract()
 result = paxman.canonicalize("Contact user@Example.com", contract)
 
-print(result.status)               # Resolution.SUCCESS
+print(result.status)  # Resolution.SUCCESS
 print(result.canonicalized_value)  # "user@example.com"
-print(result.span)                 # (8, 24) — where it sat in the input
+print(result.span)  # (8, 24) — where it sat in the input
 ```
 
 That is the full pattern. The same three lines work for any capability — only the import and the contract change:
@@ -132,12 +133,12 @@ Paxman resolves **one entity per `canonicalize()` call**. If your text contains 
 Every call returns an `ExecutionResult` with the same shape regardless of capability:
 
 ```python
-result.status                # Resolution enum: MISSING | INVALID | SUCCESS | AMBIGUOUS
-result.canonicalized_value   # str on SUCCESS, None otherwise
-result.candidates            # tuple of all validated candidates
-result.span                  # (start, end) of the resolved value on SUCCESS, else None
-result.version_stamp         # which Paxman version produced this answer
-result.contract              # the contract you passed in, echoed back
+result.status  # Resolution enum: MISSING | INVALID | SUCCESS | AMBIGUOUS
+result.canonicalized_value  # str on SUCCESS, None otherwise
+result.candidates  # tuple of all validated candidates
+result.span  # (start, end) of the resolved value on SUCCESS, else None
+result.version_stamp  # which Paxman version produced this answer
+result.contract  # the contract you passed in, echoed back
 
 for c in result.candidates:
     print(c.value, c.provenance[0].specification_name, c.span)
@@ -178,7 +179,9 @@ raw = ["United States", "Alemania", "JP", "not a country", "Burma"]
 
 for text in raw:
     r = paxman.canonicalize(text, contract)
-    print(f"{text!r:20} → {r.status.value:10} {r.canonicalized_value!r:6} span={r.span}")
+    print(
+        f"{text!r:20} → {r.status.value:10} {r.canonicalized_value!r:6} span={r.span}"
+    )
 ```
 
 Output:
@@ -198,7 +201,9 @@ for text in raw:
     r = paxman.canonicalize(text, contract)
     if r.status == Resolution.SUCCESS:
         prov = r.candidates[0].provenance[0]
-        print(f"{text!r} → {r.canonicalized_value} via {prov.authority}: {prov.specification_name}")
+        print(
+            f"{text!r} → {r.canonicalized_value} via {prov.authority}: {prov.specification_name}"
+        )
 ```
 
 No extra handling for `MISSING`/`INVALID` is needed beyond checking `status` — they are domain answers, not exceptions.
