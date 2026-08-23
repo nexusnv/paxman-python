@@ -1,0 +1,50 @@
+"""ISO 639-2:1998 validation rules.
+
+Bare alpha-3 487 T/B with B→T mapping via Library of Congress RA.
+"""
+
+from __future__ import annotations
+
+from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.rules.data.iso_639_2 import (
+    ISO6392_B,
+    ISO6392_BIB_TO_TERM,
+    ISO6392_T,
+)
+from paxman.core.contract import Contract
+from paxman.core.domain import Provenance, Rule, RuleStrategy
+
+PUBLICATION = Provenance(
+    authority="ISO",
+    specification_name="ISO 639-2:1998",
+    kind="specification",
+    reference_url="https://www.iso.org/standard/4767.html",
+    version="1998",
+    lifecycle="active",
+    publication_year=1998,
+)
+
+
+class SectionAlpha3Code(Rule[LanguageNotation]):
+    """ISO 639-2:1998 Section 4 — alpha-3 Terminology/Bibliographic."""
+
+    name = "Section 4-alpha-3-code"
+    strategy = RuleStrategy.LOOKUP_TABLE
+    provenance = PUBLICATION
+    citation = "Section 4 (alpha-3 code, 487 entries T/B)"
+    target_semantics = frozenset({"language_code"})
+    requires_features = frozenset()
+
+    def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
+        """Check bare alpha-3 membership (T or B)."""
+        lang = notation.language.lower()
+        if len(lang) != 3:
+            return False
+        return lang in ISO6392_T or lang in ISO6392_B
+
+    def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
+        """Return preferred Terminology code lower (B→T)."""
+        lang = notation.language.lower()
+        if lang in ISO6392_BIB_TO_TERM:
+            return ISO6392_BIB_TO_TERM[lang]
+        return lang

@@ -15,7 +15,9 @@ from paxman.capabilities.Language.grammar.language_name_recognition import (
     LanguageNameGrammar,
 )
 from paxman.capabilities.Language.notation import LanguageNotation
-from paxman.capabilities.Language.rules.ietf_ed2009 import LanguageRule
+from paxman.capabilities.Language.rules.bcp47_rfc5646_ed2009 import (
+    SectionBCP47Syntax as LanguageRule,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
