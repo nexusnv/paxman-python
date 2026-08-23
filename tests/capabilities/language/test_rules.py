@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from paxman.capabilities.Language.contract import LanguageContract
-from paxman.capabilities.Language.notation import LanguageNotation, normalize_name
+from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.domain import RuleStrategy
 
 
@@ -95,7 +95,7 @@ class TestISO6391:
     def test_xx_invalid(self) -> None:
         assert self.rule.matches(_code_notation("xx"), self.contract) is False
 
-    def test_EN_case_insensitive(self) -> None:
+    def test_en_case_insensitive(self) -> None:
         assert self.rule.matches(_code_notation("EN"), self.contract) is True
 
     def test_normalize_lower(self) -> None:
@@ -125,14 +125,14 @@ class TestISO6392:
         assert self.rule.provenance.specification_name == "ISO 639-2:1998"
         assert self.rule.provenance.publication_year == 1998
 
-    def test_eng_valid_T(self) -> None:
+    def test_eng_valid_t(self) -> None:
         assert self.rule.matches(_code_notation("eng"), self.contract) is True
 
-    def test_ger_B_valid_but_normalizes_to_deu(self) -> None:
+    def test_ger_b_valid_but_normalizes_to_deu(self) -> None:
         assert self.rule.matches(_code_notation("ger"), self.contract) is True
-        assert self.rule.normalize(_code_notation("ger"), self.contract) == "deu"
+        assert self.rule.normalize(_code_notation("ger"), self.contract) == "de"
 
-    def test_ger_to_de_via_T_to_alpha2(self) -> None:
+    def test_ger_to_de_via_t_to_alpha2(self) -> None:
         from paxman.capabilities.Language.rules.data.iso_639_2 import (
             ISO6392_T_TO_ALPHA2,
         )
@@ -201,7 +201,8 @@ class TestISO6395:
         assert self.rule.provenance.publication_year == 2008
 
     def test_aus_requires_flag(self) -> None:
-        # Rule matches True when called directly, but engine would not run it without flag
+        # Rule matches True when called directly,
+        # but engine would not run it without flag
         assert (
             self.rule.matches(_code_notation("aus"), self.collective_contract) is True
         )
@@ -241,13 +242,12 @@ class TestBCP47:
         assert self.rule.provenance.specification_name == "BCP 47 RFC 5646"
         assert self.rule.provenance.publication_year == 2009
 
-    def test_en_US_valid(self) -> None:
+    def test_en_us_valid(self) -> None:
         n = _bcp47_notation("en-US", language="en", region="US")
         assert self.rule.matches(n, self.contract) is True
 
     def test_en_double_hyphen_invalid(self) -> None:
         # Use compact that would be malformed; rule should reject
-        n = _bcp47_notation("en--US", language="en", region="US")
         # Simulate malformed compact with double hyphen
         malformed = LanguageNotation(
             language="en",
@@ -301,7 +301,7 @@ class TestBCP47:
         n = _bcp47_notation("x-fr-CH", privateuse="x-fr-ch")
         assert self.rule.matches(n, self.contract) is True
 
-    def test_en_Qaaa_script_position_well_formed(self) -> None:
+    def test_en_qaaa_script_position_well_formed(self) -> None:
         n = _bcp47_notation("en-Qaaa", language="en", script="Qaaa")
         assert self.rule.matches(n, self.contract) is True
 
@@ -333,11 +333,11 @@ class TestIANA:
     """IANA Language Subtag Registry — File-Date 2026-08-08."""
 
     def setup_method(self) -> None:
-        from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (
-            SectionIANARegistry,
+        from paxman.capabilities.Language.rules import (
+            iana_language_subtag_registry_ed2026 as _iana_mod,
         )
 
-        self.rule = SectionIANARegistry()
+        self.rule = _iana_mod.SectionIANARegistry()
         self.contract = LanguageContract()
         self.private_contract = LanguageContract(include_private=True)
 
@@ -357,26 +357,27 @@ class TestIANA:
         n = _bcp47_notation("de-nedis", language="de", variant="nedis")
         assert self.rule.matches(n, self.contract) is False
 
-    def test_script_Hans_valid(self) -> None:
+    def test_script_hans_valid(self) -> None:
         n = _bcp47_notation("zh-Hans", language="zh", script="Hans")
         assert self.rule.matches(n, self.contract) is True
 
-    def test_script_Qaaa_private_only_with_flag(self) -> None:
+    def test_script_qaaa_private_only_with_flag(self) -> None:
         n = _bcp47_notation("en-Qaaa", language="en", script="Qaaa")
         assert self.rule.matches(n, self.contract) is False
         assert self.rule.matches(n, self.private_contract) is True
 
-    def test_region_US_valid(self) -> None:
+    def test_region_us_valid(self) -> None:
         n = _bcp47_notation("en-US", language="en", region="US")
         assert self.rule.matches(n, self.contract) is True
 
-    def test_region_ZZ_private_only_with_flag(self) -> None:
+    def test_region_zz_private_only_with_flag(self) -> None:
         n = _bcp47_notation("en-ZZ", language="en", region="ZZ")
         assert self.rule.matches(n, self.contract) is False
         assert self.rule.matches(n, self.private_contract) is True
 
-    def test_region_XX_private_always_invalid(self) -> None:
-        # XX is private even with flag? Task says XX private — treat as private
+    def test_region_xx_private_always_invalid(self) -> None:
+        # XX is private even with flag? Task says XX private
+        # — treat as private
         n = _bcp47_notation("en-XX", language="en", region="XX")
         assert self.rule.matches(n, self.contract) is False
         assert self.rule.matches(n, self.private_contract) is True
@@ -386,16 +387,16 @@ class TestIANA:
         assert self.rule.matches(n, self.contract) is True
         assert self.rule.normalize(n, self.contract) == "he"
 
-    def test_grandfathered_en_GB_oed_to_oxendict(self) -> None:
+    def test_grandfathered_en_gb_oed_to_oxendict(self) -> None:
         n = _bcp47_notation("en-GB-oed", grandfathered="en-gb-oed")
         assert self.rule.matches(n, self.contract) is True
         assert self.rule.normalize(n, self.contract) == "en-GB-oxendict"
 
-    def test_zh_Hans_CN_passes(self) -> None:
+    def test_zh_hans_cn_passes(self) -> None:
         n = _bcp47_notation("zh-Hans-CN", language="zh", script="Hans", region="CN")
         assert self.rule.matches(n, self.contract) is True
 
-    def test_suppress_script_Latn_informative(self) -> None:
+    def test_suppress_script_latn_informative(self) -> None:
         n = _bcp47_notation("en-Latn", language="en", script="Latn")
         assert self.rule.matches(n, self.contract) is True
 
@@ -409,11 +410,11 @@ class TestCLDR:
     """CLDR localized display names — only when include_localized=True."""
 
     def setup_method(self) -> None:
-        from paxman.capabilities.Language.rules.cldr_language_display_name_ed2025 import (
-            SectionLocalizedNames,
+        from paxman.capabilities.Language.rules import (
+            cldr_language_display_name_ed2025 as _cldr_mod,
         )
 
-        self.rule = SectionLocalizedNames()
+        self.rule = _cldr_mod.SectionLocalizedNames()
         self.default_contract = LanguageContract()
         self.localized_contract = LanguageContract(include_localized=True)
 
@@ -425,12 +426,12 @@ class TestCLDR:
         assert self.rule.provenance.kind == "registry"
         assert self.rule.provenance.publication_year == 2025
 
-    def test_Deutsch_with_flag_success(self) -> None:
+    def test_deutsch_with_flag_success(self) -> None:
         n = _name_notation("Deutsch")
         assert self.rule.matches(n, self.localized_contract) is True
         assert self.rule.normalize(n, self.localized_contract) == "de"
 
-    def test_Deutsch_without_flag_invalid_via_requires_features(self) -> None:
+    def test_deutsch_without_flag_invalid_via_requires_features(self) -> None:
         assert self.rule.requires_features == frozenset({"include_localized"})
 
 
@@ -451,12 +452,12 @@ class TestEnglishNameMapping:
         assert self.rule.target_semantics == frozenset({"language_name"})
         assert self.rule.requires_features == frozenset()
 
-    def test_German_to_de(self) -> None:
+    def test_german_to_de(self) -> None:
         n = _name_notation("German")
         assert self.rule.matches(n, self.contract) is True
         assert self.rule.normalize(n, self.contract) == "de"
 
-    def test_English_to_en(self) -> None:
+    def test_english_to_en(self) -> None:
         n = _name_notation("English")
         assert self.rule.matches(n, self.contract) is True
         assert self.rule.normalize(n, self.contract) == "en"

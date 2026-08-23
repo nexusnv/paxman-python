@@ -59,7 +59,8 @@ _GRANDFATHERED_ALT = "|".join(re.escape(t) for t in _GRANDFATHERED_TAGS)
 # ---------------------------------------------------------------------------
 _BCP47_BODY = (
     r"(?P<tag>"
-    r"(?:(?=[A-Za-z]{2,3}-)[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"  # noqa: E501
+    r"(?:(?=[A-Za-z]{2,3}-)"
+    r"[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"
     r"(?:-[A-Za-z]{4})?"  # script
     r"(?:-(?:[A-Za-z]{2}|\d{3}))?"  # region
     r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"  # variant

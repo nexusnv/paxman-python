@@ -6,6 +6,7 @@ Comprehensive alpha-3 7000+ (Terminology only).
 from __future__ import annotations
 
 from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.rules.data.iso_639_2 import ISO6392_T_TO_ALPHA2
 from paxman.capabilities.Language.rules.data.iso_639_3 import ISO6393_CODES
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
@@ -46,5 +47,9 @@ class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
         return lang in ISO6393_CODES
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
-        """Return lower canonical alpha-3."""
-        return notation.language.lower()
+        """Return lower canonical; alpha-2 preferred when available."""
+        lang = notation.language.lower()
+        alpha2 = ISO6392_T_TO_ALPHA2.get(lang)
+        if alpha2 is not None:
+            return alpha2
+        return lang

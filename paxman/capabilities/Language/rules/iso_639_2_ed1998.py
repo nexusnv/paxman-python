@@ -10,6 +10,7 @@ from paxman.capabilities.Language.rules.data.iso_639_2 import (
     ISO6392_B,
     ISO6392_BIB_TO_TERM,
     ISO6392_T,
+    ISO6392_T_TO_ALPHA2,
 )
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
@@ -43,8 +44,10 @@ class SectionAlpha3Code(Rule[LanguageNotation]):
         return lang in ISO6392_T or lang in ISO6392_B
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
-        """Return preferred Terminology code lower (B→T)."""
+        """Return preferred Terminology code lower (B→T), alpha-2 when available."""
         lang = notation.language.lower()
-        if lang in ISO6392_BIB_TO_TERM:
-            return ISO6392_BIB_TO_TERM[lang]
-        return lang
+        term = ISO6392_BIB_TO_TERM.get(lang, lang)
+        alpha2 = ISO6392_T_TO_ALPHA2.get(term)
+        if alpha2 is not None:
+            return alpha2
+        return term

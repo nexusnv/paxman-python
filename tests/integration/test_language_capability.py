@@ -817,5 +817,3 @@ def test_numeric_region_and_script_private() -> None:
     )
     assert r3.status == Resolution.SUCCESS
     assert r3.canonicalized_value == "qaa"
-
-
