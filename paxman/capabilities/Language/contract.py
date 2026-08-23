@@ -10,26 +10,14 @@ from paxman.core.capability_contract import CapabilityContract
 
 @dataclass(frozen=True)
 class LanguageContract(CapabilityContract):
-    """User-facing configuration for the Language capability.
-
-    Attributes:
-        capability_name: Fixed to "language" (not user-settable).
-        output_format: Canonical output format — "bcp47" is the only
-            format. Optional — None/"default"/"bcp47" all resolve to
-            "bcp47".
-        excluded_rules: Tuple of rule names to exclude.
-        pinned_rules: Pin to specific rules (takes precedence over
-            excluded_rules).
-        year: Year for temporal filtering.
-        extra_grammars: Community grammar names (opt-in) to run alongside
-            the shipped grammars, in order (SEAM — inherited from base).
-    """
+    """Contract for the Language capability."""
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "bcp47"
-    # TODO(scaffold): offer alternative output formats here.
-    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset()
-
+    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset(
+        {"alpha2", "alpha3", "alpha3-bib", "name"}
+    )
     capability_name: str = field(default="language", init=False)
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
+    include_localized: bool = False
+    include_collective: bool = False
+    include_private: bool = False
+    include_grandfathered: bool = True
