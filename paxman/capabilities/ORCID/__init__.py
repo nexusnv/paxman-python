@@ -1,3 +1,5 @@
+"""ORCID capability package."""
+
 from paxman.capabilities.ORCID.capability import (
     ORCIDCapability,
     ORCIDContract,

@@ -190,8 +190,8 @@ class TestURLCapabilityExports:
         assert URL.name == "url"
 
     @pytest.mark.unit
-    def test_export_list_contains_ten_names(self) -> None:
-        """The registration surface exports exactly eleven capabilities."""
+    def test_export_list_contains_all_shipped_names(self) -> None:
+        """The lazy export surface lists every shipped capability."""
         import paxman.capabilities as capabilities
 
         assert set(capabilities.__all__) == {
