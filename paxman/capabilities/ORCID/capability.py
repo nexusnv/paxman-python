@@ -9,7 +9,10 @@ from paxman.capabilities.ORCID.grammar.orcid_recognition import (
     ORCIDRecognition,
 )
 from paxman.capabilities.ORCID.notation import ORCIDNotation
-from paxman.capabilities.ORCID.rules.iso_27729_ed2024 import ORCIDRule
+from paxman.capabilities.ORCID.rules.iso_27729_ed2024 import (
+    Section4OrcidStructure,
+    SectionAnnexAMod11Dash2,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
@@ -29,7 +32,7 @@ class ORCIDCapability(Capability[ORCIDNotation]):
 
     def get_rules(self) -> list[Rule[ORCIDNotation]]:
         """Return the default validation rule instances."""
-        return [ORCIDRule()]
+        return [Section4OrcidStructure(), SectionAnnexAMod11Dash2()]
 
     @staticmethod
     def create_contract(
