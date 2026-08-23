@@ -53,10 +53,13 @@ _GRANDFATHERED_ALT = "|".join(re.escape(t) for t in _GRANDFATHERED_TAGS)
 # ABNF-approximate BCP 47 body — hyphen only (underscore via Pre scratch)
 # language ["-" script] ["-" region] *("-" variant) *("-" extension) ["-" privateuse]
 # plus grandfathered and x-privateuse
+# Bare language alone (e.g. "en") is NOT a BCP47 tag here — that is the
+# language_code grammar's domain. Require hyphen after language in first
+# branch so bare codes route strictly to language_code.
 # ---------------------------------------------------------------------------
 _BCP47_BODY = (
     r"(?P<tag>"
-    r"(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"  # language + extlang
+    r"(?:(?=[A-Za-z]{2,3}-)[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"  # noqa: E501
     r"(?:-[A-Za-z]{4})?"  # script
     r"(?:-(?:[A-Za-z]{2}|\d{3}))?"  # region
     r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"  # variant

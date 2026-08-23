@@ -1,4 +1,4 @@
-"""Language code recognition — bare 2-3|5-8 via BoundaryGuard.word_only."""
+"""Language code recognition — bare 2-3|5-8 via BoundaryGuard.word_sign."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import re
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.grammar import BoundaryGuard, PipelineGrammar, RegexStage, StandardPre
 
-_GUARD = BoundaryGuard.word_only()
+_GUARD = BoundaryGuard.word_sign()
 _CODE_PATTERN = (
     _GUARD.lookbehind + r"(?P<code>[A-Za-z]{2,3}|[A-Za-z]{5,8})" + _GUARD.lookahead
 )

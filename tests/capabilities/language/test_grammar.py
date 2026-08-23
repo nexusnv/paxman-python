@@ -31,13 +31,10 @@ class TestBCP47TagGrammar:
         assert self.grammar.single_value is True
 
     def test_valid_simple_en(self) -> None:
+        # Bare "en" is language_code domain, not BCP47 (requires hyphen).
+        # BCP47 must not match bare.
         results = self.grammar.recognize("en")
-        assert len(results) == 1
-        assert results[0].start == 0
-        assert results[0].end == 2
-        assert results[0].raw_text == "en"
-        assert results[0].notation.language == "en"
-        assert results[0].notation.compact == "en"
+        assert len(results) == 0
 
     def test_valid_zh_hans_cn(self) -> None:
         results = self.grammar.recognize("zh-Hans-CN")
@@ -78,17 +75,20 @@ class TestBCP47TagGrammar:
         assert results[0].notation.region == "CN"
 
     def test_multiple_matches(self) -> None:
+        # Bare "en" not BCP47, only fr-FR matches
         results = self.grammar.recognize("en fr-FR")
-        assert len(results) == 2
-        # ordered by start
-        assert results[0].raw_text == "en"
-        assert results[1].raw_text == "fr-FR"
+        assert len(results) == 1
+        assert results[0].raw_text == "fr-FR"
 
     def test_quoted_bracketed(self) -> None:
-        for txt in ('"en-US"', "[fr-FR]", "(de)", '<html lang="en">'):
-            # extract at least one mention — quoted/bracketed should still find span
+        for txt in ('"en-US"', "[fr-FR]"):
+            # extract at least one mention — quoted/bracketed hyphenated tags
+            # still find span
             results = self.grammar.recognize(txt)
             assert len(results) >= 1, f"failed for {txt!r}: {results}"
+        # Bare codes like "(de)" are not BCP47 domain
+        assert self.grammar.recognize("(de)") == []
+        assert self.grammar.recognize('<html lang="en">') == []
 
     def test_boundary_guard_rejects_glue(self) -> None:
         # enUS glued without hyphen should not be recognized as bcp47 tag
