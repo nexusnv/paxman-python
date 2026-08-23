@@ -1,21 +1,88 @@
-"""Tests for LanguageNotation (scaffold)."""
+"""Tests for LanguageNotation — frozen, slots, all-str fields, normalize_name."""
+
+from __future__ import annotations
 
 import dataclasses
 
 import pytest
 
-from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.notation import LanguageNotation, normalize_name
+
+pytestmark = [pytest.mark.capability]
 
 
-@pytest.mark.capability
 class TestLanguageNotation:
-    """Tests for LanguageNotation."""
-
-    def test_value_attribute(self) -> None:
-        n = LanguageNotation(value="example")
-        assert n.value == "example"
-
     def test_frozen(self) -> None:
-        n = LanguageNotation(value="example")
+        notation = LanguageNotation(
+            language="en",
+            extlang="",
+            script="",
+            region="US",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="en-US",
+            raw_value="en-US",
+        )
         with pytest.raises(dataclasses.FrozenInstanceError):
-            n.value = "other"  # type: ignore[misc]
+            notation.compact = "x"  # type: ignore[misc]
+
+    def test_hashable_and_eq(self) -> None:
+        a = LanguageNotation(
+            language="en",
+            extlang="",
+            script="",
+            region="US",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="en-US",
+            raw_value="en-US",
+        )
+        b = LanguageNotation(
+            language="en",
+            extlang="",
+            script="",
+            region="US",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="en-US",
+            raw_value="en-US",
+        )
+        assert a == b
+        assert hash(a) == hash(b)
+        assert len({a, b}) == 1
+
+    def test_slots(self) -> None:
+        assert LanguageNotation.__dataclass_params__.slots is True
+
+    def test_all_fields_are_str(self) -> None:
+        for field in dataclasses.fields(LanguageNotation):
+            assert field.type is str, field.name
+
+    def test_field_values(self) -> None:
+        notation = LanguageNotation(
+            language="zh",
+            extlang="",
+            script="Hans",
+            region="CN",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="zh-Hans-CN",
+            raw_value="zh-Hans-CN",
+        )
+        assert notation.script == "Hans"
+        assert notation.region == "CN"
+        assert notation.compact == "zh-Hans-CN"
+
+    def test_normalize_name(self) -> None:
+        assert normalize_name("German") == "german"
+        assert normalize_name("  Français  ") == "francais"
+        assert normalize_name("Srpski (Serbian)") == "srpski serbian"
+        assert normalize_name("Español") == "espanol"
