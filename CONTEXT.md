@@ -42,6 +42,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Money:** `MoneyNotation(currency_part, amount_part, currency_shape, amount_shape)` — verbatim currency + amount tokens with grammar-assigned shape discriminators
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
 - **ISSN:** `ISSNNotation(digits)` — `digits` is the 8-character hyphen/space-stripped, uppercased string (grammar folds `x`→`X`); single lexical shape, no discriminator
+- **Language:** `LanguageNotation(language, extlang, script, region, variant, extension, privateuse, grandfathered, compact, raw_value)` — `language` 2-8 lower, `extlang` 3-letter hyphen-joined (e.g. `cmn` for `zh-cmn`), `script` Title 4, `region` Upper 2|3-digit, `variant` lower prefix-constrained via `VARIANT_PREFIXES` dict (`sl-nedis` ok, `de-nedis` rejected), `grandfathered` lower (preferred via `GRANDFATHERED_PREFERRED`), `compact` BCP47 case-canonical tag or bare lower, `raw_value` trimmed lower for lexicon; grammar strips case/underscore via `StandardPre` (`_`→`-` in PipelineState, `raw_text` preserves original), rules own registry + Prefix + Deprecated chain + Suppress-Script (informative, never rejects)
 - **BIC:** `BICNotation(bank_code, country_code, location_code, branch_code, compact)` — `bank_code` 4-char A-Z0-9, `country_code` 2-letter ISO 3166-1 plus XK, `location_code` 2-char A-Z0-9, `branch_code` 3-char or empty when BIC8, `compact` full 8 or 11 equals bank+country+location+branch, grammar uppercases and strips label, location second char 0/1/2 informative only
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
@@ -63,7 +64,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships fourteen built-in capabilities, each wired to an authoritative specification:
+Paxman ships fifteen built-in capabilities, each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -74,6 +75,7 @@ Paxman ships fourteen built-in capabilities, each wired to an authoritative spec
 | **IP** | IP addresses | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
+| **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **BIC** | Bank identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Money** | Money amounts | ISO 4217, CLDR |
