@@ -35,10 +35,18 @@ from paxman.capabilities import Country
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("United States", Country.create_contract()).canonicalized_value                           # "US"
-paxman.canonicalize("United States", Country.create_contract(output_format="alpha3")).canonicalized_value    # "USA"
-paxman.canonicalize("United States", Country.create_contract(output_format="numeric")).canonicalized_value   # "840"
-paxman.canonicalize("US",            Country.create_contract(output_format="name")).canonicalized_value      # "United States"
+paxman.canonicalize(
+    "United States", Country.create_contract()
+).canonicalized_value  # "US"
+paxman.canonicalize(
+    "United States", Country.create_contract(output_format="alpha3")
+).canonicalized_value  # "USA"
+paxman.canonicalize(
+    "United States", Country.create_contract(output_format="numeric")
+).canonicalized_value  # "840"
+paxman.canonicalize(
+    "US", Country.create_contract(output_format="name")
+).canonicalized_value  # "United States"
 ```
 
 ---
@@ -47,9 +55,9 @@ paxman.canonicalize("US",            Country.create_contract(output_format="name
 
 ```python
 contract = Country.create_contract(
-    include_localized=False,    # bool, default False — CLDR multilingual names
-    include_historical=False,   # bool, default False — ISO 3166-3 deprecated names
-    output_format=None,         # "alpha2" (default), "alpha3", "numeric", "name"
+    include_localized=False,  # bool, default False — CLDR multilingual names
+    include_historical=False,  # bool, default False — ISO 3166-3 deprecated names
+    output_format=None,  # "alpha2" (default), "alpha3", "numeric", "name"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```

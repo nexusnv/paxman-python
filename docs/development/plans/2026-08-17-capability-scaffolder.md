@@ -117,10 +117,10 @@ reference content is kept, not deleted).
     the real `Section {X.Y.Z}-{description}`): all six enforced metadata
     fields present —
     ```python
-    name = "Section 1-overview"                     # TODO: Section {X.Y.Z}-{description}
-    strategy = RuleStrategy.REGEX                   # TODO: match strategy to representation
-    provenance = PUBLICATION                        # from --authority/--spec-* flags
-    citation = "Section TODO"                       # TODO: real citation
+    name = "Section 1-overview"  # TODO: Section {X.Y.Z}-{description}
+    strategy = RuleStrategy.REGEX  # TODO: match strategy to representation
+    provenance = PUBLICATION  # from --authority/--spec-* flags
+    citation = "Section TODO"  # TODO: real citation
     target_semantics = frozenset({"<name>_recognition"})
     requires_features = frozenset()
     ```
@@ -251,11 +251,16 @@ def _run(*args: str) -> None:
 
 
 _ARGS = (
-    "--name", "widget",
-    "--authority", "Acme",
-    "--spec-name", "Acme Widget Standard",
-    "--spec-url", "https://example.com/widget",
-    "--publication-year", "2026",
+    "--name",
+    "widget",
+    "--authority",
+    "Acme",
+    "--spec-name",
+    "Acme Widget Standard",
+    "--spec-url",
+    "https://example.com/widget",
+    "--publication-year",
+    "2026",
 )
 ```
 

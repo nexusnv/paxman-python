@@ -110,14 +110,17 @@ This preserves `paxman.core` → no capability imports and keeps `grammar/data/`
 from dataclasses import dataclass
 from typing import Protocol
 
+
 @dataclass(frozen=True, slots=True)
 class PipelineState:
     """Mutable-through-replacement state threaded through stages."""
+
     text: str
     # Matches produced so far; composer consumes lexicon output, post consumes all prior.
     matches: list[RecognitionMatch[NotationT]]
     # Stage-local scratch (e.g. normalized text, lexicon hit offsets).
     scratch: dict[str, object]
+
 
 class Stage(Protocol[NotationT]):
     def run(self, state: PipelineState) -> PipelineState: ...
@@ -150,7 +153,9 @@ class SymbolRecognition(PipelineGrammar[CurrencyNotation]):
     semantics = "symbol_recognition"
     single_value = False
     pre = StandardPre(empty_guard=True, case="exact")
-    lexicon = LexiconStage(tokens=SYMBOL_TOKENS, boundary=CurrencyBoundary, longest_first=True)
+    lexicon = LexiconStage(
+        tokens=SYMBOL_TOKENS, boundary=CurrencyBoundary, longest_first=True
+    )
     post = QualifyPost(is_qualified=_is_qualified)
 ```
 
@@ -158,13 +163,16 @@ class SymbolRecognition(PipelineGrammar[CurrencyNotation]):
 ```python
 from paxman.capabilities.Money.grammar import AMOUNT_PATTERN, classify_amount_shape
 
+
 class SymbolRecognition(PipelineGrammar[MoneyNotation]):
     name = "symbol_recognition"
     semantics = "symbol_recognition"
     single_value = False
     pre = StandardPre(empty_guard=True)
     lexicon = LexiconStage(tokens=SYMBOL_TOKENS, boundary=MoneyBoundary)
-    composer = AmountComposer(pattern=AMOUNT_PATTERN, order="either", lexicon_first=True)
+    composer = AmountComposer(
+        pattern=AMOUNT_PATTERN, order="either", lexicon_first=True
+    )
     post = AmountShapePost(classify=classify_amount_shape)
 ```
 

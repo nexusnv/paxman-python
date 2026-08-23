@@ -36,9 +36,15 @@ from paxman.capabilities import URL
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("HTTPS://Example.COM:443/path/../other", URL.create_contract()).canonicalized_value  # "https://example.com/other"
-paxman.canonicalize("mailto:user@example.com", URL.create_contract()).canonicalized_value                # "mailto:user@example.com" (opaque → verbatim)
-paxman.canonicalize("http://münchen.de", URL.create_contract()).canonicalized_value                      # "http://xn--mnchen-3ya.de/"
+paxman.canonicalize(
+    "HTTPS://Example.COM:443/path/../other", URL.create_contract()
+).canonicalized_value  # "https://example.com/other"
+paxman.canonicalize(
+    "mailto:user@example.com", URL.create_contract()
+).canonicalized_value  # "mailto:user@example.com" (opaque → verbatim)
+paxman.canonicalize(
+    "http://münchen.de", URL.create_contract()
+).canonicalized_value  # "http://xn--mnchen-3ya.de/"
 ```
 
 ---
@@ -47,7 +53,7 @@ paxman.canonicalize("http://münchen.de", URL.create_contract()).canonicalized_v
 
 ```python
 contract = URL.create_contract(
-    output_format=None,     # "url" (only format)
+    output_format=None,  # "url" (only format)
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```

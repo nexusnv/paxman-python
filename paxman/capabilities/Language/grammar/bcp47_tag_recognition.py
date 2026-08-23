@@ -56,18 +56,18 @@ _GRANDFATHERED_ALT = "|".join(re.escape(t) for t in _GRANDFATHERED_TAGS)
 # Bare language alone (e.g. "en") is NOT a BCP47 tag here — that is the
 # language_code grammar's domain. Require hyphen after language in first
 # branch so bare codes route strictly to language_code.
+# Grandfathered first — prevents truncation of en-GB-oed to en-GB.
 # ---------------------------------------------------------------------------
 _BCP47_BODY = (
-    r"(?P<tag>"
-    r"(?:(?=[A-Za-z]{2,3}-)"
+    r"(?P<tag>" + _GRANDFATHERED_ALT + r"|x(?:-[A-Za-z0-9]{1,8})+"  # privateuse-only
+    r"|(?:(?=[A-Za-z]{2,3}-)"
     r"[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"
     r"(?:-[A-Za-z]{4})?"  # script
     r"(?:-(?:[A-Za-z]{2}|\d{3}))?"  # region
     r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"  # variant
     r"(?:-[0-9A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*"  # extension (singleton != x)
     r"(?:-x(?:-[A-Za-z0-9]{1,8})+)?"  # privateuse tail
-    r"|x(?:-[A-Za-z0-9]{1,8})+"  # privateuse-only
-    r"|" + _GRANDFATHERED_ALT + ")"  # grandfathered
+    r")"
     r")"
 )
 

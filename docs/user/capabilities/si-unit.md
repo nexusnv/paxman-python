@@ -31,9 +31,9 @@ from paxman.capabilities import SIUnit
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("Kilogram", SIUnit.create_contract()).canonicalized_value   # "kg"
+paxman.canonicalize("Kilogram", SIUnit.create_contract()).canonicalized_value  # "kg"
 paxman.canonicalize("megahertz", SIUnit.create_contract()).canonicalized_value  # "MHz"
-paxman.canonicalize("m/s²", SIUnit.create_contract()).canonicalized_value       # "m/s2"
+paxman.canonicalize("m/s²", SIUnit.create_contract()).canonicalized_value  # "m/s2"
 ```
 
 ---
@@ -43,8 +43,8 @@ paxman.canonicalize("m/s²", SIUnit.create_contract()).canonicalized_value      
 ```python
 contract = SIUnit.create_contract(
     allow_split_word_prefixes=False,  # bool, default False — "kilo gram" → "kg" when True
-    allow_multi_solidus=False,        # bool, default False — preserve "kg/m/s" when True
-    output_format=None,               # "symbol" (only format)
+    allow_multi_solidus=False,  # bool, default False — preserve "kg/m/s" when True
+    output_format=None,  # "symbol" (only format)
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -99,7 +99,15 @@ c = SIUnit.create_contract()
 c_spoken = SIUnit.create_contract(allow_split_word_prefixes=True)
 c_multi = SIUnit.create_contract(allow_multi_solidus=True)
 
-for text in ["Kilogram", "m/s²", "metre per second", "kilo gram", "k g", "kg/m/s", "25°C"]:
+for text in [
+    "Kilogram",
+    "m/s²",
+    "metre per second",
+    "kilo gram",
+    "k g",
+    "kg/m/s",
+    "25°C",
+]:
     for label, cc in [("default", c), ("spoken", c_spoken), ("multi", c_multi)]:
         r = paxman.canonicalize(text, cc)
         val = r.canonicalized_value if r.status == Resolution.SUCCESS else "—"

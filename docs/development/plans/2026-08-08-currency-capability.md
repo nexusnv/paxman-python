@@ -157,7 +157,7 @@ def test_valid_shapes(text: str, shape: str) -> None:
     ("text", "shape"),
     [
         ("", "code"),
-        ("USD", "amount"),      # not an identifier shape
+        ("USD", "amount"),  # not an identifier shape
         ("USD", "code+amount"),  # Money's shape vocabulary is out of scope
     ],
 )
@@ -222,8 +222,7 @@ class CurrencyNotation:
             raise ValueError("text must be non-empty")
         if self.shape not in _VALID_SHAPES:
             raise ValueError(
-                f"invalid shape {self.shape!r}; expected one of "
-                f"{sorted(_VALID_SHAPES)}"
+                f"invalid shape {self.shape!r}; expected one of {sorted(_VALID_SHAPES)}"
             )
 
     def as_list(self) -> list[str]:

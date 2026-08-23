@@ -37,7 +37,7 @@ import paxman
 from paxman.capabilities import Email
 from paxman.core.domain import Resolution
 
-paxman.register_all_shipped()          # once, before your first call
+paxman.register_all_shipped()  # once, before your first call
 
 contract = Email.create_contract()
 result = paxman.canonicalize("Contact user@Example.com", contract)
@@ -45,7 +45,7 @@ result = paxman.canonicalize("Contact user@Example.com", contract)
 if result.status == Resolution.SUCCESS:
     print(result.canonicalized_value)  # "user@example.com"
 else:
-    print(result.status)               # MISSING | INVALID | AMBIGUOUS
+    print(result.status)  # MISSING | INVALID | AMBIGUOUS
 ```
 
 Three steps, every time: **register** → **create a contract** → **canonicalize**.

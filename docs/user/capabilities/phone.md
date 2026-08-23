@@ -34,12 +34,20 @@ from paxman.capabilities import Phone
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("+1 555 123 4567", Phone.create_contract()).canonicalized_value                          # "+15551234567"
-paxman.canonicalize("+15551234567", Phone.create_contract(output_format="rfc3966")).canonicalized_value     # "tel:+15551234567"
-paxman.canonicalize("+15551234567", Phone.create_contract(output_format="national")).canonicalized_value    # "5551234567"
+paxman.canonicalize(
+    "+1 555 123 4567", Phone.create_contract()
+).canonicalized_value  # "+15551234567"
+paxman.canonicalize(
+    "+15551234567", Phone.create_contract(output_format="rfc3966")
+).canonicalized_value  # "tel:+15551234567"
+paxman.canonicalize(
+    "+15551234567", Phone.create_contract(output_format="national")
+).canonicalized_value  # "5551234567"
 
 # National-shaped input needs default_country
-paxman.canonicalize("(555) 234-5678", Phone.create_contract(default_country="US")).canonicalized_value      # "+15552345678"
+paxman.canonicalize(
+    "(555) 234-5678", Phone.create_contract(default_country="US")
+).canonicalized_value  # "+15552345678"
 ```
 
 ---
@@ -48,8 +56,8 @@ paxman.canonicalize("(555) 234-5678", Phone.create_contract(default_country="US"
 
 ```python
 contract = Phone.create_contract(
-    default_country=None,   # str | None — uppercase alpha-2, e.g. "US"
-    output_format=None,     # "e164" (default), "rfc3966", "national"
+    default_country=None,  # str | None — uppercase alpha-2, e.g. "US"
+    output_format=None,  # "e164" (default), "rfc3966", "national"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```

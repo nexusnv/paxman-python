@@ -76,7 +76,9 @@ Recommended file layout, rule set, notation, and contract are specified in §6, 
 
 ```python
 # SWIFT / python-stdnum pattern — strip separators, upper, then MOD-97
-compact = re.sub(r"[^0-9A-Za-z]", "", raw).upper()  # → 15-34 chars: [A-Z]{2}\d{2}[A-Z0-9]{1,30}
+compact = re.sub(
+    r"[^0-9A-Za-z]", "", raw
+).upper()  # → 15-34 chars: [A-Z]{2}\d{2}[A-Z0-9]{1,30}
 # or more narrowly: re.sub(r"[\s-]", "", raw).upper()  # spaces + hyphens only
 ```
 
@@ -100,6 +102,7 @@ Paxman resolves **one mention per `canonicalize()` call** (ARCHITECTURE.md — s
 ```python
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class IBANNotation:
     """IBAN notation — grammar-normalized compact form.
@@ -115,8 +118,10 @@ class IBANNotation:
 
     country_code: str  # e.g. "DE", "GB" — always length 2, A-Z
     check_digits: str  # e.g. "89", "29" — always length 2, 0-9
-    bban: str          # e.g. "370400440532013000" — 1-30 alphanum
-    compact: str       # e.g. "DE89370400440532013000" — 15-34, ≡ country_code+check_digits+bban
+    bban: str  # e.g. "370400440532013000" — 1-30 alphanum
+    compact: (
+        str  # e.g. "DE89370400440532013000" — 15-34, ≡ country_code+check_digits+bban
+    )
 ```
 
 **Considered alternative — single field `compact` only:** `MoneyNotation` style with multi-field validation in `__post_init__`, and `PhoneNotation` `value`-only shape. A single `compact` field would suffice for the generic mod-97 rule (which operates on the whole string), and country-specific BBAN structure can be derived via slicing `compact[4:]`. However the three-field decomposition is preferred because:
@@ -159,7 +164,11 @@ _ISBN13_PATTERN = r"\b(?:ISBN(?:-13)?[\s:-]+)?(?=((?:\d[ -]?){12}\d)(?![\d]))\1\
 ISSN precedent (`docs/development/research/2026-08-21-issn-canonicalization.md` §4.2):
 ```python
 _ISSN_BODY = r"(?:ISSN(?:-L|-H)?[\s:-]*)?(?P<body>\d{4}-?\d{3}[0-9Xx])"
-_ISSN_PATTERN = BoundaryGuard.isbn10_lead().lookbehind + _ISSN_BODY + BoundaryGuard.digit().lookahead
+_ISSN_PATTERN = (
+    BoundaryGuard.isbn10_lead().lookbehind
+    + _ISSN_BODY
+    + BoundaryGuard.digit().lookahead
+)
 ```
 
 **Proposed IBAN pattern (single grammar, staged pipeline):**
@@ -176,7 +185,12 @@ _IBAN_BODY = r"(?:IBAN[\s:-]*)?(?P<compact>[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30})
 # 15 total = 4 + 11 minimum BBAN; 34 total = 4 + 30 maximum BBAN
 # Wrapped with word-boundary guards — IBAN is [A-Z0-9] glued, so word_only prevents
 # carving a valid run out of a longer token like "XDE89 3704..." or "DE89…Y"
-_IBAN_PATTERN = BoundaryGuard.word_only().lookbehind + _IBAN_BODY + BoundaryGuard.word_only().lookahead
+_IBAN_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _IBAN_BODY
+    + BoundaryGuard.word_only().lookahead
+)
+
 
 def _iban_notation(match: re.Match[str]) -> IBANNotation:
     raw_compact = match.group("compact")
@@ -188,6 +202,7 @@ def _iban_notation(match: re.Match[str]) -> IBANNotation:
     return IBANNotation(
         country_code=country_code, check_digits=check_digits, bban=bban, compact=compact
     )
+
 
 class IBANRecognitionGrammar(PipelineGrammar[IBANNotation]):
     """IBAN recognition — CCDD + BBAN with optional IBAN label and paper spacing."""
@@ -387,7 +402,9 @@ from paxman.core.contract import CapabilityContract
 class IBANContract(CapabilityContract):
     """User-facing contract for IBAN capability."""
 
-    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "electronic"  # cf. ISSN "hyphenated" / ISBN "isbn13"
+    DEFAULT_OUTPUT_FORMAT: ClassVar[str] = (
+        "electronic"  # cf. ISSN "hyphenated" / ISBN "isbn13"
+    )
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"paper", "compact"})
     # "compact" is an alias to "electronic" — same no-space form; offer only one alternative
     # to keep OFFERED distinct from default. Prefer frozenset({"paper"}) with "electronic"
@@ -432,11 +449,14 @@ from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 from paxman.capabilities.IBAN.notation import IBANNotation
 
+
 class IBANCapability(Capability[IBANNotation]):
     name = "iban"  # lowercase identifier — what users pass to registry
 
     def get_grammars(self) -> list[Grammar[IBANNotation]]:
-        return [IBANRecognitionGrammar()]  # single grammar; paper/electronic handled together
+        return [
+            IBANRecognitionGrammar()
+        ]  # single grammar; paper/electronic handled together
 
     def get_rules(self) -> list[Rule[IBANNotation]]:
         return [Section4IBANStructureMOD97()]  # plus optional SWIFT Registry rule
@@ -686,8 +706,8 @@ Per-country registry data module shape (parallel to `paxman/capabilities/ISBN/ru
 IBAN_REGISTRY: dict[str, dict[str, object]] = {
     "DE": {
         "iban_length": 22,
-        "bban_structure": "8!n10!n",        # SWIFT ! notation
-        "bban_regex": r"^\d{8}\d{10}$",     # derived regex for Python
+        "bban_structure": "8!n10!n",  # SWIFT ! notation
+        "bban_regex": r"^\d{8}\d{10}$",  # derived regex for Python
         "bban_length": 18,
         "bank_position": 1,  # 1-indexed within BBAN
         "bank_length": 8,

@@ -85,12 +85,14 @@ Recommended file layout, rule set, notation, and contract are specified in §6, 
 # langcodes / pycountry pattern — case-fold, underscore to hyphen, then lookup
 import re
 
+
 def _normalize_lang(raw: str) -> str:
     s = raw.strip().replace("_", "-")
     # BCP 47 canonical casing is applied after validation
     # language lower, script title, region upper, variant lower
     # so grammar folds via lower then formatter restores canonical
     return s.lower()
+
 
 # Bare code path — strip separators, lower
 bare = re.sub(r"[^A-Za-z]", "", raw).lower()
@@ -198,7 +200,11 @@ _ALPHA2_PATTERN = _GUARD.lookbehind + r"[A-Za-z]{2}" + _GUARD.lookahead
 BIC single-grammar precedent (§4.2):
 ```python
 _BIC_BODY = r"(?:(?:BIC|SWIFT)[\s:-]+)?(?P<compact>[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)"
-_BIC_PATTERN = BoundaryGuard.word_only().lookbehind + _BIC_BODY + BoundaryGuard.word_only().lookahead
+_BIC_PATTERN = (
+    BoundaryGuard.word_only().lookbehind
+    + _BIC_BODY
+    + BoundaryGuard.word_only().lookahead
+)
 ```
 
 Country name precedent (Lexicon):
@@ -241,6 +247,7 @@ _BCP47_PATTERN = _GUARD.lookbehind + _BCP47_BODY + _GUARD.lookahead
 # Underscore tolerance: pre-stage replaces _ with - before regex, or allow [\s_-] in pattern
 # Keep v1 hyphen-only with word_only guards; add underscore Pre if demanded
 
+
 def _bcp47_notation(match: re.Match[str]) -> LanguageNotation:
     tag = match.group("tag")
     # Normalize _ to - and case-fold for parsing, then case-restore per §2.1.1
@@ -252,37 +259,59 @@ def _bcp47_notation(match: re.Match[str]) -> LanguageNotation:
     # Return compact as case-canonicalized tag (language lower, script Title, region Upper)
     ...
 
+
 class BCP47TagGrammar(PipelineGrammar[LanguageNotation]):
     name = "bcp47_tag_recognition"
     semantics = "bcp47_tag"
     single_value = True
     pre = StandardPre[LanguageNotation](empty_guard=True)
-    regex = RegexStage[LanguageNotation](pattern=_BCP47_PATTERN, notation_fn=_bcp47_notation, flags=re.IGNORECASE)
+    regex = RegexStage[LanguageNotation](
+        pattern=_BCP47_PATTERN, notation_fn=_bcp47_notation, flags=re.IGNORECASE
+    )
+
 
 # Grammar 2 — Bare language code (2 or 3 letters, or 5-8 for registered primary)
-_CODE_PATTERN = _GUARD.lookbehind + r"(?P<code>[A-Za-z]{2,3}|[A-Za-z]{5,8})" + _GUARD.lookahead
+_CODE_PATTERN = (
+    _GUARD.lookbehind + r"(?P<code>[A-Za-z]{2,3}|[A-Za-z]{5,8})" + _GUARD.lookahead
+)
+
 
 def _code_notation(match: re.Match[str]) -> LanguageNotation:
     code = match.group("code")
     return LanguageNotation(
         language=code.lower(),
-        extlang="", script="", region="", variant="",
-        extension="", privateuse="", grandfathered="",
-        compact=code.lower(), raw_value=code.lower(),
+        extlang="",
+        script="",
+        region="",
+        variant="",
+        extension="",
+        privateuse="",
+        grandfathered="",
+        compact=code.lower(),
+        raw_value=code.lower(),
     )
+
 
 class LanguageCodeGrammar(PipelineGrammar[LanguageNotation]):
     name = "language_code_recognition"
     semantics = "language_code"
     single_value = True
     pre = StandardPre[LanguageNotation](empty_guard=True)
-    regex = RegexStage[LanguageNotation](pattern=_CODE_PATTERN, notation_fn=_code_notation, flags=re.IGNORECASE)
+    regex = RegexStage[LanguageNotation](
+        pattern=_CODE_PATTERN, notation_fn=_code_notation, flags=re.IGNORECASE
+    )
+
 
 # Grammar 3 — Language name (Lexicon, whole-input lookup)
-from paxman.capabilities.Language.grammar.data.english_names import ENGLISH_LANGUAGE_KEYS
-from paxman.capabilities.Language.grammar.data.localized_names import LOCALIZED_LANGUAGE_KEYS  # optional
+from paxman.capabilities.Language.grammar.data.english_names import (
+    ENGLISH_LANGUAGE_KEYS,
+)
+from paxman.capabilities.Language.grammar.data.localized_names import (
+    LOCALIZED_LANGUAGE_KEYS,
+)  # optional
 
 _KNOWN_LANGUAGE_KEYS = frozenset(ENGLISH_LANGUAGE_KEYS | LOCALIZED_LANGUAGE_KEYS)
+
 
 class LanguageNameGrammar(PipelineGrammar[LanguageNotation]):
     name = "language_name_recognition"
@@ -293,9 +322,16 @@ class LanguageNameGrammar(PipelineGrammar[LanguageNotation]):
         keys=_KNOWN_LANGUAGE_KEYS,
         normalizer=normalize_name,
         notation_fn=lambda trimmed: LanguageNotation(
-            language="", extlang="", script="", region="", variant="",
-            extension="", privateuse="", grandfathered="",
-            compact=trimmed.lower(), raw_value=trimmed,
+            language="",
+            extlang="",
+            script="",
+            region="",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact=trimmed.lower(),
+            raw_value=trimmed,
         ),
     )
 ```

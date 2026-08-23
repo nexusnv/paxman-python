@@ -53,7 +53,10 @@ contract = Email.create_contract()
 # Caller-owned segmentation: a coarse pattern finds mention candidates…
 EMAIL_LIKE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
-def canonicalize_emails(text: str) -> list[tuple[str, Resolution, str | None, tuple[int, int] | None]]:
+
+def canonicalize_emails(
+    text: str,
+) -> list[tuple[str, Resolution, str | None, tuple[int, int] | None]]:
     """Return (raw, status, canonical, absolute_span) for every email candidate."""
     out: list[tuple[str, Resolution, str | None, tuple[int, int] | None]] = []
     for m in EMAIL_LIKE.finditer(text):

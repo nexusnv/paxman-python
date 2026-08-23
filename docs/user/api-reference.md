@@ -8,11 +8,26 @@ This page is the concise reference for the public Python surface you import. For
 
 ```python
 import paxman
-from paxman.capabilities import Country, Currency, Date, Email, IP, ISBN, Money, Phone, SIUnit, URL
+from paxman.capabilities import (
+    Country,
+    Currency,
+    Date,
+    Email,
+    IP,
+    ISBN,
+    Money,
+    Phone,
+    SIUnit,
+    URL,
+)
 from paxman.core.domain import Resolution
 from paxman.core.errors import (
-    PaxmanError, CapabilityError, ContractError,
-    MultipleMentionsError, RecognitionError, ValidationError,
+    PaxmanError,
+    CapabilityError,
+    ContractError,
+    MultipleMentionsError,
+    RecognitionError,
+    ValidationError,
 )
 ```
 
@@ -89,13 +104,13 @@ Every capability exposes a **keyword-only** factory. Common parameters come firs
 ```python
 contract = Email.create_contract(
     # common — every capability
-    excluded_rules=(),            # Sequence[str]
-    pinned_rules=None,            # Sequence[str] | None — when not None, only these run
-    year=None,                    # int | None — only rules with publication_year <= year
-    output_format=None,           # str | None — None / "default" / default / offered, else ContractError
-    extra_grammars=(),            # tuple[str, ...] — opt-in community grammars
+    excluded_rules=(),  # Sequence[str]
+    pinned_rules=None,  # Sequence[str] | None — when not None, only these run
+    year=None,  # int | None — only rules with publication_year <= year
+    output_format=None,  # str | None — None / "default" / default / offered, else ContractError
+    extra_grammars=(),  # tuple[str, ...] — opt-in community grammars
     # capability-specific — varies by capability
-    include_obfuscated=False,     # example: Email only
+    include_obfuscated=False,  # example: Email only
 )
 ```
 
@@ -152,36 +167,41 @@ Validation: `default_currency` / `dollar_sign_currency` must be uppercase alpha-
 ```python
 @dataclass(frozen=True)
 class ExecutionResult:
-    status: Resolution                  # MISSING | INVALID | SUCCESS | AMBIGUOUS
-    canonicalized_value: str | None     # str on SUCCESS, None otherwise
-    candidates: tuple[Candidate, ...]   # all validated evidence, deduplicated
-    contract: CapabilityContract        # the contract you passed in
-    version_stamp: VersionStamp         # .paxman_version
-    span: tuple[int, int] | None        # [start, end) of resolved value on SUCCESS, else None
+    status: Resolution  # MISSING | INVALID | SUCCESS | AMBIGUOUS
+    canonicalized_value: str | None  # str on SUCCESS, None otherwise
+    candidates: tuple[Candidate, ...]  # all validated evidence, deduplicated
+    contract: CapabilityContract  # the contract you passed in
+    version_stamp: VersionStamp  # .paxman_version
+    span: tuple[int, int] | None  # [start, end) of resolved value on SUCCESS, else None
 ```
 
 ```python
 @dataclass(frozen=True)
 class Candidate:
     value: str
-    recognition_rule: str               # grammar name, e.g. "standard_recognition"
-    validation_rule: str               # rule name, e.g. "Section 3.4.1-addr-spec"
-    span: tuple[int, int] | None       # half-open [start, end) in the input
-    provenance: tuple[Provenance, ...] # one or more authority citations (read-only property)
+    recognition_rule: str  # grammar name, e.g. "standard_recognition"
+    validation_rule: str  # rule name, e.g. "Section 3.4.1-addr-spec"
+    span: tuple[int, int] | None  # half-open [start, end) in the input
+    provenance: tuple[
+        Provenance, ...
+    ]  # one or more authority citations (read-only property)
+
 
 @dataclass(frozen=True)
 class Provenance:
-    authority: str          # "IETF", "ISO", "BIPM", "WHATWG", "CLDR", ...
-    specification_name: str # "RFC 5322", "ISO 3166-1", ...
-    kind: str               # "specification" / "standard" / ...
+    authority: str  # "IETF", "ISO", "BIPM", "WHATWG", "CLDR", ...
+    specification_name: str  # "RFC 5322", "ISO 3166-1", ...
+    kind: str  # "specification" / "standard" / ...
     reference_url: str
     version: str | None
-    lifecycle: str          # "active" / "deprecated" / ...
+    lifecycle: str  # "active" / "deprecated" / ...
     publication_year: int
+
 
 @dataclass(frozen=True)
 class VersionStamp:
     paxman_version: str
+
 
 class Resolution(Enum):
     MISSING = "missing"

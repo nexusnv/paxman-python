@@ -100,7 +100,16 @@ from paxman.core.errors import CapabilityError
 # Fixed, documented order (alphabetical by capability registry name) —
 # bootstrap is deterministic. D2: literal tuple, no dynamic enumeration.
 _SHIPPED: tuple[type[Capability[Any]], ...] = (
-    Country, Currency, Date, Email, IP, ISBN, Money, Phone, SIUnit, URL,
+    Country,
+    Currency,
+    Date,
+    Email,
+    IP,
+    ISBN,
+    Money,
+    Phone,
+    SIUnit,
+    URL,
 )
 
 
@@ -184,8 +193,16 @@ def _clean_registry() -> Iterator[None]:
 def test_registers_all_ten_shipped(_clean_registry) -> None:
     names = paxman.register_all_shipped()
     expected = (
-        "country", "currency", "date", "email", "ip",
-        "isbn", "money", "phone", "si_unit", "url",
+        "country",
+        "currency",
+        "date",
+        "email",
+        "ip",
+        "isbn",
+        "money",
+        "phone",
+        "si_unit",
+        "url",
     )
     assert names == expected
     for name in expected:

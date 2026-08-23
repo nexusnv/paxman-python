@@ -250,7 +250,16 @@ def test_capability_abc_has_no_version_surface() -> None:
 def test_shipped_capabilities_do_not_declare_version() -> None:
     """No shipped capability class carries a dead version attribute."""
     from paxman.capabilities import (
-        IP, ISBN, URL, Country, Currency, Date, Email, Money, Phone, SIUnit,
+        IP,
+        ISBN,
+        URL,
+        Country,
+        Currency,
+        Date,
+        Email,
+        Money,
+        Phone,
+        SIUnit,
     )
 
     for cls in (Country, Currency, Date, Email, IP, ISBN, Money, Phone, SIUnit, URL):
@@ -299,7 +308,9 @@ def test_project_metadata_declared() -> None:
     data = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     project = data["project"]
     assert project.get("license"), "license must be declared"
-    assert project.get("urls", {}).get("Homepage"), "project.urls.Homepage must be declared"
+    assert project.get("urls", {}).get("Homepage"), (
+        "project.urls.Homepage must be declared"
+    )
     assert project.get("readme") == "README.md"
     assert "dev" not in project.get("optional-dependencies", {}), (
         "dev deps live in [dependency-groups] only"

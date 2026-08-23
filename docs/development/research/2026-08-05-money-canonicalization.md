@@ -305,10 +305,10 @@ so the same digits parse differently by locale. Babel's `parse_decimal` shows
 the canonical behavior ([babel/numbers.py](https://github.com/python-babel/babel/blob/master/babel/numbers.py)):
 
 ```python
-parse_decimal('1,099.98', locale='en_US')  # → Decimal('1099.98')
-parse_decimal('1.099,98', locale='de')     # → Decimal('1099.98')  # European style
-parse_decimal('12 345,123', locale='ru')   # → Decimal('12345.123')  # space grouping
-parse_decimal('2,109,998', locale='de')    # → NumberFormatError  # wrong separator order
+parse_decimal("1,099.98", locale="en_US")  # → Decimal('1099.98')
+parse_decimal("1.099,98", locale="de")  # → Decimal('1099.98')  # European style
+parse_decimal("12 345,123", locale="ru")  # → Decimal('12345.123')  # space grouping
+parse_decimal("2,109,998", locale="de")  # → NumberFormatError  # wrong separator order
 ```
 
 **Paxman implication:** there is no locale signal in a bare input like
@@ -428,13 +428,19 @@ paxman/capabilities/Money/
 @dataclass(frozen=True, slots=True)
 class MoneyNotation:
     """Money notation: a currency part and an amount part (both mandatory)."""
-    currency_part: str   # recognized currency token: "USD", "$", "US$", "Dollar"
-    amount_part: str     # recognized amount token: "500", "50.79", "1,000.50"
-    currency_shape: str = ""   # discriminator: "code"|"symbol"|"qualified_symbol"|"word"
-    amount_shape: str = ""     # discriminator: "integer"|"dot_decimal"|"comma_decimal"|"space_decimal"|"accounting"
+
+    currency_part: str  # recognized currency token: "USD", "$", "US$", "Dollar"
+    amount_part: str  # recognized amount token: "500", "50.79", "1,000.50"
+    currency_shape: str = ""  # discriminator: "code"|"symbol"|"qualified_symbol"|"word"
+    amount_shape: str = ""  # discriminator: "integer"|"dot_decimal"|"comma_decimal"|"space_decimal"|"accounting"
 
     def as_list(self) -> list[str]:
-        return [self.currency_part, self.amount_part, self.currency_shape, self.amount_shape]
+        return [
+            self.currency_part,
+            self.amount_part,
+            self.currency_shape,
+            self.amount_shape,
+        ]
 ```
 
 This satisfies the guide's notation rules: frozen, `slots=True` (newer
@@ -507,9 +513,9 @@ one-provenance-per-file pattern):
 PUBLICATION = Provenance(
     authority="ISO",
     specification_name="ISO 4217:2015",
-    kind="registry",                 # List One is a registry of the standard
+    kind="registry",  # List One is a registry of the standard
     reference_url="https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html",
-    version="2015",                  # or the List One publish date
+    version="2015",  # or the List One publish date
     lifecycle="active",
     publication_year=2015,
 )

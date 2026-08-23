@@ -185,10 +185,28 @@ class TestLanguageNotation:
 
     def test_hashable_and_eq(self) -> None:
         a = LanguageNotation(
-            language="en", extlang="", script="", region="US", variant="", extension="", privateuse="", grandfathered="", compact="en-US", raw_value="en-US",
+            language="en",
+            extlang="",
+            script="",
+            region="US",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="en-US",
+            raw_value="en-US",
         )
         b = LanguageNotation(
-            language="en", extlang="", script="", region="US", variant="", extension="", privateuse="", grandfathered="", compact="en-US", raw_value="en-US",
+            language="en",
+            extlang="",
+            script="",
+            region="US",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="en-US",
+            raw_value="en-US",
         )
         assert a == b
         assert hash(a) == hash(b)
@@ -203,7 +221,16 @@ class TestLanguageNotation:
 
     def test_field_values(self) -> None:
         notation = LanguageNotation(
-            language="zh", extlang="", script="Hans", region="CN", variant="", extension="", privateuse="", grandfathered="", compact="zh-Hans-CN", raw_value="zh-Hans-CN",
+            language="zh",
+            extlang="",
+            script="Hans",
+            region="CN",
+            variant="",
+            extension="",
+            privateuse="",
+            grandfathered="",
+            compact="zh-Hans-CN",
+            raw_value="zh-Hans-CN",
         )
         assert notation.script == "Hans"
         assert notation.region == "CN"
@@ -314,33 +341,41 @@ from paxman.core.errors import ContractError
 
 pytestmark = [pytest.mark.capability]
 
+
 def test_defaults():
     c = LanguageContract()
     assert c.output_format == "bcp47"
     assert c.capability_name == "language"
     assert LanguageContract.DEFAULT_OUTPUT_FORMAT == "bcp47"
-    assert LanguageContract.OFFERED_OUTPUT_FORMATS == frozenset({"alpha2","alpha3","alpha3-bib","name"})
+    assert LanguageContract.OFFERED_OUTPUT_FORMATS == frozenset(
+        {"alpha2", "alpha3", "alpha3-bib", "name"}
+    )
     assert c.include_localized is False
     assert c.include_collective is False
     assert c.include_private is False
     assert c.include_grandfathered is True
 
+
 def test_offered():
-    for fmt in ("alpha2","alpha3","alpha3-bib","name"):
+    for fmt in ("alpha2", "alpha3", "alpha3-bib", "name"):
         assert LanguageContract(output_format=fmt).output_format == fmt
+
 
 def test_default_alias():
     for alias in (None, "default", "bcp47"):
         assert LanguageContract(output_format=alias).output_format == "bcp47"
+
 
 def test_invalid_raises():
     for bad in ("paper", "iso", "hyphenated", "", "BCP47"):
         with pytest.raises(ContractError):
             LanguageContract(output_format=bad)  # type: ignore[arg-type]
 
+
 def test_flags():
     c = LanguageContract(include_private=True, include_collective=True)
     assert c.include_private is True and c.include_collective is True
+
 
 def test_frozen():
     c = LanguageContract()
@@ -373,7 +408,9 @@ class LanguageContract(CapabilityContract):
     """Contract for the Language capability."""
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "bcp47"
-    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"alpha2", "alpha3", "alpha3-bib", "name"})
+    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset(
+        {"alpha2", "alpha3", "alpha3-bib", "name"}
+    )
 
     capability_name: str = field(default="language", init=False)
     include_localized: bool = False
@@ -415,19 +452,47 @@ Create `paxman/capabilities/Language/grammar/data/english_names.py` (keys derive
 ```python
 # Derived from paxman/capabilities/Language/rules/data/english_language_map.py
 # Header: Source IANA Language Subtag Registry + ISO 639 English Description, generated 2026-08-08
-ENGLISH_LANGUAGE_KEYS: frozenset[str] = frozenset({
-    "english", "german", "french", "spanish", "japanese", "chinese", "arabic", "russian", "portuguese", "italian",
-    "dutch", "korean", "hindi", "turkish", "polish", "swedish", "danish", "norwegian", "finnish", "czech",
-    "hebrew", "indonesian", "yiddish", "moldavian", "cherokee", "bihari", "serbo croatian",
-})
+ENGLISH_LANGUAGE_KEYS: frozenset[str] = frozenset(
+    {
+        "english",
+        "german",
+        "french",
+        "spanish",
+        "japanese",
+        "chinese",
+        "arabic",
+        "russian",
+        "portuguese",
+        "italian",
+        "dutch",
+        "korean",
+        "hindi",
+        "turkish",
+        "polish",
+        "swedish",
+        "danish",
+        "norwegian",
+        "finnish",
+        "czech",
+        "hebrew",
+        "indonesian",
+        "yiddish",
+        "moldavian",
+        "cherokee",
+        "bihari",
+        "serbo croatian",
+    }
+)
 ```
 
 Create `paxman/capabilities/Language/grammar/data/localized_names.py` as gated stub (populated in Task 4 from `rules/data/cldr_language_display_name.py` or CLDR JSON; grammar always recognizes union but validation is gated via `cldr_language_display_name_ed2025.py` `requires_features={"include_localized"}` — without flag, localized recognition yields `INVALID` not `MISSING`, matching Country precedent):
 
 ```python
-LOCALIZED_LANGUAGE_KEYS: frozenset[str] = frozenset({
-    # Populated in Task 4 from CLDR; stub empty or minimal for Task 3 green
-})
+LOCALIZED_LANGUAGE_KEYS: frozenset[str] = frozenset(
+    {
+        # Populated in Task 4 from CLDR; stub empty or minimal for Task 3 green
+    }
+)
 ```
 
 (Real Task 4 will populate `english_names.py` 200+ from `rules/data/english_language_map.py` keys and `localized_names.py` 1000+ from CLDR; grammar/data stays key-only, data logic in rules/data.)
@@ -528,6 +593,7 @@ PUBLICATION = Provenance(
     publication_year=2009,
 )
 
+
 class Section21Syntax(Rule[LanguageNotation]):
     name = "Section 2.1-syntax"
     strategy = RuleStrategy.PARSER
@@ -535,9 +601,14 @@ class Section21Syntax(Rule[LanguageNotation]):
     citation = "Section 2.1 (ABNF well-formed)"
     target_semantics = frozenset({"bcp47_tag"})
     requires_features = frozenset()
-    def matches(self, notation: LanguageNotation, contract: Contract) -> bool: # ABNF regex fullmatch + no empty subtags, extlang 3* handling
+
+    def matches(
+        self, notation: LanguageNotation, contract: Contract
+    ) -> bool:  # ABNF regex fullmatch + no empty subtags, extlang 3* handling
         ...
-    def normalize(self, notation: LanguageNotation, contract: Contract) -> str: # language lower, script Title, region Upper, variant lower, x- lower
+    def normalize(
+        self, notation: LanguageNotation, contract: Contract
+    ) -> str:  # language lower, script Title, region Upper, variant lower, x- lower
         ...
 ```
 
@@ -626,16 +697,36 @@ from paxman.capabilities import (
     SIUnit,
     URL,
 )
+
+
 class TestLanguageCapabilityExports:
     @pytest.mark.unit
     def test_language_capability_importable(self) -> None:
         assert Language is not None
+
     @pytest.mark.unit
     def test_language_capability_name(self) -> None:
         assert Language.name == "language"
 
+
 # In test_export_list_contains expected set, add "Language"
-assert set(capabilities.__all__) == {"BIC","Country","Currency","Date","Email","IBAN","IP","ISBN","ISSN","Language","Money","ORCID","Phone","SIUnit","URL"}
+assert set(capabilities.__all__) == {
+    "BIC",
+    "Country",
+    "Currency",
+    "Date",
+    "Email",
+    "IBAN",
+    "IP",
+    "ISBN",
+    "ISSN",
+    "Language",
+    "Money",
+    "ORCID",
+    "Phone",
+    "SIUnit",
+    "URL",
+}
 ```
 
 - [ ] **Step 6.2: Run homogeneity gate**
@@ -710,14 +801,17 @@ from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.domain import Resolution
 from paxman.core.errors import MultipleMentionsError
 
+
 @pytest.fixture(autouse=True)
 def _clean_registry():
     reset_registry()
     yield
     reset_registry()
 
+
 def _register():
     register_capability(LanguageCapability())
+
 
 @pytest.mark.integration
 def test_bare_code_success():
@@ -725,11 +819,13 @@ def test_bare_code_success():
     r = paxman.canonicalize("en", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "en"
 
+
 @pytest.mark.integration
 def test_bcp47_case_canonicalization():
     _register()
     r = paxman.canonicalize("EN-us", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "en-US"
+
 
 @pytest.mark.integration
 def test_underscore_tolerance():
@@ -737,11 +833,13 @@ def test_underscore_tolerance():
     r = paxman.canonicalize("fr_FR", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "fr-FR"
 
+
 @pytest.mark.integration
 def test_display_name_success():
     _register()
     r = paxman.canonicalize("German", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "de"
+
 
 @pytest.mark.integration
 def test_grandfathered_preferred():
@@ -749,11 +847,13 @@ def test_grandfathered_preferred():
     r = paxman.canonicalize("i-cherokee", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "chr"
 
+
 @pytest.mark.integration
 def test_deprecated_preferred():
     _register()
     r = paxman.canonicalize("iw", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "he"
+
 
 @pytest.mark.integration
 def test_collective_invalid_by_default():
@@ -761,11 +861,15 @@ def test_collective_invalid_by_default():
     r = paxman.canonicalize("aus", LanguageCapability.create_contract())
     assert r.status == Resolution.INVALID
 
+
 @pytest.mark.integration
 def test_collective_success_when_gated():
     _register()
-    r = paxman.canonicalize("aus", LanguageCapability.create_contract(include_collective=True))
+    r = paxman.canonicalize(
+        "aus", LanguageCapability.create_contract(include_collective=True)
+    )
     assert r.status == Resolution.SUCCESS
+
 
 @pytest.mark.integration
 def test_variant_prefix_invalid():
@@ -775,17 +879,24 @@ def test_variant_prefix_invalid():
     r2 = paxman.canonicalize("sl-nedis", LanguageCapability.create_contract())
     assert r2.status == Resolution.SUCCESS and r2.canonicalized_value == "sl-nedis"
 
+
 @pytest.mark.integration
 def test_output_format_alpha2():
     _register()
-    r = paxman.canonicalize("eng", LanguageCapability.create_contract(output_format="alpha2"))
+    r = paxman.canonicalize(
+        "eng", LanguageCapability.create_contract(output_format="alpha2")
+    )
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "en"
+
 
 @pytest.mark.integration
 def test_output_format_alpha3():
     _register()
-    r = paxman.canonicalize("en", LanguageCapability.create_contract(output_format="alpha3"))
+    r = paxman.canonicalize(
+        "en", LanguageCapability.create_contract(output_format="alpha3")
+    )
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "eng"
+
 
 @pytest.mark.integration
 def test_year_filter():
@@ -794,11 +905,13 @@ def test_year_filter():
     r = paxman.canonicalize("en-US", LanguageCapability.create_contract(year=2008))
     assert r.status == Resolution.INVALID  # bcp47_tag rule excluded, no candidate
 
+
 @pytest.mark.integration
 def test_two_distinct_raise():
     _register()
     with pytest.raises(MultipleMentionsError):
         paxman.canonicalize("en, fr", LanguageCapability.create_contract())
+
 
 @pytest.mark.integration
 def test_identical_coalesce():
@@ -806,13 +919,17 @@ def test_identical_coalesce():
     r = paxman.canonicalize("en en", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS and r.canonicalized_value == "en"
 
+
 @pytest.mark.integration
 def test_missing():
     _register()
     r = paxman.canonicalize("xx", LanguageCapability.create_contract())
-    assert r.status == Resolution.INVALID  # 2-letter shape claimed, registry rejects → INVALID not MISSING
+    assert (
+        r.status == Resolution.INVALID
+    )  # 2-letter shape claimed, registry rejects → INVALID not MISSING
     r2 = paxman.canonicalize("!!!", LanguageCapability.create_contract())
     assert r2.status == Resolution.MISSING
+
 
 @pytest.mark.integration
 def test_script_region_canonical():
@@ -860,7 +977,8 @@ from paxman.capabilities.Language.capability import LanguageCapability
 from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.domain import Resolution
 
-_VALID_LANGUAGES = st.sampled_from(["en","de","fr","zh","ja","es","ar"])
+_VALID_LANGUAGES = st.sampled_from(["en", "de", "fr", "zh", "ja", "es", "ar"])
+
 
 @given(lang=_VALID_LANGUAGES)
 def test_bare_code_round_trip(lang: str):
@@ -874,6 +992,7 @@ def test_bare_code_round_trip(lang: str):
     finally:
         reset_registry()
 
+
 @given(lang=_VALID_LANGUAGES)
 def test_bcp47_region_round_trip(lang: str):
     tag = f"{lang}-US"
@@ -886,6 +1005,7 @@ def test_bcp47_region_round_trip(lang: str):
         assert r.status in (Resolution.SUCCESS, Resolution.INVALID)
     finally:
         reset_registry()
+
 
 @given(st.sampled_from(["sl-nedis", "en-GB-oxendict", "zh-cmn", "zh-Hans-CN"]))
 def test_variant_extlang_prefix_valid(tag: str):

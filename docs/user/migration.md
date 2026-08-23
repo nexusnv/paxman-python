@@ -101,7 +101,10 @@ checks = [
 
 for text, contract, expected in checks:
     r = paxman.canonicalize(text, contract)
-    assert r.status == Resolution.SUCCESS and r.canonicalized_value == expected, (text, r)
+    assert r.status == Resolution.SUCCESS and r.canonicalized_value == expected, (
+        text,
+        r,
+    )
 ```
 
 ---

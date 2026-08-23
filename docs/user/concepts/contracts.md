@@ -11,7 +11,7 @@ You never construct a contract by hand. Each capability exposes a typed factory:
 ```python
 from paxman.capabilities import Email, Country
 
-email_contract   = Email.create_contract()
+email_contract = Email.create_contract()
 country_contract = Country.create_contract(include_localized=True)
 ```
 
@@ -157,10 +157,10 @@ contract = Date.create_contract(year=2019)  # only rules published ≤ 2019
 ```python
 from paxman.capabilities import Phone, ISBN
 
-Phone.create_contract(output_format="rfc3966")   # tel:+15551234567
-ISBN.create_contract(output_format="hyphenated") # 978-0-11-000222-4
+Phone.create_contract(output_format="rfc3966")  # tel:+15551234567
+ISBN.create_contract(output_format="hyphenated")  # 978-0-11-000222-4
 Phone.create_contract(output_format="national")  # national form
-ISBN.create_contract(output_format="isbn13")     # bare digits (default)
+ISBN.create_contract(output_format="isbn13")  # bare digits (default)
 # None / "default" also resolve to the default for any capability
 ```
 

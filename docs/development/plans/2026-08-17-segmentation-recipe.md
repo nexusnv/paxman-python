@@ -63,6 +63,7 @@ statement so nobody plans a document-extractor on top of the library.
      # Caller-owned segmentation: a coarse pattern finds mention candidates…
      EMAIL_LIKE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
+
      def canonicalize_emails(text: str) -> list[tuple[str, str, str]]:
          """Return (raw, canonical, position) for every email mention."""
          out: list[tuple[str, str, str]] = []
@@ -73,9 +74,7 @@ statement so nobody plans a document-extractor on top of the library.
                  # Your segmenter let two mentions through — tighten it.
                  raise
              if result.status is Resolution.SUCCESS:
-                 out.append(
-                     (m.group(0), result.canonicalized_value or "", str(m.start()))
-                 )
+                 out.append((m.group(0), result.canonicalized_value or "", str(m.start())))
          return out
      ```
   3. **Span mechanics** — `ExecutionResult.span` /

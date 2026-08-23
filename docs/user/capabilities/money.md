@@ -36,9 +36,15 @@ import paxman
 
 paxman.register_all_shipped()
 # Money.create_contract() is a contract — use paxman.canonicalize() to get a result
-paxman.canonicalize("USD500", Money.create_contract()).canonicalized_value                           # "USD 500.00"
-paxman.canonicalize("USD500", Money.create_contract(output_format="compact")).canonicalized_value    # "USD500.00"
-paxman.canonicalize("1.000,50 EUR", Money.create_contract()).canonicalized_value                    # "EUR 1000.50"
+paxman.canonicalize(
+    "USD500", Money.create_contract()
+).canonicalized_value  # "USD 500.00"
+paxman.canonicalize(
+    "USD500", Money.create_contract(output_format="compact")
+).canonicalized_value  # "USD500.00"
+paxman.canonicalize(
+    "1.000,50 EUR", Money.create_contract()
+).canonicalized_value  # "EUR 1000.50"
 ```
 
 ---
@@ -47,9 +53,9 @@ paxman.canonicalize("1.000,50 EUR", Money.create_contract()).canonicalized_value
 
 ```python
 contract = Money.create_contract(
-    dollar_sign_currency=None,   # str | None — uppercase alpha-3, e.g. "USD"
-    precision="strict",          # "strict" (default) | "truncate" | "round" — over-precision policy
-    output_format=None,          # "code_amount" (default) or "compact"
+    dollar_sign_currency=None,  # str | None — uppercase alpha-3, e.g. "USD"
+    precision="strict",  # "strict" (default) | "truncate" | "round" — over-precision policy
+    output_format=None,  # "code_amount" (default) or "compact"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -59,12 +65,20 @@ contract = Money.create_contract(
 - `output_format` never affects validation — only the space.
 
 ```python
-paxman.canonicalize("$500", Money.create_contract()).status.value                               # "invalid"
-paxman.canonicalize("$500", Money.create_contract(dollar_sign_currency="USD")).canonicalized_value  # "USD 500.00"
+paxman.canonicalize("$500", Money.create_contract()).status.value  # "invalid"
+paxman.canonicalize(
+    "$500", Money.create_contract(dollar_sign_currency="USD")
+).canonicalized_value  # "USD 500.00"
 # MYR is not a "$" candidate (its CLDR symbol is "RM"), so it stays INVALID even when requested
-paxman.canonicalize("$500", Money.create_contract(dollar_sign_currency="MYR")).status.value   # "invalid"
-paxman.canonicalize("USD 1.999", Money.create_contract(precision="strict")).status.value       # "invalid" — too many decimals for USD
-paxman.canonicalize("USD 1.999", Money.create_contract(precision="round")).canonicalized_value # "USD 2.00"
+paxman.canonicalize(
+    "$500", Money.create_contract(dollar_sign_currency="MYR")
+).status.value  # "invalid"
+paxman.canonicalize(
+    "USD 1.999", Money.create_contract(precision="strict")
+).status.value  # "invalid" — too many decimals for USD
+paxman.canonicalize(
+    "USD 1.999", Money.create_contract(precision="round")
+).canonicalized_value  # "USD 2.00"
 ```
 
 ---

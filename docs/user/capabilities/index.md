@@ -6,9 +6,10 @@ All capabilities share the same call shape — only the import, the factory, and
 
 ```python
 import paxman
-from paxman.capabilities import X        # Email, Country, ... 
-paxman.register_all_shipped()             # once, before first use
-contract = X.create_contract(...)         # domain flags here
+from paxman.capabilities import X  # Email, Country, ...
+
+paxman.register_all_shipped()  # once, before first use
+contract = X.create_contract(...)  # domain flags here
 result = paxman.canonicalize(text, contract)
 ```
 
@@ -72,6 +73,7 @@ Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline
 
 ```python
 from paxman.core.errors import MultipleMentionsError
+
 try:
     result = paxman.canonicalize("alice@example.com, bob@example.org", contract)
 except MultipleMentionsError:

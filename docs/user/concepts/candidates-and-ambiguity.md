@@ -9,11 +9,11 @@ One input can legitimately mean two different things. Paxman does not guess — 
 A **candidate** is one validated answer: a canonical string plus the evidence that produced it.
 
 ```python
-candidate.value              # e.g. "2026-01-02"
-candidate.recognition_rule   # which grammar spotted it
-candidate.validation_rule    # which rule (spec section) validated it
-candidate.span               # where in the input it sat
-candidate.provenance         # which authority vouches for it
+candidate.value  # e.g. "2026-01-02"
+candidate.recognition_rule  # which grammar spotted it
+candidate.validation_rule  # which rule (spec section) validated it
+candidate.span  # where in the input it sat
+candidate.provenance  # which authority vouches for it
 ```
 
 Candidates are deduplicated by `(value, recognition_rule, validation_rule)`. If two rules happen to converge on the same string, they collapse to one distinct value — that is agreement, not ambiguity (see [Execution Result](execution-result.md)).
@@ -104,7 +104,9 @@ result = paxman.canonicalize("01/02/2026", Date.create_contract())
 if result.status == Resolution.AMBIGUOUS:
     for c in result.candidates:
         p = c.provenance[0]
-        print(f"  {c.value!r} via {c.validation_rule} ({p.authority}: {p.specification_name}) span={c.span}")
+        print(
+            f"  {c.value!r} via {c.validation_rule} ({p.authority}: {p.specification_name}) span={c.span}"
+        )
 ```
 
 Output:

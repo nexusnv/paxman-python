@@ -48,7 +48,8 @@ Replace 29 bespoke `Grammar.recognize()` implementations with a **fixed-order pi
   class PipelineState:
       text: str
       matches: list[RecognitionMatch[Any]]  # produced so far
-      scratch: dict[str, object]            # stage-local (normalized text, offsets)
+      scratch: dict[str, object]  # stage-local (normalized text, offsets)
+
 
   class Stage(Protocol[NotationT]):
       def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]: ...
@@ -260,7 +261,9 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
       def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
           if self.empty_guard and not state.text.strip():
-              return PipelineState(text=state.text, matches=[], scratch=dict(state.scratch))
+              return PipelineState(
+                  text=state.text, matches=[], scratch=dict(state.scratch)
+              )
           return state
 
 
@@ -282,9 +285,13 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
           for m in self._compiled.finditer(state.text):
               notation = self.notation_fn(m)
               new_matches.append(
-                  RecognitionMatch(notation=notation, start=m.start(), end=m.end(), raw_text=m.group(0))
+                  RecognitionMatch(
+                      notation=notation, start=m.start(), end=m.end(), raw_text=m.group(0)
+                  )
               )
-          return PipelineState(text=state.text, matches=new_matches, scratch=dict(state.scratch))
+          return PipelineState(
+              text=state.text, matches=new_matches, scratch=dict(state.scratch)
+          )
   ```
 
   **Note:** The skeleton `RegexStage.run` above is intentionally generic — it returns `state` unchanged. The probe test must inject a notation factory. Refine the skeleton so `_ProbeGrammar` works: either (a) `RegexStage` accepts an optional `notation_fn` callable `(re.Match) -> NotationT` and `run` uses it, or (b) the test grammar overrides `regex` with a bound subclass. **Pick (a)** for the plan — it keeps `PipelineGrammar` generic without per-grammar subclassing. The exact field is:
@@ -306,9 +313,13 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
           for m in self._compiled.finditer(state.text):
               notation = self.notation_fn(m)
               new_matches.append(
-                  RecognitionMatch(notation=notation, start=m.start(), end=m.end(), raw_text=m.group(0))
+                  RecognitionMatch(
+                      notation=notation, start=m.start(), end=m.end(), raw_text=m.group(0)
+                  )
               )
-          return PipelineState(text=state.text, matches=new_matches, scratch=dict(state.scratch))
+          return PipelineState(
+              text=state.text, matches=new_matches, scratch=dict(state.scratch)
+          )
   ```
 
   And the probe grammar becomes:
@@ -316,14 +327,18 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   ```python
   from paxman.capabilities.Date.notation import DateNotation
 
+
   def _date_notation(m: re.Match[str]) -> DateNotation:
       return DateNotation(N1=m.group(1), N2=m.group(2), N3=m.group(3))
+
 
   class _ProbeGrammar(PipelineGrammar[DateNotation]):
       name = "probe_recognition"
       semantics = "probe_recognition"
       pre = StandardPre(empty_guard=True)
-      regex = RegexStage(r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)", notation_fn=_date_notation)
+      regex = RegexStage(
+          r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)", notation_fn=_date_notation
+      )
   ```
 
   Create `paxman/core/grammar/pipeline.py`:
@@ -351,13 +366,19 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       post: Any = None
 
       def recognize(self, text: str) -> list[RecognitionMatch[NotationT]]:
-          state: PipelineState[NotationT] = PipelineState(text=text, matches=[], scratch={})
+          state: PipelineState[NotationT] = PipelineState(
+              text=text, matches=[], scratch={}
+          )
           for stage in (self.pre, self.regex, self.lexicon, self.composer, self.post):
               if stage is not None:
                   state = stage.run(state)  # type: ignore[union-attr]
                   # Pre short-circuit: if StandardPre emptied matches on whitespace-only
                   # input, skip remaining stages — they would find nothing anyway.
-                  if self.pre is not None and not state.text.strip() and not state.matches:
+                  if (
+                      self.pre is not None
+                      and not state.text.strip()
+                      and not state.matches
+                  ):
                       break
           return list(state.matches)
   ```
@@ -407,7 +428,7 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
   def test_word_sign_guard_blocks_inside_token() -> None:
       g = BoundaryGuard.word_sign()  # (?<![\w\-+\u2212]) / (?![\w\-+\u2212])
-      assert g.blocks("x$", 1) is True   # "$" inside "x$"? Actually test via regex match
+      assert g.blocks("x$", 1) is True  # "$" inside "x$"? Actually test via regex match
       # Prefer integration: the guard's pattern must NOT match "x€" at offset 1
       assert g.pattern_for("€").search("x€") is None
       assert g.pattern_for("€").search(" €") is not None
@@ -485,7 +506,9 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
       @classmethod
       def degree_word_sign(cls) -> BoundaryGuard:
-          return cls(lookbehind=r"(?<![°\w\-+\u2212/·⋅])", lookahead=r"(?![\w\-+\u2212/·⋅])")
+          return cls(
+              lookbehind=r"(?<![°\w\-+\u2212/·⋅])", lookahead=r"(?![\w\-+\u2212/·⋅])"
+          )
 
       @classmethod
       def digit(cls) -> BoundaryGuard:
@@ -682,9 +705,16 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
           for m in pat.finditer(state.text):
               token = m.group(0)
               new_matches.append(
-                  RecognitionMatch(notation=self.notation_fn(token), start=m.start(), end=m.end(), raw_text=token)
+                  RecognitionMatch(
+                      notation=self.notation_fn(token),
+                      start=m.start(),
+                      end=m.end(),
+                      raw_text=token,
+                  )
               )
-          return PipelineState(text=state.text, matches=new_matches, scratch=dict(state.scratch))
+          return PipelineState(
+              text=state.text, matches=new_matches, scratch=dict(state.scratch)
+          )
 
 
   @dataclass(frozen=True, slots=True)
@@ -693,7 +723,7 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
       keys: frozenset[str] | set[str]
       notation_fn: Any = None  # Callable[[str], NotationT]
-      normalizer: Any = None   # Callable[[str], str] | None
+      normalizer: Any = None  # Callable[[str], str] | None
 
       def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
           if self.notation_fn is None:
@@ -701,15 +731,24 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
           trimmed = state.text.strip()
           if not trimmed:
               return state
-          normalized = self.normalizer(trimmed) if self.normalizer is not None else trimmed.lower()
+          normalized = (
+              self.normalizer(trimmed) if self.normalizer is not None else trimmed.lower()
+          )
           if normalized in self.keys:
               start = len(state.text) - len(state.text.lstrip())
               end = start + len(trimmed)
               new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)
               new_matches.append(
-                  RecognitionMatch(notation=self.notation_fn(trimmed), start=start, end=end, raw_text=trimmed)
+                  RecognitionMatch(
+                      notation=self.notation_fn(trimmed),
+                      start=start,
+                      end=end,
+                      raw_text=trimmed,
+                  )
               )
-              return PipelineState(text=state.text, matches=new_matches, scratch=dict(state.scratch))
+              return PipelineState(
+                  text=state.text, matches=new_matches, scratch=dict(state.scratch)
+              )
           return state
   ```
 
@@ -775,21 +814,21 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
 
   CURATED_CORPUS: list[str] = [
-      "United States",       # Country name — original case preservation
-      "  united states  ",   # Country name — whitespace + case fold
-      "+1 555 123 4567",    # Phone e164 — normal
+      "United States",  # Country name — original case preservation
+      "  united states  ",  # Country name — whitespace + case fold
+      "+1 555 123 4567",  # Phone e164 — normal
       "+15551234567 5551234567",  # Phone e164 — runaway trim at 15 digits
       "https://example.com/path_(with_parens)",  # URL paren-balance
-      "USD500",              # Money code+amount
-      "$500",                # Money bare symbol + amount (shared symbol)
-      "500 EUR",             # Money amount + code (either order)
-      "kilo gram",           # SIUnit split_word_prefix
-      "m/s",                 # SIUnit compound
-      "9780306406157",       # ISBN13 bare
-      "978-0-11-000222-4",   # ISBN13 hyphenated (range message)
-      "2026-01-15",          # Date S1
-      "user@example.com",    # Email S1
-      "192.168.1.1",         # IP S1
+      "USD500",  # Money code+amount
+      "$500",  # Money bare symbol + amount (shared symbol)
+      "500 EUR",  # Money amount + code (either order)
+      "kilo gram",  # SIUnit split_word_prefix
+      "m/s",  # SIUnit compound
+      "9780306406157",  # ISBN13 bare
+      "978-0-11-000222-4",  # ISBN13 hyphenated (range message)
+      "2026-01-15",  # Date S1
+      "user@example.com",  # Email S1
+      "192.168.1.1",  # IP S1
   ]
 
 
@@ -819,12 +858,18 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       """Assert byte-identical RecognitionMatch lists."""
       old_matches = old.recognize(text)
       new_matches = new.recognize(text)
-      assert len(old_matches) == len(new_matches), f"len mismatch for {text!r}: {old_matches} vs {new_matches}"
+      assert len(old_matches) == len(new_matches), (
+          f"len mismatch for {text!r}: {old_matches} vs {new_matches}"
+      )
       for o, n in zip(old_matches, new_matches):
           assert o.start == n.start, f"start mismatch for {text!r}: {o} vs {n}"
           assert o.end == n.end, f"end mismatch for {text!r}: {o} vs {n}"
-          assert o.raw_text == n.raw_text, f"raw_text mismatch for {text!r}: {o.raw_text!r} vs {n.raw_text!r}"
-          assert o.notation == n.notation, f"notation mismatch for {text!r}: {o.notation!r} vs {n.notation!r}"
+          assert o.raw_text == n.raw_text, (
+              f"raw_text mismatch for {text!r}: {o.raw_text!r} vs {n.raw_text!r}"
+          )
+          assert o.notation == n.notation, (
+              f"notation mismatch for {text!r}: {o.notation!r} vs {n.notation!r}"
+          )
   ```
 
 - [ ] **Step 2: Run test to verify it fails (or is skipped as designed)**
@@ -878,6 +923,7 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   from tests.property._legacy_currency_grammars import LegacySymbolRecognition
   from paxman.capabilities.Currency.grammar.symbol_recognition import SymbolRecognition
   from tests.property.grammar_stage_parity import assert_grammar_parity
+
 
   @pytest.mark.property
   @pytest.mark.parametrize("text", ["US$", "$", "€", "¥", "x€", "US$5", "Pay € now"])
@@ -969,15 +1015,29 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
   ```python
   from tests.property._legacy_money_grammars import LegacyMoneySymbolRecognition
-  from paxman.capabilities.Money.grammar.symbol_recognition import SymbolRecognition as MoneySymbolRecognition
+  from paxman.capabilities.Money.grammar.symbol_recognition import (
+      SymbolRecognition as MoneySymbolRecognition,
+  )
   from tests.property.grammar_stage_parity import assert_grammar_parity
 
+
   @pytest.mark.property
-  @pytest.mark.parametrize("text", [
-      "USD500", "$500", "500 EUR", "€ 1.000,50", "Pay $500 now", "US$ 1,000", "(500) USD",
-  ])
+  @pytest.mark.parametrize(
+      "text",
+      [
+          "USD500",
+          "$500",
+          "500 EUR",
+          "€ 1.000,50",
+          "Pay $500 now",
+          "US$ 1,000",
+          "(500) USD",
+      ],
+  )
   def test_money_symbol_parity(text: str) -> None:
-      assert_grammar_parity(LegacyMoneySymbolRecognition(), MoneySymbolRecognition(), text)
+      assert_grammar_parity(
+          LegacyMoneySymbolRecognition(), MoneySymbolRecognition(), text
+      )
   ```
 
   Run: `uv run pytest tests/property/test_grammar_stage_parity.py::test_money_symbol_parity -v` → RED (composer not yet landed, or span-merge off by the optional space).
@@ -1004,6 +1064,7 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
   NotationT = TypeVar("NotationT")
 
+
   def _strip_separators(text: str, *, plus: bool = False) -> str:
       """Local helper — mirrors Phone/grammar/common.py:strip_separators."""
       # Keep digits only (and optional leading +); drop spaces/dots/dashes/parens.
@@ -1026,7 +1087,7 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       boundary_lookbehind: str = r"(?<![\w\-+\u2212])"
       boundary_lookahead: str = r"(?![\w\-+\u2212])"
       notation_fn: Any = None  # Callable[[str, str, str, str], NotationT] — (lex, amount, lex_shape, amount_shape)
-      classify: Any = None     # Callable[[str], str] — classify_amount_shape
+      classify: Any = None  # Callable[[str], str] — classify_amount_shape
       lexicon_tokens: frozenset[str] | None = None  # for ALT rebuild if needed
 
       _amount_re: re.Pattern[str] = field(init=False, repr=False)
@@ -1063,7 +1124,11 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
           #       notation = self.notation_fn(lex, amt, shape)
           #       fused.append(RecognitionMatch(notation=notation, start=m.start(), end=m.end(), raw_text=m.group(0)))
           # return PipelineState(text=state.text, matches=fused if fused else list(state.matches), scratch=dict(state.scratch))
-          return PipelineState(text=state.text, matches=fused if fused else list(state.matches), scratch=dict(state.scratch))
+          return PipelineState(
+              text=state.text,
+              matches=fused if fused else list(state.matches),
+              scratch=dict(state.scratch),
+          )
   ```
 
   > **Oracle fix — Rev.1:** The prior `...` placeholder hid the span-merge loop and the frozen-dataclass replacement contract. `RecognitionMatch` is `frozen=True, slots=True` — the composer cannot mutate `start/end/raw_text` in place; it must **create new `RecognitionMatch` instances**. The illustrative loop above is the required shape; the worker must land the real `finditer` loop with the exact ` ?` space handling before the harness can pass. No `...` placeholder is shipped.
@@ -1074,7 +1139,12 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   from paxman.capabilities.Money.grammar import AMOUNT_PATTERN, classify_amount_shape
   from paxman.capabilities.Money.grammar.data.currency_symbols import SYMBOL_TOKENS
   from paxman.capabilities.Money.notation import MoneyNotation
-  from paxman.core.grammar import BoundaryGuard, LexiconStage, PipelineGrammar, StandardPre
+  from paxman.core.grammar import (
+      BoundaryGuard,
+      LexiconStage,
+      PipelineGrammar,
+      StandardPre,
+  )
   from paxman.core.grammar.composer import AmountComposer
 
 
@@ -1083,9 +1153,18 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       semantics = "symbol_recognition"
       single_value = True
       pre = StandardPre(empty_guard=True)
-      lexicon = LexiconStage(tokens=SYMBOL_TOKENS, boundary=BoundaryGuard.word_sign(), longest_first=True)
-      composer = AmountComposer(pattern=AMOUNT_PATTERN, order="either", lexicon_first=True, classify=classify_amount_shape)
-      post = AmountShapePost(classify=classify_amount_shape)  # if needed, or fold into composer
+      lexicon = LexiconStage(
+          tokens=SYMBOL_TOKENS, boundary=BoundaryGuard.word_sign(), longest_first=True
+      )
+      composer = AmountComposer(
+          pattern=AMOUNT_PATTERN,
+          order="either",
+          lexicon_first=True,
+          classify=classify_amount_shape,
+      )
+      post = AmountShapePost(
+          classify=classify_amount_shape
+      )  # if needed, or fold into composer
   ```
 
   The `post` here is `AmountShapePost` that calls `classify_amount_shape(amount)` to set `MoneyNotation.amount_shape` — if the composer already classifies, the post may be folded. Keep the pipeline's post stage for `shape` assignment (`classify_amount_shape`) so the composer stays span-focused.
@@ -1127,15 +1206,31 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 - [ ] **Step 1: Write the failing test — SIUnit parity**
 
   ```python
-  from tests.property._legacy_siunit_grammars import LegacySymbolRecognition as LegacySiSymbol
-  from paxman.capabilities.SIUnit.grammar.symbol_recognition import SymbolRecognition as SiSymbol
+  from tests.property._legacy_siunit_grammars import (
+      LegacySymbolRecognition as LegacySiSymbol,
+  )
+  from paxman.capabilities.SIUnit.grammar.symbol_recognition import (
+      SymbolRecognition as SiSymbol,
+  )
   from tests.property.grammar_stage_parity import assert_grammar_parity
 
+
   @pytest.mark.property
-  @pytest.mark.parametrize("text", [
-      "kg", "MHz", "kilo gram", "k g", "m/s", "m/s²", "kg/m/s",
-      "degree celsius", "m·kg", "kPa",
-  ])
+  @pytest.mark.parametrize(
+      "text",
+      [
+          "kg",
+          "MHz",
+          "kilo gram",
+          "k g",
+          "m/s",
+          "m/s²",
+          "kg/m/s",
+          "degree celsius",
+          "m·kg",
+          "kPa",
+      ],
+  )
   def test_siunit_symbol_parity(text: str) -> None:
       assert_grammar_parity(LegacySiSymbol(), SiSymbol(), text)
   ```
@@ -1154,16 +1249,23 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   from paxman.capabilities.SIUnit.grammar.data.prefix_tokens import PREFIX_SYMBOL_TOKENS
   from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
   from paxman.capabilities.SIUnit.notation import SIUnitNotation
-  from paxman.core.grammar import BoundaryGuard, LexiconStage, PipelineGrammar, StandardPre
+  from paxman.core.grammar import (
+      BoundaryGuard,
+      LexiconStage,
+      PipelineGrammar,
+      StandardPre,
+  )
 
   PREFIX_ONLY_SYMBOLS = frozenset(PREFIX_SYMBOL_TOKENS) - frozenset({"a", "d", "h", "m"})
+
 
   class SymbolRecognition(PipelineGrammar[SIUnitNotation]):
       name = "symbol_recognition"
       semantics = "symbol_recognition"
       pre = StandardPre(empty_guard=True)
       lexicon = LexiconStage(
-          tokens=SYMBOL_TOKENS | PREFIX_SYMBOL_TOKENS,  # or two-stage: prefix alt + unit alt
+          tokens=SYMBOL_TOKENS
+          | PREFIX_SYMBOL_TOKENS,  # or two-stage: prefix alt + unit alt
           boundary=BoundaryGuard.degree_word_sign(),
           longest_first=True,
       )
@@ -1196,13 +1298,23 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
                   #   from paxman.capabilities.SIUnit.notation import SIUnitNotation
                   #   notation: Any = SIUnitNotation(text=m.raw_text, shape="split_symbol_prefix")
                   # Preserve the lexicon's span (start/end/raw_text unchanged — split is intra-span).
-                  from paxman.capabilities.SIUnit.notation import SIUnitNotation  # local to avoid core→capability import at module load if shared
+                  from paxman.capabilities.SIUnit.notation import (
+                      SIUnitNotation,
+                  )  # local to avoid core→capability import at module load if shared
 
                   # Shape depends on originating grammar: symbol vs name — worker
                   # parameterizes via constructor (e.g. split_shape="split_symbol_prefix").
-                  shape = "split_word_prefix" if " " in m.raw_text and m.raw_text.split()[0] in self.prefix_only else m.notation.shape  # type: ignore[attr-defined]
+                  shape = (
+                      "split_word_prefix"
+                      if " " in m.raw_text and m.raw_text.split()[0] in self.prefix_only
+                      else m.notation.shape
+                  )  # type: ignore[attr-defined]
                   notation: Any = SIUnitNotation(text=m.raw_text, shape=shape)  # type: ignore[arg-type]
-                  new.append(RecognitionMatch(notation=notation, start=m.start, end=m.end, raw_text=m.raw_text))
+                  new.append(
+                      RecognitionMatch(
+                          notation=notation, start=m.start, end=m.end, raw_text=m.raw_text
+                      )
+                  )
               else:
                   new.append(m)
           return PipelineState(text=state.text, matches=new, scratch=dict(state.scratch))
@@ -1253,14 +1365,18 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   from paxman.capabilities.Phone.grammar.e164_recognition import E164Grammar
   from tests.property.grammar_stage_parity import assert_grammar_parity
 
+
   @pytest.mark.property
-  @pytest.mark.parametrize("text", [
-      "+15551234567",
-      "+1 555 123 4567",
-      "+15551234567 5551234567",  # runaway — must trim to 15 digits
-      "tel:+15551234567",        # must NOT match e164 (colon guard)
-      "user+123@example.com",    # must NOT match e164
-  ])
+  @pytest.mark.parametrize(
+      "text",
+      [
+          "+15551234567",
+          "+1 555 123 4567",
+          "+15551234567 5551234567",  # runaway — must trim to 15 digits
+          "tel:+15551234567",  # must NOT match e164 (colon guard)
+          "user+123@example.com",  # must NOT match e164
+      ],
+  )
   def test_phone_e164_parity(text: str) -> None:
       assert_grammar_parity(LegacyE164(), E164Grammar(), text)
   ```
@@ -1269,15 +1385,21 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
 
   ```python
   from tests.property._legacy_url_grammars import LegacyAbsoluteUri
-  from paxman.capabilities.URL.grammar.absolute_uri_recognition import AbsoluteUriRecognition
+  from paxman.capabilities.URL.grammar.absolute_uri_recognition import (
+      AbsoluteUriRecognition,
+  )
+
 
   @pytest.mark.property
-  @pytest.mark.parametrize("text", [
-      "https://example.com/other",
-      "See https://example.com/path_(with_parens)) trailing",
-      "mailto:user@example.com",
-      "https://example.com:443/path/../other",
-  ])
+  @pytest.mark.parametrize(
+      "text",
+      [
+          "https://example.com/other",
+          "See https://example.com/path_(with_parens)) trailing",
+          "mailto:user@example.com",
+          "https://example.com:443/path/../other",
+      ],
+  )
   def test_url_parity(text: str) -> None:
       assert_grammar_parity(LegacyAbsoluteUri(), AbsoluteUriRecognition(), text)
   ```
@@ -1337,8 +1459,17 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
                   # The stage must reconstruct notation — access via m.notation and produce new.
                   from paxman.capabilities.Phone.notation import PhoneNotation
 
-                  notation: Any = PhoneNotation(shape="e164", value=re.sub(r"[^\d+]", "", trimmed))
-                  new.append(RecognitionMatch(notation=notation, start=m.start, end=m.start + len(trimmed), raw_text=trimmed))
+                  notation: Any = PhoneNotation(
+                      shape="e164", value=re.sub(r"[^\d+]", "", trimmed)
+                  )
+                  new.append(
+                      RecognitionMatch(
+                          notation=notation,
+                          start=m.start,
+                          end=m.start + len(trimmed),
+                          raw_text=trimmed,
+                      )
+                  )
               else:
                   new.append(m)
           return PipelineState(text=state.text, matches=new, scratch=dict(state.scratch))
@@ -1370,7 +1501,14 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
                   from paxman.capabilities.URL.notation import URLNotation
 
                   notation: Any = URLNotation(text=raw)
-                  new.append(RecognitionMatch(notation=notation, start=m.start, end=m.start + len(raw), raw_text=raw))
+                  new.append(
+                      RecognitionMatch(
+                          notation=notation,
+                          start=m.start,
+                          end=m.start + len(raw),
+                          raw_text=raw,
+                      )
+                  )
               else:
                   new.append(m)
           return PipelineState(text=state.text, matches=new, scratch=dict(state.scratch))
@@ -1392,7 +1530,10 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       single_value = True
       pre = StandardPre(empty_guard=True)
       # Regex stage emits raw value — post stage recomputes value=end+len(trimmed)
-      regex = RegexStage(r"(?<![\w:.])\+\d[\d\s().\-]*(?<=\d)", notation_fn=lambda m: PhoneNotation(shape="e164", value=m.group(0)))
+      regex = RegexStage(
+          r"(?<![\w:.])\+\d[\d\s().\-]*(?<=\d)",
+          notation_fn=lambda m: PhoneNotation(shape="e164", value=m.group(0)),
+      )
       post = E164Trim(max_digits=15)
   ```
 
@@ -1409,7 +1550,10 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       semantics = "absolute_uri_recognition"
       single_value = True
       pre = StandardPre(empty_guard=True)
-      regex = RegexStage(r"(?<![A-Za-z0-9+.\-])[A-Za-z][A-Za-z0-9+.\-]*:[^ <>\"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*[^ <>\"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", notation_fn=lambda m: URLNotation(text=m.group(0)))
+      regex = RegexStage(
+          r"(?<![A-Za-z0-9+.\-])[A-Za-z][A-Za-z0-9+.\-]*:[^ <>\"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*[^ <>\"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]",
+          notation_fn=lambda m: URLNotation(text=m.group(0)),
+      )
       post = UrlParenBalance()
   ```
 
@@ -1466,8 +1610,12 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   from paxman.capabilities.Date.grammar.iso8601_recognition import ISO8601DateGrammar
   from tests.property.grammar_stage_parity import assert_grammar_parity
 
+
   @pytest.mark.property
-  @pytest.mark.parametrize("text", ["2026-01-15", "2026/01/15", "01/02/2026", "12026-01-15", "foo 2026-01-15 bar"])
+  @pytest.mark.parametrize(
+      "text",
+      ["2026-01-15", "2026/01/15", "01/02/2026", "12026-01-15", "foo 2026-01-15 bar"],
+  )
   def test_date_iso8601_parity(text: str) -> None:
       assert_grammar_parity(LegacyISO8601(), ISO8601DateGrammar(), text)
   ```
@@ -1502,7 +1650,9 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
       name = "iso8601_recognition"
       semantics = "iso8601_calendar_date"
       pre = StandardPre(empty_guard=True)
-      regex = RegexStage(r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)", notation_fn=_iso_notation)
+      regex = RegexStage(
+          r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)", notation_fn=_iso_notation
+      )
   ```
 
   Repeat for US/European/slash_iso with their respective patterns and `us_calendar_date` / `european_calendar_date` semantics (already coalesced per ADR-0003 D6). For ISBN, keep the lookahead-digit-extraction pattern verbatim.
@@ -1510,11 +1660,14 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   **Country alpha2/alpha3/numeric:** `RegexStage` with `\b` / digit patterns and their respective `BoundaryGuard.word_only` / `digit` guards. **Do not migrate `Country/name_recognition.py` here** — it is S2 (`WholeInputLookup`), migrate it alongside this task as:
 
   ```python
-  from paxman.capabilities.Country.grammar.data.country_names import COUNTRY_NAME_KEYS  # or the real table
+  from paxman.capabilities.Country.grammar.data.country_names import (
+      COUNTRY_NAME_KEYS,
+  )  # or the real table
   from paxman.capabilities.Country.grammar.name_normalization import normalize_name
   from paxman.capabilities.Country.notation import CountryNotation
   from paxman.core.grammar import PipelineGrammar, StandardPre
   from paxman.core.grammar.stages import WholeInputLookup
+
 
   class NameGrammar(PipelineGrammar[CountryNotation]):
       name = "name_recognition"
@@ -1568,8 +1721,10 @@ Verified on `main` at `1a7c4b2` (29 grammars, 56 files under `paxman/capabilitie
   def test_strip_separators_moved_to_stage() -> None:
       # After retirement, the old helper is gone — stage internals own it.
       import pytest
+
       with pytest.raises(ImportError):
           from paxman.capabilities.Phone.grammar.common import strip_separators
+
           _ = strip_separators
   ```
 

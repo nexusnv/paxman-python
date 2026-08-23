@@ -395,8 +395,8 @@ paxman/capabilities/SI/
 ```python
 @dataclass(frozen=True, slots=True)
 class SIUnitNotation:
-    text: str        # the recognized token, as written
-    shape: str       # "symbol" | "name" | "compound"
+    text: str  # the recognized token, as written
+    shape: str  # "symbol" | "name" | "compound"
 ```
 
 `_VALID_SHAPES = frozenset({"symbol", "name", "compound"})`, `__post_init__` rejects empty text / bad shape, `as_list()` returns `[text, shape]`. Currency's exact convention.

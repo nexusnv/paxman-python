@@ -32,9 +32,15 @@ from paxman.capabilities import ISBN
 import paxman
 
 paxman.register_all_shipped()
-paxman.canonicalize("9780110002224", ISBN.create_contract()).canonicalized_value                          # "9780110002224"
-paxman.canonicalize("9780110002224", ISBN.create_contract(output_format="hyphenated")).canonicalized_value # "978-0-11-000222-4"
-paxman.canonicalize("0306406152", ISBN.create_contract()).canonicalized_value                              # "9780306406157" (10 → 13)
+paxman.canonicalize(
+    "9780110002224", ISBN.create_contract()
+).canonicalized_value  # "9780110002224"
+paxman.canonicalize(
+    "9780110002224", ISBN.create_contract(output_format="hyphenated")
+).canonicalized_value  # "978-0-11-000222-4"
+paxman.canonicalize(
+    "0306406152", ISBN.create_contract()
+).canonicalized_value  # "9780306406157" (10 → 13)
 ```
 
 ---
@@ -43,9 +49,9 @@ paxman.canonicalize("0306406152", ISBN.create_contract()).canonicalized_value   
 
 ```python
 contract = ISBN.create_contract(
-    include_isbn10=True,           # bool, default True  — recognize ISBN-10
-    include_range_validation=False, # bool, default False — gate the registrant-range rule/provenance
-    output_format=None,            # "isbn13" (default) or "hyphenated"
+    include_isbn10=True,  # bool, default True  — recognize ISBN-10
+    include_range_validation=False,  # bool, default False — gate the registrant-range rule/provenance
+    output_format=None,  # "isbn13" (default) or "hyphenated"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
