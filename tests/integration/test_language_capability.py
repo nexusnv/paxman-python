@@ -712,12 +712,12 @@ def test_comprehensive_iana_and_bcp47() -> None:
         extlang="cmn",
         script="Hans",
         region="CN",
-        variant="1996",
+        variant="pinyin",
         extension="a-foo",
         privateuse="x-bar",
         grandfathered="",
-        compact="zh-cmn-Hans-CN-1996-a-foo-x-bar",
-        raw_value="zh-cmn-hans-cn-1996-a-foo-x-bar",
+        compact="zh-cmn-Hans-CN-pinyin-a-foo-x-bar",
+        raw_value="zh-cmn-hans-cn-pinyin-a-foo-x-bar",
     )
     # This should be valid for both bcp and private iana
     assert bcp.matches(n, LanguageCapability.create_contract()) is True
@@ -735,7 +735,7 @@ def test_comprehensive_iana_and_bcp47() -> None:
         iana_private.normalize(
             n, LanguageCapability.create_contract(include_private=True)
         )
-        == "zh-cmn-Hans-CN-1996-a-foo-x-bar"
+        == "zh-cmn-Hans-CN-pinyin-a-foo-x-bar"
     )
     # Language empty with script/region
     n2 = LanguageNotation(
@@ -774,12 +774,12 @@ def test_comprehensive_iana_and_bcp47() -> None:
         extlang="qab",
         script="Qaaa",
         region="ZZ",
-        variant="nedis",
+        variant="ulster",
         extension="a-foo",
         privateuse="x-bar",
         grandfathered="",
-        compact="qaa-qab-Qaaa-ZZ-nedis-a-foo-x-bar",
-        raw_value="qaa-qab-qaaa-zz-nedis-a-foo-x-bar",
+        compact="qaa-qab-Qaaa-ZZ-ulster-a-foo-x-bar",
+        raw_value="qaa-qab-qaaa-zz-ulster-a-foo-x-bar",
     )
     assert (
         iana.matches(n4, LanguageCapability.create_contract(include_private=True))
