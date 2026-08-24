@@ -18,10 +18,12 @@ from paxman.core.domain import (
     Candidate,
     Grammar,
     GrammarRule,
+    Mention,
     RecognitionMatch,
     RecognizedRep,
     Resolution,
     Rule,
+    ScanResult,
     VersionStamp,
 )
 from paxman.core.errors import (
@@ -32,7 +34,11 @@ from paxman.core.errors import (
     ValidationError,
 )
 from paxman.core.extensions import get_extended_grammars, get_extended_rules
-from paxman.core.grammar.engine_loop import _run_matchers
+from paxman.core.grammar.engine_loop import (
+    _run_matchers,
+    run_matchers_with_context,
+)
+from paxman.core.grammar.scan_context import ScanContext
 
 
 def _resolve_version() -> str:
@@ -111,6 +117,44 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     )
 
 
+def run_scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult:
+    """Batch scan — one substrate pass, per-capability Mention records.
+
+    This is the engine half of the ``scan()`` API (ADR-009). The substrate
+    (:class:`ScanContext`) is built once and reused for every contract in
+    the batch; mentions are maximal clusters of recognitions under the
+    existing total order + containment policy.
+    """
+    freeze_registry()
+    # One substrate pass for the whole batch.
+    ctx = ScanContext.of(text)
+    mentions: dict[str, tuple[Mention, ...]] = {}
+    for contract in contracts:
+        capability = get_capability(contract.capability_name)
+        shipped_grammars = capability.get_grammars()
+        all_grammars = [
+            *shipped_grammars,
+            *get_extended_grammars(capability.name),
+        ]
+        _assert_unique_names("grammar", all_grammars)
+        semantics_by_name = {g.name: g.semantics for g in all_grammars}
+        all_rules = [
+            *capability.get_rules(),
+            *_activated_rules(capability, contract, semantics_by_name),
+        ]
+        _assert_unique_names("rule", all_rules)
+        _validate_affinity(semantics_by_name, all_rules)
+        recognitions = _recognize(
+            text,
+            all_grammars,
+            [g.name for g in shipped_grammars],
+            contract,
+            scan_context=ctx,
+        )
+        mentions[contract.capability_name] = _recognitions_to_mentions(recognitions)
+    return ScanResult(text=text, mentions=mentions)
+
+
 def _assert_unique_names(kind: str, items: Sequence[Grammar[Any] | Rule[Any]]) -> None:
     """Fail fast when a composed grammar or rule name is duplicated.
 
@@ -148,6 +192,8 @@ def _recognize(
     all_grammars: Sequence[Grammar[Any]],
     shipped_names: Sequence[str],
     contract: CapabilityContract,
+    *,
+    scan_context: ScanContext | None = None,
 ) -> list[RecognizedRep[Any]]:
     """Run active grammars, dedup contained matches per grammar, and order.
 
@@ -167,6 +213,11 @@ def _recognize(
     ``get_grammars()`` declaration order — so adding a shipped grammar to a
     capability activates it with no contract edit. Community grammars stay
     opt-in via ``extra_grammars`` in both cases.
+
+    ``scan_context`` is the shared substrate for ``scan()`` batch calls
+    (ADR-009): when provided the engine reuses it for compiled matchers
+    instead of constructing a new :class:`ScanContext` per grammar, so one
+    substrate pass serves all capabilities in the batch.
     """
     supported_names = {g.name for g in all_grammars}
     extra_grammars = _extra_grammars_of(contract)
@@ -186,13 +237,25 @@ def _recognize(
     by_name = {g.name: g for g in all_grammars}
     active_grammars = [by_name[name] for name in active_names]
 
+    # Shared substrate (ADR-009): one ScanContext for the whole batch.
+    # Lazy-initialize when scan() passes a context; single-capability
+    # canonicalize() still creates one locally.
+    shared_ctx = scan_context if scan_context is not None else ScanContext.of(text)
+    # Reuse shared word_spans/text without forcing grammars to change
+    # their recognize(text) surface: compiled matchers go through the
+    # engine loop with the shared context, legacy grammars keep their
+    # own recognize path (they internally call ScanContext.of but that
+    # is bounded to one extra construction per legacy grammar).
     ordered: list[tuple[int, int, int, str, RecognitionMatch[Any]]] = []
     for grammar in active_grammars:
         # compat shim: if grammar exposes compiled matchers, delegate to
         # engine-owned loop
         if hasattr(grammar, "matchers") and grammar.matchers:  # type: ignore[attr-defined]
             try:
-                matches = _run_matchers(text, [grammar])
+                if scan_context is not None:
+                    matches = run_matchers_with_context(shared_ctx, [grammar])
+                else:
+                    matches = _run_matchers(text, [grammar])
             except Exception as exc:
                 raise RecognitionError(
                     rule=grammar.name,
@@ -473,6 +536,65 @@ def _enforce_single_value_invariant(
 def _spans_overlap(a: tuple[int, int], b: tuple[int, int]) -> bool:
     """Whether two half-open spans share any character position."""
     return a[0] < b[1] and b[0] < a[1]
+
+
+def _cluster_recognitions(
+    recognitions: Sequence[RecognizedRep[Any]],
+) -> list[list[RecognizedRep[Any]]]:
+    """Cluster recognitions into maximal overlapping groups (mentions).
+
+    Uses the same overlap+containment policy as the single-value invariant:
+    any two recognitions whose spans overlap belong to the same logical
+    mention; transitive overlap merges clusters. Input is assumed already in
+    total order (start, end, ...); output clusters preserve that order and
+    are sorted by their covering span.
+    """
+    clusters: list[list[RecognizedRep[Any]]] = []
+    for rec in recognitions:
+        span = (rec.start, rec.end)
+        overlapping = [
+            c
+            for c in clusters
+            if any(_spans_overlap(span, (r.start, r.end)) for r in c)
+        ]
+        if overlapping:
+            merged: list[RecognizedRep[Any]] = [rec]
+            for c in overlapping:
+                merged.extend(c)
+                clusters.remove(c)
+            # Keep total-order determinism inside the merged cluster.
+            merged.sort(key=lambda r: (r.start, r.end, r.grammar.grammar_name))
+            clusters.append(merged)
+        else:
+            clusters.append([rec])
+    # Sort clusters by covering span for deterministic mention order.
+    clusters.sort(key=lambda c: (min(r.start for r in c), max(r.end for r in c)))
+    return clusters
+
+
+def _recognitions_to_mentions(
+    recognitions: Sequence[RecognizedRep[Any]],
+) -> tuple[Mention, ...]:
+    """Map recognitions to Mention records via maximal-cluster policy."""
+    if not recognitions:
+        return ()
+    clusters = _cluster_recognitions(list(recognitions))
+    mentions: list[Mention] = []
+    for cluster in clusters:
+        # Covering span of the cluster
+        min_start = min(r.start for r in cluster)
+        max_end = max(r.end for r in cluster)
+        first = cluster[0]
+        mentions.append(
+            Mention(
+                span=(min_start, max_end),
+                grammar=first.grammar.grammar_name,
+                notation=first.notation,
+                candidates=None,
+            )
+        )
+    mentions.sort(key=lambda m: (m.span[0], m.span[1], m.grammar))
+    return tuple(mentions)
 
 
 def _dedup_candidates(

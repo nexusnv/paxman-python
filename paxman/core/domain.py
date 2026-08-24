@@ -180,6 +180,45 @@ class Candidate:
 
 
 @dataclass(frozen=True, slots=True)
+class Mention:
+    """A maximal cluster of recognitions for one logical mention.
+
+    Clustering uses the same total order + containment policy as the
+    single-value invariant: overlapping or containing spans are one
+    logical mention. ``span`` is the covering half-open interval,
+    ``grammar`` is the first grammar in total order within the cluster,
+    ``notation`` is that grammar's notation, and ``candidates`` holds
+    validated candidates for the cluster when available (``None`` for
+    recognition-only scans).
+    """
+
+    span: tuple[int, int]
+    grammar: str
+    notation: object
+    candidates: tuple[Candidate, ...] | None = None
+
+    def __post_init__(self) -> None:
+        if self.span[0] < 0 or self.span[1] < self.span[0]:
+            raise ValueError(
+                f"Invalid span start={self.span[0]}, end={self.span[1]}: "
+                "expected 0 <= start <= end"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class ScanResult:
+    """Batch scan result — one substrate pass, per-capability mentions."""
+
+    text: str
+    mentions: dict[str, tuple[Mention, ...]]
+
+    def __post_init__(self) -> None:
+        # Freeze inner tuples / dict for safety; dataclass is frozen.
+        # No validation beyond type shape — callers own well-formedness.
+        pass
+
+
+@dataclass(frozen=True, slots=True)
 class VersionStamp:
     """Version metadata."""
 
