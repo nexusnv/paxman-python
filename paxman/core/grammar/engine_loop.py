@@ -9,11 +9,28 @@ from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.normalizers import CaseFold, CountryNameFold
 from paxman.core.grammar.scan_context import ScanContext
 
-__all__ = ["_run_matchers"]
+__all__ = [
+    "_run_matchers",
+    "_run_matchers_with_context",
+    "run_matchers",
+    "run_matchers_with_context",
+]
 
 
 def _run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[Any]]:
     context = ScanContext.of(text)
+    return _run_matchers_with_context(context, compiled)
+
+
+def run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[Any]]:
+    """Public alias for :func:`_run_matchers` (engine-owned loop)."""
+    return _run_matchers(text, compiled)
+
+
+def _run_matchers_with_context(
+    context: ScanContext, compiled: Sequence[Any]
+) -> list[RecognitionMatch[Any]]:
+    text = context.text
     out: list[RecognitionMatch[Any]] = []
     for grammar in compiled:
         for matcher in getattr(grammar, "matchers", ()):
@@ -47,3 +64,10 @@ def _run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[A
                     )
                 )
     return out
+
+
+def run_matchers_with_context(
+    context: ScanContext, compiled: Sequence[Any]
+) -> list[RecognitionMatch[Any]]:
+    """Public alias for :func:`_run_matchers_with_context`."""
+    return _run_matchers_with_context(context, compiled)

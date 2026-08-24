@@ -30,7 +30,10 @@ def _build_parser() -> argparse.ArgumentParser:
             '  paxman email "User@Example.COM"\n'
             '  echo "usd" | paxman currency\n'
             "  paxman --list\n"
-            '  paxman email --json "user@example.com"'
+            '  paxman email --json "user@example.com"\n'
+            '  paxman scan "Ship to United States please"\n'
+            '  paxman scan --json "Ship to United States please"\n'
+            '  paxman scan country "Ship to United States please"'
         ),
         epilog=(
             f"Capabilities: {shipped}\n"
@@ -63,6 +66,48 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _build_scan_parser() -> argparse.ArgumentParser:
+    shipped = ", ".join(list_shipped_capabilities())
+    parser = argparse.ArgumentParser(
+        prog="paxman scan",
+        description=(
+            "Scan text for mentions — one substrate pass, per-capability Mentions.\n"
+            "Examples:\n"
+            '  paxman scan "Ship to United States please"\n'
+            '  paxman scan --json "Ship to United States please"\n'
+            '  paxman scan country "Ship to United States please"\n'
+            '  echo "hello" | paxman scan --json'
+        ),
+        epilog=(
+            f"Capabilities: {shipped}\n"
+            "If no capability is given, all shipped capabilities are scanned."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="output JSON",
+    )
+    parser.add_argument(
+        "--capability",
+        "-c",
+        action="append",
+        dest="capabilities",
+        default=None,
+        help="capability to scan (repeatable; default all)",
+    )
+    parser.add_argument(
+        "pos",
+        nargs="*",
+        help=(
+            "optional [capability] [text]; capability is case-insensitive, "
+            "text is stdin if omitted"
+        ),
+    )
+    return parser
+
+
 def _print_list() -> None:
     for name in list_shipped_capabilities():
         print(name)
@@ -70,6 +115,10 @@ def _print_list() -> None:
 
 def _create_contract(normalized: str) -> CapabilityContract:
     """Create a default contract for the normalized capability name."""
+    if normalized == "bic":
+        from paxman.capabilities import BIC
+
+        return BIC.create_contract()
     if normalized == "country":
         from paxman.capabilities import Country
 
@@ -102,6 +151,10 @@ def _create_contract(normalized: str) -> CapabilityContract:
         from paxman.capabilities import ISSN
 
         return ISSN.create_contract()
+    if normalized == "language":
+        from paxman.capabilities import Language
+
+        return Language.create_contract()
     if normalized == "money":
         from paxman.capabilities import Money
 
@@ -225,7 +278,184 @@ def _print_json(result: object) -> None:
     sys.stdout.write("\n")
 
 
+def _print_scan_human(result: object) -> None:
+    from paxman.core.domain import ScanResult
+
+    assert isinstance(result, ScanResult)
+    print(f"text: {result.text!r}")
+    if not result.mentions:
+        print("mentions: —")
+        return
+    for cap_name in sorted(result.mentions.keys()):
+        mentions = result.mentions[cap_name]
+        print(f"capability: {cap_name}")
+        if not mentions:
+            print("  mentions: —")
+            continue
+        for m in mentions:
+            span = f"[{m.span[0]}, {m.span[1]})"
+            raw = result.text[m.span[0] : m.span[1]]
+            msg = (
+                f"  mention: {raw!r} span={span} "
+                f"grammar={m.grammar} notation={m.notation!r}"
+            )
+            print(msg)
+
+
+def _print_scan_json(result: object) -> None:
+    import dataclasses
+
+    from paxman.core.domain import ScanResult
+
+    assert isinstance(result, ScanResult)
+    mentions_payload: dict[str, list[dict[str, object]]] = {}
+    for cap_name, mentions in result.mentions.items():
+        lst: list[dict[str, object]] = []
+        for m in mentions:
+            notation_obj = m.notation
+            if dataclasses.is_dataclass(notation_obj):
+                notation_val: object = dataclasses.asdict(notation_obj)  # type: ignore[arg-type]
+            else:
+                try:
+                    notation_val = str(notation_obj)
+                except Exception:
+                    notation_val = repr(notation_obj)
+            lst.append(
+                {
+                    "span": list(m.span),
+                    "grammar": m.grammar,
+                    "notation": notation_val,
+                    "candidates": (
+                        [
+                            {
+                                "value": c.value,
+                                "recognition_rule": c.recognition_rule,
+                                "validation_rule": c.validation_rule,
+                                "span": list(c.span) if c.span is not None else None,
+                            }
+                            for c in m.candidates
+                        ]
+                        if m.candidates is not None
+                        else None
+                    ),
+                }
+            )
+        mentions_payload[cap_name] = lst
+    payload: dict[str, object] = {
+        "text": result.text,
+        "mentions": mentions_payload,
+    }
+    json.dump(payload, sys.stdout, indent=2, ensure_ascii=False)
+    sys.stdout.write("\n")
+
+
+def _handle_scan(scan_argv: list[str]) -> None:
+    # Manual flag extraction to allow interspersed `--json` / `-c` with
+    # positional capability/text (argparse with nargs="*" is order-sensitive).
+    # Supports: `paxman scan [--json] [capability] [text]`
+    #           `paxman scan country --json "text"` etc.
+    parser = _build_scan_parser()
+    if any(a in ("-h", "--help") for a in scan_argv):
+        parser.print_help(sys.stdout)
+        sys.exit(0)
+
+    json_flag = False
+    cap_filters_raw: list[str] = []
+    pos: list[str] = []
+    i = 0
+    while i < len(scan_argv):
+        arg = scan_argv[i]
+        if arg == "--json":
+            json_flag = True
+        elif arg in ("--capability", "-c"):
+            if i + 1 >= len(scan_argv):
+                parser.error(f"{arg} requires an argument")
+            cap_filters_raw.append(scan_argv[i + 1])
+            i += 1
+        elif arg.startswith("--capability="):
+            cap_filters_raw.append(arg.split("=", 1)[1])
+        elif arg.startswith("-c") and len(arg) > 2:
+            # -ccountry is not valid; require separate arg, but handle
+            cap_filters_raw.append(arg[2:])
+        elif arg == "--":
+            # Remaining args are positional text verbatim
+            pos.extend(scan_argv[i + 1 :])
+            break
+        else:
+            pos.append(arg)
+        i += 1
+
+    shipped_set = set(list_shipped_capabilities())
+    # Resolve capability filters: --capability plus positional heuristic
+    cap_filters: list[str] = []
+    for raw in cap_filters_raw:
+        norm = _normalize_capability(raw)
+        if norm not in shipped_set:
+            shipped_str = ", ".join(list_shipped_capabilities())
+            _fail(
+                f"unknown capability {raw!r}. Run `paxman --list` to see: {shipped_str}"
+            )
+        cap_filters.append(norm)
+
+    text_arg: str | None = None
+
+    # Heuristic for positional [capability] [text]
+    if pos:
+        # If cap_filters empty and first pos looks like a capability, treat it as filter
+        first_norm = _normalize_capability(pos[0])
+        if not cap_filters and first_norm in shipped_set:
+            # One positional capability alone -> filter, text from stdin
+            # or two positionals where first is capability and second is text
+            if len(pos) == 1:
+                cap_filters.append(first_norm)
+                pos = []
+            elif len(pos) >= 2:
+                cap_filters.append(first_norm)
+                # Remaining pos joined as text (preserves spaces if split)
+                text_arg = " ".join(pos[1:]) if len(pos) > 2 else pos[1]
+                pos = []
+            else:
+                pos = []
+        # Remaining pos is text (join with space if multiple)
+        if pos:
+            text_arg = " ".join(pos) if len(pos) > 1 else pos[0]
+
+    # Fallback text resolution (stdin)
+    text = _resolve_text(text_arg)
+    if text is None:
+        _fail("no text provided — pass an argument or pipe via stdin")
+
+    from paxman.api.bootstrap import register_all_shipped
+    from paxman.api.scan import scan
+
+    register_all_shipped()
+
+    # Default: scan all shipped if no filter
+    if not cap_filters:
+        cap_filters = list(list_shipped_capabilities())
+
+    contracts = [_create_contract(norm) for norm in cap_filters]
+
+    try:
+        result = scan(text, contracts)
+    except Exception as exc:  # ContractError, CapabilityError, etc.
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if json_flag:
+        _print_scan_json(result)
+    else:
+        _print_scan_human(result)
+
+
 def main(argv: list[str] | None = None) -> None:
+    # Scan subcommand check — must happen before the canonicalize parser
+    # so `paxman scan ...` is not misinterpreted as `paxman <capability>`.
+    argv_list = argv if argv is not None else sys.argv[1:]
+    if argv_list and argv_list[0] == "scan":
+        _handle_scan(list(argv_list[1:]))
+        return
+
     parser = _build_parser()
     args = parser.parse_args(argv)
 
