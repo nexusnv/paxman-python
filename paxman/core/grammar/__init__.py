@@ -10,6 +10,7 @@ from paxman.core.grammar.engine_loop import _run_matchers
 from paxman.core.grammar.lexicon import LexiconAlternation
 from paxman.core.grammar.matcher_spec import EmitFn, MatcherKind, MatcherSpec
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
+from paxman.core.grammar.matchers.scanner import ScannerMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
     CaseFold,
@@ -48,6 +49,7 @@ __all__ = [
     "LexiconAlternation",
     "LexiconMatcher",
     "LexiconStage",
+    "ScannerMatcher",
     "LiteralAnchor",
     "MatcherKind",
     "MatcherSpec",
