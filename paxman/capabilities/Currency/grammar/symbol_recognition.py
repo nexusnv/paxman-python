@@ -38,12 +38,18 @@ class SymbolRecognition(PipelineGrammar[CurrencyNotation]):
 
     A token is "qualified" when it embeds an ASCII letter ("US$", "A$",
     "R$") and "bare" otherwise ("$", "€", "¥"). Symbols are case-exact —
-    no case folding (symbols are arbitrary glyph strings). The lexicon is
-    guarded by word_sign lookarounds so amount-glued ("US$5", "$500") and
-    inside-token ("x€") forms are rejected.
+    no case folding (symbols are arbitrary glyph strings), so "US$" matches
+    but "us$" is MISSING (word grammar and code grammar are case-insensitive
+    by contrast: "usd"→"USD", "euro"→"euro"). The lexicon is guarded by
+    word_sign lookarounds so amount-glued ("US$5", "$500") and inside-token
+    ("x€") forms are rejected. Shared bare symbols ("$", "¥", "£") require
+    the contract's default_currency opt-in to resolve; definitive symbols
+    ("€"→"EUR") and qualified symbols ("US$"→"USD") ignore it.
 
     Examples: "US$" -> text "US$", shape "qualified_symbol"
               "€"    -> text "€",    shape "symbol"
+    Non-examples: "us$" (lowercase qualified, MISSING), "Lei" (capitalized
+        "lei"→"RON" is case-exact, so "Lei" is INVALID via code path).
     """
 
     name = "symbol_recognition"

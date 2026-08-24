@@ -176,9 +176,13 @@ def _emit_currency_symbols(snapshot: dict[str, Any], *, for_money: bool) -> str:
             "paxman/capabilities/Currency/rules/data/\n"
             "cldr_currencies.py (Unicode CLDR v47, en + es).\n"
             "\n"
-            "Qualified symbols (containing an ASCII letter, e.g. US$, CA$, RM) are\n"
-            "ordered before bare symbols ($, \\u00a5, \\u20ac), longest first within\n"
-            'each class, so the grammar alternates "US$" before "$".\n'
+            "Qualified symbols (containing an ASCII letter, e.g. US$, CA$, RM)\n"
+            "are ordered longest-first, qualified-first within equal length\n"
+            'via LexiconAlternation (so the grammar alternates "US$" before\n'
+            '"$" and "Kz" before "K"). The file\'s pre-sort is\n'
+            "qualified-first longest-first; runtime LexiconStage re-sorts by\n"
+            "(-len, -is_qualified), so the effective alternation is\n"
+            "longest-first. Both guarantee prefix safety.\n"
         )
     return _emit_module(docstring, assignment)
 

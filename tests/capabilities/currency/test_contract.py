@@ -44,10 +44,8 @@ def test_default_currency_default_is_none() -> None:
     assert CurrencyContract().default_currency is None
 
 
-@pytest.mark.parametrize("value", ["usd", "US", "USDD", "U5D", 123, None, ""])
+@pytest.mark.parametrize("value", ["usd", "US", "USDD", "U5D", 123, ""])
 def test_invalid_default_currency(value: object) -> None:
-    if value is None:
-        return
     with pytest.raises(ContractError):
         # cast keeps the deliberately-invalid input type-safe at the
         # boundary; runtime validation rejects non-str/improper values.

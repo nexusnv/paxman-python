@@ -6,6 +6,14 @@ as amended by the Maintenance Agency amendment series (see D-decision 1
 of the implementation plan). ISO 4217:2015 itself defines the coding
 method; the code list lives with the Maintenance Agency. The data module
 snapshots SIX List One, published 2026-01-01.
+
+Note on temporal filtering: the rule's Provenance publication_year is
+2015 (the edition year), but the snapshot is 2026-01-01 and includes
+post-2015 codes (ZWG, VES, VED, SLE, XAD, XCG). A contract with
+year=2020 still validates those codes — year filtering is coarse
+(edition-year, not per-amendment). This matches the Currency
+implementation plan D-decision 1 (one rule for "ISO 4217:2015 as
+amended").
 """
 
 from __future__ import annotations
