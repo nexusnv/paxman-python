@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from paxman.core.grammar.boundary_spec import BoundarySpec
 
 _WordSpans = tuple[tuple[int, int], ...]
 
@@ -59,3 +63,22 @@ class ScanContext:
         view = View(subject=subject, offsets=offsets, _text_len=len(self.text))
         self._views[name] = view
         return view
+
+    def check_hit(self, text: str, start: int, end: int, spec: BoundarySpec) -> bool:
+        """Return True if the hit at ``[start:end)`` respects ``spec`` boundaries.
+
+        Each ``left`` entry is interpreted as a regex that must NOT match the
+        suffix ending at ``start``; each ``right`` entry must NOT match the
+        prefix starting at ``end``. Mirrors ``(?<!...)`` / ``(?!...)`` guards.
+        """
+        if spec.left is not None and start > 0:
+            prefix = text[:start]
+            for pat in spec.left:
+                if re.search(pat + r"\Z", prefix) is not None:
+                    return False
+        if spec.right is not None and end < len(text):
+            suffix = text[end:]
+            for pat in spec.right:
+                if re.search(r"\A" + pat, suffix) is not None:
+                    return False
+        return True
