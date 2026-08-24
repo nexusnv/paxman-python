@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from typing import Any
 
 import pytest
 
@@ -58,9 +59,9 @@ class TestLanguageNotation:
         assert len({a, b}) == 1
 
     def test_slots(self) -> None:
-        params = LanguageNotation.__dataclass_params__  # type: ignore[attr-defined]
-        if hasattr(params, "slots"):
-            assert params.slots is True  # type: ignore[attr-defined]  # noqa: B009
+        params: Any = LanguageNotation.__dict__.get("__dataclass_params__")
+        if params is not None and hasattr(params, "slots"):
+            assert getattr(params, "slots") is True  # noqa: B009
         else:
             assert hasattr(LanguageNotation, "__slots__")
 

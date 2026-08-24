@@ -98,6 +98,7 @@ def _is_private_region(region: str) -> bool:
         "xu",
         "xv",
         "xw",
+        "xx",
         "xy",
         "xz",
     }
@@ -298,7 +299,68 @@ class SectionIANARegistryPrivate(Rule[LanguageNotation]):
         if notation.privateuse:
             has_private = True
 
-        return has_private
+        if not has_private:
+            return False
+
+        # Validate preceding components with generic checks, allowing private
+        if lang and not _is_private_language(lang):
+            resolved = _resolve_deprecated(lang)
+            if (
+                lang not in DEPRECATED_MAP
+                and lang not in _LANGUAGE_SET
+                and resolved not in _LANGUAGE_SET
+            ):
+                return False
+        if notation.extlang:
+            for ext in notation.extlang.lower().split("-"):
+                if not ext or _is_private_language(ext):
+                    continue
+                if ext not in _LANGUAGE_SET:
+                    return False
+        if (
+            notation.script
+            and not _is_private_script(notation.script)
+            and notation.script.lower() not in _SCRIPT_SET
+        ):
+            return False
+        if (
+            notation.region
+            and not _is_private_region(notation.region)
+            and notation.region.lower() not in _REGION_SET
+            and not (
+                notation.region.isdigit() and notation.region.lower() in _REGION_SET
+            )
+        ):
+            return False
+        if notation.variant:
+            for var in notation.variant.lower().split("-"):
+                if not var:
+                    continue
+                if var not in _VARIANT_SET:
+                    return False
+                prefixes = VARIANT_PREFIXES.get(var)
+                if prefixes is not None:
+                    lower_compact = notation.compact.lower()
+                    idx = lower_compact.rfind("-" + var)
+                    prefix = lower_compact[:idx] if idx != -1 else lang
+                    allowed = frozenset(p.lower() for p in prefixes)
+                    if prefix not in allowed and lang not in allowed:
+                        candidates = {lang}
+                        if notation.script:
+                            candidates.add(f"{lang}-{notation.script.lower()}")
+                        if notation.region:
+                            candidates.add(f"{lang}-{notation.region.lower()}")
+                            if notation.script:
+                                candidates.add(
+                                    f"{lang}-{notation.script.lower()}"
+                                    f"-{notation.region.lower()}"
+                                )
+                        if notation.extlang:
+                            candidates.add(f"{lang}-{notation.extlang.lower()}")
+                        if not candidates & allowed and prefix not in allowed:
+                            return False
+
+        return True
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
         """Return canonical tag (same as generic)."""
