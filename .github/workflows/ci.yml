@@ -55,6 +55,24 @@ jobs:
       - name: Check generated SIUnit data drift
         run: uv run python tools/regenerate_si_prefix_data.py --check
 
+      - name: Check generated BIC data drift
+        run: uv run python tools/regenerate_bic_data.py --check
+
+      - name: Check generated IBAN data drift
+        run: uv run python tools/regenerate_iban_registry_data.py --check
+
+      - name: Check generated IANA language data drift
+        run: uv run python tools/regenerate_iana_language_data.py --check
+
+      - name: Check generated Unicode property data drift
+        run: uv run python tools/regenerate_unicode_property_data.py --check
+
+      - name: Check generated Language data drift
+        run: uv run python tools/regenerate_language_data.py --check
+
+      - name: Verify no generated data drift (git diff)
+        run: git diff --exit-code
+
       - name: Benchmark (informational, non-blocking)
         continue-on-error: true
         run: uv run python -m benchmarks.harness --iterations 50 --output /tmp/bench.json && cat /tmp/bench.json
