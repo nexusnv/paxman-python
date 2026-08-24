@@ -58,7 +58,11 @@ class TestLanguageNotation:
         assert len({a, b}) == 1
 
     def test_slots(self) -> None:
-        assert LanguageNotation.__dataclass_params__.slots is True
+        params = LanguageNotation.__dataclass_params__  # type: ignore[attr-defined]
+        if hasattr(params, "slots"):
+            assert params.slots is True  # type: ignore[attr-defined]  # noqa: B009
+        else:
+            assert hasattr(LanguageNotation, "__slots__")
 
     def test_all_fields_are_str(self) -> None:
         for field in dataclasses.fields(LanguageNotation):

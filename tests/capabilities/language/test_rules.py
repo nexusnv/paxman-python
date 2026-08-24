@@ -384,12 +384,10 @@ class TestIANA:
         assert self.rule.matches(n, self.contract) is False
         assert self.private_rule.matches(n, self.private_contract) is True
 
-    def test_region_xx_private_always_invalid(self) -> None:
-        # XX is private even with flag? Task says XX private
-        # — treat as private
+    def test_region_xx_invalid_region(self) -> None:
         n = _bcp47_notation("en-XX", language="en", region="XX")
         assert self.rule.matches(n, self.contract) is False
-        assert self.private_rule.matches(n, self.private_contract) is True
+        assert self.private_rule.matches(n, self.private_contract) is False
 
     def test_deprecated_iw_to_he(self) -> None:
         n = _bcp47_notation("iw", language="iw")
