@@ -2,7 +2,15 @@
 
 ## Status
 
-Accepted — Approved 2026-08-20
+**Obsolete — Superseded by [ADR-0009](0009-recognition-kernel.md) (2026-08-24).** ADR-0009
+replaces the fixed-order `pre → regex → lexicon → composer → post` pipeline with the Recognition
+Kernel spine. The durable wins of this ADR — the declarative `Grammar` surface, parameterized
+boundary handling, the byte-identical parity harness as the migration gate, and the
+core-is-capability-agnostic layering — are inherited and re-based onto the kernel, not
+discarded. ADR-0009 §Migration maps each phase of this ADR onto the kernel plan. The body below
+remains as the historical record of what was accepted 2026-08-20.
+
+Original status: Accepted — Approved 2026-08-20
 
 ## Changelog
 
@@ -11,6 +19,7 @@ Accepted — Approved 2026-08-20
 | Draft | 2026-08-20 | initial author | Initial draft — proposed staged pipeline over bespoke `recognize()` methods (30 grammars, 5 strategies, 4 boundary variants, benchmark-gated migration). |
 | Rev.1 | 2026-08-20 | Sisyphus (Oracle review `ses_fe24b48daffeCucuRVJMF2OWlL`) | **Corrects factual blockers and closes architectural gaps before acceptance.** Grammar count 30 → **29** verified (`Grammar[NotationT]` subclasses); strategy counts reframed as **strategy-instances** (30 instances across 29 grammars) with corrected recount S1≈17/S2=1/S3=4/S4=4/S5=4 (was 19/1/5/4/5=34); boundary variants 4 → **8 distinct** lookarounds unified behind a **parameterized `BoundaryGuard` family** (was "single guard"); remove `IsbnDigitStrip` from hand-rolled post-trim list (ISBN digit extraction is regex-native); benchmark harness is **informational, non-blocking** per `benchmarks/README.md` — not a gate — and remove erroneous ADR-0007 cross-ref; `amount.py` layering clarified — `AMOUNT_PATTERN`/`classify_amount_shape` **stay in `Money`** and composer accepts a caller-supplied pattern (core stays capability-agnostic per `paxman/core/AGENTS.md`); sketch **Stage Protocol** + `PipelineState`; clarify `WholeInputLookup` emits **original `trimmed`** value; add `single_value` to examples; add **Migration Proof Harness** (differential `RecognitionMatch` equality gate) and **Open Questions**; polish references. |
 | Accepted | 2026-08-20 | Sisyphus | Status → **Accepted** (approved for implementation). No normative changes; Rev.1 body is the implementation baseline. |
+| Obsolete | 2026-08-24 | Sisyphus | Status → **Obsolete**. Superseded by ADR-0009 (Recognition Kernel), which re-bases this pipeline's durable wins (declarative `Grammar` surface, parameterized `BoundaryGuard`, byte-identical parity harness, core layering) onto a substrate + matcher-spec spine. See `docs/adr/0009-recognition-kernel.md`. |
 
 > **How to read Rev.1:** All normative fixes are already folded into the body below. This table is the audit trail; reviewers need not diff Draft vs Rev.1 separately. The body is the current proposal.
 
