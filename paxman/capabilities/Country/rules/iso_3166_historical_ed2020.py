@@ -30,7 +30,7 @@ def _normalize_numeric_key(value: str) -> str:
     try:
         return f"{int(value):03d}"
     except ValueError:
-        return value.upper()
+        return value
 
 
 # Normalized former-name lookup view: keys normalized with the shared Country

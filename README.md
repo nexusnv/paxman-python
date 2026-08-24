@@ -469,6 +469,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | Date | `two_digit_base_year` | `int` | Base year for 2-digit years (e.g., `2000` → `"26"` = `2026`) |
 | Country | `include_localized` | `bool` | Enable CLDR multilingual name recognition |
 | Country | `include_historical` | `bool` | Enable deprecated/historical country name recognition |
+| Country | `output_format` | `str` | Output format (`"alpha2"` default, `"alpha3"`, `"numeric"`, `"name"`) |
 | Currency | `default_currency` | `str` \| `None` | ISO 4217 alpha-3 code resolving a shared bare symbol (e.g. `"$"`), valid only when it is one of that symbol's own candidate codes; `None` (default) or a non-candidate code makes them INVALID |
 | IP | `include_ipv6` | `bool` | Enable IPv6 recognition (default: `True`) |
 | ISBN | `include_isbn10` | `bool` | Enable ISBN-10 recognition (default: `True`) |

@@ -1,15 +1,19 @@
-"""ISO 3166-1:2024 lookup tables.
+"""ISO 3166-1:2020 lookup tables (data snapshot 2024).
 
-All tables derived from ISO 3166-1:2024.
-Source: https://www.iso.org/standard/396855.html
+All tables derived from ISO 3166-1:2020 (second edition, 2020-08) as
+maintained in the ISO 3166-1 Online Browsing Platform (OBP). Snapshot year
+2024; see https://www.iso.org/standard/396855.html and the OBP active list
+https://www.iso.org/guest/en/ISO3166-1/RegistrationTable/Active%20country%20list.html
 
 Includes forward mappings (alpha-3→alpha-2, numeric→alpha-2, name→alpha-2)
 and reverse mappings (alpha-2→alpha-3, alpha-2→numeric, alpha-2→name).
+There are 249 ISO-assigned codes plus 1 user-assigned code (XK for Kosovo)
+= 250 alpha-2 entries; XK has no M49 numeric code.
 """
 
 from __future__ import annotations
 
-# Alpha-2 codes (249 assigned)
+# Alpha-2 codes (249 ISO-assigned + 1 user-assigned XK = 250)
 ALPHA2_CODES: frozenset[str] = frozenset(
     {
         "AD",
@@ -519,7 +523,7 @@ ALPHA3_TO_ALPHA2: dict[str, str] = {
     "ZWE": "ZW",
 }
 
-# Numeric (M49) to Alpha-2 mapping (250 entries)
+# Numeric (M49) to Alpha-2 mapping (249 entries; XK has no M49 code)
 NUMERIC_TO_ALPHA2: dict[str, str] = {
     "004": "AF",
     "008": "AL",
@@ -770,7 +774,6 @@ NUMERIC_TO_ALPHA2: dict[str, str] = {
     "882": "WS",
     "887": "YE",
     "894": "ZM",
-    "-99": "XK",
 }
 
 # Official English short names (249 entries, uppercased)
@@ -1381,7 +1384,7 @@ ALPHA2_TO_ALPHA3: dict[str, str] = {
     "ZW": "ZWE",
 }
 
-# Alpha-2 to Numeric (M49) mapping (250 entries)
+# Alpha-2 to Numeric (M49) mapping (249 entries; XK has no M49 code)
 ALPHA2_TO_NUMERIC: dict[str, str] = {
     "AD": "020",
     "AE": "784",
@@ -1627,7 +1630,6 @@ ALPHA2_TO_NUMERIC: dict[str, str] = {
     "VU": "548",
     "WF": "876",
     "WS": "882",
-    "XK": "-99",
     "YE": "887",
     "YT": "175",
     "ZA": "710",

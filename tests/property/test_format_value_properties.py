@@ -180,12 +180,11 @@ def test_date_iso_to_us_matches_independent_derivation(
 def test_country_every_current_alpha2_round_trips_independently() -> None:
     """Every current alpha-2 code formats to reverse-consistent current values.
 
-    For each of the 249 assigned alpha-2 codes the formatter's alpha-3 and
-    numeric outputs must independently round-trip back to the original alpha-2
-    through the authoritative reverse tables, and the name output must be a
-    non-empty presentation string. Exact presentation values are locked
-    separately by literal expectations for representative codes, so a shared
-    regression in the forward tables cannot mask itself here.
+    For each of the 249 assigned alpha-2 codes plus XK the formatter's alpha-3
+    outputs must round-trip, and for the 249 ISO-assigned codes (all except XK,
+    which has no M49 code) the numeric output must also round-trip. The name
+    output must be a non-empty presentation string. Exact presentation values
+    are locked separately for representative codes.
     """
     cap = CountryCapability()
     for alpha2 in sorted(ALPHA2_CODES):
@@ -194,7 +193,12 @@ def test_country_every_current_alpha2_round_trips_independently() -> None:
         numeric = cap.format_value(alpha2, "numeric", notation)
         name = cap.format_value(alpha2, "name", notation)
         assert ALPHA3_TO_ALPHA2[alpha3] == alpha2
-        assert NUMERIC_TO_ALPHA2[numeric] == alpha2
+        if alpha2 == "XK":
+            # XK is user-assigned with no M49 numeric code — numeric format
+            # passes through the alpha-2 code unchanged by design.
+            assert numeric == "XK"
+        else:
+            assert NUMERIC_TO_ALPHA2[numeric] == alpha2
         assert isinstance(name, str) and name != ""
 
 

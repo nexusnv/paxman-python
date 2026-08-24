@@ -261,7 +261,7 @@ class TestCountryPipeline:
         assert len(result.candidates) == 1
         assert result.candidates[0].provenance[0].authority == "ISO"
         assert (
-            result.candidates[0].provenance[0].specification_name == "ISO 3166-1:2024"
+            result.candidates[0].provenance[0].specification_name == "ISO 3166-1:2020"
         )
 
     @pytest.mark.integration
@@ -420,7 +420,7 @@ class TestCountryPipeline:
         contract = CountryCapability.create_contract(year=2019)
         result = run_capability("US", contract)
 
-        # ISO 3166-1:2024 (year=2024) should be excluded
+        # ISO 3166-1:2020 (year=2020) should be excluded
         # No rules match, so result is INVALID
         assert result.status == Resolution.INVALID
 
