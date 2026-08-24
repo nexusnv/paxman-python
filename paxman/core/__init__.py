@@ -35,6 +35,7 @@ from paxman.core.extensions import (
     register_rule,
     reset_extensions,
 )
+from paxman.core.snapshot import Snapshot
 
 __all__ = [
     "Capability",
@@ -53,6 +54,7 @@ __all__ = [
     "Resolution",
     "Rule",
     "RuleStrategy",
+    "Snapshot",
     "ValidationError",
     "VersionStamp",
     "freeze_extensions",
