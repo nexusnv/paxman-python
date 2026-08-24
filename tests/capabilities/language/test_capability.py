@@ -88,12 +88,12 @@ class TestLanguageCapabilityGrammars:
 
 
 class TestLanguageCapabilityRules:
-    """Rules — 8 (6 always + 1 CLDR gated + 1 English name map) with metadata."""
+    """Rules - 10 with metadata."""  # noqa: E501
 
     def test_get_rules_len(self) -> None:
-        # 8 rule classes: 2 in iso_639_1 (alpha2 + English name), 1 each in iso_639_2,
-        # iso_639_3, iso_639_5, bcp47, iana, cldr. Plan says 7 files but 8 classes.
-        assert len(LanguageCapability().get_rules()) == 8
+        # 10 rule classes: 2 in iso_639_1, 1 iso_639_2,
+        # 2 iso_639_3 (comprehensive + private), 1 iso_639_5, bcp47, 2 iana, cldr.
+        assert len(LanguageCapability().get_rules()) == 10
 
     def test_rule_names(self) -> None:
         names = {r.name for r in LanguageCapability().get_rules()}
@@ -102,9 +102,11 @@ class TestLanguageCapabilityRules:
             "Section-english-name-mapping",
             "Section 4-alpha-3-code",
             "Section 4-comprehensive-alpha-3",
+            "Section 4-private-alpha-3",
             "Section 4-collective-code",
             "Section 2.1-syntax",
             "Section-iana-registry",
+            "Section-iana-registry-private",
             "Section-localized-names",
         }
 
@@ -120,6 +122,7 @@ class TestLanguageCapabilityRules:
             prov["Section 4-comprehensive-alpha-3"].specification_name
             == "ISO 639-3:2007"
         )
+        assert prov["Section 4-private-alpha-3"].specification_name == "ISO 639-3:2007"
         assert prov["Section 4-collective-code"].specification_name == "ISO 639-5:2008"
         assert prov["Section 2.1-syntax"].specification_name == "BCP 47 RFC 5646"
         assert (
@@ -128,6 +131,10 @@ class TestLanguageCapabilityRules:
         )
         assert prov["Section-iana-registry"].kind == "registry"
         assert prov["Section-iana-registry"].version == "Rolling File-Date 2026-08-08"
+        assert (
+            prov["Section-iana-registry-private"].specification_name
+            == "IANA Language Subtag Registry"
+        )
         assert (
             prov["Section-localized-names"].specification_name
             == "CLDR Language Display Names"
@@ -141,9 +148,11 @@ class TestLanguageCapabilityRules:
         assert targets["Section 4-comprehensive-alpha-3"] == frozenset(
             {"language_code"}
         )
+        assert targets["Section 4-private-alpha-3"] == frozenset({"language_code"})
         assert targets["Section 4-collective-code"] == frozenset({"language_code"})
         assert targets["Section 2.1-syntax"] == frozenset({"bcp47_tag"})
         assert targets["Section-iana-registry"] == frozenset({"bcp47_tag"})
+        assert targets["Section-iana-registry-private"] == frozenset({"bcp47_tag"})
         assert targets["Section-localized-names"] == frozenset({"language_name"})
 
     def test_rule_requires_features(self) -> None:
@@ -152,9 +161,11 @@ class TestLanguageCapabilityRules:
         assert req["Section-english-name-mapping"] == frozenset()
         assert req["Section 4-alpha-3-code"] == frozenset()
         assert req["Section 4-comprehensive-alpha-3"] == frozenset()
+        assert req["Section 4-private-alpha-3"] == frozenset({"include_private"})
         assert req["Section 4-collective-code"] == frozenset({"include_collective"})
         assert req["Section 2.1-syntax"] == frozenset()
         assert req["Section-iana-registry"] == frozenset()
+        assert req["Section-iana-registry-private"] == frozenset({"include_private"})
         assert req["Section-localized-names"] == frozenset({"include_localized"})
 
     def test_rule_strategies(self) -> None:
@@ -164,8 +175,10 @@ class TestLanguageCapabilityRules:
             "Section 4-alpha-2-code",
             "Section 4-alpha-3-code",
             "Section 4-comprehensive-alpha-3",
+            "Section 4-private-alpha-3",
             "Section 4-collective-code",
             "Section-iana-registry",
+            "Section-iana-registry-private",
             "Section-localized-names",
             "Section-english-name-mapping",
         ):

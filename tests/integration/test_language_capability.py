@@ -255,7 +255,10 @@ def test_extlang_and_private() -> None:
     )
     assert r3.status == Resolution.SUCCESS
     assert r3.canonicalized_value == "en-x-private"
-    assert any(c.validation_rule == "Section-iana-registry" for c in r3.candidates)
+    assert any(
+        c.validation_rule in ("Section-iana-registry", "Section-iana-registry-private")
+        for c in r3.candidates
+    )
 
 
 @pytest.mark.integration
@@ -345,9 +348,11 @@ def test_iana_registry_edge_cases() -> None:
     from paxman.capabilities.Language.notation import LanguageNotation
     from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (  # noqa: E501
         SectionIANARegistry,
+        SectionIANARegistryPrivate,
     )
 
     rule = SectionIANARegistry()
+    private_rule = SectionIANARegistryPrivate()
     # script private Qaaa without flag should fail, with flag succeed - already covered
     # region private ZZ
     n = LanguageNotation(
@@ -364,7 +369,9 @@ def test_iana_registry_edge_cases() -> None:
     )
     assert rule.matches(n, LanguageCapability.create_contract()) is False
     assert (
-        rule.matches(n, LanguageCapability.create_contract(include_private=True))
+        private_rule.matches(
+            n, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
     # variant prefix valid
@@ -409,7 +416,9 @@ def test_iana_registry_edge_cases() -> None:
     )
     assert rule.matches(n4, LanguageCapability.create_contract()) is False
     assert (
-        rule.matches(n4, LanguageCapability.create_contract(include_private=True))
+        private_rule.matches(
+            n4, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
     # extlang invalid
@@ -441,7 +450,9 @@ def test_iana_registry_edge_cases() -> None:
     )
     assert rule.matches(n6, LanguageCapability.create_contract()) is False
     assert (
-        rule.matches(n6, LanguageCapability.create_contract(include_private=True))
+        private_rule.matches(
+            n6, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
     # script invalid
@@ -501,7 +512,9 @@ def test_iana_registry_edge_cases() -> None:
     )
     assert rule.matches(n10, LanguageCapability.create_contract()) is False
     assert (
-        rule.matches(n10, LanguageCapability.create_contract(include_private=True))
+        private_rule.matches(
+            n10, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
     # grandfathered
@@ -688,6 +701,11 @@ def test_comprehensive_iana_and_bcp47() -> None:
 
     iana = SectionIANARegistry()
     bcp = SectionBCP47Syntax()
+    from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (  # noqa: E501
+        SectionIANARegistryPrivate,
+    )
+
+    iana_private = SectionIANARegistryPrivate()
     # Complex valid tag hits all IANA branches
     n = LanguageNotation(
         language="zh",
@@ -701,14 +719,22 @@ def test_comprehensive_iana_and_bcp47() -> None:
         compact="zh-cmn-Hans-CN-1996-a-foo-x-bar",
         raw_value="zh-cmn-hans-cn-1996-a-foo-x-bar",
     )
-    # This should be valid for both
+    # This should be valid for both bcp and private iana
     assert bcp.matches(n, LanguageCapability.create_contract()) is True
     assert (
         iana.matches(n, LanguageCapability.create_contract(include_private=True))
+        is False
+    )
+    assert (
+        iana_private.matches(
+            n, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
     assert (
-        iana.normalize(n, LanguageCapability.create_contract(include_private=True))
+        iana_private.normalize(
+            n, LanguageCapability.create_contract(include_private=True)
+        )
         == "zh-cmn-Hans-CN-1996-a-foo-x-bar"
     )
     # Language empty with script/region
@@ -742,7 +768,7 @@ def test_comprehensive_iana_and_bcp47() -> None:
     )
     assert iana.matches(n3, LanguageCapability.create_contract()) is True
     assert iana.normalize(n3, LanguageCapability.create_contract()) == "he-cmn"
-    # Private language with all
+    # Private language with all — private rule validates, generic rejects
     n4 = LanguageNotation(
         language="qaa",
         extlang="qab",
@@ -757,6 +783,12 @@ def test_comprehensive_iana_and_bcp47() -> None:
     )
     assert (
         iana.matches(n4, LanguageCapability.create_contract(include_private=True))
+        is False
+    )
+    assert (
+        iana_private.matches(
+            n4, LanguageCapability.create_contract(include_private=True)
+        )
         is True
     )
 

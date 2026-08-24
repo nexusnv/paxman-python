@@ -10,6 +10,8 @@ import re
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.data.iana_grandfathered import (
     GRANDFATHERED_PREFERRED as _GRANDFATHERED_PREFERRED,
+)
+from paxman.capabilities.Language.rules.data.iana_grandfathered import (
     GRANDFATHERED_TAGS as _GRANDFATHERED_SET,
 )
 from paxman.capabilities.Language.rules.data.iana_variant_subtags import (
@@ -34,7 +36,7 @@ _GRANDFATHERED_ALT = "|".join(
 
 _BCP47_WELL_FORMED = re.compile(
     r"^(?:"
-    r"(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"
+    r"(?:(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})"
     r"(?:-[A-Za-z]{4})?"
     r"(?:-(?:[A-Za-z]{2}|\d{3}))?"
     r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"
@@ -55,7 +57,40 @@ def _is_well_formed(tag: str) -> bool:
     for part in tag.split("-"):
         if len(part) == 0 or len(part) > 8:
             return False
-    return bool(_BCP47_WELL_FORMED.match(tag))
+    if not _BCP47_WELL_FORMED.match(tag):
+        return False
+    # Reject duplicate extension singletons (e.g., en-a-foo-a-bar)
+    seen_singletons: set[str] = set()
+    for part in tag.split("-"):
+        if len(part) == 1 and part.lower() not in {"x"} and part.lower().isalnum():
+            low = part.lower()
+            if low in seen_singletons:
+                return False
+            # Only count if it's an extension singleton (followed by 2-8 alphanum)
+            # We detect singleton positions by checking next part length 2-8
+            # Simpler: track all singletons encountered before privateuse
+            seen_singletons.add(low)
+            if part.lower() == "x":
+                break
+    # More precise: re-parse to ensure no duplicate singleton before x-
+    parts = tag.split("-")
+    seen: set[str] = set()
+    for i, p in enumerate(parts):
+        if (
+            len(p) == 1
+            and p.isalnum()
+            and p.lower() != "x"
+            and i + 1 < len(parts)
+            and 2 <= len(parts[i + 1]) <= 8
+            and parts[i + 1].isalnum()
+        ):
+            low = p.lower()
+            if low in seen:
+                return False
+            seen.add(low)
+        if p.lower() == "x":
+            break
+    return True
 
 
 class SectionBCP47Syntax(Rule[LanguageNotation]):
