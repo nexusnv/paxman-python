@@ -6,7 +6,9 @@ from paxman.core.grammar.anchors import AnchorSet, HasDigit, KeySetAnchor, Liter
 from paxman.core.grammar.boundary import BoundaryGuard
 from paxman.core.grammar.boundary_spec import BoundarySpec
 from paxman.core.grammar.composer import AmountComposer
+from paxman.core.grammar.engine_loop import _run_matchers
 from paxman.core.grammar.lexicon import LexiconAlternation
+from paxman.core.grammar.matcher_spec import EmitFn, MatcherKind, MatcherSpec
 from paxman.core.grammar.normalizers import (
     AccentStrip,
     CaseFold,
@@ -36,12 +38,15 @@ __all__ = [
     "BoundaryGuard",
     "BoundarySpec",
     "CaseFold",
+    "EmitFn",
     "HasDigit",
     "IDNAFold",
     "KeySetAnchor",
     "LexiconAlternation",
     "LexiconStage",
     "LiteralAnchor",
+    "MatcherKind",
+    "MatcherSpec",
     "Normalizer",
     "NormalizerSequence",
     "PipelineGrammar",
@@ -56,4 +61,5 @@ __all__ = [
     "SymbolFold",
     "View",
     "WholeInputLookup",
+    "_run_matchers",
 ]

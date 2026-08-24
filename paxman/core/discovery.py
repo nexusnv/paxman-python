@@ -14,6 +14,7 @@ from paxman.core.extensions import freeze_extensions, reset_extensions
 
 _registry: dict[str, Capability[Any]] = {}
 _frozen: bool = False
+_recognition_revision: str = "0"
 
 
 def register_capability(capability: Any) -> None:
@@ -53,11 +54,27 @@ def get_capability(name: str) -> Capability[Any]:
     return _registry[name]
 
 
+def get_recognition_revision() -> str:
+    """Return the current recognition revision hash."""
+    return _recognition_revision
+
+
 def freeze_registry() -> None:
     """Freeze the registry so no more capabilities can be registered."""
-    global _frozen
+    global _frozen, _recognition_revision
+    if _frozen:
+        return
     _frozen = True
     freeze_extensions()
+    import hashlib
+
+    parts = sorted(
+        f"{cap.name}:{getattr(cap, 'version', getattr(cap, '__version__', '0'))}"
+        for cap in _registry.values()
+    )
+    _recognition_revision = (
+        hashlib.sha256("|".join(parts).encode()).hexdigest()[:12] if parts else "0"
+    )
 
 
 def is_registry_frozen() -> bool:
@@ -77,7 +94,8 @@ def list_registered_capabilities() -> tuple[str, ...]:
 
 def reset_registry() -> None:
     """Reset the registry (for testing only)."""
-    global _frozen
+    global _frozen, _recognition_revision
     _registry.clear()
     _frozen = False
+    _recognition_revision = "0"
     reset_extensions()

@@ -184,6 +184,7 @@ class VersionStamp:
     """Version metadata."""
 
     paxman_version: str
+    recognition_revision: str = "0"
 
 
 class Rule(ABC, Generic[NotationT]):
