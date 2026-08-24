@@ -1,9 +1,10 @@
 """IANA Language Subtag Registry validation.
 
-Registry Type membership: language/script/region/variant + Prefix, Deprecated→Preferred,
-grandfathered preferred. Private-use reservations are validated by the
-engine-gated private rule ``SectionIANARegistryPrivate``; generic rejects private.
-"""  # noqa: E501
+Registry Type membership: language/script/region/variant + Prefix,
+Deprecated→Preferred, grandfathered preferred. Private-use reservations
+are validated by the engine-gated private rule
+``SectionIANARegistryPrivate``; generic rejects private.
+"""
 
 from __future__ import annotations
 
@@ -60,7 +61,6 @@ def _is_private_region(region: str) -> bool:
     return low in {
         "aa",
         "zz",
-        "xx",
         "qm",
         "qn",
         "qo",

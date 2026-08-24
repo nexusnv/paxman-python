@@ -17,7 +17,6 @@ DEPRECATED_MAP: dict[str, str] = {
     "ji": "yi",
     "jw": "jv",
     "mo": "ro",
-    "sh": "sr",
     "bh": "bih",
     "scc": "sr",
     "scr": "hr",
