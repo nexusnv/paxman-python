@@ -9,7 +9,11 @@ from typing import Any
 
 from paxman.core.capability import Capability
 from paxman.core.capability_contract import CapabilityContract
-from paxman.core.discovery import freeze_registry, get_capability
+from paxman.core.discovery import (
+    freeze_registry,
+    get_capability,
+    get_recognition_revision,
+)
 from paxman.core.domain import (
     Candidate,
     Grammar,
@@ -28,6 +32,7 @@ from paxman.core.errors import (
     ValidationError,
 )
 from paxman.core.extensions import get_extended_grammars, get_extended_rules
+from paxman.core.grammar.engine_loop import _run_matchers
 
 
 def _resolve_version() -> str:
@@ -88,7 +93,9 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
 
     status = _determine_status(candidates, had_recognitions)
     canonical_value = _extract_canonical_value(candidates, status)
-    version_stamp = VersionStamp(paxman_version=PAXMAN_VERSION)
+    version_stamp = VersionStamp(
+        paxman_version=PAXMAN_VERSION, recognition_revision=get_recognition_revision()
+    )
 
     return ExecutionResult(
         status=status,
@@ -181,14 +188,26 @@ def _recognize(
 
     ordered: list[tuple[int, int, int, str, RecognitionMatch[Any]]] = []
     for grammar in active_grammars:
-        try:
-            matches = grammar.recognize(text)
-        except Exception as exc:
-            raise RecognitionError(
-                rule=grammar.name,
-                message=f"Grammar failed: {exc}",
-                original_error=exc,
-            ) from exc
+        # compat shim: if grammar exposes compiled matchers, delegate to
+        # engine-owned loop
+        if hasattr(grammar, "matchers") and grammar.matchers:  # type: ignore[attr-defined]
+            try:
+                matches = _run_matchers(text, [grammar])
+            except Exception as exc:
+                raise RecognitionError(
+                    rule=grammar.name,
+                    message=f"Grammar failed: {exc}",
+                    original_error=exc,
+                ) from exc
+        else:
+            try:
+                matches = grammar.recognize(text)
+            except Exception as exc:
+                raise RecognitionError(
+                    rule=grammar.name,
+                    message=f"Grammar failed: {exc}",
+                    original_error=exc,
+                ) from exc
         for match in matches:
             if not 0 <= match.start <= match.end <= len(text):
                 raise RecognitionError(

@@ -36,6 +36,7 @@ class TestVersionStamp:
     @pytest.mark.unit
     def test_surface_is_exactly_paxman_version(self) -> None:
         field_names = tuple(f.name for f in dataclasses.fields(VersionStamp))
-        assert field_names == ("paxman_version",)
+        assert field_names == ("paxman_version", "recognition_revision")
         vs = VersionStamp(paxman_version="0.1.0")
+        assert vs.recognition_revision == "0"
         assert not hasattr(vs, "replay_hash")
