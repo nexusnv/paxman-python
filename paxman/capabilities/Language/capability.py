@@ -31,6 +31,7 @@ from paxman.capabilities.Language.rules.data.iso_639_2 import (
 )
 from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (
     SectionIANARegistry,
+    SectionIANARegistryPrivate,
 )
 from paxman.capabilities.Language.rules.iso_639_1_ed2002 import (
     SectionAlpha2Code,
@@ -39,6 +40,7 @@ from paxman.capabilities.Language.rules.iso_639_1_ed2002 import (
 from paxman.capabilities.Language.rules.iso_639_2_ed1998 import SectionAlpha3Code
 from paxman.capabilities.Language.rules.iso_639_3_ed2007 import (
     SectionComprehensiveAlpha3,
+    SectionPrivateAlpha3,
 )
 from paxman.capabilities.Language.rules.iso_639_5_ed2008 import SectionCollectiveCode
 from paxman.core.capability import Capability
@@ -96,9 +98,11 @@ class LanguageCapability(Capability[LanguageNotation]):
             SectionEnglishNameMapping(),
             SectionAlpha3Code(),
             SectionComprehensiveAlpha3(),
+            SectionPrivateAlpha3(),
             SectionCollectiveCode(),
             SectionBCP47Syntax(),
             SectionIANARegistry(),
+            SectionIANARegistryPrivate(),
             SectionLocalizedNames(),
         ]
 

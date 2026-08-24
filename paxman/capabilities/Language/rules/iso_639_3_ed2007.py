@@ -1,20 +1,10 @@
 """ISO 639-3:2007 validation rules.
 
 Comprehensive alpha-3 7000+ (Terminology only).
-
-Private-use reservation qaa-qtz (SIL private range) is gated on
-``LanguageContract.include_private``. Per-subtag gating is intrinsic to
-ISO 639-3 §4 private-use semantics — a single-rule per-subtag check via
-the contract field is intentional (cf. IANA registry §2.2.1). The contract
-type is fixed for this capability, so ``cast`` is validity-gated, not
-optional-feature probing.
 """
 
 from __future__ import annotations
 
-from typing import cast
-
-from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.data.iso_639_2 import ISO6392_T_TO_ALPHA2
 from paxman.capabilities.Language.rules.data.iso_639_3 import ISO6393_CODES
@@ -37,7 +27,7 @@ def _is_private_qaa(lang: str) -> bool:
 
 
 class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
-    """ISO 639-3:2007 Section 4 — comprehensive alpha-3."""
+    """ISO 639-3:2007 Section 4 — comprehensive alpha-3 (non-private)."""
 
     name = "Section 4-comprehensive-alpha-3"
     strategy = RuleStrategy.LOOKUP_TABLE
@@ -47,13 +37,12 @@ class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
-        """Check comprehensive membership with private reservation gating."""
+        """Check comprehensive membership (private qaa-qtz excluded)."""
         lang = notation.language.lower()
         if len(lang) != 3:
             return False
         if _is_private_qaa(lang):
-            include_private = cast(LanguageContract, contract).include_private
-            return bool(include_private)
+            return False
         return lang in ISO6393_CODES
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
@@ -63,3 +52,25 @@ class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
         if alpha2 is not None:
             return alpha2
         return lang
+
+
+class SectionPrivateAlpha3(Rule[LanguageNotation]):
+    """ISO 639-3:2007 Section 4 — private-use qaa-qtz (engine-gated)."""
+
+    name = "Section 4-private-alpha-3"
+    strategy = RuleStrategy.LOOKUP_TABLE
+    provenance = PUBLICATION
+    citation = "Section 4 (private-use qaa-qtz)"
+    target_semantics = frozenset({"language_code"})
+    requires_features = frozenset({"include_private"})
+
+    def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
+        """Accept private-use qaa-qtz when include_private."""
+        lang = notation.language.lower()
+        if len(lang) != 3:
+            return False
+        return _is_private_qaa(lang)
+
+    def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
+        """Return lower private code."""
+        return notation.language.lower()

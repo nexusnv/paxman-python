@@ -40,8 +40,7 @@ DEPRECATED_MAP: dict[str, str] = {
     "slk": "sk",
     "sqi": "sq",
     "zho": "zh",
-    # Region deprecated? Not in test but included for completeness
+    # Region deprecated: BU→MM (Burma/Myanmar), YD→YE (Yemen)
     "bu": "mm",
-    "tl": "ph",
     "yd": "ye",
 }

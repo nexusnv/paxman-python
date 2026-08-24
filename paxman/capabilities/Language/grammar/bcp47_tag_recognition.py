@@ -36,12 +36,12 @@ _GRANDFATHERED_ALT = "|".join(
 # ---------------------------------------------------------------------------
 _BCP47_BODY = (
     r"(?P<tag>" + _GRANDFATHERED_ALT + r"|x(?:-[A-Za-z0-9]{1,8})+"  # privateuse-only
-    r"|(?:(?=[A-Za-z]{2,3}-)"
-    r"[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}"
+    r"|(?:(?=[A-Za-z]{2,8}-)"
+    r"(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})"
     r"(?:-[A-Za-z]{4})?"  # script
     r"(?:-(?:[A-Za-z]{2}|\d{3}))?"  # region
     r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"  # variant
-    r"(?:-[0-9A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*"  # extension (singleton != x)
+    r"(?:-[A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*"  # extension (singleton != x)
     r"(?:-x(?:-[A-Za-z0-9]{1,8})+)?"  # privateuse tail
     r")"
     r")"

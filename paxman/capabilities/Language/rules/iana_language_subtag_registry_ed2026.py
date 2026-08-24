@@ -1,22 +1,12 @@
 """IANA Language Subtag Registry validation.
 
 Registry Type membership: language/script/region/variant + Prefix, Deprecated→Preferred,
-private qaa-qtz + x- gated per-subtag via include_private, grandfathered preferred.
-
-Private-use reservations (qaa-qtz for language, Qaaa for script, qm-qz/ZZ/XX
-for region, and x- privateuse) are gated per-subtag on
-``LanguageContract.include_private``. Per-subtag gating is intrinsic to IANA
-Registry §2.2.1 — ``requires_features`` would drop whole-tag validation, not
-individual reservations. The contract type is fixed for this capability, so
-``cast(LanguageContract, contract).include_private`` is validity-gated, not
-optional-feature probing.
-"""
+grandfathered preferred. Private-use reservations are validated by the
+engine-gated private rule ``SectionIANARegistryPrivate``; generic rejects private.
+"""  # noqa: E501
 
 from __future__ import annotations
 
-from typing import cast
-
-from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.data.iana_deprecated_map import DEPRECATED_MAP
 from paxman.capabilities.Language.rules.data.iana_grandfathered import (
@@ -61,14 +51,14 @@ def _is_private_language(lang: str) -> bool:
 
 
 def _is_private_script(script: str) -> bool:
-    # Qaaa is private script
-    return script.lower() == "qaaa"
+    low = script.lower()
+    return "qaaa" <= low <= "qabx"
 
 
 def _is_private_region(region: str) -> bool:
-    # ZZ and XX are private region subtags for tests
     low = region.lower()
     return low in {
+        "aa",
         "zz",
         "xx",
         "qm",
@@ -85,6 +75,31 @@ def _is_private_region(region: str) -> bool:
         "qx",
         "qy",
         "qz",
+        "xa",
+        "xb",
+        "xc",
+        "xd",
+        "xe",
+        "xf",
+        "xg",
+        "xh",
+        "xi",
+        "xj",
+        "xk",
+        "xl",
+        "xm",
+        "xn",
+        "xo",
+        "xp",
+        "xq",
+        "xr",
+        "xs",
+        "xt",
+        "xu",
+        "xv",
+        "xw",
+        "xy",
+        "xz",
     }
 
 
@@ -97,8 +112,20 @@ def _resolve_deprecated(lang: str) -> str:
     return cur
 
 
+def _has_no_other_components(notation: LanguageNotation) -> bool:
+    return not (
+        notation.language
+        or notation.extlang
+        or notation.script
+        or notation.region
+        or notation.variant
+        or notation.extension
+        or notation.grandfathered
+    )
+
+
 class SectionIANARegistry(Rule[LanguageNotation]):
-    """IANA Registry — language/script/region/variant membership plus constraints."""
+    """IANA Registry — language/script/region/variant membership (non-private)."""  # noqa: E501
 
     name = "Section-iana-registry"
     strategy = RuleStrategy.LOOKUP_TABLE
@@ -111,30 +138,30 @@ class SectionIANARegistry(Rule[LanguageNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
-        """Validate registry membership with private and prefix constraints."""
-        include_private = bool(cast(LanguageContract, contract).include_private)
-
+        """Validate registry membership (private subtags invalid)."""
         # Grandfathered
         if notation.grandfathered:
             return notation.grandfathered.lower() in GRANDFATHERED_TAGS
 
-        # Privateuse-only
+        # Privateuse-only: generic rejects
+        if notation.privateuse and _has_no_other_components(notation):
+            return False
+
+        # If any private subtag present → invalid for generic
         if notation.privateuse:
-            return bool(include_private)
+            # privateuse suffix with other components → invalid for generic
+            return False
 
         # Language
         lang = notation.language.lower() if notation.language else ""
         if lang:
             if _is_private_language(lang):
-                if not include_private:
-                    return False
-            else:
-                # Check deprecated or direct membership
-                resolved = _resolve_deprecated(lang)
-                if lang in DEPRECATED_MAP:
-                    pass
-                elif lang not in _LANGUAGE_SET and resolved not in _LANGUAGE_SET:
-                    return False
+                return False
+            resolved = _resolve_deprecated(lang)
+            if lang in DEPRECATED_MAP:
+                pass
+            elif lang not in _LANGUAGE_SET and resolved not in _LANGUAGE_SET:
+                return False
 
         # Extlang
         if notation.extlang:
@@ -142,27 +169,24 @@ class SectionIANARegistry(Rule[LanguageNotation]):
                 if not ext:
                     continue
                 if _is_private_language(ext):
-                    if not include_private:
-                        return False
-                elif ext not in _LANGUAGE_SET:
+                    return False
+                if ext not in _LANGUAGE_SET:
                     return False
 
         # Script
         if notation.script:
             scr = notation.script
             if _is_private_script(scr):
-                if not include_private:
-                    return False
-            elif scr.lower() not in _SCRIPT_SET:
+                return False
+            if scr.lower() not in _SCRIPT_SET:
                 return False
 
         # Region
         if notation.region:
             reg = notation.region
             if _is_private_region(reg):
-                if not include_private:
-                    return False
-            elif reg.lower() not in _REGION_SET and not (
+                return False
+            if reg.lower() not in _REGION_SET and not (
                 reg.isdigit() and reg.lower() in _REGION_SET
             ):
                 return False
@@ -196,16 +220,14 @@ class SectionIANARegistry(Rule[LanguageNotation]):
                         if not candidates & allowed and prefix not in allowed:
                             return False
 
-        return not (notation.privateuse and not include_private)
+        return True
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
         """Return canonical tag with Deprecated and grandfathered preferred."""
-        # Grandfathered preferred
         if notation.grandfathered:
             low = notation.grandfathered.lower()
             return GRANDFATHERED_PREFERRED.get(low, low)
 
-        # Privateuse-only
         if notation.privateuse and not notation.language:
             return notation.privateuse.lower()
 
@@ -215,12 +237,10 @@ class SectionIANARegistry(Rule[LanguageNotation]):
             lang = _resolve_deprecated(lang)
             parts.append(lang)
         if notation.extlang:
-            # Each extlang resolved? Keep as is
             for ext in notation.extlang.lower().split("-"):
                 if ext:
                     parts.append(_resolve_deprecated(ext))
         if notation.script:
-            # Title case
             s = notation.script
             parts.append(s[0].upper() + s[1:].lower() if s else "")
         if notation.region:
@@ -238,13 +258,83 @@ class SectionIANARegistry(Rule[LanguageNotation]):
                 if ext:
                     parts.append(ext)
         if notation.privateuse:
-            # privateuse is "x-..." already lower
             parts.extend(notation.privateuse.lower().split("-"))
 
-        # Handle case where language was deprecated and we already resolved
-        # Reassemble
         if not parts:
             return notation.compact
-        # Preserve hyphen joins
-        # Language already lower, script title, region upper handled
+        return "-".join(parts)
+
+
+class SectionIANARegistryPrivate(Rule[LanguageNotation]):
+    """IANA Registry — private-use reservations (engine-gated)."""
+
+    name = "Section-iana-registry-private"
+    strategy = RuleStrategy.LOOKUP_TABLE
+    provenance = PUBLICATION
+    citation = "IANA Registry private-use qaa-qtz/Qaaa-Qabx/QM-QZ/AA/XA-XZ/ZZ/x-"
+    target_semantics = frozenset({"bcp47_tag"})
+    requires_features = frozenset({"include_private"})
+
+    def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
+        """Validate private-use reservations when include_private."""
+        if notation.grandfathered:
+            return notation.grandfathered.lower() in GRANDFATHERED_TAGS
+
+        if notation.privateuse and _has_no_other_components(notation):
+            return True
+
+        has_private = False
+        lang = notation.language.lower() if notation.language else ""
+        if lang and _is_private_language(lang):
+            has_private = True
+        if notation.extlang:
+            for ext in notation.extlang.lower().split("-"):
+                if ext and _is_private_language(ext):
+                    has_private = True
+        if notation.script and _is_private_script(notation.script):
+            has_private = True
+        if notation.region and _is_private_region(notation.region):
+            has_private = True
+        if notation.privateuse:
+            has_private = True
+
+        return has_private
+
+    def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
+        """Return canonical tag (same as generic)."""
+        if notation.grandfathered:
+            low = notation.grandfathered.lower()
+            return GRANDFATHERED_PREFERRED.get(low, low)
+        if notation.privateuse and not notation.language:
+            return notation.privateuse.lower()
+        parts: list[str] = []
+        lang = notation.language.lower() if notation.language else ""
+        if lang:
+            lang = _resolve_deprecated(lang)
+            parts.append(lang)
+        if notation.extlang:
+            for ext in notation.extlang.lower().split("-"):
+                if ext:
+                    parts.append(_resolve_deprecated(ext))
+        if notation.script:
+            s = notation.script
+            parts.append(s[0].upper() + s[1:].lower() if s else "")
+        if notation.region:
+            r = notation.region
+            if r.isdigit():
+                parts.append(r)
+            else:
+                parts.append(r.upper())
+        if notation.variant:
+            for var in notation.variant.lower().split("-"):
+                if var:
+                    parts.append(var.lower())
+        if notation.extension:
+            for ext in notation.extension.lower().split("-"):
+                if ext:
+                    parts.append(ext)
+        if notation.privateuse:
+            parts.extend(notation.privateuse.lower().split("-"))
+        if not parts:
+            return notation.compact
         return "-".join(parts)

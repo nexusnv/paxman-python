@@ -61,7 +61,7 @@ VARIANT_PREFIXES: dict[str, frozenset[str]] = {
     "alalc97": frozenset({"ru"}),
     "fonipa": frozenset({"en", "de", "fr", "sl"}),
     "pinyin": frozenset({"zh"}),
-    "wadegile": frozenset({"zh"}),
+    "wadegile": frozenset({"zh-Latn"}),
     "rozaj": frozenset({"sl"}),
     "biske": frozenset({"sl"}),
 }

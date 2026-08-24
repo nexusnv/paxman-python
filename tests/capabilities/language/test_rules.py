@@ -148,14 +148,16 @@ class TestISO6392:
 
 @pytest.mark.capability
 class TestISO6393:
-    """ISO 639-3:2007 — bare alpha-3 comprehensive 7000+ (T only)."""
+    """ISO 639-3:2007 — bare alpha-3 comprehensive 7000+ (T only) + private qaa-qtz."""
 
     def setup_method(self) -> None:
         from paxman.capabilities.Language.rules.iso_639_3_ed2007 import (
             SectionComprehensiveAlpha3,
+            SectionPrivateAlpha3,
         )
 
         self.rule = SectionComprehensiveAlpha3()
+        self.private_rule = SectionPrivateAlpha3()
         self.contract = LanguageContract()
         self.private_contract = LanguageContract(include_private=True)
 
@@ -166,15 +168,20 @@ class TestISO6393:
         assert self.rule.provenance.authority == "SIL International (ISO 639-3 RA)"
         assert self.rule.provenance.specification_name == "ISO 639-3:2007"
         assert self.rule.provenance.publication_year == 2007
+        assert self.private_rule.requires_features == frozenset({"include_private"})
 
     def test_cmn_valid(self) -> None:
         assert self.rule.matches(_code_notation("cmn"), self.contract) is True
 
     def test_qaa_private_reserved_without_flag_invalid(self) -> None:
         assert self.rule.matches(_code_notation("qaa"), self.contract) is False
+        assert self.private_rule.requires_features == frozenset({"include_private"})
 
     def test_qaa_with_private_flag_valid(self) -> None:
-        assert self.rule.matches(_code_notation("qaa"), self.private_contract) is True
+        assert (
+            self.private_rule.matches(_code_notation("qaa"), self.private_contract)
+            is True
+        )
 
     def test_normalize_lower(self) -> None:
         assert self.rule.normalize(_code_notation("CMN"), self.contract) == "cmn"
@@ -338,6 +345,7 @@ class TestIANA:
         )
 
         self.rule = _iana_mod.SectionIANARegistry()
+        self.private_rule = _iana_mod.SectionIANARegistryPrivate()
         self.contract = LanguageContract()
         self.private_contract = LanguageContract(include_private=True)
 
@@ -345,6 +353,7 @@ class TestIANA:
         assert self.rule.strategy is RuleStrategy.LOOKUP_TABLE
         assert self.rule.target_semantics == frozenset({"bcp47_tag"})
         assert self.rule.requires_features == frozenset()
+        assert self.private_rule.requires_features == frozenset({"include_private"})
         assert self.rule.provenance.authority == "IANA"
         assert self.rule.provenance.kind == "registry"
         assert self.rule.provenance.version == "Rolling File-Date 2026-08-08"
@@ -364,7 +373,7 @@ class TestIANA:
     def test_script_qaaa_private_only_with_flag(self) -> None:
         n = _bcp47_notation("en-Qaaa", language="en", script="Qaaa")
         assert self.rule.matches(n, self.contract) is False
-        assert self.rule.matches(n, self.private_contract) is True
+        assert self.private_rule.matches(n, self.private_contract) is True
 
     def test_region_us_valid(self) -> None:
         n = _bcp47_notation("en-US", language="en", region="US")
@@ -373,14 +382,14 @@ class TestIANA:
     def test_region_zz_private_only_with_flag(self) -> None:
         n = _bcp47_notation("en-ZZ", language="en", region="ZZ")
         assert self.rule.matches(n, self.contract) is False
-        assert self.rule.matches(n, self.private_contract) is True
+        assert self.private_rule.matches(n, self.private_contract) is True
 
     def test_region_xx_private_always_invalid(self) -> None:
         # XX is private even with flag? Task says XX private
         # — treat as private
         n = _bcp47_notation("en-XX", language="en", region="XX")
         assert self.rule.matches(n, self.contract) is False
-        assert self.rule.matches(n, self.private_contract) is True
+        assert self.private_rule.matches(n, self.private_contract) is True
 
     def test_deprecated_iw_to_he(self) -> None:
         n = _bcp47_notation("iw", language="iw")
