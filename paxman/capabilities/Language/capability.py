@@ -65,6 +65,17 @@ class LanguageCapability(Capability[LanguageNotation]):
     Canonicalizes language identifiers (bare codes, BCP 47 tags, display names)
     to BCP 47 canonical tag with full provenance. Alternative output formats
     via ``format_value``: alpha2, alpha3, alpha3-bib, name.
+
+    Display-name completeness (v1.0.0): English language names are a curatorial
+    subset (60 entries from ISO 639 English Descriptions + IANA Registry; see
+    ``language_snapshot.json`` _meta) — not the full IANA Registry Description
+    set (7,900+). Localized (CLDR) names are a subset (24 entries, en/fr/de/es latn)
+    gated by ``include_localized`` (``requires_features``). Names outside these
+    subsets are ``MISSING`` (grammar emits no match), not ``INVALID``, so no
+    false negative occurs under the current completeness contract. Full IANA
+    Description / CLDR v46 root coverage will be generated from the respective
+    registry snapshots in a follow-up; unsupported provenance is documented in
+    ``paxman/shared_data/language_snapshot.json`` and rule/grammar data headers.
     """
 
     name = "language"
@@ -102,7 +113,6 @@ class LanguageCapability(Capability[LanguageNotation]):
         include_localized: bool = False,
         include_collective: bool = False,
         include_private: bool = False,
-        include_grandfathered: bool = True,
     ) -> LanguageContract:
         """Factory method for creating contracts with proper defaults.
 
@@ -119,7 +129,6 @@ class LanguageCapability(Capability[LanguageNotation]):
             include_localized: Enable CLDR localized names.
             include_collective: Enable ISO 639-5 collective codes.
             include_private: Enable private-use language codes.
-            include_grandfathered: Enable grandfathered tags.
 
         Returns:
             Configured LanguageContract instance.
@@ -133,7 +142,6 @@ class LanguageCapability(Capability[LanguageNotation]):
             include_localized=include_localized,
             include_collective=include_collective,
             include_private=include_private,
-            include_grandfathered=include_grandfathered,
         )
 
     def format_value(

@@ -6,6 +6,9 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from paxman.capabilities.Language.grammar.data.grandfathered_tags import (
+    GRANDFATHERED_TAGS as _GRANDFATHERED_TAGS_SET,
+)
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.boundary import BoundaryGuard
@@ -13,41 +16,14 @@ from paxman.core.grammar.pipeline import PipelineGrammar
 from paxman.core.grammar.stages import PipelineState, StandardPre
 
 # ---------------------------------------------------------------------------
-# Grandfathered enumerated alternation (26 tags + i-cherokee for test vector)
+# Grandfathered enumerated alternation (27 tags: 26 authority + i-cherokee test vector)
 # IANA Language Subtag Registry File-Date 2026-08-08 + test vector i-cherokee
+# Generated source: paxman/capabilities/Language/grammar/data/grandfathered_tags.py
 # ---------------------------------------------------------------------------
-_GRANDFATHERED_TAGS = [
-    "en-GB-oed",
-    "i-ami",
-    "i-bnn",
-    "i-cherokee",
-    "i-default",
-    "i-enochian",
-    "i-hak",
-    "i-klingon",
-    "i-lux",
-    "i-mingo",
-    "i-navajo",
-    "i-pwn",
-    "i-tao",
-    "i-tay",
-    "i-tsu",
-    "sgn-BE-FR",
-    "sgn-BE-NL",
-    "sgn-CH-DE",
-    "art-lojban",
-    "cel-gaulish",
-    "no-bok",
-    "no-nyn",
-    "zh-guoyu",
-    "zh-hakka",
-    "zh-min",
-    "zh-min-nan",
-    "zh-xiang",
-]
-
-_GRANDFATHERED_SET: frozenset[str] = frozenset(t.lower() for t in _GRANDFATHERED_TAGS)
-_GRANDFATHERED_ALT = "|".join(re.escape(t) for t in _GRANDFATHERED_TAGS)
+_GRANDFATHERED_SET: frozenset[str] = _GRANDFATHERED_TAGS_SET
+_GRANDFATHERED_ALT = "|".join(
+    re.escape(t) for t in sorted(_GRANDFATHERED_TAGS_SET, key=lambda t: (-len(t), t))
+)
 
 # ---------------------------------------------------------------------------
 # ABNF-approximate BCP 47 body — hyphen only (underscore via Pre scratch)

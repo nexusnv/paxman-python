@@ -20,4 +20,3 @@ class LanguageContract(CapabilityContract):
     include_localized: bool = False
     include_collective: bool = False
     include_private: bool = False
-    include_grandfathered: bool = True

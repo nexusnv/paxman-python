@@ -58,7 +58,13 @@ class SectionAlpha2Code(Rule[LanguageNotation]):
 
 
 class SectionEnglishNameMapping(Rule[LanguageNotation]):
-    """ISO 639-1:2002 English language name → canonical code mapping."""
+    """ISO 639-1:2002 English language name → canonical code mapping.
+
+    Completeness: English display names are a curatorial subset (60 entries)
+    — not the full IANA Registry Description set (7,900+). Names outside the
+    subset yield MISSING (grammar emits no match), not INVALID; see
+    ``language_snapshot.json`` _meta and grammar/rules data headers.
+    """
 
     name = "Section-english-name-mapping"
     strategy = RuleStrategy.LOOKUP_TABLE

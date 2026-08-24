@@ -1,4 +1,11 @@
-"""Language code recognition — bare 2-3|5-8 via BoundaryGuard.word_sign."""
+"""Language code recognition — bare 2-3|5-8 via BoundaryGuard.word_sign.
+
+word_sign blocks hyphen/plus/sign so bare codes do not carve inside
+BCP47 tags (e.g. ``en`` inside ``en-US`` must not be recognized as
+language_code; the tag is the longer, correct recognition). Mirrors
+Phone/Currency sign-aware guards for disjoint grammars within one
+capability and avoids cross-grammar AMBIGUOUS on every hyphenated tag.
+"""
 
 from __future__ import annotations
 
