@@ -9,9 +9,11 @@ from paxman.core.grammar.composer import AmountComposer
 from paxman.core.grammar.engine_loop import _run_matchers
 from paxman.core.grammar.lexicon import LexiconAlternation
 from paxman.core.grammar.matcher_spec import EmitFn, MatcherKind, MatcherSpec
+from paxman.core.grammar.matchers.lexicon import LexiconMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
     CaseFold,
+    CountryNameFold,
     IDNAFold,
     Normalizer,
     NormalizerSequence,
@@ -38,11 +40,13 @@ __all__ = [
     "BoundaryGuard",
     "BoundarySpec",
     "CaseFold",
+    "CountryNameFold",
     "EmitFn",
     "HasDigit",
     "IDNAFold",
     "KeySetAnchor",
     "LexiconAlternation",
+    "LexiconMatcher",
     "LexiconStage",
     "LiteralAnchor",
     "MatcherKind",
