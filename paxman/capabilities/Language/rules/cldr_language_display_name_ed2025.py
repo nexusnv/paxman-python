@@ -25,7 +25,14 @@ _NORMALIZED: dict[str, str] = {
 
 
 class SectionLocalizedNames(Rule[LanguageNotation]):
-    """CLDR Language Display Names — localized names → canonical code."""
+    """CLDR Language Display Names — localized names → canonical code.
+
+    Completeness: localized display names are a curatorial subset (24 entries,
+    en/fr/de/es latn) gated by ``include_localized`` via ``requires_features``.
+    Full CLDR v46 root coverage is not yet generated. Names outside the subset
+    are MISSING (grammar emits no match when gated, engine-gated otherwise),
+    not INVALID; see ``language_snapshot.json`` _meta.
+    """
 
     name = "Section-localized-names"
     strategy = RuleStrategy.LOOKUP_TABLE

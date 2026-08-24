@@ -20,7 +20,7 @@ def test_defaults():
     assert c.include_localized is False
     assert c.include_collective is False
     assert c.include_private is False
-    assert c.include_grandfathered is True
+    # include_grandfathered removed — grandfathered always valid (IANA)
 
 
 def test_offered():

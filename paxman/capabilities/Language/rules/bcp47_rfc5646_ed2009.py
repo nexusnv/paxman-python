@@ -8,6 +8,10 @@ from __future__ import annotations
 import re
 
 from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.rules.data.iana_grandfathered import (
+    GRANDFATHERED_PREFERRED as _GRANDFATHERED_PREFERRED,
+    GRANDFATHERED_TAGS as _GRANDFATHERED_SET,
+)
 from paxman.capabilities.Language.rules.data.iana_variant_subtags import (
     VARIANT_PREFIXES,
 )
@@ -24,67 +28,9 @@ PUBLICATION = Provenance(
     publication_year=2009,
 )
 
-_GRANDFATHERED_TAGS = [
-    "en-GB-oed",
-    "i-ami",
-    "i-bnn",
-    "i-cherokee",
-    "i-default",
-    "i-enochian",
-    "i-hak",
-    "i-klingon",
-    "i-lux",
-    "i-mingo",
-    "i-navajo",
-    "i-pwn",
-    "i-tao",
-    "i-tay",
-    "i-tsu",
-    "sgn-BE-FR",
-    "sgn-BE-NL",
-    "sgn-CH-DE",
-    "art-lojban",
-    "cel-gaulish",
-    "no-bok",
-    "no-nyn",
-    "zh-guoyu",
-    "zh-hakka",
-    "zh-min",
-    "zh-min-nan",
-    "zh-xiang",
-]
-_GRANDFATHERED_SET = frozenset(t.lower() for t in _GRANDFATHERED_TAGS)
-_GRANDFATHERED_ALT = "|".join(re.escape(t) for t in _GRANDFATHERED_TAGS)
-
-_GRANDFATHERED_PREFERRED: dict[str, str] = {
-    "en-gb-oed": "en-GB-oxendict",
-    "i-ami": "ami",
-    "i-bnn": "bnn",
-    "i-cherokee": "chr",
-    "i-default": "en",
-    "i-enochian": "enochian",
-    "i-hak": "hak",
-    "i-klingon": "tlh",
-    "i-lux": "lb",
-    "i-mingo": "see",
-    "i-navajo": "nv",
-    "i-pwn": "pwn",
-    "i-tao": "tao",
-    "i-tay": "tay",
-    "i-tsu": "tsu",
-    "sgn-be-fr": "sfb",
-    "sgn-be-nl": "vgt",
-    "sgn-ch-de": "sgg",
-    "art-lojban": "jbo",
-    "cel-gaulish": "cel-gaulish",
-    "no-bok": "nb",
-    "no-nyn": "nn",
-    "zh-guoyu": "cmn",
-    "zh-hakka": "hak",
-    "zh-min": "nan",
-    "zh-min-nan": "nan",
-    "zh-xiang": "hsn",
-}
+_GRANDFATHERED_ALT = "|".join(
+    re.escape(t) for t in sorted(_GRANDFATHERED_SET, key=lambda t: (-len(t), t))
+)
 
 _BCP47_WELL_FORMED = re.compile(
     r"^(?:"

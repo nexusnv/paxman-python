@@ -1,11 +1,22 @@
 """IANA Language Subtag Registry validation.
 
 Registry Type membership: language/script/region/variant + Prefix, Deprecated→Preferred,
-private qaa-qtz + x- gated internally via include_private, grandfathered preferred.
+private qaa-qtz + x- gated per-subtag via include_private, grandfathered preferred.
+
+Private-use reservations (qaa-qtz for language, Qaaa for script, qm-qz/ZZ/XX
+for region, and x- privateuse) are gated per-subtag on
+``LanguageContract.include_private``. Per-subtag gating is intrinsic to IANA
+Registry §2.2.1 — ``requires_features`` would drop whole-tag validation, not
+individual reservations. The contract type is fixed for this capability, so
+``cast(LanguageContract, contract).include_private`` is validity-gated, not
+optional-feature probing.
 """
 
 from __future__ import annotations
 
+from typing import cast
+
+from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.data.iana_deprecated_map import DEPRECATED_MAP
 from paxman.capabilities.Language.rules.data.iana_grandfathered import (
@@ -101,7 +112,7 @@ class SectionIANARegistry(Rule[LanguageNotation]):
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
         """Validate registry membership with private and prefix constraints."""
-        include_private = bool(getattr(contract, "include_private", False))
+        include_private = bool(cast(LanguageContract, contract).include_private)
 
         # Grandfathered
         if notation.grandfathered:

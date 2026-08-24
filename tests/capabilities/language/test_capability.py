@@ -188,7 +188,6 @@ class TestLanguageCreateContract:
         assert c.include_localized is False
         assert c.include_collective is False
         assert c.include_private is False
-        assert c.include_grandfathered is True
 
     def test_default_aliases(self) -> None:
         for alias in (None, "default", "bcp47"):
@@ -228,12 +227,10 @@ class TestLanguageCreateContract:
             include_localized=True,
             include_collective=True,
             include_private=True,
-            include_grandfathered=False,
         )
         assert c.include_localized is True
         assert c.include_collective is True
         assert c.include_private is True
-        assert c.include_grandfathered is False
 
     def test_year_passthrough(self) -> None:
         assert LanguageCapability.create_contract(year=2008).year == 2008

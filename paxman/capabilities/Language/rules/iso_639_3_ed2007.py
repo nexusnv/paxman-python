@@ -1,10 +1,20 @@
 """ISO 639-3:2007 validation rules.
 
 Comprehensive alpha-3 7000+ (Terminology only).
+
+Private-use reservation qaa-qtz (SIL private range) is gated on
+``LanguageContract.include_private``. Per-subtag gating is intrinsic to
+ISO 639-3 §4 private-use semantics — a single-rule per-subtag check via
+the contract field is intentional (cf. IANA registry §2.2.1). The contract
+type is fixed for this capability, so ``cast`` is validity-gated, not
+optional-feature probing.
 """
 
 from __future__ import annotations
 
+from typing import cast
+
+from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.capabilities.Language.rules.data.iso_639_2 import ISO6392_T_TO_ALPHA2
 from paxman.capabilities.Language.rules.data.iso_639_3 import ISO6393_CODES
@@ -42,7 +52,7 @@ class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
         if len(lang) != 3:
             return False
         if _is_private_qaa(lang):
-            include_private = bool(getattr(contract, "include_private", False))
+            include_private = cast(LanguageContract, contract).include_private
             return bool(include_private)
         return lang in ISO6393_CODES
 

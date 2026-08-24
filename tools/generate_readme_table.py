@@ -37,6 +37,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "ip": ("IP addresses", "RFC 791, RFC 5952"),
     "isbn": ("ISBNs", "ISO 2108, ISBN Users' Manual, ISBN Range Message"),
     "issn": ("Serial identifiers", "ISO 3297:2022"),
+    "language": (
+        "Language identifiers",
+        "ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR",
+    ),
     "money": ("Money amounts", "ISO 4217, CLDR"),
     "orcid": ("Researcher identifiers", "ISO 27729:2024, MOD 11-2"),
     "phone": ("Phone numbers", "ITU-T E.164, RFC 3966, NANP"),
@@ -54,6 +58,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "ip": "IP",
     "isbn": "ISBN",
     "issn": "ISSN",
+    "language": "Language",
     "money": "Money",
     "orcid": "ORCID",
     "phone": "Phone",
