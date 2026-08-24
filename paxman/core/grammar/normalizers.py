@@ -87,6 +87,74 @@ class AccentStrip:
 
 
 @dataclass(frozen=True, slots=True)
+class CountryNameFold:
+    """Country name view: accent-strip + separator fold + punctuation strip.
+
+    Mirrors ``paxman.capabilities.Country.notation.normalize_name`` but
+    lowercases and preserves offset mapping for kernel views. Used for the
+    ``normalized`` view when the Country lexicon trie scans in-text.
+    """
+
+    name: str = "normalized"
+    provenance: Provenance | None = Provenance(
+        authority="CLDR",
+        specification_name="CLDR/ISO 3166",
+        kind="specification",
+        reference_url="https://cldr.unicode.org/",
+        version="47",
+        lifecycle="active",
+        publication_year=2024,
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+        chars: list[str] = []
+        offs: list[int] = []
+        for idx, ch in enumerate(text):
+            nfd = unicodedata.normalize("NFD", ch)
+            stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+            for c2 in stripped:
+                if c2 in "-/\u2013":
+                    c2 = " "
+                if c2.isalnum() or c2.isspace():
+                    chars.append(c2.lower())
+                    offs.append(idx)
+                else:
+                    continue
+        # Collapse runs of whitespace to a single space
+        final_chars: list[str] = []
+        final_offs: list[int] = []
+        prev_space = False
+        for c, o in zip(chars, offs, strict=True):
+            is_space = c.isspace()
+            if is_space:
+                if prev_space:
+                    continue
+                final_chars.append(" ")
+                final_offs.append(o)
+                prev_space = True
+            else:
+                final_chars.append(c)
+                final_offs.append(o)
+                prev_space = False
+        subject = "".join(final_chars)
+        if not subject:
+            # Empty subject: offsets map whole input
+            return "", (0, len(text)) if text else (0,)
+        # Build offsets tuple len(subject)+1
+        offsets = tuple(final_offs) + (len(text),)
+        # Identity optimization: if subject equals lowercased text without
+        # changes and offsets is 0..n, return None. But we have lowercasing,
+        # so check length and lower equality.
+        if (
+            len(subject) == len(text)
+            and subject == text.lower()
+            and all(off == idx for idx, off in enumerate(final_offs))
+        ):
+            return subject, None
+        return subject, offsets
+
+
+@dataclass(frozen=True, slots=True)
 class SymbolFold:
     name: str = "normalized"
     provenance: Provenance | None = Provenance(
