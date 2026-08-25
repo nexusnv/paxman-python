@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
@@ -17,6 +17,10 @@ _check_boundary = check_boundary  # legacy alias for tests
 _WORD_RE = re.compile(r"\w", re.UNICODE)
 
 
+def _default_emit(span: tuple[int, int], _ctx: Any) -> tuple[int, int]:
+    return span
+
+
 def _build_trie(tokens: frozenset[str]) -> dict[str, Any]:
     trie: dict[str, Any] = {}
     for token in tokens:
@@ -26,7 +30,7 @@ def _build_trie(tokens: frozenset[str]) -> dict[str, Any]:
             if nxt_any is None:
                 nxt_any = {}
                 node[ch] = nxt_any
-            node = nxt_any  # type: ignore[assignment]
+            node = cast(dict[str, Any], nxt_any)
         node["_end"] = token
     return trie
 
@@ -39,9 +43,7 @@ class LexiconMatcher:
     boundary: BoundarySpec | None = None
     view: str | None = None
     anchors: AnchorSet = field(default_factory=AnchorSet)
-    emit: Callable[[tuple[int, int], Any], Any] = field(
-        default=lambda span, _ctx: span  # type: ignore[no-untyped-def]
-    )
+    emit: Callable[[tuple[int, int], Any], Any] = field(default=_default_emit)
     representation: str = "auto"
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
     kind: str = field(default="lexicon", init=False)
@@ -95,7 +97,7 @@ class LexiconMatcher:
                     nxt2: Any = node2.get(ch)
                     if nxt2 is None:
                         break
-                    node2 = nxt2  # type: ignore[assignment]
+                    node2 = cast(dict[str, Any], nxt2)
                     j += 1
                     if "_end" in node2:
                         e = j

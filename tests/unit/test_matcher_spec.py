@@ -54,5 +54,5 @@ def test_frozen_slots() -> None:
         anchors=AnchorSet(),
         emit=lambda s, ctx: s,
     )
-    assert MatcherSpec.__dataclass_params__.slots is True  # type: ignore[attr-defined]
-    assert MatcherSpec.__dataclass_params__.frozen is True  # type: ignore[attr-defined]
+    assert hasattr(MatcherSpec, "__slots__")
+    assert MatcherSpec.__dataclass_params__.frozen is True

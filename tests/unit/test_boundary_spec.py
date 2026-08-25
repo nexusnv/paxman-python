@@ -27,6 +27,8 @@ def test_preset_table_covers_11_factories() -> None:
     assert BoundarySpec.WORD_SIGN.left is not None
     assert BoundarySpec.DEGREE_WORD_SIGN.left != BoundarySpec.WORD_SIGN.left
     # degree_word_sign's left should contain °
-    assert any("°" in entry for entry in BoundarySpec.DEGREE_WORD_SIGN.left)  # type: ignore
+    left = BoundarySpec.DEGREE_WORD_SIGN.left
+    assert left is not None
+    assert any("°" in entry for entry in left)
     assert BoundarySpec.DIGIT is not None
     assert BoundarySpec.PHONE_NATIONAL is not None

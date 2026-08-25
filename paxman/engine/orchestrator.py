@@ -247,7 +247,8 @@ def _recognize(
     for grammar in active_grammars:
         # compat shim: if grammar exposes compiled matchers, delegate to
         # engine-owned loop (pass contract for requires_features D5 filtering)
-        if hasattr(grammar, "matchers") and grammar.matchers:  # type: ignore[attr-defined]
+        _matchers = getattr(grammar, "matchers", None)
+        if _matchers:
             try:
                 matches = run_matchers_with_context(shared_ctx, [grammar], contract)
             except Exception as exc:
