@@ -41,7 +41,15 @@ class PropertyMatcher:
     def __post_init__(self) -> None:
         # Compat: `view_name` is deprecated alias for `view`. Keep both in sync
         # so engine_loop (which reads `view`) and legacy tests (which read
-        # `view_name`) both see the value.
+        # `view_name`) both see the value. If both are set but differ, fail fast.
+        if self.view is not None and self.view_name is not None:
+            if self.view != self.view_name:
+                raise ValueError(
+                    f"PropertyMatcher: view={self.view!r} and "
+                    f"view_name={self.view_name!r} conflict; provide only one"
+                )
+            # matching values — already in sync, leave unchanged
+            return
         if self.view is not None and self.view_name is None:
             object.__setattr__(self, "view_name", self.view)
         elif self.view_name is not None and self.view is None:
