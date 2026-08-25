@@ -37,7 +37,21 @@ class NormalizerSequence:
         cur_offsets: tuple[int, ...] | None = None
         for step in self.steps:
             nxt, off = step.normalize(cur)
-            cur, cur_offsets = nxt, off if off is not None else cur_offsets
+            if off is None:
+                # length-preserving step: nxt maps 1:1 to cur, offsets unchanged
+                cur = nxt
+                # cur_offsets stays mapping cur(now nxt) -> original
+            else:
+                # off maps nxt index -> cur index
+                if cur_offsets is None:
+                    # cur was identity to original, so off already maps nxt -> original
+                    cur_offsets = off
+                else:
+                    # compose: nxt -> cur -> original
+                    # off values are valid indices into cur (0..len(cur))
+                    composed = tuple(cur_offsets[o] for o in off)
+                    cur_offsets = composed
+                cur = nxt
         return cur, cur_offsets
 
 
@@ -138,8 +152,9 @@ class CountryNameFold:
                 prev_space = False
         subject = "".join(final_chars)
         if not subject:
-            # Empty subject: offsets map whole input
-            return "", (0, len(text)) if text else (0,)
+            # Empty subject: len(offsets) must be len(subject)+1 == 1 per D3 invariant.
+            # The sentinel maps empty span to start of original text.
+            return "", (0,)
         # Build offsets tuple len(subject)+1
         offsets = tuple(final_offs) + (len(text),)
         # Identity optimization: if subject equals lowercased text without
@@ -221,7 +236,15 @@ class IDNAFold:
     )
 
     def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
-        cleaned = text.replace("\t", "").replace("\n", "").replace("\r", "")
+        cleaned_chars: list[str] = []
+        offsets: list[int] = []
+        for idx, ch in enumerate(text):
+            if ch in "\t\n\r":
+                continue
+            cleaned_chars.append(ch)
+            offsets.append(idx)
+        offsets.append(len(text))
+        cleaned = "".join(cleaned_chars)
         if len(cleaned) == len(text):
             return cleaned, None
-        return cleaned, tuple(range(len(cleaned) + 1))
+        return cleaned, tuple(offsets)

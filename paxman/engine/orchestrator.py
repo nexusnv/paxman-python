@@ -34,10 +34,7 @@ from paxman.core.errors import (
     ValidationError,
 )
 from paxman.core.extensions import get_extended_grammars, get_extended_rules
-from paxman.core.grammar.engine_loop import (
-    _run_matchers,
-    run_matchers_with_context,
-)
+from paxman.core.grammar.engine_loop import run_matchers_with_context
 from paxman.core.grammar.scan_context import ScanContext
 
 
@@ -249,13 +246,10 @@ def _recognize(
     ordered: list[tuple[int, int, int, str, RecognitionMatch[Any]]] = []
     for grammar in active_grammars:
         # compat shim: if grammar exposes compiled matchers, delegate to
-        # engine-owned loop
+        # engine-owned loop (pass contract for requires_features D5 filtering)
         if hasattr(grammar, "matchers") and grammar.matchers:  # type: ignore[attr-defined]
             try:
-                if scan_context is not None:
-                    matches = run_matchers_with_context(shared_ctx, [grammar])
-                else:
-                    matches = _run_matchers(text, [grammar])
+                matches = run_matchers_with_context(shared_ctx, [grammar], contract)
             except Exception as exc:
                 raise RecognitionError(
                     rule=grammar.name,

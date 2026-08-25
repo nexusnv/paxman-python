@@ -11,7 +11,10 @@ def test_combinator_ordered_alt_placeholder() -> None:
     m = CombinatorMatcher(expr=("alt", [r"a", r"b"]))
     ctx = ScanContext.of("ab")
     view = ctx.view("orig", lambda t: (t, None))
-    assert m.match(view) == []
+    with pytest.raises(
+        NotImplementedError, match="CombinatorMatcher not yet implemented"
+    ):
+        m.match(view)
 
 
 @pytest.mark.property

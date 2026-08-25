@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -30,6 +31,21 @@ class BoundarySpec:
     ISBN10_LEAD: ClassVar[BoundarySpec]
     ISBN_TRAIL_LEFT: ClassVar[BoundarySpec]
     IPV6_TOKEN: ClassVar[BoundarySpec]
+
+
+def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bool:
+    """Single source for boundary checks (consolidates triplicated logic)."""
+    if spec.left is not None and start > 0:
+        prefix = subject[:start]
+        for pat in spec.left:
+            if re.search(pat + r"\Z", prefix) is not None:
+                return False
+    if spec.right is not None and end < len(subject):
+        suffix = subject[end:]
+        for pat in spec.right:
+            if re.search(r"\A" + pat, suffix) is not None:
+                return False
+    return True
 
 
 BoundarySpec.WORD_SIGN = BoundarySpec(

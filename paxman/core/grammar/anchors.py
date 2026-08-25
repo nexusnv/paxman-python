@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from paxman.core.grammar.scan_context import ScanContext
 
@@ -15,12 +15,20 @@ class AnchorSet:
     literals: frozenset[str] = frozenset()
     classes: tuple[str, ...] = ()
     key_sets: tuple[frozenset[str], ...] = ()
-    _class_res: tuple[re.Pattern[str], ...] = ()
+    _class_res: tuple[re.Pattern[str], ...] = field(
+        default_factory=tuple, init=False, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "_class_res", tuple(re.compile(p) for p in self.classes)
+        )
 
     def passes(self, text: str, ctx: ScanContext) -> bool:
         for lit in self.literals:
             if lit not in text:
                 return False
+        # Use cached compiled regexes; fallback if constructed via manual _class_res
         patterns: tuple[re.Pattern[str], ...]
         if self._class_res:
             patterns = self._class_res
@@ -46,7 +54,6 @@ class HasDigit:
             literals=frozenset(),
             classes=(r"\d",),
             key_sets=(),
-            _class_res=(re.compile(r"\d"),),
         )
 
 

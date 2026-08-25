@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from paxman.core.grammar.anchors import AnchorSet
-from paxman.core.grammar.boundary_spec import BoundarySpec
+from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
 from paxman.core.grammar.engine_loop import (
     _run_matchers,
     _run_matchers_with_context,
@@ -14,7 +14,7 @@ from paxman.core.grammar.engine_loop import (
 from paxman.core.grammar.matchers.candidates import CandidatesMatcher
 from paxman.core.grammar.matchers.combinator import CombinatorMatcher
 from paxman.core.grammar.matchers.label import LabelMatcher
-from paxman.core.grammar.matchers.lexicon import LexiconMatcher, _check_boundary
+from paxman.core.grammar.matchers.lexicon import LexiconMatcher
 from paxman.core.grammar.matchers.property import PropertyMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
@@ -89,13 +89,13 @@ def test_view_original_span_with_offsets() -> None:
 
 
 def test_check_boundary_left_right() -> None:
-    assert _check_boundary("x y", 2, 3, BoundarySpec.WORD) is True
+    assert check_boundary("x y", 2, 3, BoundarySpec.WORD) is True
     # left char is 'x' which is \w, should block WORD
-    assert _check_boundary("x y", 1, 2, BoundarySpec.WORD) is False
+    assert check_boundary("x y", 1, 2, BoundarySpec.WORD) is False
     # right check: "a b" span "a" at 0,1 -> suffix " b" starts with " " not \w so passes
-    assert _check_boundary("a b", 0, 1, BoundarySpec.WORD) is True
+    assert check_boundary("a b", 0, 1, BoundarySpec.WORD) is True
     # blocked right: "ab" span "a" -> next char "b" is \w -> block
-    assert _check_boundary("ab", 0, 1, BoundarySpec.WORD) is False
+    assert check_boundary("ab", 0, 1, BoundarySpec.WORD) is False
     # degree sign
     assert BoundarySpec.DEGREE_WORD_SIGN.left is not None
 
@@ -216,10 +216,16 @@ def test_label_matcher_and_candidates() -> None:
 
     cm = CandidatesMatcher(candidates=("a", "b"), strategy="first")
     assert cm.strategy == "first"
-    assert cm.match(View(subject="x", offsets=None, _text_len=1)) == []
+    with pytest.raises(
+        NotImplementedError, match="CandidatesMatcher not yet implemented"
+    ):
+        cm.match(View(subject="x", offsets=None, _text_len=1))
 
     cb = CombinatorMatcher(expr=("alt", ["a", "b"]))
-    assert cb.match(View(subject="ab", offsets=None, _text_len=2)) == []
+    with pytest.raises(
+        NotImplementedError, match="CombinatorMatcher not yet implemented"
+    ):
+        cb.match(View(subject="ab", offsets=None, _text_len=2))
 
 
 def test_engine_loop_with_dummy_matchers() -> None:
@@ -325,11 +331,14 @@ def test_engine_loop_with_dummy_matchers() -> None:
     assert len(out_views) >= 4
 
 
-def test_engine_loop_emit_view_span_fallback() -> None:
+def test_engine_loop_emit_strict_signature() -> None:
     from dataclasses import dataclass
 
+    # Strict emit: (span, context) -> NotationT where span is original [o_s,o_e).
+    # A TypeError inside emit must not be conflated with a signature mismatch;
+    # signature is validated via inspect before calling.
     @dataclass(frozen=True, slots=True)
-    class ViewSpanEmitMatcher:
+    class DomainErrorMatcher:
         anchors: AnchorSet = AnchorSet()
         view: str | None = None
 
@@ -337,15 +346,30 @@ def test_engine_loop_emit_view_span_fallback() -> None:
             return [(0, 2)]
 
         def emit(self, span: tuple[int, int], ctx: ScanContext) -> str:
-            # expects view span, not original (fallback path)
-            raise TypeError("view span")
+            raise TypeError("domain error inside emit")
 
-    # engine tries (o_s,o_e) then fallback to span on TypeError
-    # Test fallback by having emit raise once then succeed
-    calls = {"n": 0}
+    # Domain TypeError propagates as-is (not wrapped as signature mismatch)
+    with pytest.raises(TypeError, match="domain error inside emit"):
+        _run_matchers("ab", [type("G", (), {"matchers": (DomainErrorMatcher(),)})()])
 
+    # Wrong arity emits raise an actionable signature error via inspect guard
     @dataclass(frozen=True, slots=True)
-    class FlakyMatcher:
+    class WrongArityMatcher:
+        anchors: AnchorSet = AnchorSet()
+        view: str | None = None
+
+        def match(self, view: View) -> list[tuple[int, int]]:
+            return [(0, 2)]
+
+        def emit(self, span: tuple[int, int]) -> str:  # type: ignore[override]
+            return "bad"
+
+    with pytest.raises(TypeError, match="must have 2 params"):
+        _run_matchers("ab", [type("G", (), {"matchers": (WrongArityMatcher(),)})()])
+
+    # Happy path: correct arity succeeds
+    @dataclass(frozen=True, slots=True)
+    class OkMatcher:
         anchors: AnchorSet = AnchorSet()
         view: str | None = None
 
@@ -353,13 +377,9 @@ def test_engine_loop_emit_view_span_fallback() -> None:
             return [(0, 2)]
 
         def emit(self, span: tuple[int, int], ctx: ScanContext) -> str:
-            calls["n"] += 1
-            if calls["n"] == 1:
-                raise TypeError("first fail")
             return "ok"
 
-    # This will trigger fallback per match
-    out = _run_matchers("ab", [type("G", (), {"matchers": (FlakyMatcher(),)})()])
+    out = _run_matchers("ab", [type("G", (), {"matchers": (OkMatcher(),)})()])
     assert out[0].notation == "ok"
 
 

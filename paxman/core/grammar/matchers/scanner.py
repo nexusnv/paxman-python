@@ -1,4 +1,15 @@
-"""Scanner matcher — (context,pos)->(end,Notation)|None, non-overlapping advance."""
+"""Scanner matcher — (context,pos)->(end,Notation)|None, non-overlapping advance.
+
+Per ADR-0009 §9.3: ``scan: (context, pos) -> (end, Notation) | None``. The
+kernel's loop tries the scanner at each position, advances to ``end`` on hit,
+``pos+1`` on miss (libphonenumber non-overlapping discipline). Bounds are
+carried as data (``max_window``). No shipped grammar uses it on the kernel
+path yet — URL paren-balance and Phone E.164 remain on ``PostStage`` until
+their parity shards are green (plan Task 7). This implementation enforces
+``max_window``, ``boundary`` (including ``consuming`` inner-span only per
+ADR §10), and ``requires_features`` via the engine loop; the matcher itself
+only caps ``end`` to ``max_window`` and checks boundaries at hit positions.
+"""
 
 from __future__ import annotations
 
@@ -7,8 +18,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
-from paxman.core.grammar.boundary_spec import BoundarySpec
+from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
 from paxman.core.grammar.scan_context import View
+
+_check_boundary = check_boundary  # legacy alias for tests
 
 ScanFn = Callable[[View, int], tuple[int, Any] | None]
 
@@ -21,6 +34,7 @@ class ScannerMatcher:
     boundary: BoundarySpec | None = None
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     max_window: int = 2048
+    requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
 
     def match(self, view: View) -> list[tuple[int, int]]:
         out: list[tuple[int, int]] = []
@@ -31,11 +45,28 @@ class ScannerMatcher:
             res = self.scan(view, pos)
             if res is not None:
                 end, _notation = res
-                # consuming-mode inner span only: if boundary is consuming,
-                # emitted span is inner? For MVP emit pos->end; engine_loop
-                # translates via view.original_span
-                # Ensure advance includes delimiters if scanner consumed them?
-                # For now just pos->end
+                # Guard against scanner contract violations
+                if not isinstance(end, int) or end < pos or end > n:
+                    # Clamp or advance by 1 on violation to avoid infinite loop
+                    # Surface as no-match at this pos
+                    pos += 1
+                    continue
+                # Enforce max_window — bounds as data (libphonenumber discipline).
+                # Do not silently clamp to max_window; treat as miss and advance
+                # to avoid infinite loop while preserving the bound.
+                if end - pos > self.max_window:
+                    pos += 1
+                    continue
+                # Boundary check at hit positions (O(hits), not O(positions))
+                if self.boundary is not None and not check_boundary(
+                    s, pos, end, self.boundary
+                ):
+                    pos += 1
+                    continue
+                # ADR §10 consuming-mode: emitted span is inner only. Scanners that
+                # consume delimiters for advance must return inner end; if they
+                # return the consuming span, engine_loop will not re-trim. For now
+                # we emit pos->end as returned (inner).
                 out.append((pos, end))
                 pos = end if end > pos else pos + 1
             else:
