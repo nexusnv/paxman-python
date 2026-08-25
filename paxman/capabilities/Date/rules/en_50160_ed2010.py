@@ -1,4 +1,17 @@
-"""EN 50160 date rule — validates and normalizes European DD/MM/YYYY dates."""
+"""EN 50160 date rule — validates and normalizes European DD/MM/YYYY dates.
+
+This module historically cited "CENELEC EN 50160:2010 Voltage characteristics of
+electricity". That provenance was inaccurate: EN 50160 is a power-quality
+standard and does not define calendar date formats. European ``DD/MM/YYYY``
+ordering is a civilian locale convention documented in Unicode CLDR (locale
+data for en-GB/fr/de etc.) and in national practice (BS 3733, DIN 1355).
+The provenance below is corrected to Unicode CLDR (aligns with Country/Currency
+capabilities). File name is retained for compatibility; the ``PUBLICATION``
+inside is authoritative.
+
+The rule validates both slash grammars for the same cross-validation reason
+as the US rule (see its docstring and audit B3).
+"""
 
 from __future__ import annotations
 
@@ -9,27 +22,33 @@ from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
 PUBLICATION = Provenance(
-    authority="CENELEC",
-    specification_name="EN 50160",
+    authority="Unicode CLDR",
+    specification_name="Unicode CLDR",
     kind="specification",
-    reference_url="https://standards.cencenelec.eu/dyn/www/f?p=205:110:0::::FSP_PROJECT,FSP_ORG_ID:55423,32357",
-    version="2010",
+    reference_url="https://cldr.unicode.org/",
+    version="47",
     lifecycle="active",
-    publication_year=2010,
+    publication_year=2025,
 )
 
 
 class Section4DateFormat(Rule[DateNotation]):
-    """EN 50160 Section 4 — European date format DD/MM/YYYY.
+    """Unicode CLDR — European date format DD/MM/YYYY.
+
+    Validates ``DD/MM/YYYY`` with two-digit year expansion. Also validates
+    ``MM/DD/YYYY`` spans (via ``us_calendar_date`` semantics) under European
+    day-first interpretation.
 
     Notation mapping (European grammar):
         N1 = day, N2 = month, N3 = year
+
+    Provenance: Unicode CLDR date patterns (European DD/MM/YYYY ordering).
     """
 
     name = "Section 4-date-format"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Section 4 (date format)"
+    citation = "Date and time patterns — DD/MM/YYYY"
     target_semantics = frozenset({"us_calendar_date", "european_calendar_date"})
     requires_features = frozenset()
 
@@ -41,6 +60,8 @@ class Section4DateFormat(Rule[DateNotation]):
         otherwise. An explicit zero is a configured value and is honored
         rather than treated as unset. This helper never raises for contracts
         that lack the Date-specific parameter.
+
+        This helper is shared with ``Section1DateFormat`` — keep the two in sync.
 
         Args:
             year_str: The year field from the notation.

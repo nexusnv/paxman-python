@@ -115,9 +115,9 @@ class TestSection1DateFormat:
 
     def test_provenance_attributes(self) -> None:
         rule = Section1DateFormat()
-        assert rule.provenance.authority == "US Federal Government"
-        assert rule.provenance.specification_name == "Federal Rules"
-        assert rule.provenance.publication_year == 2023
+        assert rule.provenance.authority == "U.S. Government Publishing Office"
+        assert rule.provenance.specification_name == "Style Manual"
+        assert rule.provenance.publication_year == 2016
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -188,9 +188,9 @@ class TestEN50160Section4DateFormat:
     def test_provenance_attributes(self) -> None:
         """Provenance is correctly set."""
         rule = Section4DateFormat()
-        assert rule.provenance.authority == "CENELEC"
-        assert rule.provenance.specification_name == "EN 50160"
-        assert rule.provenance.publication_year == 2010
+        assert rule.provenance.authority == "Unicode CLDR"
+        assert rule.provenance.specification_name == "Unicode CLDR"
+        assert rule.provenance.publication_year == 2025
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:

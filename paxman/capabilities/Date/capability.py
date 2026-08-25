@@ -29,7 +29,18 @@ __all__ = ["DateCapability", "DateContract"]
 
 
 class DateCapability(Capability[DateNotation]):
-    """Date canonicalization capability."""
+    """Date canonicalization capability.
+
+    Recognizes strict ISO ``YYYY-MM-DD`` (dash, 2-digit month/day),
+    lenient slash-ISO ``YYYY/MM/DD`` (1-2 digit month/day), and slash
+    ``MM/DD/YYYY`` / ``DD/MM/YYYY`` with cross-grammar ambiguity handling.
+    Validates via ISO 8601-1:2019 (strict) and US/European civilian
+    conventions (GPO Style Manual / Unicode CLDR). Normalizes to ISO
+    ``YYYY-MM-DD`` by default; ``output_format="US"`` renders ``MM/DD/YYYY``.
+
+    Two-digit years use ``DateContract.two_digit_base_year`` (default 2000,
+    explicit 0 honored, validated 0..9999).
+    """
 
     name = "date"
 
