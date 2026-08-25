@@ -374,3 +374,24 @@ def test_anchors_pass_keyset() -> None:
 def test_boundary_spec_consuming() -> None:
     assert BoundarySpec.IPV6_TOKEN.is_consuming is True
     assert BoundarySpec.WORD.is_consuming is False
+
+
+def test_scan_api_type_errors() -> None:
+    from paxman.api.scan import scan
+    from paxman.capabilities.Country.capability import CountryCapability
+    from paxman.core.discovery import register_capability, reset_registry
+    from paxman.core.domain import Mention, ScanResult
+
+    with pytest.raises(TypeError):
+        scan(123, [])  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        scan("hello", 123)  # type: ignore[arg-type]
+    # valid scan path
+    reset_registry()
+    register_capability(CountryCapability())
+    result = scan("hello United States", [CountryCapability.create_contract()])
+    assert isinstance(result, ScanResult)
+    assert isinstance(result.mentions, dict)
+    m = Mention(span=(0, 1), grammar="g", notation="n", candidates=None)
+    assert m.span == (0, 1)
+    reset_registry()
