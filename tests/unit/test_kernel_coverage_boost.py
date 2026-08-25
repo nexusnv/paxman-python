@@ -324,10 +324,8 @@ def test_engine_loop_with_dummy_matchers() -> None:
     class GUnknown:
         matchers: tuple[UnknownViewMatcher, ...] = (UnknownViewMatcher(),)
 
-    out_views = _run_matchers(
-        "Hello",
-        [DummyGrammar(), GCase(), GNorm(), GUnknown()],  # type: ignore
-    )
+    grammars: list[object] = [DummyGrammar(), GCase(), GNorm(), GUnknown()]
+    out_views = _run_matchers("Hello", grammars)
     assert len(out_views) >= 4
 
 
@@ -361,7 +359,7 @@ def test_engine_loop_emit_strict_signature() -> None:
         def match(self, view: View) -> list[tuple[int, int]]:
             return [(0, 2)]
 
-        def emit(self, span: tuple[int, int]) -> str:  # type: ignore[override]
+        def emit(self, span: tuple[int, int]) -> str:
             return "bad"
 
     with pytest.raises(TypeError, match="must have 2 params"):

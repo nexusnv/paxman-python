@@ -6,7 +6,8 @@ Stores registered capabilities by name. Freezes after the first
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterable, Sequence
+from typing import Any, cast
 
 from paxman.core.capability import Capability
 from paxman.core.errors import CapabilityError
@@ -76,7 +77,6 @@ def freeze_registry() -> None:
     _frozen = True
     freeze_extensions()
     import hashlib
-    import inspect
     import pathlib
 
     parts: list[str] = []
@@ -85,7 +85,8 @@ def freeze_registry() -> None:
         for grammar in sorted(grammars, key=lambda g: g.name):
             matchers = getattr(grammar, "matchers", None)
             if matchers:
-                for matcher in matchers:  # type: ignore[union-attr]
+                matchers_typed: Sequence[Any] = cast(Sequence[Any], matchers)
+                for matcher in matchers_typed:
                     kind = getattr(matcher, "kind", type(matcher).__name__)
                     view = getattr(matcher, "view", None)
                     boundary = getattr(matcher, "boundary", None)
@@ -95,13 +96,15 @@ def freeze_registry() -> None:
                     )
                     requires_repr = ",".join(sorted(requires))
                     # Tokens / payload hashing
-                    tokens = getattr(matcher, "tokens", None)
-                    if tokens is not None:
+                    tokens_set: Any = getattr(matcher, "tokens", None)
+                    if tokens_set is not None:
                         # frozenset[str] — sort for determinism
                         try:
-                            tokens_repr = "|".join(sorted(tokens))  # type: ignore[arg-type]
+                            tokens_repr = "|".join(
+                                sorted(cast(Iterable[str], tokens_set))
+                            )
                         except TypeError:
-                            tokens_repr = repr(tokens)
+                            tokens_repr = repr(tokens_set)
                     else:
                         payload = getattr(matcher, "payload", None)
                         if payload is not None:
@@ -112,12 +115,13 @@ def freeze_registry() -> None:
                                 qualname = getattr(
                                     scan_fn, "__qualname__", type(matcher).__name__
                                 )
-                                try:
-                                    src = inspect.getsource(scan_fn)
-                                except (OSError, TypeError):
-                                    src = qualname
-                                sha12 = hashlib.sha256(src.encode()).hexdigest()[:12]
-                                tokens_repr = f"{sha12}:{qualname}"
+                                max_window = getattr(matcher, "max_window", 0)
+                                boundary_repr_inner = (
+                                    repr(boundary) if boundary is not None else "None"
+                                )
+                                tokens_repr = (
+                                    f"{qualname}:{max_window}:{view}:{boundary_repr_inner}"
+                                )
                             else:
                                 fallback_chosen = getattr(matcher, "_chosen", "")
                                 tokens_repr = (

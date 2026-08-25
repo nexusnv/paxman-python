@@ -58,7 +58,7 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
         )
     normalizer = _VIEW_REGISTRY.get(view_name)
     if normalizer is not None:
-        return context.view(view_name, normalizer.normalize)  # type: ignore[union-attr]
+        return context.view(view_name, normalizer.normalize)
     # Fallback: identity view (length-preserving, offsets=None)
     return context.view(view_name, lambda t: (t, None))
 
@@ -99,8 +99,20 @@ def _run_matchers_with_context(
             # L0 view materialization (lazy, one per ScanContext)
             view_name = getattr(matcher, "view", None)
             view = _resolve_view(context, view_name)
+            # Emit callable and signature guard — hoisted out of per-span loop
+            emit_fn = getattr(matcher, "emit", None)
+            if not callable(emit_fn):
+                raise TypeError(
+                    f"Matcher {type(matcher).__name__} has no callable emit"
+                )
+            sig = inspect.signature(cast(Callable[..., Any], emit_fn))
+            if len(sig.parameters) != 2:
+                raise TypeError(
+                    f"Matcher {type(matcher).__name__}.emit must have 2 params "
+                    f"(span, context), got {len(sig.parameters)}"
+                )
             # T1 shape match — kind-specific
-            for span in matcher.match(view):  # type: ignore[attr-defined]
+            for span in matcher.match(view):
                 # Validate span bounds against view subject
                 s, e = span
                 if not (0 <= s <= e <= len(view.subject)):
@@ -122,16 +134,7 @@ def _run_matchers_with_context(
                     # scanner emits a span including delimiters, trim here:
                     # o_s/o_e already inner per spec.
                     pass
-                # Emit — strict (span, context) -> NotationT
-                # Inspect-based signature guard to avoid conflating domain TypeError
-                # with emit signature mismatches (H-03).
-                sig = inspect.signature(cast(Callable[..., Any], matcher.emit))
-                if len(sig.parameters) != 2:
-                    raise TypeError(
-                        f"Matcher {type(matcher).__name__}.emit must have 2 params "
-                        f"(span, context), got {len(sig.parameters)}"
-                    )
-                notation = matcher.emit((o_s, o_e), context)  # type: ignore[arg-type]
+                notation = emit_fn((o_s, o_e), context)
                 out.append(
                     RecognitionMatch(
                         notation=notation,

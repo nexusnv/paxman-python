@@ -2,10 +2,11 @@
 
 import paxman
 from paxman.capabilities.Country.capability import CountryCapability
+from paxman.core.capability_contract import CapabilityContract
 from paxman.core.discovery import register_capability, reset_registry
 
 
-def _contract():  # type: ignore[no-untyped-def]
+def _contract() -> CapabilityContract:
     return CountryCapability.create_contract()
 
 

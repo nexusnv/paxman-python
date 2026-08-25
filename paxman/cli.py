@@ -5,11 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import NoReturn
+from typing import Any, NoReturn, cast
 
 from paxman.api.bootstrap import list_shipped_capabilities
 from paxman.core.capability_contract import CapabilityContract
-from paxman.core.errors import MultipleMentionsError
+from paxman.core.errors import CapabilityError, ContractError, MultipleMentionsError
 
 
 def _normalize_capability(raw: str) -> str:
@@ -313,13 +313,12 @@ def _print_scan_json(result: object) -> None:
         lst: list[dict[str, object]] = []
         for m in mentions:
             notation_obj = m.notation
-            if dataclasses.is_dataclass(notation_obj):
-                notation_val: object = dataclasses.asdict(notation_obj)  # type: ignore[arg-type]
+            if dataclasses.is_dataclass(notation_obj) and not isinstance(
+                notation_obj, type
+            ):
+                notation_val: object = dataclasses.asdict(cast(Any, notation_obj))
             else:
-                try:
-                    notation_val = str(notation_obj)
-                except Exception:
-                    notation_val = repr(notation_obj)
+                notation_val = str(notation_obj)
             lst.append(
                 {
                     "span": list(m.span),
@@ -438,7 +437,7 @@ def _handle_scan(scan_argv: list[str]) -> None:
 
     try:
         result = scan(text, contracts)
-    except Exception as exc:  # ContractError, CapabilityError, etc.
+    except (ContractError, CapabilityError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)
 

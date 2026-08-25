@@ -59,7 +59,7 @@ def test_scan_context_is_frozen_slots() -> None:
     ctx = ScanContext.of("x")
     with pytest.raises(AttributeError):
         ctx.text = "y"  # type: ignore[misc]
-    assert ScanContext.__dataclass_params__.slots is True
+    assert not hasattr(ctx, "__dict__")
     assert ScanContext.__dataclass_params__.frozen is True
 
 
