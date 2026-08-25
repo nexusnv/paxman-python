@@ -9,7 +9,7 @@ from typing import Any, NoReturn, cast
 
 from paxman.api.bootstrap import list_shipped_capabilities
 from paxman.core.capability_contract import CapabilityContract
-from paxman.core.errors import CapabilityError, ContractError, MultipleMentionsError
+from paxman.core.errors import MultipleMentionsError, PaxmanError
 
 
 def _normalize_capability(raw: str) -> str:
@@ -437,7 +437,7 @@ def _handle_scan(scan_argv: list[str]) -> None:
 
     try:
         result = scan(text, contracts)
-    except (ContractError, CapabilityError) as exc:
+    except PaxmanError as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)
 
