@@ -8,9 +8,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
-from paxman.core.grammar.boundary_spec import BoundarySpec
+from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
 from paxman.core.grammar.lexicon import LexiconAlternation
 from paxman.core.grammar.scan_context import View
+
+_check_boundary = check_boundary  # legacy alias for tests
+
+_WORD_RE = re.compile(r"\w", re.UNICODE)
 
 
 def _build_trie(tokens: frozenset[str]) -> dict[str, Any]:
@@ -25,20 +29,6 @@ def _build_trie(tokens: frozenset[str]) -> dict[str, Any]:
             node = nxt_any  # type: ignore[assignment]
         node["_end"] = token
     return trie
-
-
-def _check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bool:
-    if spec.left is not None and start > 0:
-        prefix = subject[:start]
-        for pat in spec.left:
-            if re.search(pat + r"\Z", prefix) is not None:
-                return False
-    if spec.right is not None and end < len(subject):
-        suffix = subject[end:]
-        for pat in spec.right:
-            if re.search(r"\A" + pat, suffix) is not None:
-                return False
-    return True
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,7 +69,7 @@ class LexiconMatcher:
             out: list[tuple[int, int]] = []
             for m in self._compiled.finditer(view.subject):
                 s, e = m.start(), m.end()
-                if self.boundary is not None and not _check_boundary(
+                if self.boundary is not None and not check_boundary(
                     view.subject, s, e, self.boundary
                 ):
                     continue
@@ -92,7 +82,9 @@ class LexiconMatcher:
             n = len(subj)
             pos = 0
             while pos < n:
-                if pos > 0 and (subj[pos - 1].isalnum() or subj[pos - 1] == "_"):
+                # Word-anchored entry (FlashText model):
+                # trie is entered only at word starts.
+                if pos > 0 and _WORD_RE.match(subj[pos - 1]) is not None:
                     pos += 1
                     continue
                 node2: dict[str, Any] = self._trie
@@ -109,7 +101,7 @@ class LexiconMatcher:
                         e = j
                         ok = True
                         if self.boundary is not None:
-                            ok = _check_boundary(subj, pos, e, self.boundary)
+                            ok = check_boundary(subj, pos, e, self.boundary)
                         if ok:
                             longest = e
                 if longest is not None:

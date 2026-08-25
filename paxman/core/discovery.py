@@ -60,21 +60,109 @@ def get_recognition_revision() -> str:
 
 
 def freeze_registry() -> None:
-    """Freeze the registry so no more capabilities can be registered."""
+    """Freeze the registry so no more capabilities can be registered.
+
+    Also computes ``recognition_revision`` as a hash of the compiled matcher
+    set (pure function of ``(spec, snapshot)`` per ADR-0009 §13/D8). Any
+    recognition-behavior change — including lexicon token changes, regex
+    pattern edits, boundary presets, anchor sets, ``requires_features`` gating,
+    or snapshot SHAs — changes the revision, giving callers a same-snapshot
+    diff signal. Capability ``version`` strings are *not* the signal; they are
+    included only as a fallback for legacy grammars without compiled matchers.
+    """
     global _frozen, _recognition_revision
     if _frozen:
         return
     _frozen = True
     freeze_extensions()
     import hashlib
+    import inspect
+    import pathlib
 
-    parts = sorted(
-        f"{cap.name}:{getattr(cap, 'version', getattr(cap, '__version__', '0'))}"
-        for cap in _registry.values()
-    )
-    _recognition_revision = (
-        hashlib.sha256("|".join(parts).encode()).hexdigest()[:12] if parts else "0"
-    )
+    parts: list[str] = []
+    for cap in sorted(_registry.values(), key=lambda c: c.name):
+        grammars = cap.get_grammars()
+        for grammar in sorted(grammars, key=lambda g: g.name):
+            matchers = getattr(grammar, "matchers", None)
+            if matchers:
+                for matcher in matchers:  # type: ignore[union-attr]
+                    kind = getattr(matcher, "kind", type(matcher).__name__)
+                    view = getattr(matcher, "view", None)
+                    boundary = getattr(matcher, "boundary", None)
+                    anchors = getattr(matcher, "anchors", None)
+                    requires: frozenset[str] = getattr(
+                        matcher, "requires_features", frozenset[str]()
+                    )
+                    requires_repr = ",".join(sorted(requires))
+                    # Tokens / payload hashing
+                    tokens = getattr(matcher, "tokens", None)
+                    if tokens is not None:
+                        # frozenset[str] — sort for determinism
+                        try:
+                            tokens_repr = "|".join(sorted(tokens))  # type: ignore[arg-type]
+                        except TypeError:
+                            tokens_repr = repr(tokens)
+                    else:
+                        payload = getattr(matcher, "payload", None)
+                        if payload is not None:
+                            tokens_repr = repr(payload)
+                        else:
+                            scan_fn = getattr(matcher, "scan", None)
+                            if scan_fn is not None:
+                                qualname = getattr(
+                                    scan_fn, "__qualname__", type(matcher).__name__
+                                )
+                                try:
+                                    src = inspect.getsource(scan_fn)
+                                except (OSError, TypeError):
+                                    src = qualname
+                                sha12 = hashlib.sha256(src.encode()).hexdigest()[:12]
+                                tokens_repr = f"{sha12}:{qualname}"
+                            else:
+                                fallback_chosen = getattr(matcher, "_chosen", "")
+                                tokens_repr = (
+                                    f"{type(matcher).__name__}:{fallback_chosen}"
+                                )
+                    # Include matcher-specific choices (e.g., lexicon _chosen)
+                    chosen = getattr(matcher, "_chosen", "")
+                    # Deterministic boundary/anchors repr
+                    boundary_repr = repr(boundary) if boundary is not None else "None"
+                    anchors_repr = repr(anchors) if anchors is not None else "None"
+                    parts.append(
+                        f"{cap.name}:{grammar.name}:{kind}:{view}:{boundary_repr}:"
+                        f"{anchors_repr}:{requires_repr}:{chosen}:{tokens_repr}"
+                    )
+            else:
+                # Legacy PipelineGrammar shims: include grammar identity so F2 rescan
+                # grammars still contribute to revision via capability version fallback
+                cap_version = getattr(cap, "version", getattr(cap, "__version__", "0"))
+                parts.append(
+                    f"{cap.name}:{grammar.name}:{grammar.semantics}:{cap_version}"
+                )
+    # Snapshot rails — include JSON hashes so data drift changes revision
+    snapshot_dir = pathlib.Path(__file__).resolve().parents[1] / "shared_data"
+    if snapshot_dir.is_dir():
+        for snap_path in sorted(snapshot_dir.glob("*_snapshot.json")):
+            try:
+                content = snap_path.read_bytes()
+                sha = hashlib.sha256(content).hexdigest()[:12]
+                parts.append(f"snapshot:{snap_path.name}:{sha}")
+            except OSError:
+                continue
+
+    # Include capability-level version as tie-breaker for legacy + new mix
+    for cap in sorted(_registry.values(), key=lambda c: c.name):
+        cap_version = getattr(cap, "version", getattr(cap, "__version__", "0"))
+        parts.append(f"cap_version:{cap.name}:{cap_version}")
+
+    if not parts:
+        _recognition_revision = "0"
+    else:
+        # Sort for total order regardless of insertion
+        parts_sorted = sorted(parts)
+        _recognition_revision = hashlib.sha256(
+            "|".join(parts_sorted).encode()
+        ).hexdigest()[:12]
 
 
 def is_registry_frozen() -> bool:

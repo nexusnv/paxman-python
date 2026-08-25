@@ -9,7 +9,12 @@ from paxman.core.grammar.composer import AmountComposer
 from paxman.core.grammar.engine_loop import _run_matchers
 from paxman.core.grammar.lexicon import LexiconAlternation
 from paxman.core.grammar.matcher_spec import EmitFn, MatcherKind, MatcherSpec
+from paxman.core.grammar.matchers.candidates import CandidatesMatcher
+from paxman.core.grammar.matchers.combinator import CombinatorMatcher
+from paxman.core.grammar.matchers.label import LabelMatcher
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
+from paxman.core.grammar.matchers.property import PropertyMatcher
+from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.matchers.scanner import ScannerMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
@@ -40,26 +45,31 @@ __all__ = [
     "AnchorSet",
     "BoundaryGuard",
     "BoundarySpec",
+    "CandidatesMatcher",
     "CaseFold",
+    "CombinatorMatcher",
     "CountryNameFold",
     "EmitFn",
     "HasDigit",
     "IDNAFold",
     "KeySetAnchor",
+    "LabelMatcher",
     "LexiconAlternation",
     "LexiconMatcher",
     "LexiconStage",
+    "PipelineGrammar",
+    "PipelineState",
+    "PostStage",
+    "PropertyMatcher",
+    "RegexMatcher",
+    "RegexStage",
+    "ScanContext",
     "ScannerMatcher",
     "LiteralAnchor",
     "MatcherKind",
     "MatcherSpec",
     "Normalizer",
     "NormalizerSequence",
-    "PipelineGrammar",
-    "PipelineState",
-    "PostStage",
-    "RegexStage",
-    "ScanContext",
     "SeparatorFold",
     "Stage",
     "StandardPre",

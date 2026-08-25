@@ -70,15 +70,8 @@ class ScanContext:
         Each ``left`` entry is interpreted as a regex that must NOT match the
         suffix ending at ``start``; each ``right`` entry must NOT match the
         prefix starting at ``end``. Mirrors ``(?<!...)`` / ``(?!...)`` guards.
+        Delegates to the single-source :func:`check_boundary`.
         """
-        if spec.left is not None and start > 0:
-            prefix = text[:start]
-            for pat in spec.left:
-                if re.search(pat + r"\Z", prefix) is not None:
-                    return False
-        if spec.right is not None and end < len(text):
-            suffix = text[end:]
-            for pat in spec.right:
-                if re.search(r"\A" + pat, suffix) is not None:
-                    return False
-        return True
+        from paxman.core.grammar.boundary_spec import check_boundary
+
+        return check_boundary(text, start, end, spec)

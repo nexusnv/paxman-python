@@ -25,7 +25,63 @@ flowchart LR
 
 Contract compatibility (which contracts are accepted) is stable across PATCH and MINOR; result stability (which `status`/`canonicalized_value` you get) depends on data and is not promised when spec tables change. `year` filters rules by `publication_year <= year`; only `pinned_rules` and `excluded_rules` identify rules. Provenance and spec-version changes alone do not imply a MAJOR bump.
 
-Determinism is per-installed-build: the `version_stamp.paxman_version` on every `ExecutionResult` records exactly which build produced the answer, so you can audit what changed across an upgrade.
+Determinism is per-installed-build: the `version_stamp.paxman_version` on every `ExecutionResult` records exactly which build produced the answer, so you can audit what changed across an upgrade. Since 0.2.0, `version_stamp.recognition_revision` (hash of the compiled matcher set + snapshot SHAs, per ADR-0009 §13) is the same-snapshot diff signal — if `recognition_revision` changes, recognition behavior changed for at least one capability even when `paxman_version` is unchanged (e.g., a lexicon token table update).
+
+---
+
+## 0.2.0 — Recognition Kernel (breaking, scoped)
+
+**Scope:** This is a *pre-1.0* minor bump (0.1.0 → 0.2.0) with one intentional breaking change: the F1 correctness fix for whole-input vocabulary matching (ADR-0009). All other inputs are byte-identical under the parity gate.
+
+**What changed:** Country `name_recognition` moved from whole-input lookup to an in-text word-anchored trie on the `CountryNameFold` view. Short-code grammars (`alpha2`) now honestly compete with the name grammar instead of silently winning when the name was invisible.
+
+| Input class | Before (0.1.x pipeline) | After (0.2.0 kernel) |
+|---|---|---|
+| Exact name, whole input (`"United States"`) | `SUCCESS "US"` | `SUCCESS "US"` — unchanged |
+| Name embedded in prose (`"Ship to United States please"`) | `SUCCESS "TO"` — **wrong** (Tonga) | `MultipleMentionsError` under a `single_value` contract; both mentions via `paxman.scan()` |
+| Short code as ordinary word (`"to"` in prose) | recognized and validated as alpha-2 — silent win | recognized; competes with the name mention — no silent win |
+| All other inputs | — | byte-identical (parity gate) |
+
+**Migration snippet:**
+
+```python
+# Exact value — unchanged:
+import paxman
+from paxman.capabilities.Country import Country
+
+paxman.register_all_shipped()
+contract = Country.create_contract()
+paxman.canonicalize("United States", contract)  # SUCCESS "US"
+
+# Prose with embedded values — the new honest paths:
+from paxman.core.errors import MultipleMentionsError
+
+try:
+    result = paxman.canonicalize("Ship to United States please", contract)
+except MultipleMentionsError:
+    # scan() shares one ScanContext substrate across all contracts in the batch
+    mentions = paxman.scan("Ship to United States please", [contract])
+    # mentions.mentions["country"] == [
+    #   Mention(span=(5, 7), grammar="alpha2_recognition", notation=...),
+    #   Mention(span=(8, 21), grammar="name_recognition", notation=...),
+    # ]
+    # Segment first — docs/recipes/segmentation.md remains valid
+    for m in mentions.mentions["country"]:
+        print(m.span, m.grammar, m.notation)
+
+# Or segment-first (recipe) — `paxman.scan` is preferred; no direct
+# `normalize_name` import is needed.
+```
+
+**How to detect the change:** Compare `result.version_stamp.recognition_revision` across builds. The F1 migration changes the compiled matcher set, so `recognition_revision` changes even if you stay on the same `paxman_version` snapshot. Store both `paxman_version` and `recognition_revision` for audit trails.
+
+**Why this is correct:** 0.1.x returned a confident, provenance-backed, wrong answer on ordinary prose (`"Ship to United States please"` → Tonga). 0.2.0 surfaces the competition honestly; `scan()` turns the caller-owned split-then-canonicalize loop into an API (see `docs/recipes/segmentation.md` and `paxman scan --help`).
+
+**Other 0.2.0 additions (non-breaking):**
+
+- `paxman.scan(text, contracts)` batch API + `Mention`/`ScanResult` model + `paxman scan` CLI (one substrate pass, see `docs/user/api-reference.md`).
+- `ScanContext` lazy views, `MatcherSpec`/`LexiconMatcher` trie (SIUnit 2.4–6.5× win at 650/820 tokens), `BoundarySpec` presets, `AnchorSet` T0 prefilter.
+- Snapshot rails (`paxman/shared_data/*_snapshot.json` + `tools/regenerate_*` + CI drift gate) and derived recognition keys (BIC country codes, Language IANA subset) per ADR-0009 §14.
 
 ---
 
