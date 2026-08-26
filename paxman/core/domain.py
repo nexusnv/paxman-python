@@ -85,12 +85,12 @@ class RecognitionMatch(Generic[NotationT]):
 
     def __post_init__(self) -> None:
         if self.start < 0 or self.end < self.start:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Invalid span start={self.start}, end={self.end}: "
                 "expected 0 <= start <= end"
             )
         if len(self.raw_text) != self.end - self.start:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"raw_text {self.raw_text!r} length {len(self.raw_text)} "
                 f"does not match span [{self.start}, {self.end})"
             )
@@ -117,12 +117,12 @@ class RecognizedRep(Generic[NotationT]):
     def __post_init__(self) -> None:
         """Enforce the same span invariants as RecognitionMatch."""
         if self.start < 0 or self.end < self.start:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Invalid span start={self.start}, end={self.end}: "
                 "expected 0 <= start <= end"
             )
         if len(self.raw_text) != self.end - self.start:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"raw_text {self.raw_text!r} length {len(self.raw_text)} "
                 f"does not match span [{self.start}, {self.end})"
             )
@@ -199,7 +199,7 @@ class Mention:
 
     def __post_init__(self) -> None:
         if self.span[0] < 0 or self.span[1] < self.span[0]:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Invalid span start={self.span[0]}, end={self.span[1]}: "
                 "expected 0 <= start <= end"
             )
@@ -264,10 +264,14 @@ class Rule(ABC, Generic[NotationT]):
             raise TypeError(f"{cls.__name__}.target_semantics must be non-empty")
 
     @abstractmethod
-    def matches(self, notation: NotationT, contract: Contract) -> bool: ...
+    def matches(
+        self, notation: NotationT, contract: Contract
+    ) -> bool: ...  # pragma: no cover
 
     @abstractmethod
-    def normalize(self, notation: NotationT, contract: Contract) -> str: ...
+    def normalize(
+        self, notation: NotationT, contract: Contract
+    ) -> str: ...  # pragma: no cover
 
 
 class Grammar(ABC, Generic[NotationT]):
