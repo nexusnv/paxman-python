@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from paxman.core.domain import RecognitionMatch
+from paxman.core.grammar.data.common_words import COMMON_WORDS
 from paxman.core.grammar.normalizers import (
     CaseFold,
     CountryNameFold,
@@ -105,6 +106,17 @@ def _run_matchers_with_context(
                         f"for view {view_name!r} len {len(view.subject)}"
                     )
                 o_s, o_e = view.original_span(s, e)
+                # ADR §16 common-word suppression (B1): short-code matchers marked
+                # suppressible are skipped when contract requests it and the
+                # word-bounded hit is a high-frequency English function word.
+                # Provenance-neutral: suppressed recognition never canonicalizes.
+                if (
+                    contract is not None
+                    and bool(getattr(contract, "suppress_common_words", False))
+                    and bool(getattr(matcher, "suppressible", False))
+                    and text[o_s:o_e].lower() in COMMON_WORDS
+                ):
+                    continue
                 # ADR §10 consuming-mode: anchors consumed for advance
                 # but never part of emitted span. Lexicon/Scanner already
                 # emit inner span; boundary.is_consuming check below

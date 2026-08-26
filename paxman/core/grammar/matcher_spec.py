@@ -24,3 +24,4 @@ class MatcherSpec:
     anchors: AnchorSet
     emit: EmitFn
     requires_features: frozenset[str] = frozenset()
+    suppressible: bool = False

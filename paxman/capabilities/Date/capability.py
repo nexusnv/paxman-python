@@ -68,6 +68,7 @@ class DateCapability(Capability[DateNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         two_digit_base_year: int | None = None,
     ) -> DateContract:
         """Create a DateContract with the given configuration."""
@@ -77,6 +78,7 @@ class DateCapability(Capability[DateNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             two_digit_base_year=two_digit_base_year,
         )
 

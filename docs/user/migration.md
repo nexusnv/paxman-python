@@ -117,6 +117,65 @@ new `ExecutionResult.span`/`Mention.span`; do not add `+1` for dropped
 chars. Golden samples that asserted `(0, 14)` for `"United States."`
 should assert `(0, 13)`.
 
+### 0.2.0 — Common-word suppression for scan (B1, ADR-0009 §16)
+
+ADR-0009 §16 was deferred as non-binding; it now ships off by default as the
+suppression table for usable `scan()` on prose (R7: ~80% of prose `scan()`
+hits were short-code noise like `to`→Tonga). The change is **additive and
+off-by-default — byte-identical for every existing caller**.
+
+**Contract:** `CapabilityContract.suppress_common_words: bool = False`
+(after `extra_grammars`; frozen no-slots). Every capability's
+`create_contract(..., suppress_common_words: bool = False)` forwards it.
+Default `False` preserves existing `canonicalize()` / `scan()` results;
+`True` removes word-bounded short-code recognitions whose lowercased span
+is in the curated table — never canonicalizing, only suppressing
+recognition (provenance-neutral by construction).
+
+**Table:** `paxman/core/grammar/data/common_words.py:COMMON_WORDS`
+`frozenset[str]` curated via
+`Google 1000 (https://github.com/first20hours/google-10000-english,
+google-10000-english.txt first 1000 lines) ∩ (ISO 3166 α2/α3 + ISO 4217 +
+ISO 639-1/2/3)` lowercased, reviewable, frozen with `assert
+len(COMMON_WORDS)==67` and `assert "USD" not in COMMON_WORDS`. USD is
+deliberately not suppressed (not in Google 1000); currency `scan()` keeps
+`USD` while `to`/`in` etc. are removed for country/currency/language
+code shapes.
+
+**Matchers:** short-code matchers marked `suppressible=True` (declaration,
+not per-grammar code): Country `alpha2_recognition` / `alpha3_recognition`
+/ `numeric_recognition`, Currency `code_recognition`, Language
+`language_code_recognition`. Boundary is already word-bounded
+(`BoundarySpec.WORD` / `WORD_SIGN` — required), so suppression only fires
+on word-bounded hits.
+
+**Engine:** `paxman/core/grammar/engine_loop.py` insertion between
+`view.original_span` and `emit`: when `contract.suppress_common_words`
+and `matcher.suppressible` and `text[o_s:o_e].lower() in COMMON_WORDS`
+→ `continue` (skip emit).
+
+**Scan vs canonicalize:**
+- `scan("Ship to the United States of America, total 45.50 USD, weight 3.5 kg", [Country.create_contract(suppress_common_words=True)])`
+  keeps only the name mention `United States of America` for the short-code
+  shapes (plus numeric/already-word-bounded non-common-word hits); with the
+  flag off the full current snapshot is preserved. `Currency` scan keeps `USD`
+  in both modes.
+- `canonicalize("to", Country.create_contract(suppress_common_words=False))`
+  → `SUCCESS "TO"` (Tonga correct for bare code); with the flag on →
+  `MISSING` (suppressed recognition, never validated).
+
+**CLI:** `paxman scan` keeps default contracts (flag off) but now accepts
+`--suppress-common-words` — thin `create_contract(suppress_common_words=True)`
+construction only (see `paxman scan --help`). API remains the seam for
+`canonicalize()`.
+
+**ADR:** Rev.4 §16 "deferred, non-binding" is superseded — the table ships in
+0.2.0 off by default. `recognition_revision` bumps for the new matcher marker
+(one-time, pre-release).
+
+Migrate: no change required. Opt in only for `scan()` on prose where Tonga
+noise matters; keep bare-code `canonicalize()` contracts flag-off.
+
 ---
 
 ## What can appear in a minor release

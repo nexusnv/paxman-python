@@ -50,6 +50,7 @@ class LexiconMatcher:
     emit: Callable[[tuple[int, int], Any], Any] = field(default=_default_emit)
     representation: str = "auto"
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+    suppressible: bool = False
     kind: str = field(default="lexicon", init=False)
 
     _trie: dict[str, Any] | None = field(init=False, repr=False, default=None)

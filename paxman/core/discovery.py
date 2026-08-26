@@ -98,6 +98,7 @@ def freeze_registry() -> None:
                         matcher, "requires_features", frozenset[str]()
                     )
                     requires_repr = ",".join(sorted(requires))
+                    suppressible = bool(getattr(matcher, "suppressible", False))
                     digest_val: str | None = getattr(matcher, "digest", None)
                     if digest_val is not None:
                         tokens_repr = digest_val
@@ -141,7 +142,7 @@ def freeze_registry() -> None:
                     anchors_repr = repr(anchors) if anchors is not None else "None"
                     parts.append(
                         f"{cap.name}:{grammar.name}:{kind}:{view}:{boundary_repr}:"
-                        f"{anchors_repr}:{requires_repr}:{chosen}:{tokens_repr}"
+                        f"{anchors_repr}:{requires_repr}:{suppressible}:{chosen}:{tokens_repr}"
                     )
             else:
                 # Legacy PipelineGrammar shims: include grammar identity so F2 rescan

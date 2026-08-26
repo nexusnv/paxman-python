@@ -1,25 +1,34 @@
-"""Numeric (M49) country code recognition grammar (staged pipeline).
+"""Numeric (M49) country code recognition grammar (kernel RegexMatcher).
 
-Recognizes 1-3 digits as a numeric country code shape. The word boundary is
-supplied by BoundaryGuard.word_only() (ADR-0009 §10) so no hard-coded
-lookaround literal remains in this file. Syntax only: the grammar never
-resolves the code to a country.
+Recognizes 1-3 digits as a numeric country code shape.
+BoundarySpec.WORD provides word-boundary discipline (ADR-0009 §10).
+Syntax only: never resolves the code to a country.
+Suppressible marker present (ADR-0009 §16) — digit hits never collide
+with COMMON_WORDS but declaration keeps the short-code surface uniform.
 """
 
 from __future__ import annotations
 
-import re
-
 from paxman.capabilities.Country.notation import CountryNotation
-from paxman.core.grammar import BoundaryGuard, PipelineGrammar, RegexStage, StandardPre
+from paxman.core.grammar import AnchorSet, BoundarySpec, PipelineGrammar, StandardPre
+from paxman.core.grammar.matchers.regex import RegexMatcher
+from paxman.core.grammar.scan_context import ScanContext
 
-_GUARD = BoundaryGuard.word_only()
-_NUMERIC_PATTERN = _GUARD.lookbehind + r"\d{1,3}" + _GUARD.lookahead
+
+def _emit(span: tuple[int, int], ctx: ScanContext) -> CountryNotation:
+    s, e = span
+    raw = ctx.text[s:e]
+    return CountryNotation(shape="numeric", value=raw)
 
 
-def _numeric_notation(match: re.Match[str]) -> CountryNotation:
-    """Map a numeric match to its verbatim notation."""
-    return CountryNotation(shape="numeric", value=match.group(0))
+_MATCHER = RegexMatcher(
+    pattern=r"\d{1,3}",
+    boundary=BoundarySpec.WORD,
+    view=None,
+    anchors=AnchorSet(),
+    emit=_emit,
+    suppressible=True,
+)
 
 
 class NumericGrammar(PipelineGrammar[CountryNotation]):
@@ -34,6 +43,4 @@ class NumericGrammar(PipelineGrammar[CountryNotation]):
     single_value = True
 
     pre = StandardPre[CountryNotation](empty_guard=True)
-    regex = RegexStage[CountryNotation](
-        pattern=_NUMERIC_PATTERN, notation_fn=_numeric_notation
-    )
+    matchers = (_MATCHER,)

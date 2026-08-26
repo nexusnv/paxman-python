@@ -76,11 +76,18 @@ def _build_scan_parser() -> argparse.ArgumentParser:
             '  paxman scan "Ship to United States please"\n'
             '  paxman scan --json "Ship to United States please"\n'
             '  paxman scan country "Ship to United States please"\n'
+            '  paxman scan --suppress-common-words "Ship to United States please"\n'
             '  echo "hello" | paxman scan --json'
         ),
         epilog=(
             f"Capabilities: {shipped}\n"
-            "If no capability is given, all shipped capabilities are scanned."
+            "If no capability is given, all shipped capabilities are scanned.\n"
+            "Flag --suppress-common-words gates common-word suppression for\n"
+            "short-code matchers (Country alpha2/alpha3/numeric, Currency code,\n"
+            "Language language_code) per ADR-0009 §16 — off by default\n"
+            "(provenance-neutral; a suppressed span is simply not emitted).\n"
+            "Default scan contracts are flag-off; use the API flag for\n"
+            "canonicalize() control."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -88,6 +95,14 @@ def _build_scan_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="output JSON",
+    )
+    parser.add_argument(
+        "--suppress-common-words",
+        action="store_true",
+        help=(
+            "suppress common-word hits for short-code matchers "
+            "(ADR-0009 §16); off by default"
+        ),
     )
     parser.add_argument(
         "--capability",
@@ -113,68 +128,70 @@ def _print_list() -> None:
         print(name)
 
 
-def _create_contract(normalized: str) -> CapabilityContract:
+def _create_contract(
+    normalized: str, suppress_common_words: bool = False
+) -> CapabilityContract:
     """Create a default contract for the normalized capability name."""
     if normalized == "bic":
         from paxman.capabilities import BIC
 
-        return BIC.create_contract()
+        return BIC.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "country":
         from paxman.capabilities import Country
 
-        return Country.create_contract()
+        return Country.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "currency":
         from paxman.capabilities import Currency
 
-        return Currency.create_contract()
+        return Currency.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "date":
         from paxman.capabilities import Date
 
-        return Date.create_contract()
+        return Date.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "email":
         from paxman.capabilities import Email
 
-        return Email.create_contract()
+        return Email.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "iban":
         from paxman.capabilities import IBAN
 
-        return IBAN.create_contract()
+        return IBAN.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "ip":
         from paxman.capabilities import IP
 
-        return IP.create_contract()
+        return IP.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "isbn":
         from paxman.capabilities import ISBN
 
-        return ISBN.create_contract()
+        return ISBN.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "issn":
         from paxman.capabilities import ISSN
 
-        return ISSN.create_contract()
+        return ISSN.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "language":
         from paxman.capabilities import Language
 
-        return Language.create_contract()
+        return Language.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "money":
         from paxman.capabilities import Money
 
-        return Money.create_contract()
+        return Money.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "orcid":
         from paxman.capabilities import ORCID
 
-        return ORCID.create_contract()
+        return ORCID.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "phone":
         from paxman.capabilities import Phone
 
-        return Phone.create_contract()
+        return Phone.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "si_unit":
         from paxman.capabilities import SIUnit
 
-        return SIUnit.create_contract()
+        return SIUnit.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "url":
         from paxman.capabilities import URL
 
-        return URL.create_contract()
+        return URL.create_contract(suppress_common_words=suppress_common_words)
     # Should be unreachable after validation, but keep for type safety.
     raise ValueError(f"Unknown capability: {normalized!r}")
 
@@ -363,6 +380,7 @@ def _handle_scan(scan_argv: list[str]) -> None:
         sys.exit(0)
 
     json_flag = False
+    suppress_flag = False
     cap_filters_raw: list[str] = []
     pos: list[str] = []
     after_double_dash = False
@@ -372,6 +390,8 @@ def _handle_scan(scan_argv: list[str]) -> None:
         arg = scan_argv[i]
         if arg == "--json":
             json_flag = True
+        elif arg == "--suppress-common-words":
+            suppress_flag = True
         elif arg in ("--capability", "-c"):
             if i + 1 >= len(scan_argv):
                 parser.error(f"{arg} requires an argument")
@@ -445,7 +465,10 @@ def _handle_scan(scan_argv: list[str]) -> None:
     if not cap_filters:
         cap_filters = list(list_shipped_capabilities())
 
-    contracts = [_create_contract(norm) for norm in cap_filters]
+    contracts = [
+        _create_contract(norm, suppress_common_words=suppress_flag)
+        for norm in cap_filters
+    ]
 
     try:
         result = scan(text, contracts)

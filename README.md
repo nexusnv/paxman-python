@@ -650,6 +650,10 @@ for Cap in (Money, Email, URL, Country):
 
 For inputs with multiple mentions of the same capability, split the text first — see [docs/recipes/segmentation.md](docs/recipes/segmentation.md). The CLI offers the same extraction without code: `python -m paxman email "Contact billing@example.com"`.
 
+For scan on prose, short-code noise (`to`→Tonga) can dominate: use the off-by-default
+`suppress_common_words` gate (ADR-0009 §16) — `Country.create_contract(suppress_common_words=True)` /
+`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency and bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note.
+
 ---
 
 ## Provenance

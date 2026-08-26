@@ -41,6 +41,7 @@ class RegexMatcher:
     anchors: AnchorSet = field(default_factory=AnchorSet)
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+    suppressible: bool = False
     kind: str = field(default="regex", init=False)
     _compiled: re.Pattern[str] = field(init=False, repr=False)
     digest: str = field(init=False, repr=False, default="")

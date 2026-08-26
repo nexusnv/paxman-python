@@ -98,6 +98,7 @@ class ISBNCapability(Capability[ISBNNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         include_isbn10: bool = True,
         include_range_validation: bool = False,
     ) -> ISBNContract:
@@ -108,6 +109,7 @@ class ISBNCapability(Capability[ISBNNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             include_isbn10=include_isbn10,
             include_range_validation=include_range_validation,
         )
