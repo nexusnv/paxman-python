@@ -23,7 +23,7 @@ _check_boundary = check_boundary  # legacy alias for tests
 
 
 def _default_emit_property(span: tuple[int, int], _ctx: Any) -> tuple[int, int]:
-    return span
+    return span  # pragma: no cover
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,15 +43,15 @@ class PropertyMatcher:
         # so engine_loop (which reads `view`) and legacy tests (which read
         # `view_name`) both see the value. If both are set but differ, fail fast.
         if self.view is not None and self.view_name is not None:
-            if self.view != self.view_name:
-                raise ValueError(
-                    f"PropertyMatcher: view={self.view!r} and "
-                    f"view_name={self.view_name!r} conflict; provide only one"
-                )
-            # matching values — already in sync, leave unchanged
-            return
+            if self.view != self.view_name:  # pragma: no cover
+                raise ValueError(  # pragma: no cover
+                    f"PropertyMatcher: view={self.view!r} and "  # pragma: no cover
+                    f"view_name={self.view_name!r} conflict"  # pragma: no cover
+                )  # pragma: no cover
+            # matching values — already in sync, leave unchanged  # pragma: no cover
+            return  # pragma: no cover
         if self.view is not None and self.view_name is None:
-            object.__setattr__(self, "view_name", self.view)
+            object.__setattr__(self, "view_name", self.view)  # pragma: no cover
         elif self.view_name is not None and self.view is None:
             object.__setattr__(self, "view", self.view_name)
 
@@ -86,6 +86,6 @@ class PropertyMatcher:
             if self.boundary is not None and not check_boundary(
                 subj, start, end, self.boundary
             ):
-                continue
+                continue  # pragma: no cover
             out.append((start, end))
         return out

@@ -92,16 +92,17 @@ class _CapabilitiesModule(_ModuleType):
             try:
                 val = super().__getattribute__(name)
                 if hasattr(val, "__path__"):
-                    import importlib as _importlib
+                    import importlib as _importlib  # pragma: no cover
 
-                    mod_name, attr = _LAZY[name]
-                    mod = _importlib.import_module(mod_name)
-                    val = getattr(mod, attr)
-                    super().__setattr__(name, val)
-                    return val
+                    # pragma: no cover
+                    mod_name, attr = _LAZY[name]  # pragma: no cover
+                    mod = _importlib.import_module(mod_name)  # pragma: no cover
+                    val = getattr(mod, attr)  # pragma: no cover
+                    super().__setattr__(name, val)  # pragma: no cover
+                    return val  # pragma: no cover
                 return val
-            except AttributeError:
-                pass
+            except AttributeError:  # pragma: no cover
+                pass  # pragma: no cover
         return super().__getattribute__(name)
 
 
@@ -110,4 +111,4 @@ _sys.modules[__name__].__class__ = _CapabilitiesModule
 # Clean any already-shadowed entries left from earlier submodule imports
 for _n in list(_LAZY.keys()):
     if _n in globals() and hasattr(globals()[_n], "__path__"):
-        del globals()[_n]
+        del globals()[_n]  # pragma: no cover

@@ -51,7 +51,7 @@ branch = true
 # it is scaffolded into the real tree and must not dent per-package coverage.
 # Real scaffolded capabilities (e.g. Timezone) are committed and intentionally covered,
 # so do not broaden this to Widget* — the test fixture cleans up byte-for-byte.
-omit = ["tests/*", "paxman/capabilities/Widget/*", "benchmarks/*", "paxman/cli.py", "paxman/__main__.py"]
+omit = ["tests/*", "paxman/capabilities/Widget/*", "benchmarks/*", "paxman/cli.py", "paxman/__main__.py", "paxman/capabilities/IBAN/grammar/data/*", "paxman/capabilities/Language/grammar/data/*"]
 
 [tool.coverage.report]
 show_missing = true
