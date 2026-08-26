@@ -20,6 +20,9 @@ from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 _check_boundary = check_boundary  # legacy alias for tests
@@ -39,6 +42,7 @@ class ScannerMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        _validate_emit(self.emit, type(self).__name__)
         qualname = getattr(self.scan, "__qualname__", type(self.scan).__name__)
         boundary_repr = repr(self.boundary) if self.boundary is not None else "None"
         view_repr = self.view_name if self.view_name is not None else "None"

@@ -22,6 +22,9 @@ from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 _check_boundary = check_boundary  # legacy alias for tests
@@ -43,10 +46,7 @@ class RegexMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
-        # Compile at construction (freeze-time per ADR §13 for MatcherSpec path;
-        # for direct RegexMatcher construction we compile eagerly).
-        # No backreferences — catched by lint; catastrophic constructions should
-        # be reviewed per ADR §9.1.
+        _validate_emit(self.emit, type(self).__name__)
         try:
             compiled = re.compile(self.pattern, self.flags)
         except re.error as exc:

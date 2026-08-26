@@ -18,6 +18,9 @@ from typing import Any, cast
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 _check_boundary = check_boundary  # legacy alias for tests
@@ -41,6 +44,7 @@ class PropertyMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        _validate_emit(self.emit, type(self).__name__)
         digest_val = hashlib.sha256(repr(self.ranges).encode("utf-8")).hexdigest()
         object.__setattr__(self, "digest", digest_val)
         # Compat: `view_name` is deprecated alias for `view`. Keep both in sync

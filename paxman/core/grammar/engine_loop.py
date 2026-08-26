@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import inspect
 import warnings
-from collections.abc import Callable, Sequence
-from typing import Any, cast
+from collections.abc import Sequence
+from typing import Any
 
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.normalizers import (
@@ -99,17 +98,10 @@ def _run_matchers_with_context(
             # L0 view materialization (lazy, one per ScanContext)
             view_name = getattr(matcher, "view", None)
             view = _resolve_view(context, view_name)
-            # Emit callable and signature guard — hoisted out of per-span loop
             emit_fn = getattr(matcher, "emit", None)
             if not callable(emit_fn):
                 raise TypeError(
                     f"Matcher {type(matcher).__name__} has no callable emit"
-                )
-            sig = inspect.signature(cast(Callable[..., Any], emit_fn))
-            if len(sig.parameters) != 2:
-                raise TypeError(
-                    f"Matcher {type(matcher).__name__}.emit must have 2 params "
-                    f"(span, context), got {len(sig.parameters)}"
                 )
             # T1 shape match — kind-specific
             for span in matcher.match(view):

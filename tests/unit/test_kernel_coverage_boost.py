@@ -350,7 +350,9 @@ def test_engine_loop_emit_strict_signature() -> None:
     with pytest.raises(TypeError, match="domain error inside emit"):
         _run_matchers("ab", [type("G", (), {"matchers": (DomainErrorMatcher(),)})()])
 
-    # Wrong arity emits raise an actionable signature error via inspect guard
+    # Wrong arity now validated at matcher construction for shipped matchers
+    # (see test_emit_arity_validated_at_construction). Dummy matcher without
+    # construction validation falls through to Python call-time TypeError.
     @dataclass(frozen=True, slots=True)
     class WrongArityMatcher:
         anchors: AnchorSet = AnchorSet()
@@ -359,10 +361,10 @@ def test_engine_loop_emit_strict_signature() -> None:
         def match(self, view: View) -> list[tuple[int, int]]:
             return [(0, 2)]
 
-        def emit(self, span: tuple[int, int]) -> str:
+        def emit(self, span: tuple[int, int]) -> str:  # type: ignore[no-untyped-def]
             return "bad"
 
-    with pytest.raises(TypeError, match="must have 2 params"):
+    with pytest.raises(TypeError):
         _run_matchers("ab", [type("G", (), {"matchers": (WrongArityMatcher(),)})()])
 
     # Happy path: correct arity succeeds
@@ -413,3 +415,65 @@ def test_scan_api_type_errors() -> None:
     m = Mention(span=(0, 1), grammar="g", notation="n", candidates=None)
     assert m.span == (0, 1)
     reset_registry()
+
+
+def test_emit_arity_validated_at_construction() -> None:
+    # ADR §13 R3: emit signature validated once at matcher construction,
+    # not per-call via inspect.signature in engine_loop.
+    def bad_emit_1(span: tuple[int, int]) -> str:  # type: ignore[no-untyped-def]
+        return "bad"
+
+    def bad_emit_3(  # type: ignore[no-untyped-def]
+        span: tuple[int, int], ctx: object, extra: object
+    ) -> str:
+        return "bad"
+
+    def ok_emit(span: tuple[int, int], ctx: object) -> str:  # type: ignore[no-untyped-def]
+        return "ok"
+
+    # 1-param emit must fail at construction
+    with pytest.raises(TypeError, match="must have 2 params"):
+        LexiconMatcher(tokens=frozenset({"hello"}), emit=bad_emit_1)  # type: ignore[arg-type]
+
+    # 3-param emit must fail at construction
+    with pytest.raises(TypeError, match="must have 2 params"):
+        LexiconMatcher(tokens=frozenset({"hello"}), emit=bad_emit_3)  # type: ignore[arg-type]
+
+    # 2-param emit must succeed
+    m = LexiconMatcher(tokens=frozenset({"hello"}), emit=ok_emit)  # type: ignore[arg-type]
+    assert m.emit is ok_emit
+
+    # RegexMatcher with bad arity also fails at construction
+    with pytest.raises(TypeError, match="must have 2 params"):
+        from paxman.core.grammar.matchers.regex import RegexMatcher
+
+        RegexMatcher(pattern="hello", emit=bad_emit_1)  # type: ignore[arg-type]
+
+    # PropertyMatcher with bad arity also fails at construction
+    with pytest.raises(TypeError, match="must have 2 params"):
+        PropertyMatcher(ranges=((48, 57),), emit=bad_emit_1)  # type: ignore[arg-type]
+
+    # ScannerMatcher with bad arity also fails at construction
+    from paxman.core.grammar.matchers.scanner import ScannerMatcher
+
+    def dummy_scan(view: object, pos: int) -> tuple[int, object] | None:  # type: ignore[no-untyped-def]
+        return None
+
+    with pytest.raises(TypeError, match="must have 2 params"):
+        ScannerMatcher(scan=dummy_scan, emit=bad_emit_1)  # type: ignore[arg-type]
+
+    # CombinatorMatcher with bad arity also fails at construction
+    with pytest.raises(TypeError, match="must have 2 params"):
+        CombinatorMatcher(expr=("alt", ["a"]), emit=bad_emit_1)  # type: ignore[arg-type]
+
+    # Happy path: good emit for each kind
+    from paxman.core.grammar.matchers.regex import RegexMatcher as RegexMatcher2
+
+    rm = RegexMatcher2(pattern="hello", emit=ok_emit)  # type: ignore[arg-type]
+    assert rm.emit is ok_emit
+    pm = PropertyMatcher(ranges=((48, 57),), emit=ok_emit)  # type: ignore[arg-type]
+    assert pm.emit is ok_emit
+    sm = ScannerMatcher(scan=dummy_scan, emit=ok_emit)  # type: ignore[arg-type]
+    assert sm.emit is ok_emit
+    cm = CombinatorMatcher(expr=("alt", ["a"]), emit=ok_emit)  # type: ignore[arg-type]
+    assert cm.emit is ok_emit  # type: ignore[attr-defined]

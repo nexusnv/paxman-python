@@ -18,6 +18,9 @@ from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 
@@ -30,6 +33,9 @@ class CombinatorMatcher:
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     predicate: Callable[[str, str], bool] | None = None
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+
+    def __post_init__(self) -> None:
+        _validate_emit(self.emit, type(self).__name__)
 
     def match(self, view: View) -> list[tuple[int, int]]:
         raise NotImplementedError(
