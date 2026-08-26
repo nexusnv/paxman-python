@@ -31,7 +31,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     ),
     "country": ("Country codes/names", "ISO 3166, CLDR"),
     "currency": ("Currency identifiers", "ISO 4217, CLDR"),
-    "date": ("Dates", "ISO 8601, US federal, EN 50160"),
+    "date": (
+        "Dates",
+        "ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale)",
+    ),
     "email": ("Email addresses", "RFC 5322, RFC 6761"),
     "iban": ("Bank account numbers", "ISO 13616, SWIFT Registry, MOD 97-10"),
     "ip": ("IP addresses", "RFC 791, RFC 5952"),

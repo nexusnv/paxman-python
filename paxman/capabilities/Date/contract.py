@@ -49,7 +49,7 @@ class DateContract(CapabilityContract):
             mapped = tuple(_LEGACY_RULE_NAME_MAP.get(n, n) for n in self.pinned_rules)
             if mapped != self.pinned_rules:
                 object.__setattr__(self, "pinned_rules", mapped)
-        if self.excluded_rules:
+        if self.excluded_rules != ():
             mapped_ex = tuple(
                 _LEGACY_RULE_NAME_MAP.get(n, n) for n in self.excluded_rules
             )

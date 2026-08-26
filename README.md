@@ -61,7 +61,7 @@ Paxman ships with fifteen built-in capabilities:
 | **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Country** | Country codes/names | 4 (alpha2, alpha3, numeric, name) | 6 | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
-| **Date** | Dates | 4 (iso8601, us, european, slash_iso) | 3 | ISO 8601, US federal, EN 50160 |
+| **Date** | Dates | 4 (iso8601, us, european, slash_iso) | 3 | ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale) |
 | **Email** | Email addresses | 3 (standard, obfuscated, localhost) | 2 | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | 1 (iban) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |

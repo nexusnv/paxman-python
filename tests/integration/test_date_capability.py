@@ -152,3 +152,20 @@ class TestDateCapabilityIntegration:
         result = paxman.canonicalize("07/26/2026", contract)
         assert result.status == Resolution.SUCCESS
         assert result.canonicalized_value == "2026-07-26"
+
+    def test_year_2024_includes_both_regional_rules(self) -> None:
+        """Year filter 2024 keeps both US and European rules active."""
+        contract = Date.create_contract(year=2024)
+        r_us = paxman.canonicalize("07/26/2024", contract)
+        r_eu = paxman.canonicalize("26/07/2024", contract)
+        assert r_us.status == Resolution.SUCCESS
+        assert r_eu.status == Resolution.SUCCESS
+        assert r_us.canonicalized_value == "2024-07-26"
+        assert r_eu.canonicalized_value == "2024-07-26"
+        # Both regional rules have publication_year <= 2024 (US 2023 and European 2010)
+        # so both should be active (regression for 2025→2023 year restore).
+        # 07/26/2024 is unambiguous (EU month 26 invalid) but proves US rule active;
+        # 26/07/2024 proves EU rule active; together they prove both survive
+        # year=2024 filtering.
+        assert r_us.candidates[0].provenance[0].publication_year <= 2024
+        assert r_eu.candidates[0].provenance[0].publication_year <= 2024
