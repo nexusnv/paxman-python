@@ -304,7 +304,7 @@ def test_engine_loop_with_dummy_matchers() -> None:
     @dataclass(frozen=True, slots=True)
     class NormMatcher:
         anchors: AnchorSet = AnchorSet()
-        view: str | None = "normalized"
+        view: str | None = "country_normalized"
 
         def match(self, view: View) -> list[tuple[int, int]]:
             return [(0, 2)]

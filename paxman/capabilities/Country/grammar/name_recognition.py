@@ -54,7 +54,7 @@ def _emit(span: tuple[int, int], ctx: ScanContext) -> CountryNotation:
 _LEXICON_MATCHER = LexiconMatcher(
     tokens=_LEXICON_TOKENS,
     boundary=BoundarySpec.WORD,
-    view="normalized",
+    view="country_normalized",
     anchors=AnchorSet(),
     emit=_emit,
     representation="trie",
@@ -90,7 +90,7 @@ class NameGrammar(PipelineGrammar[CountryNotation]):
         if not text.strip():
             return []
         ctx = ScanContext.of(text)
-        view = ctx.view("normalized", CountryNameFold().normalize)
+        view = ctx.view("country_normalized", CountryNameFold().normalize)
         spans = _LEXICON_MATCHER.match(view)
         out: list[RecognitionMatch[CountryNotation]] = []
         for s, e in spans:
