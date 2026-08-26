@@ -120,7 +120,8 @@ def freeze_registry() -> None:
                                     repr(boundary) if boundary is not None else "None"
                                 )
                                 tokens_repr = (
-                                    f"{qualname}:{max_window}:{view}:{boundary_repr_inner}"
+                                    f"{qualname}:{max_window}:{view}:"
+                                    f"{boundary_repr_inner}"
                                 )
                             else:
                                 fallback_chosen = getattr(matcher, "_chosen", "")

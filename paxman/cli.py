@@ -354,7 +354,11 @@ def _handle_scan(scan_argv: list[str]) -> None:
     # Supports: `paxman scan [--json] [capability] [text]`
     #           `paxman scan country --json "text"` etc.
     parser = _build_scan_parser()
-    if any(a in ("-h", "--help") for a in scan_argv):
+    # Only flags before `--` are real options; after `--` treat as verbatim text
+    help_check_args = (
+        scan_argv[: scan_argv.index("--")] if "--" in scan_argv else scan_argv
+    )
+    if any(a in ("-h", "--help") for a in help_check_args):
         parser.print_help(sys.stdout)
         sys.exit(0)
 
