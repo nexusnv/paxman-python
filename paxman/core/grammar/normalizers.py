@@ -110,6 +110,9 @@ class AccentStrip:
         return stripped.lower(), None, None
 
 
+_NFD_CACHE: dict[str, str] = {}
+
+
 @dataclass(frozen=True, slots=True)
 class CountryNameFold:
     """Country name view: accent-strip + separator fold + punctuation strip.
@@ -133,19 +136,32 @@ class CountryNameFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        if not text:
+            return "", (), ()
+        nfd = unicodedata.normalize("NFD", text)
+        # Map each NFD char back to its original index via cached per-char
+        # decomposition lengths (avoids per-char normalize of the whole text).
+        nfd_orig: list[int] = []
+        nfd_pos = 0
+        for orig_idx, ch in enumerate(text):
+            cached = _NFD_CACHE.get(ch)
+            if cached is None:
+                cached = unicodedata.normalize("NFD", ch)
+                _NFD_CACHE[ch] = cached
+            seg_len = len(cached)
+            for _ in range(seg_len):
+                nfd_orig.append(orig_idx)
+            nfd_pos += seg_len
         chars: list[str] = []
         offs: list[int] = []
-        for idx, ch in enumerate(text):
-            nfd = unicodedata.normalize("NFD", ch)
-            stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
-            for c2 in stripped:
-                if c2 in "-/\u2013":
-                    c2 = " "
-                if c2.isalnum() or c2.isspace():
-                    chars.append(c2.lower())
-                    offs.append(idx)
-                else:
-                    continue
+        for c, orig_idx in zip(nfd, nfd_orig, strict=True):
+            if unicodedata.category(c) == "Mn":
+                continue
+            if c in "-/\u2013":
+                c = " "
+            if c.isalnum() or c.isspace():
+                chars.append(c.lower())
+                offs.append(orig_idx)
         final_chars: list[str] = []
         final_offs: list[int] = []
         prev_space = False
