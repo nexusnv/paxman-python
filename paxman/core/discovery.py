@@ -65,7 +65,7 @@ def freeze_registry() -> None:
     """Freeze the registry so no more capabilities can be registered.
 
     Also computes ``recognition_revision`` as a hash of the compiled matcher
-    set (pure function of ``(spec, snapshot)`` per ADR-0009 §13/D8). Any
+    set (pure function of ``(spec, snapshot)`` per ADR-0009 §13). Any
     recognition-behavior change — including lexicon token changes, regex
     pattern edits, boundary presets, anchor sets, ``requires_features`` gating,
     or snapshot SHAs — changes the revision, giving callers a same-snapshot

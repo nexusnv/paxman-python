@@ -3,7 +3,7 @@
 Extracts IPv6 addresses in full and compressed formats. The full and
 compressed legacy patterns are merged into one alternation wrapped by a
 single outer capture group; the boundary lookarounds are supplied by
-BoundaryGuard.ipv6_token() (ADR-0008 D5) so no hard-coded lookaround literal
+BoundaryGuard.ipv6_token() (ADR-0009 §10) so no hard-coded lookaround literal
 remains in this file. Syntax only: the grammar never validates the address.
 
 Note: The legacy bespoke ``recognize()`` ran two separate ``finditer`` loops

@@ -1,7 +1,7 @@
 """Numeric (M49) country code recognition grammar (staged pipeline).
 
 Recognizes 1-3 digits as a numeric country code shape. The word boundary is
-supplied by BoundaryGuard.word_only() (ADR-0008 D5) so no hard-coded
+supplied by BoundaryGuard.word_only() (ADR-0009 §10) so no hard-coded
 lookaround literal remains in this file. Syntax only: the grammar never
 resolves the code to a country.
 """

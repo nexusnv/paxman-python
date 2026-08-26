@@ -246,7 +246,7 @@ def _recognize(
     ordered: list[tuple[int, int, int, str, RecognitionMatch[Any]]] = []
     for grammar in active_grammars:
         # compat shim: if grammar exposes compiled matchers, delegate to
-        # engine-owned loop (pass contract for requires_features D5 filtering)
+        # engine-owned loop (pass contract for requires_features filtering per ADR §13)
         _matchers = getattr(grammar, "matchers", None)
         if _matchers:
             try:

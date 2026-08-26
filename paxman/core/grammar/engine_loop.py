@@ -56,10 +56,10 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
 def _matcher_requires_unsatisfied(matcher: Any, contract: Any | None) -> bool:
     """Return True if matcher's ``requires_features`` is unsatisfied.
 
-    Per D5: matcher omitted from compiled set at freeze when unsatisfied;
-    for the compat shim we filter at match time. If contract is None
-    (e.g. legacy unit tests calling run_matchers without contract), we treat
-    all matchers as satisfied.
+    Per ADR §8/§13: matcher omitted when unsatisfied; the registry freezes
+    without a contract so contract-dependent omission happens at match time
+    (compat shim). If contract is None (e.g. legacy unit tests calling
+    run_matchers without contract), we treat all matchers as satisfied.
     """
     requires: frozenset[str] = getattr(matcher, "requires_features", frozenset[str]())
     if not requires:
@@ -79,7 +79,7 @@ def _run_matchers_with_context(
     out: list[RecognitionMatch[Any]] = []
     for grammar in compiled:
         for matcher in getattr(grammar, "matchers", ()):
-            # D5 requires_features omission — filter unsatisfied matchers
+            # ADR §13 requires_features omission — filter unsatisfied matchers
             if _matcher_requires_unsatisfied(matcher, contract):
                 continue
             # T0 anchor prefilter — C-speed skip

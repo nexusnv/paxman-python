@@ -64,7 +64,7 @@ def _trim_to_e164_boundary(raw: str) -> str:
 
 
 # Body: "+" then digits with optional separators, ending on a digit. The
-# leading lookbehind is supplied by BoundaryGuard.e164() (ADR-0008 D5) so no
+# leading lookbehind is supplied by BoundaryGuard.e164() (ADR-0009 §10) so no
 # hard-coded lookaround literal remains in this file.
 _E164_BODY = r"\+\d[\d\s().\-]*(?<=\d)"
 _GUARD = BoundaryGuard.e164()

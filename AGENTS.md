@@ -5,7 +5,7 @@
 **Branch:** chores/pre-release-housekeeping
 
 ## OVERVIEW
-Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 12 capabilities (Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Money, Phone, SI Unit, URL). Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
+Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 15 capabilities (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
 
 ## STRUCTURE
 ```text
@@ -14,8 +14,8 @@ paxman/
 ├── cli.py          # CLI: `paxman` console script / `python -m paxman` (--list, --json, stdin)
 ├── __main__.py     # python -m paxman entry
 ├── engine/         # run_capability() pipeline orchestrator
-├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery)
-├── capabilities/   # 12 self-contained capability packages
+├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop + legacy stages)
+├── capabilities/   # 15 self-contained capability packages
 ├── shared_data/    # cross-capability source snapshots (currency_snapshot.json → Currency + Money data)
 └── py.typed        # PEP 561 marker
 benchmarks/         # harness.py (CI-run), grammar_stage_parity.py, baseline.json
@@ -46,7 +46,7 @@ docs/               # adr/, development/, recipes/, user/
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
 | `canonicalize()` | function | `paxman/api/canonicalize.py` | Sole user entry point → `run_capability()` |
-| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 12 shipped capabilities; deterministic name list |
+| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 15 shipped capabilities; deterministic name list |
 | `list_registered_capabilities()` | function | `paxman/core/discovery.py` | Introspection of the live registry |
 | `register_capability()` | function | `paxman/core/discovery.py` | Registry add; freezes on first run |
 | `register_grammar()` / `register_rule()` | functions | `paxman/core/extensions.py` | Community extension seam (opt-in via contract `extra_grammars`) |
@@ -99,8 +99,8 @@ uv run python -m paxman email "user@example.com"      # CLI smoke test
 Full pre-PR gate: `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run import-linter lint && uv run pytest`
 
 ## NOTES
-- `paxman/capabilities/__init__.py` exports all twelve shipped capabilities (Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Money, Phone, SI Unit, URL); export completeness is enforced by `tests/unit/test_capability_exports.py`.
-- CONTEXT.md is the domain glossary for the full shipped set (twelve capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
+- `paxman/capabilities/__init__.py` exports all fifteen shipped capabilities (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL); export completeness is enforced by `tests/unit/test_capability_exports.py`.
+- CONTEXT.md is the domain glossary for the full shipped set (fifteen capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
 - No `pyrightconfig.json` — pyright config is inline `[tool.pyright]` in pyproject.toml. No `.editorconfig`.
 - Data modules live under `rules/data/` and `grammar/data/` — plain module-level tables separating data from logic. Generated modules (edit via snapshot + regenerate, never by hand): ISBN range message (`tools/regenerate_isbn_range_data.py`), URL IDNA UTS #46 mapping (`tools/regenerate_idna_uts46_data.py`), SIUnit prefixed-unit and grammar token tables (`tools/regenerate_si_prefix_data.py`), and the Currency + Money data set (`tools/regenerate_currency_data.py`, from `paxman/shared_data/currency_snapshot.json`). Unmarked data files are edited directly.
 - Library + CLI: `[project.scripts] paxman = "paxman.cli:main"` and `python -m paxman`; CLI supports `--list`, `--json`, stdin input. Version 0.1.0.

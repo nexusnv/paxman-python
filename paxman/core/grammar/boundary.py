@@ -3,7 +3,7 @@
 Each guard produces a compiled alternation-ready regex via `wrap(alternation)`,
 or exposes its `(lookbehind, lookahead)` pair for `LexiconStage` injection.
 No grammar file hard-codes a lookaround literal after migration — each grammar
-references a `BoundaryGuard` instance (ADR-0008 D5).
+references a `BoundaryGuard` instance (ADR-0009 §10).
 """
 
 from __future__ import annotations

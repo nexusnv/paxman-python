@@ -9,8 +9,8 @@ from dataclasses import dataclass
 class URLNotation:
     """URL notation: a single URL string.
 
-    Shape-only carrier (D15): it stores the recognized text exactly as
-    scanned and never validates it — validity is the rule layer's job (D7).
+    Shape-only carrier (ADR §5): it stores the recognized text exactly as
+    scanned and never validates it — validity is the rule layer's job (ADR §5).
     The single ``text`` component is the recognized URL string.
     """
 

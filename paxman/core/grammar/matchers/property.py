@@ -4,7 +4,7 @@ Implemented per ADR-0009 §9.5: membership is ``bisect`` on generated sorted-ran
 tuples (ICU ``UnicodeSet`` discipline; no ``\\p{...}``, no ``regex`` dep). The
 kind is live but has no shipped data until the Unicode property snapshot is
 materialized — ``paxman/core/grammar/data/unicode_ranges.py`` is currently
-``UNICODE_RANGES = ()`` (see plan Task 11). When populated, this matcher finds
+``UNICODE_RANGES = ()`` (see ADR §9.5). When populated, this matcher finds
 maximal contiguous runs where every code point satisfies the property.
 """
 

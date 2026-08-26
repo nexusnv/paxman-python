@@ -1,13 +1,13 @@
 """Absolute-URI recognition grammar for the URL capability (staged pipeline).
 
 Recognizes absolute-URI/IRI spans (RFC 3986 section 4.2, RFC 3987 section
-2.2) as scheme-anchored shape matches. Shape-only per D7/D8: validity is the
+2.2) as scheme-anchored shape matches. Shape-only per ADR §5: validity is the
 rule layer's job — the grammar never validates the scheme, host, or port,
 and carries no scheme table.
 
 The leading lookbehind (via BoundaryGuard.scheme_char()) rejects a scheme
 preceded by a scheme-legal character. A PostStage applies the Appendix C
-paren-balance trim and the D16 bare-scheme drop (ADR-0008 S5) so the emitted
+paren-balance trim and the ADR §9.3 bare-scheme drop (ADR-0008 S5) so the emitted
 span is byte-identical to the legacy recognize().
 """
 
@@ -30,7 +30,7 @@ from paxman.core.grammar import (
 # section 2.2 ucschar, plus tab/newline for Appendix C multi-line URIs),
 # bounded by whitespace/control/delimiter characters on the right. The
 # leading lookbehind is supplied by BoundaryGuard.scheme_char() (ADR-0008
-# D5) so no hard-coded lookaround literal remains in this file.
+# ADR-0009 §10) so no hard-coded lookaround literal remains in this file.
 _URL_BODY = (
     r"[A-Za-z][A-Za-z0-9+.\-]*:"
     r'[^ <>"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*[^ <>"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'
@@ -47,12 +47,12 @@ def _url_notation(match: re.Match[str]) -> URLNotation:
 def _url_trim(
     match: RecognitionMatch[URLNotation],
 ) -> RecognitionMatch[URLNotation] | None:
-    """Appendix C paren-balance trim + D16 bare-scheme drop.
+    """Appendix C paren-balance trim + ADR §9.3 bare-scheme drop.
 
     Drops trailing ")" only while it outnumbers "(" (counting once then
     trimming the run equals the legacy loop in one pass). After trimming,
     a span reduced to the bare scheme (no body past the colon) is dropped
-    entirely (D16) — it is not a valid absolute-URI match.
+    entirely (ADR §9.3) — it is not a valid absolute-URI match.
     """
     raw_span = match.raw_text
     excess = raw_span.count(")") - raw_span.count("(")

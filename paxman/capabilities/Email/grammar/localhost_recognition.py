@@ -2,7 +2,7 @@
 
 Recognizes user@localhost. The word boundary and trailing lookahead are kept
 verbatim (``\\b`` is a word boundary, not a hard-coded lookaround class —
-ADR-0008 D5). Syntax only: the grammar never validates the address.
+ADR-0009 §10). Syntax only: the grammar never validates the address.
 """
 
 from __future__ import annotations

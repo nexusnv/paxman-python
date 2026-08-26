@@ -3,7 +3,7 @@
 Deferred per ADR-0009 §9.6/§15: thin wrapper over ``combinator`` ordered alt
 with per-candidate semantics routing (``strategy first|all``). No shipped
 grammar uses it on the kernel path yet (Date 4→1, IBAN registry, ISBN
-candidates are Phase 3 per plan). Fails fast instead of silent ``[]``.
+candidates are Phase 3 per ADR §9.6). Fails fast instead of silent ``[]``.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ class CandidatesMatcher:
     def match(self, view: View) -> list[tuple[int, int]]:
         raise NotImplementedError(
             "CandidatesMatcher not yet implemented — no shipped grammar uses it "
-            "on the kernel path (see ADR-0009 §9.6, plan Task 8). Date/IBAN/ISBN "
+            "on the kernel path (see ADR-0009 §9.6). Date/IBAN/ISBN "
             "candidates remain on PipelineGrammar until this kind lands and its "
             "parity shard is green."
         )

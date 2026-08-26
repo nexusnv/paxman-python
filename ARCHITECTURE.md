@@ -80,7 +80,7 @@ Each capability is a self-contained domain module that provides:
 - **Validation Rules** — semantic rules that validate the notation against authoritative specifications
 - **A Contract** — a user-facing configuration object that toggles grammars, excludes rules, and passes parameters
 
-Capabilities are registered with the discovery registry before the first canonicalization call. The registry freezes on the first `canonicalize()` call and remains frozen for later runs, ensuring that the set of available capabilities is stable during execution. The sanctioned bulk form is `paxman.register_all_shipped()`, which registers all ten shipped capabilities in fixed alphabetical order; registration — single or bootstrap — must complete from a single thread before the first `canonicalize()` call, after which reads are safe from any thread.
+Capabilities are registered with the discovery registry before the first canonicalization call. The registry freezes on the first `canonicalize()` call and remains frozen for later runs, ensuring that the set of available capabilities is stable during execution. The sanctioned bulk form is `paxman.register_all_shipped()`, which registers all fifteen shipped capabilities in fixed alphabetical order; registration — single or bootstrap — must complete from a single thread before the first `canonicalize()` call, after which reads are safe from any thread. Recognition is via the Recognition Kernel (ADR-0009) — see that ADR for the substrate, matcher kinds, and boundary/anchor discipline; legacy pipeline stages remain for unmigrated grammars.
 
 ### Engine
 

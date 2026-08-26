@@ -5,7 +5,7 @@ kernel's loop tries the scanner at each position, advances to ``end`` on hit,
 ``pos+1`` on miss (libphonenumber non-overlapping discipline). Bounds are
 carried as data (``max_window``). No shipped grammar uses it on the kernel
 path yet — URL paren-balance and Phone E.164 remain on ``PostStage`` until
-their parity shards are green (plan Task 7). This implementation enforces
+their parity shards are green (ADR §9.3). This implementation enforces
 ``max_window``, ``boundary`` (including ``consuming`` inner-span only per
 ADR §10), and ``requires_features`` via the engine loop; the matcher itself
 only caps ``end`` to ``max_window`` and checks boundaries at hit positions.

@@ -22,7 +22,7 @@ from paxman.core.grammar import (
 
 # Body: "tel:" + global number (optional separators) + optional ";ext=".
 # The leading lookbehind is supplied by BoundaryGuard.word_only() (ADR-0008
-# D5) so no hard-coded lookaround literal remains in this file.
+# ADR-0009 §10) so no hard-coded lookaround literal remains in this file.
 _TEL_BODY = r"tel:\+(\d[\d\s().\-]*)(?:;ext=(\d+))?"
 _GUARD = BoundaryGuard.word_only()
 _TEL_URI_PATTERN = _GUARD.lookbehind + _TEL_BODY

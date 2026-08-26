@@ -4,7 +4,7 @@ Recognizes strict YYYY-MM-DD extended format (ISO 8601-1:2019 §5.2.1.1).
 Requires 4-digit year and 2-digit month/day with dash delimiter; single-digit
 month/day (``2026-1-5``) is not recognized and is ``MISSING`` — use the
 slash variants for lenient 1-2 digit handling. The digit lookarounds are
-supplied by BoundaryGuard.digit() (ADR-0008 D5) so no hard-coded lookaround
+supplied by BoundaryGuard.digit() (ADR-0009 §10) so no hard-coded lookaround
 literal remains. Notation mapping: N1=year, N2=month, N3=day.
 """
 

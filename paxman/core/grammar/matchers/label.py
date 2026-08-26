@@ -2,9 +2,9 @@
 
 Deferred per ADR-0009 §9.7/§15: unifies per-file ``[\\s:-]+`` vs ``[\\s:-]*``
 conventions as ``glued_policy reject|allow``. No shipped grammar uses it on
-the kernel path yet (BIC/IBAN/ORCID/ISSN/ISBN label migrations are Phase 3).
-``matches_prefix`` is the tested utility; :meth:`match` fails fast until the
-kind is wired to a value matcher and its parity shard is green.
+the kernel path yet (BIC/IBAN/ORCID/ISSN/ISBN label migrations are Phase 3
+per ADR §9.7). ``matches_prefix`` is the tested utility; :meth:`match` fails
+fast until the kind is wired to a value matcher and its parity shard is green.
 """
 
 from __future__ import annotations
@@ -49,6 +49,6 @@ class LabelMatcher:
     def match(self, view: View) -> list[tuple[int, int]]:
         raise NotImplementedError(
             "LabelMatcher.match not yet implemented — no shipped grammar uses it "
-            "on the kernel path (see ADR-0009 §9.7, plan Task 8). Label migrations "
+            "on the kernel path (see ADR-0009 §9.7). Label migrations "
             "remain on PipelineGrammar RegexStage until this kind lands."
         )

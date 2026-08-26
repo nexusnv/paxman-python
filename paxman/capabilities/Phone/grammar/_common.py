@@ -1,6 +1,6 @@
 """Shared Phone grammar helpers — separator stripping.
 
-Capability-local helper for Phone grammars (ADR-0008 D5 self-containment).
+Capability-local helper for Phone grammars (ADR-0009 §10 self-containment).
 ``paxman/core/grammar`` stays capability-agnostic (D2); Phone grammars share
 this helper internally to avoid quadruplicated ``strip_separators`` and
 translation-table construction.

@@ -27,7 +27,7 @@ from paxman.core.grammar import (
 
 # Body: "00" then optional separators, a non-zero first digit, then digits
 # with optional separators, ending on a digit. The leading lookbehind is
-# supplied by BoundaryGuard.e164_00() (ADR-0008 D5) so no hard-coded
+# supplied by BoundaryGuard.e164_00() (ADR-0009 §10) so no hard-coded
 # lookaround literal remains in this file.
 _INTERNATIONAL_00_BODY = r"00[\s.\-]*(?=[1-9])\d[\d\s().\-]*(?<=\d)"
 _GUARD = BoundaryGuard.e164_00()

@@ -1,7 +1,7 @@
 """Standard email recognition grammar (staged pipeline).
 
 Recognizes user@domain.tld. The word boundaries are kept verbatim (``\\b`` is
-a word boundary, not a hard-coded lookaround class — ADR-0008 D5). Syntax
+a word boundary, not a hard-coded lookaround class — ADR-0009 §10). Syntax
 only: the grammar never validates the address.
 """
 
