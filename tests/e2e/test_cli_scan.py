@@ -2,14 +2,13 @@
 
 import json
 import subprocess
-import sys
 
 
 def _run_cli(
     args: list[str], input_text: str | None = None
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "-m", "paxman", *args],
+        ["uv", "run", "python", "-m", "paxman", *args],
         input=input_text,
         capture_output=True,
         text=True,
