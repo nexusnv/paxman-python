@@ -32,7 +32,10 @@ from paxman.core.grammar.scan_context import ScanContext, View
 def test_property_contains_empty() -> None:
     m = PropertyMatcher(ranges=())
     assert m._contains(65) is False
-    assert m.match(View(subject="A", offsets=None, _text_len=1)) == []
+    assert (
+        m.match(View(subject="A", source_starts=None, source_ends=None, _text_len=1))
+        == []
+    )
 
 
 def test_property_contains_hit_and_miss() -> None:
@@ -57,16 +60,18 @@ def test_property_with_view_name_and_boundary() -> None:
 def test_scan_context_offset_invariant_violation() -> None:
     ctx = ScanContext.of("hello world")
 
-    # bad offsets length
-    def bad_len(s: str) -> tuple[str, tuple[int, ...] | None]:
-        return "hi", (0, 1)  # len 2+1 expected 3 but got 2
+    # bad offsets length — starts len != subject len
+    def bad_len(s: str) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        return "hi", (0,), (1,)
 
     with pytest.raises(AssertionError):
         ctx.view("bad", bad_len)
 
-    # empty interval
-    def bad_interval(s: str) -> tuple[str, tuple[int, ...] | None]:
-        return "ab", (0, 0, 5)
+    # empty interval — 0 < ends fails
+    def bad_interval(
+        s: str,
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        return "ab", (0, 0), (0, 5)
 
     ctx2 = ScanContext.of("hello")
     with pytest.raises(AssertionError):
@@ -75,15 +80,15 @@ def test_scan_context_offset_invariant_violation() -> None:
 
 def test_scan_context_view_caching() -> None:
     ctx = ScanContext.of("hello world")
-    v1 = ctx.view("case", lambda t: (t.lower(), None))
-    v2 = ctx.view("case", lambda t: (t.upper(), None))
+    v1 = ctx.view("case", lambda t: (t.lower(), None, None))
+    v2 = ctx.view("case", lambda t: (t.upper(), None, None))
     assert v1 is v2
     assert v1.subject == "hello world"
 
 
 def test_view_original_span_with_offsets() -> None:
     ctx = ScanContext.of("a  b")
-    view = ctx.view("c", lambda t: ("ab", (0, 3, 4)))
+    view = ctx.view("c", lambda t: ("ab", (0, 3), (1, 4)))
     assert view.original_span(0, 2) == (0, 4)
     assert view.original_span(1, 2) == (3, 4)
 
@@ -102,27 +107,30 @@ def test_check_boundary_left_right() -> None:
 
 def test_normalizer_sequence_offsets() -> None:
     seq = NormalizerSequence(steps=(StripSeparators(), CaseFold()))
-    subj, offs = seq.normalize("+1 (555) 123-4567")
+    subj, starts, ends = seq.normalize("+1 (555) 123-4567")
     assert subj == "+15551234567"
-    assert offs is not None
+    assert starts is not None and ends is not None
     seq2 = NormalizerSequence(steps=(CaseFold(), SeparatorFold()))
-    subj2, offs2 = seq2.normalize("Hello_World")
+    subj2, starts2, ends2 = seq2.normalize("Hello_World")
     assert subj2 == "hello-world"
+    assert starts2 is None and ends2 is None
     assert seq2.name == "casefolded+normalized"
     assert seq2.provenance is not None
 
 
 def test_country_name_fold_empty_and_identity() -> None:
     nf = CountryNameFold()
-    subj, offs = nf.normalize("")
+    subj, starts, ends = nf.normalize("")
     assert subj == ""
-    assert offs == (0,)
-    subj2, offs2 = nf.normalize("hello")
+    assert starts == () and ends == ()
+    subj2, starts2, ends2 = nf.normalize("hello")
     assert subj2 == "hello"
-    assert offs2 is None
-    subj3, offs3 = nf.normalize("Côte d'Ivoire")
+    assert starts2 is None and ends2 is None
+    subj3, starts3, ends3 = nf.normalize("Côte d'Ivoire")
     assert "cote" in subj3
-    subj4, _ = nf.normalize("United\u2013States")
+    _ = starts3
+    _ = ends3
+    subj4, _, _ = nf.normalize("United\u2013States")
     assert "united states" in subj4
 
 
@@ -135,19 +143,23 @@ def test_accent_strip_and_symbol_fold() -> None:
 
 def test_idna_fold_tab() -> None:
     nf = IDNAFold()
-    subj, offs = nf.normalize("a\tb\nc")
+    subj, starts, ends = nf.normalize("a\tb\nc")
     assert subj == "abc"
-    assert offs is not None
-    subj2, offs2 = nf.normalize("abc")
-    assert offs2 is None
+    assert starts is not None and ends is not None
+    subj2, starts2, ends2 = nf.normalize("abc")
+    assert starts2 is None and ends2 is None
+    _ = subj2
 
 
 def test_strip_separators_no_change() -> None:
     nf = StripSeparators()
-    subj, offs = nf.normalize("15551234567")
-    assert offs is None
-    subj2, offs2 = nf.normalize("+1-555")
-    assert offs2 is not None
+    subj, starts, ends = nf.normalize("15551234567")
+    assert starts is None and ends is None
+    _ = subj
+    subj2, starts2, ends2 = nf.normalize("+1-555")
+    assert starts2 is not None and ends2 is not None
+    _ = subj2
+    _ = ends2
 
 
 def test_lexicon_matcher_alternation_with_boundary() -> None:
@@ -157,7 +169,7 @@ def test_lexicon_matcher_alternation_with_boundary() -> None:
         representation="alternation",
     )
     ctx = ScanContext.of("hello world")
-    view = ctx.view("orig", lambda t: (t, None))
+    view = ctx.view("orig", lambda t: (t, None, None))
     spans = matcher.match(view)
     assert (0, 5) in spans
     assert (6, 11) in spans
@@ -168,7 +180,7 @@ def test_lexicon_matcher_alternation_with_boundary() -> None:
         representation="alternation",
     )
     ctx2 = ScanContext.of("hello")
-    view2 = ctx2.view("orig", lambda t: (t, None))
+    view2 = ctx2.view("orig", lambda t: (t, None, None))
     assert matcher2.match(view2) == []
 
 
@@ -177,7 +189,7 @@ def test_lexicon_matcher_trie_longest() -> None:
     # force trie by passing representation trie or >500
     m = LexiconMatcher(tokens=tokens, boundary=None, representation="trie")
     ctx = ScanContext.of("abc hello world")
-    view = ctx.view("orig", lambda t: (t, None))
+    view = ctx.view("orig", lambda t: (t, None, None))
     spans = m.match(view)
     assert (0, 3) in spans  # longest abc
     # hello world spans 4..15?
@@ -185,7 +197,7 @@ def test_lexicon_matcher_trie_longest() -> None:
     # word anchored: inside word not matched
     m2 = LexiconMatcher(tokens=frozenset({"ell"}), representation="trie")
     ctx2 = ScanContext.of("hello")
-    view2 = ctx2.view("orig", lambda t: (t, None))
+    view2 = ctx2.view("orig", lambda t: (t, None, None))
     assert m2.match(view2) == []
 
 
@@ -194,11 +206,11 @@ def test_lexicon_matcher_trie_boundary() -> None:
         tokens=frozenset({"hello"}), boundary=BoundarySpec.WORD, representation="trie"
     )
     ctx = ScanContext.of("xhelloy")  # no space -> word anchored no match
-    view = ctx.view("orig", lambda t: (t, None))
+    view = ctx.view("orig", lambda t: (t, None, None))
     assert m.match(view) == []
     # but with spaces it matches
     ctx2 = ScanContext.of(" hello ")
-    view2 = ctx2.view("orig", lambda t: (t, None))
+    view2 = ctx2.view("orig", lambda t: (t, None, None))
     assert m.match(view2) == [(1, 6)]
 
 
@@ -219,13 +231,13 @@ def test_label_matcher_and_candidates() -> None:
     with pytest.raises(
         NotImplementedError, match="CandidatesMatcher not yet implemented"
     ):
-        cm.match(View(subject="x", offsets=None, _text_len=1))
+        cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1))
 
     cb = CombinatorMatcher(expr=("alt", ["a", "b"]))
     with pytest.raises(
         NotImplementedError, match="CombinatorMatcher not yet implemented"
     ):
-        cb.match(View(subject="ab", offsets=None, _text_len=2))
+        cb.match(View(subject="ab", source_starts=None, source_ends=None, _text_len=2))
 
 
 def test_engine_loop_with_dummy_matchers() -> None:

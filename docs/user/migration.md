@@ -83,6 +83,40 @@ except MultipleMentionsError:
 - `ScanContext` lazy views, `MatcherSpec`/`LexiconMatcher` trie (SIUnit 2.4–6.5× win at 650/820 tokens), `BoundarySpec` presets, `AnchorSet` T0 prefilter.
 - Snapshot rails (`paxman/shared_data/*_snapshot.json` + `tools/regenerate_*` + CI drift gate) and derived recognition keys (BIC country codes, Language IANA subset) per ADR-0009 §14.
 
+### 0.2.0 — Two-array offset maps (A4 Rev.4, breaking in spans only)
+
+Pre-0.2.0 the recognition kernel used a single-array D3 invariant
+`offsets[s] -> offsets[e]` with a `len(text)` sentinel. When a
+normalizer dropped source characters (CountryNameFold strips
+punctuation, StripSeparators drops ` ()-.`, IDNAFold drops tabs) the
+translated end absorbed the dropped tail: `"United States."`
+recognized as `(0, 14)` with `raw_text == "United States."`.
+ADR-0009 Rev.4 amends D3 to two arrays:
+
+`View.original_span(s, e) -> (starts[s], ends[e-1])` when mapped,
+`(s, e)` when `None`; empty `(0, 0)`. Each normalizer now returns
+`(subject, starts, ends)` with `len(starts)==len(ends)==len(subject)`
+and `0 <= starts[i] < ends[i] <= len(text)`.
+
+Visible change (Option 1, word-boundary-aligned mentions):
+
+| Input | Before | After |
+|---|---|---|
+| `"United States."` name mention | `(0, 14)` `raw_text="United States."` | `(0, 13)` `raw_text="United States"` |
+| `"United States of America,"` | `(0, 25)` includes trailing `,` | `(0, 24)` trimmed |
+| `"+1 (555) 123-4567"` via `StripSeparators` | `ends[-1]==len(text)` sentinel | `ends` per-char `s+1`, `original_span(0,n)==(0,17)` exact |
+| All length-preserving views (`CaseFold` etc.) | `None` | `None, None` — zero-cost unchanged |
+
+Whole-input canonical values are unchanged (rules normalize);
+only `span`/`raw_text` presentation shifts, and `scan()` mentions no
+longer carry trailing dropped punctuation. `raw_text == text[start:end]`
+is now an engine invariant enforced for every emitted match.
+
+Migrate: if you stored `span` for later slicing, re-derive it from the
+new `ExecutionResult.span`/`Mention.span`; do not add `+1` for dropped
+chars. Golden samples that asserted `(0, 14)` for `"United States."`
+should assert `(0, 13)`.
+
 ---
 
 ## What can appear in a minor release

@@ -14,7 +14,9 @@ class Normalizer(Protocol):
     name: str
     provenance: Provenance | None
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,27 +34,29 @@ class NormalizerSequence:
                 return s.provenance
         return None
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         cur = text
-        cur_offsets: tuple[int, ...] | None = None
+        cur_starts: tuple[int, ...] | None = None
+        cur_ends: tuple[int, ...] | None = None
         for step in self.steps:
-            nxt, off = step.normalize(cur)
-            if off is None:
-                # length-preserving step: nxt maps 1:1 to cur, offsets unchanged
+            nxt, off_starts, off_ends = step.normalize(cur)
+            if off_starts is None and off_ends is None:
                 cur = nxt
-                # cur_offsets stays mapping cur(now nxt) -> original
             else:
-                # off maps nxt index -> cur index
-                if cur_offsets is None:
-                    # cur was identity to original, so off already maps nxt -> original
-                    cur_offsets = off
+                assert off_starts is not None and off_ends is not None
+                if cur_starts is None and cur_ends is None:
+                    cur_starts = off_starts
+                    cur_ends = off_ends
                 else:
-                    # compose: nxt -> cur -> original
-                    # off values are valid indices into cur (0..len(cur))
-                    composed = tuple(cur_offsets[o] for o in off)
-                    cur_offsets = composed
+                    assert cur_starts is not None and cur_ends is not None
+                    composed_starts = tuple(cur_starts[o] for o in off_starts)
+                    composed_ends = tuple(cur_ends[o] for o in off_starts)
+                    cur_starts = composed_starts
+                    cur_ends = composed_ends
                 cur = nxt
-        return cur, cur_offsets
+        return cur, cur_starts, cur_ends
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,8 +64,10 @@ class CaseFold:
     name: str = "casefolded"
     provenance: Provenance | None = None
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
-        return text.lower(), None
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        return text.lower(), None, None
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,8 +83,10 @@ class SeparatorFold:
         publication_year=2009,
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
-        return text.replace("_", "-"), None
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        return text.replace("_", "-"), None, None
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,10 +102,12 @@ class AccentStrip:
         publication_year=2024,
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         nfd = unicodedata.normalize("NFD", text)
         stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
-        return stripped.lower(), None
+        return stripped.lower(), None, None
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,7 +130,9 @@ class CountryNameFold:
         publication_year=2024,
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         chars: list[str] = []
         offs: list[int] = []
         for idx, ch in enumerate(text):
@@ -134,7 +146,6 @@ class CountryNameFold:
                     offs.append(idx)
                 else:
                     continue
-        # Collapse runs of whitespace to a single space
         final_chars: list[str] = []
         final_offs: list[int] = []
         prev_space = False
@@ -152,21 +163,16 @@ class CountryNameFold:
                 prev_space = False
         subject = "".join(final_chars)
         if not subject:
-            # Empty subject: len(offsets) must be len(subject)+1 == 1 per D3 invariant.
-            # The sentinel maps empty span to start of original text.
-            return "", (0,)
-        # Build offsets tuple len(subject)+1
-        offsets = tuple(final_offs) + (len(text),)
-        # Identity optimization: if subject equals lowercased text without
-        # changes and offsets is 0..n, return None. But we have lowercasing,
-        # so check length and lower equality.
+            return "", (), ()
+        final_starts = tuple(final_offs)
+        final_ends = tuple(o + 1 for o in final_offs)
         if (
             len(subject) == len(text)
             and subject == text.lower()
             and all(off == idx for idx, off in enumerate(final_offs))
         ):
-            return subject, None
-        return subject, offsets
+            return subject, None, None
+        return subject, final_starts, final_ends
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,10 +196,12 @@ class SymbolFold:
         ("°", "°"),
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         for src, dst in self._table:
             text = text.replace(src, dst)
-        return text, None
+        return text, None, None
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,17 +217,23 @@ class StripSeparators:
         publication_year=2010,
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         subject_chars: list[str] = []
-        offsets: list[int] = []
+        starts: list[int] = []
         for i, ch in enumerate(text):
             if ch in " ().-":
                 continue
-            offsets.append(i)
+            starts.append(i)
             subject_chars.append(ch)
-        offsets.append(len(text))
         subject = "".join(subject_chars)
-        return subject, tuple(offsets) if len(subject) != len(text) else None
+        if len(subject) == len(text):
+            return subject, None, None
+        if not subject:
+            return "", (), ()
+        ends = tuple(s + 1 for s in starts)
+        return subject, tuple(starts), ends
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,16 +249,20 @@ class IDNAFold:
         publication_year=2024,
     )
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
         cleaned_chars: list[str] = []
-        offsets: list[int] = []
+        starts: list[int] = []
         for idx, ch in enumerate(text):
             if ch in "\t\n\r":
                 continue
             cleaned_chars.append(ch)
-            offsets.append(idx)
-        offsets.append(len(text))
+            starts.append(idx)
         cleaned = "".join(cleaned_chars)
         if len(cleaned) == len(text):
-            return cleaned, None
-        return cleaned, tuple(offsets)
+            return cleaned, None, None
+        if not cleaned:
+            return "", (), ()
+        ends = tuple(s + 1 for s in starts)
+        return cleaned, tuple(starts), ends

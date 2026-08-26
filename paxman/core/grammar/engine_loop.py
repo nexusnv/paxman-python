@@ -48,7 +48,7 @@ _VIEW_REGISTRY: dict[str, Any] = {
 
 def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
     if view_name is None:
-        return context.view("__orig__", lambda t: (t, None))
+        return context.view("__orig__", lambda t: (t, None, None))
     if view_name == "normalized":
         warnings.warn(
             "view='normalized' is ambiguous; prefer capability-qualified name",
@@ -58,8 +58,7 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
     normalizer = _VIEW_REGISTRY.get(view_name)
     if normalizer is not None:
         return context.view(view_name, normalizer.normalize)
-    # Fallback: identity view (length-preserving, offsets=None)
-    return context.view(view_name, lambda t: (t, None))
+    return context.view(view_name, lambda t: (t, None, None))
 
 
 def _matcher_requires_unsatisfied(matcher: Any, contract: Any | None) -> bool:

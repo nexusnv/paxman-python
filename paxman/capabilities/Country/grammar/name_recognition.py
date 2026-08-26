@@ -108,19 +108,24 @@ class NameGrammar(PipelineGrammar[CountryNotation]):
         # view correctly normalizes punctuation and separators, but we keep
         # the explicit WholeInputLookup parity check for byte-identical
         # whole-input semantics on edge punctuation cases.
+        # After A4 two-array exact-end (ADR D3 Rev.4) the trie maps
+        # "United States." -> (0,13) "United States", so the whitespace-trimmed
+        # whole-input span (0,14) would overshoot. Deduplicate by normalized
+        # key equality, not exact span equality.
         trimmed = text.strip()
-        if normalize_name(trimmed) in _KNOWN_NAME_KEYS:
+        if normalize_name(trimmed) in _KNOWN_NAME_KEYS and not any(
+            normalize_name(m.notation.value) == normalize_name(trimmed) for m in out
+        ):
             start = len(text) - len(text.lstrip())
             end = start + len(trimmed)
-            if not any(m.start == start and m.end == end for m in out):
-                raw = text[start:end]
-                out.append(
-                    RecognitionMatch(
-                        notation=CountryNotation(shape="name", value=raw),
-                        start=start,
-                        end=end,
-                        raw_text=raw,
-                    )
+            raw = text[start:end]
+            out.append(
+                RecognitionMatch(
+                    notation=CountryNotation(shape="name", value=raw),
+                    start=start,
+                    end=end,
+                    raw_text=raw,
                 )
+            )
         out.sort(key=lambda m: (m.start, -(m.end - m.start)))
         return out

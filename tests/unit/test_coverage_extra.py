@@ -28,7 +28,9 @@ def test_property_matcher_non_empty_ranges_with_boundary() -> None:
     # Ranges for ASCII digits 48-57 and uppercase 65-90.
     m = PropertyMatcher(ranges=((48, 57), (65, 90)), boundary=BoundarySpec.WORD)
     # Text with digit run and letter run separated by space — should find two spans
-    view = View(subject="abc 123 XYZ", offsets=None, _text_len=11)
+    view = View(
+        subject="abc 123 XYZ", source_starts=None, source_ends=None, _text_len=11
+    )
     # Only digits and uppercase are in ranges, so "123" and "XYZ" should be found
     # But "abc" is lowercase not in ranges, so not found.
     spans = m.match(view)
@@ -39,7 +41,7 @@ def test_property_matcher_non_empty_ranges_with_boundary() -> None:
 
     # No boundary — should find digit run
     m2 = PropertyMatcher(ranges=((48, 57),))
-    view2 = View(subject="a1b22c", offsets=None, _text_len=6)
+    view2 = View(subject="a1b22c", source_starts=None, source_ends=None, _text_len=6)
     spans2 = m2.match(view2)
     # Should find "1" at 1-2 and "22" at 3-5
     assert (1, 2) in spans2
@@ -47,19 +49,26 @@ def test_property_matcher_non_empty_ranges_with_boundary() -> None:
 
     # Empty ranges early return already covered elsewhere, but ensure
     m_empty = PropertyMatcher(ranges=())
-    assert m_empty.match(View(subject="abc", offsets=None, _text_len=3)) == []
+    assert (
+        m_empty.match(
+            View(subject="abc", source_starts=None, source_ends=None, _text_len=3)
+        )
+        == []
+    )
 
 
 def test_regex_matcher_match_and_boundary() -> None:
     m = RegexMatcher(pattern=r"\d+", boundary=BoundarySpec.WORD)
-    view = View(subject="a 123 b 456", offsets=None, _text_len=11)
+    view = View(
+        subject="a 123 b 456", source_starts=None, source_ends=None, _text_len=11
+    )
     spans = m.match(view)
     assert (2, 5) in spans
     assert (8, 11) in spans
 
     # Without boundary, also finds inside word
     m2 = RegexMatcher(pattern=r"\d+")
-    view2 = View(subject="a1b2", offsets=None, _text_len=4)
+    view2 = View(subject="a1b2", source_starts=None, source_ends=None, _text_len=4)
     spans2 = m2.match(view2)
     assert (1, 2) in spans2
     assert (3, 4) in spans2
@@ -78,7 +87,9 @@ def test_scanner_matcher_match_and_boundary() -> None:
         return None
 
     m = ScannerMatcher(scan=scan_fn, boundary=BoundarySpec.WORD, max_window=10)
-    view = View(subject=" foo bar foo", offsets=None, _text_len=13)
+    view = View(
+        subject=" foo bar foo", source_starts=None, source_ends=None, _text_len=13
+    )
     spans = m.match(view)
     # Should find "foo" at word boundaries
     assert len(spans) >= 1
@@ -87,7 +98,9 @@ def test_scanner_matcher_match_and_boundary() -> None:
     # Max window exceeded — should be treated as miss (pos+1)
     m2 = ScannerMatcher(scan=scan_fn, max_window=2)
     # "foo" is length 3, exceeds max_window 2, so should not be emitted
-    spans2 = m2.match(View(subject="foo", offsets=None, _text_len=3))
+    spans2 = m2.match(
+        View(subject="foo", source_starts=None, source_ends=None, _text_len=3)
+    )
     assert spans2 == []
 
 

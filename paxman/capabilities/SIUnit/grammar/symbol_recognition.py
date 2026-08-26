@@ -71,7 +71,7 @@ class SymbolRecognition(PipelineGrammar[SIUnitNotation]):
         if not text.strip():
             return []
         ctx = ScanContext.of(text)
-        view = ctx.view("__orig__", lambda t: (t, None))
+        view = ctx.view("__orig__", lambda t: (t, None, None))
         spans = _SYMBOL_MATCHER.match(view)
         out: list[RecognitionMatch[SIUnitNotation]] = []
         for s, e in spans:
