@@ -27,6 +27,21 @@ pytestmark = [pytest.mark.property]
 def _assert_delegation(g: Any, text: str) -> None:
     out_via_recognize = g.recognize(text)  # type: ignore[operator]
     out_via_engine = run_matchers(text, [g])  # type: ignore[arg-type]
+    # SIUnit symbol now uses longer-wins dedup in recognize (combinator);
+    # run_matchers is raw, so apply same dedup to engine side for comparison
+    if g.__class__.__name__ == "SymbolRecognition":
+
+        def _dedup(matches: list[Any]) -> list[Any]:
+            ordered = sorted(matches, key=lambda m: (m.start, -(m.end - m.start)))  # type: ignore[no-untyped-call]
+            kept: list[Any] = []
+            for m in ordered:
+                if any(o.start <= m.start and m.end <= o.end for o in kept):  # type: ignore[attr-defined]
+                    continue
+                kept.append(m)
+            kept.sort(key=lambda m: (m.start, m.end))  # type: ignore[no-untyped-call]
+            return kept
+
+        out_via_engine = _dedup(out_via_engine)  # type: ignore[arg-type]
     assert out_via_recognize == out_via_engine, (
         f"delegation mismatch for {type(g).__name__!r} text={text!r}: "
         f"recognize={out_via_recognize!r} vs run_matchers={out_via_engine!r}"

@@ -16,6 +16,7 @@ from paxman.core.grammar.matchers.combinator import CombinatorMatcher
 from paxman.core.grammar.matchers.label import LabelMatcher
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
 from paxman.core.grammar.matchers.property import PropertyMatcher
+from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
     CaseFold,
@@ -233,11 +234,11 @@ def test_label_matcher_and_candidates() -> None:
     ):
         cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1))
 
-    cb = CombinatorMatcher(expr=("alt", ["a", "b"]))
-    with pytest.raises(
-        NotImplementedError, match="CombinatorMatcher not yet implemented"
-    ):
-        cb.match(View(subject="ab", source_starts=None, source_ends=None, _text_len=2))
+    cb = CombinatorMatcher(
+        expr=("alt", [RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet())])
+    )
+    view_cb = View(subject="ab", source_starts=None, source_ends=None, _text_len=2)
+    assert cb.match(view_cb) == [(0, 1)]
 
 
 def test_engine_loop_with_dummy_matchers() -> None:

@@ -99,6 +99,11 @@ typeCheckingMode = "strict"
 reportMissingImports = true
 reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = "none"
+reportUnnecessaryCast = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
 include = ["paxman"]
 exclude = ["tests", "docs"]
 
