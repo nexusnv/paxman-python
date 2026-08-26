@@ -361,6 +361,8 @@ def _handle_scan(scan_argv: list[str]) -> None:
     json_flag = False
     cap_filters_raw: list[str] = []
     pos: list[str] = []
+    after_double_dash = False
+    text_after_dash: str | None = None
     i = 0
     while i < len(scan_argv):
         arg = scan_argv[i]
@@ -377,8 +379,10 @@ def _handle_scan(scan_argv: list[str]) -> None:
             # -ccountry is not valid; require separate arg, but handle
             cap_filters_raw.append(arg[2:])
         elif arg == "--":
-            # Remaining args are positional text verbatim
-            pos.extend(scan_argv[i + 1 :])
+            # Remaining args are positional text verbatim, never a capability
+            after_double_dash = True
+            if i + 1 < len(scan_argv):
+                text_after_dash = " ".join(scan_argv[i + 1 :])
             break
         else:
             pos.append(arg)
@@ -418,6 +422,10 @@ def _handle_scan(scan_argv: list[str]) -> None:
         # Remaining pos is text (join with space if multiple)
         if pos:
             text_arg = " ".join(pos) if len(pos) > 1 else pos[0]
+
+    # Arguments after `--` are verbatim text, never a capability
+    if after_double_dash and text_after_dash is not None:
+        text_arg = text_after_dash
 
     # Fallback text resolution (stdin)
     text = _resolve_text(text_arg)
