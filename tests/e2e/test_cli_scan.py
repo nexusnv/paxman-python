@@ -61,3 +61,28 @@ def test_cli_scan_stdin() -> None:
     payload = json.loads(result.stdout)
     assert payload["text"] == "Ship to United States please"
     assert len(payload["mentions"]["country"]) == 2
+
+
+def test_cli_scan_double_dash_text_is_not_capability() -> None:
+    # Text matching a shipped capability (e.g. "country") after `--` must be
+    # treated as positional text, never as a capability filter.
+    result = _run_cli(["scan", "--json", "--", "country"])
+    assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
+    payload = json.loads(result.stdout)
+    assert payload["text"] == "country"
+    # When scanning default all, the payload must contain all capabilities
+    assert "country" in payload["mentions"]
+
+    # Explicit capability before `--`, text after `--` that also looks like a capability
+    result2 = _run_cli(["scan", "--json", "country", "--", "country"])
+    assert result2.returncode == 0, f"stderr: {result2.stderr}"
+    payload2 = json.loads(result2.stdout)
+    assert payload2["text"] == "country"
+    assert "country" in payload2["mentions"]
+
+
+def test_cli_scan_double_dash_preserves_flag_like_text() -> None:
+    result = _run_cli(["scan", "--json", "--", "--json"])
+    assert result.returncode == 0, f"stderr: {result.stderr}"
+    payload = json.loads(result.stdout)
+    assert payload["text"] == "--json"
