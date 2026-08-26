@@ -16,7 +16,6 @@ from __future__ import annotations
 from paxman.capabilities.SIUnit.grammar.data.prefix_tokens import PREFIX_WORD_TOKENS
 from paxman.capabilities.SIUnit.grammar.data.unit_name_tokens import NAME_TOKENS
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
-from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar import (
     AnchorSet,
     BoundarySpec,
@@ -24,7 +23,6 @@ from paxman.core.grammar import (
     StandardPre,
 )
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
-from paxman.core.grammar.normalizers import CaseFold
 from paxman.core.grammar.scan_context import ScanContext
 
 PREFIX_WORDS = frozenset(PREFIX_WORD_TOKENS)
@@ -65,29 +63,3 @@ class NameRecognition(PipelineGrammar[SIUnitNotation]):
 
     pre = StandardPre[SIUnitNotation](empty_guard=True)
     matchers = (_NAME_MATCHER,)
-
-    def recognize(self, text: str) -> list[RecognitionMatch[SIUnitNotation]]:
-        if not text.strip():
-            return []
-        ctx = ScanContext.of(text)
-        view = ctx.view("casefolded", CaseFold().normalize)
-        spans = _NAME_MATCHER.match(view)
-        out: list[RecognitionMatch[SIUnitNotation]] = []
-        for s, e in spans:
-            o_s, o_e = view.original_span(s, e)
-            raw = text[o_s:o_e]
-            token = raw.lower()
-            parts = token.split()
-            if len(parts) >= 2 and parts[0] in PREFIX_WORDS:
-                shape = "split_word_prefix"
-            else:
-                shape = "name"
-            out.append(
-                RecognitionMatch(
-                    notation=SIUnitNotation(text=token, shape=shape),
-                    start=o_s,
-                    end=o_e,
-                    raw_text=raw,
-                )
-            )
-        return out

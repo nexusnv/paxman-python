@@ -17,7 +17,6 @@ from __future__ import annotations
 from paxman.capabilities.SIUnit.grammar.data.prefix_tokens import PREFIX_SYMBOL_TOKENS
 from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
-from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar import (
     AnchorSet,
     BoundarySpec,
@@ -66,28 +65,3 @@ class SymbolRecognition(PipelineGrammar[SIUnitNotation]):
 
     pre = StandardPre[SIUnitNotation](empty_guard=True)
     matchers = (_SYMBOL_MATCHER,)
-
-    def recognize(self, text: str) -> list[RecognitionMatch[SIUnitNotation]]:
-        if not text.strip():
-            return []
-        ctx = ScanContext.of(text)
-        view = ctx.view("__orig__", lambda t: (t, None, None))
-        spans = _SYMBOL_MATCHER.match(view)
-        out: list[RecognitionMatch[SIUnitNotation]] = []
-        for s, e in spans:
-            o_s, o_e = view.original_span(s, e)
-            raw = text[o_s:o_e]
-            parts = raw.split()
-            if len(parts) >= 2 and parts[0] in PREFIX_ONLY_SYMBOLS:
-                shape = "split_symbol_prefix"
-            else:
-                shape = "symbol"
-            out.append(
-                RecognitionMatch(
-                    notation=SIUnitNotation(text=raw, shape=shape),
-                    start=o_s,
-                    end=o_e,
-                    raw_text=raw,
-                )
-            )
-        return out

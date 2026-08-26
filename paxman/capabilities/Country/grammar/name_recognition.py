@@ -20,8 +20,7 @@ from paxman.capabilities.Country.grammar.data.historical_names import (
 from paxman.capabilities.Country.grammar.data.localized_names import (
     LOCALIZED_NAME_KEYS,
 )
-from paxman.capabilities.Country.notation import CountryNotation, normalize_name
-from paxman.core.domain import RecognitionMatch
+from paxman.capabilities.Country.notation import CountryNotation
 from paxman.core.grammar import (
     AnchorSet,
     BoundarySpec,
@@ -29,7 +28,6 @@ from paxman.core.grammar import (
     StandardPre,
 )
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
-from paxman.core.grammar.normalizers import CountryNameFold
 from paxman.core.grammar.scan_context import ScanContext
 
 # Union of every recognized name representation across locales.
@@ -45,8 +43,6 @@ _LEXICON_TOKENS: frozenset[str] = frozenset(k.lower() for k in _KNOWN_NAME_KEYS)
 
 def _emit(span: tuple[int, int], ctx: ScanContext) -> CountryNotation:
     s, e = span
-    # View offsets are None for AccentStrip (length-preserving), so span
-    # maps directly to original text indices. Use original text slice.
     raw = ctx.text[s:e]
     return CountryNotation(shape="name", value=raw)
 
@@ -85,47 +81,3 @@ class NameGrammar(PipelineGrammar[CountryNotation]):
 
     pre = StandardPre[CountryNotation](empty_guard=True)
     matchers = (_LEXICON_MATCHER,)
-
-    def recognize(self, text: str) -> list[RecognitionMatch[CountryNotation]]:
-        if not text.strip():
-            return []
-        ctx = ScanContext.of(text)
-        view = ctx.view("country_normalized", CountryNameFold().normalize)
-        spans = _LEXICON_MATCHER.match(view)
-        out: list[RecognitionMatch[CountryNotation]] = []
-        for s, e in spans:
-            o_s, o_e = view.original_span(s, e)
-            raw = text[o_s:o_e]
-            out.append(
-                RecognitionMatch(
-                    notation=CountryNotation(shape="name", value=raw),
-                    start=o_s,
-                    end=o_e,
-                    raw_text=raw,
-                )
-            )
-        # Whole-input spans are a subset of the trie emission when the
-        # view correctly normalizes punctuation and separators, but we keep
-        # the explicit WholeInputLookup parity check for byte-identical
-        # whole-input semantics on edge punctuation cases.
-        # After A4 two-array exact-end (ADR D3 Rev.4) the trie maps
-        # "United States." -> (0,13) "United States", so the whitespace-trimmed
-        # whole-input span (0,14) would overshoot. Deduplicate by normalized
-        # key equality, not exact span equality.
-        trimmed = text.strip()
-        if normalize_name(trimmed) in _KNOWN_NAME_KEYS and not any(
-            normalize_name(m.notation.value) == normalize_name(trimmed) for m in out
-        ):
-            start = len(text) - len(text.lstrip())
-            end = start + len(trimmed)
-            raw = text[start:end]
-            out.append(
-                RecognitionMatch(
-                    notation=CountryNotation(shape="name", value=raw),
-                    start=start,
-                    end=end,
-                    raw_text=raw,
-                )
-            )
-        out.sort(key=lambda m: (m.start, -(m.end - m.start)))
-        return out
