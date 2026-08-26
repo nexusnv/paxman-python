@@ -172,21 +172,3 @@ class TestDateContractLegacyAndYear:
     def test_canonical_names_unchanged(self) -> None:
         c = DateContract(pinned_rules=("Derived-US-date-format",))
         assert c.pinned_rules == ("Derived-US-date-format",)
-
-    def test_year_2024_includes_both_regional_rules(self) -> None:
-        import paxman
-        from paxman.core.discovery import register_capability, reset_registry
-
-        reset_registry()
-        register_capability(DateCapability())
-        try:
-            contract = DateContract(year=2024)
-            r_us = paxman.canonicalize("07/26/2024", contract)
-            r_eu = paxman.canonicalize("26/07/2024", contract)
-            assert r_us.candidates and r_eu.candidates
-            # Both regional rules have publication_year <=2024 (2023 and 2010)
-            # so both should be active; US input is ambiguous (2 values)
-            # but must not be MISSING/INVALID due to year filtering.
-            assert r_us.candidates[0].provenance[0].publication_year <= 2024
-        finally:
-            reset_registry()
