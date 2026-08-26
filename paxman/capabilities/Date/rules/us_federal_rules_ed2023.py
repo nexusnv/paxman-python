@@ -1,12 +1,13 @@
-"""US federal date rule — validates and normalizes dates with two-digit year support.
+"""US date rule — validates and normalizes dates with two-digit year support.
 
 This module historically cited "US Federal Government, Federal Rules 2023" via
-the USGS Board on Geographic Names. That provenance was inaccurate: the BGN
-does not define date formats. US ``MM/DD/YYYY`` ordering is a de facto national
-convention codified in the U.S. Government Publishing Office Style Manual,
-Chapter 9 (Dates), and in NARA/OMB guidance (MM/DD/YYYY). The provenance below
-is corrected to the GPO Style Manual 2016 (31st Edition) for audit traceability.
-File name is retained for compatibility; the ``PUBLICATION`` inside is authoritative.
+the USGS Board on Geographic Names, then the GPO Style Manual 2016. Both
+attributions are inaccurate as normative sources for numeric date ordering:
+``MM/DD/YYYY`` is not defined by a single federal specification but is a
+civilian locale convention (en-US) evidenced across style guides, territory
+data, and de facto practice. The rule is therefore attributed as a derived
+convention rather than to a generic GPO or policy publication. File name is
+retained for compatibility; the ``PUBLICATION`` inside is authoritative.
 
 The rule validates both slash grammars (``us_recognition`` and
 ``european_recognition``) because either recognition can be interpreted under
@@ -24,18 +25,18 @@ from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
 PUBLICATION = Provenance(
-    authority="U.S. Government Publishing Office",
-    specification_name="Style Manual",
-    kind="policy",
-    reference_url="https://www.govinfo.gov/content/pkg/GPO-STYLEMANUAL-2016/pdf/GPO-STYLEMANUAL-2016.pdf",
-    version="2016",
+    authority="Derived convention",
+    specification_name="US locale — MM/DD/YYYY",
+    kind="convention",
+    reference_url="",
+    version=None,
     lifecycle="active",
-    publication_year=2016,
+    publication_year=2025,
 )
 
 
 class Section1DateFormat(Rule[DateNotation]):
-    """US GPO Style Manual, 31st Edition (2016) Chapter 9 — Dates — MM/DD/YYYY.
+    """Derived convention — US locale date ordering (MM/DD/YYYY).
 
     Validates ``MM/DD/YYYY`` with two-digit year expansion. Also validates
     ``DD/MM/YYYY`` spans (via ``european_calendar_date`` semantics) under US
@@ -45,13 +46,13 @@ class Section1DateFormat(Rule[DateNotation]):
     Notation mapping (US grammar):
         N1 = month, N2 = day, N3 = year
 
-    Provenance: U.S. GPO Style Manual, Chapter 9 — Dates (MM/DD/YYYY).
+    Provenance: Derived convention (US civilian MM/DD/YYYY, en-US locale).
     """
 
-    name = "Section 1-date-format"
+    name = "Derived-US-date-format"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Chapter 9 (dates) — MM/DD/YYYY"
+    citation = "Derived convention — MM/DD/YYYY (US locale, en-US)"
     target_semantics = frozenset({"us_calendar_date", "european_calendar_date"})
     requires_features = frozenset()
 
