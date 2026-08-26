@@ -5,6 +5,16 @@ patterns (dot-form and at-only form) are merged into one alternation; the
 notation factory branches on which alternative matched. Word boundaries are
 kept verbatim (``\\b`` is a word boundary, not a hard-coded lookaround class —
 ADR-0009 §10). Syntax only: the grammar never validates the address.
+
+Keywords "at" and "dot" are matched case-insensitively (``re.IGNORECASE``)
+so ``USER AT EXAMPLE DOT COM`` and ``User At Example Dot Com`` are
+recognized; local/domain casing is preserved in the notation and the
+domain is lowercased at validation (``Rule.normalize``). Shares
+``rfc5322_addr_spec`` semantics with ``StandardEmailGrammar`` — same
+validation path. Known limitation: chained ``dot`` like
+``user at example dot co dot uk`` consumes only the first ``dot``
+(→ ``example.co``, second ``dot uk`` ignored); bracketed forms like
+``user [at] example [dot] com`` are not recognized (v0.2.0 P3).
 """
 
 from __future__ import annotations
@@ -49,5 +59,7 @@ class ObfuscatedEmailGrammar(PipelineGrammar[EmailNotation]):
 
     pre = StandardPre[EmailNotation](empty_guard=True)
     regex = RegexStage[EmailNotation](
-        pattern=_OBFUSCATED_PATTERN, notation_fn=_obfuscated_notation
+        pattern=_OBFUSCATED_PATTERN,
+        notation_fn=_obfuscated_notation,
+        flags=re.IGNORECASE,
     )

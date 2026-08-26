@@ -106,6 +106,23 @@ class TestObfuscatedEmailGrammar:
             local_part="user", domain_part="gmail.com"
         )
 
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "USER AT EXAMPLE DOT COM",
+            "User At Example Dot Com",
+            "USER AT GMAIL.COM",
+            "user AT example DOT com",
+        ],
+    )
+    @pytest.mark.capability
+    def test_recognizes_case_insensitive_keywords(self, text: str) -> None:
+        """Keywords "at"/"dot" match case-insensitively (re.IGNORECASE); the
+        local part and domain keep their input casing for the rule to fold."""
+        grammar = ObfuscatedEmailGrammar()
+        results = grammar.recognize(text)
+        assert len(results) == 1
+
     @pytest.mark.capability
     def test_ignores_standard_email(self) -> None:
         grammar = ObfuscatedEmailGrammar()

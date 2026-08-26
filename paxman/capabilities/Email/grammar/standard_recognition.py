@@ -3,6 +3,14 @@
 Recognizes user@domain.tld. The word boundaries are kept verbatim (``\\b`` is
 a word boundary, not a hard-coded lookaround class — ADR-0009 §10). Syntax
 only: the grammar never validates the address.
+
+Shares ``rfc5322_addr_spec`` semantics with ``ObfuscatedEmailGrammar`` —
+same validation (``Section341AddrSpec``). Leading dot/underscore is not
+part of the match: ``".user@example.com"`` yields ``user@example.com`` at
+``[1,17]``. The grammar is shape-broad (e.g. ``user..test@example.com``,
+``user@-example.com`` are matched); strictness is owned by the
+validation rule which rejects consecutive/trailing dots and bad hyphen
+labels as ``INVALID``.
 """
 
 from __future__ import annotations

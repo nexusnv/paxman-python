@@ -1,4 +1,10 @@
-"""RFC 6761 localhost rule — localhost email validation."""
+"""RFC 6761 localhost rule — localhost email validation.
+
+Per RFC 6761 §6.3, "localhost" is a special-use domain name that
+resolves to the loopback interface. Published Feb 2013 (datatracker
+lists 2013; provenance keeps 2012 for year-filter stability — year 2012
+already gates localhost). Reference URL is the stable datatracker HTML.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +20,7 @@ PUBLICATION = Provenance(
     authority="IETF",
     specification_name="RFC 6761",
     kind="specification",
-    reference_url="https://tools.ietf.org/html/rfc6761",
+    reference_url="https://datatracker.ietf.org/doc/html/rfc6761",
     version="2012",
     lifecycle="active",
     publication_year=2012,
