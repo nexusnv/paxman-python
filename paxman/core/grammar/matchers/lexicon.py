@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -51,8 +52,13 @@ class LexiconMatcher:
     _trie: dict[str, Any] | None = field(init=False, repr=False, default=None)
     _compiled: re.Pattern[str] | None = field(init=False, repr=False, default=None)
     _chosen: str = field(init=False, repr=False, default="alternation")
+    digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        tokens_digest = hashlib.sha256(
+            "\x00".join(sorted(self.tokens)).encode("utf-8")
+        ).hexdigest()
+        object.__setattr__(self, "digest", tokens_digest)
         rep = self.representation
         if rep == "auto":
             rep = "trie" if len(self.tokens) > 500 else "alternation"

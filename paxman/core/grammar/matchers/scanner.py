@@ -13,6 +13,7 @@ only caps ``end`` to ``max_window`` and checks boundaries at hit positions.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -35,6 +36,16 @@ class ScannerMatcher:
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     max_window: int = 2048
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+    digest: str = field(init=False, repr=False, default="")
+
+    def __post_init__(self) -> None:
+        qualname = getattr(self.scan, "__qualname__", type(self.scan).__name__)
+        boundary_repr = repr(self.boundary) if self.boundary is not None else "None"
+        view_repr = self.view_name if self.view_name is not None else "None"
+        digest_val = hashlib.sha256(
+            f"{qualname}\x00{self.max_window}\x00{view_repr}\x00{boundary_repr}".encode()
+        ).hexdigest()
+        object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
         out: list[tuple[int, int]] = []

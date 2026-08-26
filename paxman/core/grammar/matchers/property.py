@@ -11,6 +11,7 @@ maximal contiguous runs where every code point satisfies the property.
 from __future__ import annotations
 
 import bisect
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, cast
@@ -37,8 +38,11 @@ class PropertyMatcher:
     emit: Callable[[tuple[int, int], Any], Any] = field(default=_default_emit_property)
     kind: str = field(default="property", init=False)
     _chosen: str = field(default="", init=False, repr=False)
+    digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        digest_val = hashlib.sha256(repr(self.ranges).encode("utf-8")).hexdigest()
+        object.__setattr__(self, "digest", digest_val)
         # Compat: `view_name` is deprecated alias for `view`. Keep both in sync
         # so engine_loop (which reads `view`) and legacy tests (which read
         # `view_name`) both see the value. If both are set but differ, fail fast.

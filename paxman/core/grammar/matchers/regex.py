@@ -14,6 +14,7 @@ shipped path until per-grammar parity shards are green.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -39,6 +40,7 @@ class RegexMatcher:
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
     kind: str = field(default="regex", init=False)
     _compiled: re.Pattern[str] = field(init=False, repr=False)
+    digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
         # Compile at construction (freeze-time per ADR §13 for MatcherSpec path;
@@ -50,6 +52,10 @@ class RegexMatcher:
         except re.error as exc:
             raise ValueError(f"Invalid regex pattern {self.pattern!r}: {exc}") from exc
         object.__setattr__(self, "_compiled", compiled)
+        digest_val = hashlib.sha256(
+            f"{self.pattern}\x00{self.flags}".encode()
+        ).hexdigest()
+        object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
         out: list[tuple[int, int]] = []

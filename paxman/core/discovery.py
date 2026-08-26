@@ -6,7 +6,7 @@ Stores registered capabilities by name. Freezes after the first
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from typing import Any, cast
 
 from paxman.core.capability import Capability
@@ -16,6 +16,7 @@ from paxman.core.extensions import freeze_extensions, reset_extensions
 _registry: dict[str, Capability[Any]] = {}
 _frozen: bool = False
 _recognition_revision: str = "0"
+_snapshot_hashes: dict[tuple[str, int, int], str] = {}
 
 
 def register_capability(capability: Any) -> None:
@@ -89,47 +90,50 @@ def freeze_registry() -> None:
                 for matcher in matchers_typed:
                     kind = getattr(matcher, "kind", type(matcher).__name__)
                     view = getattr(matcher, "view", None)
+                    if view is None:
+                        view = getattr(matcher, "view_name", None)
                     boundary = getattr(matcher, "boundary", None)
                     anchors = getattr(matcher, "anchors", None)
                     requires: frozenset[str] = getattr(
                         matcher, "requires_features", frozenset[str]()
                     )
                     requires_repr = ",".join(sorted(requires))
-                    # Tokens / payload hashing
-                    tokens_set: Any = getattr(matcher, "tokens", None)
-                    if tokens_set is not None:
-                        # frozenset[str] — sort for determinism
-                        try:
-                            tokens_repr = "|".join(
-                                sorted(cast(Iterable[str], tokens_set))
-                            )
-                        except TypeError:  # pragma: no cover
-                            tokens_repr = repr(tokens_set)  # pragma: no cover
+                    digest_val: str | None = getattr(matcher, "digest", None)
+                    if digest_val is not None:
+                        tokens_repr = digest_val
                     else:
-                        payload = getattr(matcher, "payload", None)
-                        if payload is not None:
-                            tokens_repr = repr(payload)
+                        tokens_set: Any = getattr(matcher, "tokens", None)
+                        if tokens_set is not None:
+                            tokens_repr = repr(tokens_set)
                         else:
-                            scan_fn = getattr(matcher, "scan", None)  # pragma: no cover
-                            if scan_fn is not None:  # pragma: no cover
-                                qualname = getattr(  # pragma: no cover
-                                    scan_fn, "__qualname__", type(matcher).__name__
-                                )  # pragma: no cover
-                                max_window = getattr(matcher, "max_window", 0)
-                                boundary_repr_inner = (
-                                    repr(boundary) if boundary is not None else "None"
-                                )
-                                tokens_repr = (
-                                    f"{qualname}:{max_window}:{view}:"
-                                    f"{boundary_repr_inner}"
-                                )
+                            payload = getattr(matcher, "payload", None)
+                            if payload is not None:
+                                tokens_repr = repr(payload)
                             else:
-                                fallback_chosen = getattr(
-                                    matcher, "_chosen", ""
+                                scan_fn = getattr(
+                                    matcher, "scan", None
                                 )  # pragma: no cover
-                                tokens_repr = (  # pragma: no cover
-                                    f"{type(matcher).__name__}:{fallback_chosen}"
-                                )
+                                if scan_fn is not None:  # pragma: no cover
+                                    qualname = getattr(  # pragma: no cover
+                                        scan_fn, "__qualname__", type(matcher).__name__
+                                    )  # pragma: no cover
+                                    max_window = getattr(matcher, "max_window", 0)
+                                    boundary_repr_inner = (
+                                        repr(boundary)
+                                        if boundary is not None
+                                        else "None"
+                                    )
+                                    tokens_repr = (
+                                        f"{qualname}:{max_window}:{view}:"
+                                        f"{boundary_repr_inner}"
+                                    )
+                                else:
+                                    fallback_chosen = getattr(
+                                        matcher, "_chosen", ""
+                                    )  # pragma: no cover
+                                    tokens_repr = (  # pragma: no cover
+                                        f"{type(matcher).__name__}:{fallback_chosen}"
+                                    )
                     # Include matcher-specific choices (e.g., lexicon _chosen)
                     chosen = getattr(matcher, "_chosen", "")
                     # Deterministic boundary/anchors repr
@@ -151,8 +155,23 @@ def freeze_registry() -> None:
     if snapshot_dir.is_dir():  # pragma: no cover
         for snap_path in sorted(snapshot_dir.glob("*_snapshot.json")):
             try:
-                content = snap_path.read_bytes()
-                sha = hashlib.sha256(content).hexdigest()[:12]
+                st = snap_path.stat()
+                key = (str(snap_path), st.st_size, st.st_mtime_ns)
+                cached = _snapshot_hashes.get(key)
+                if cached is not None:
+                    if st.st_mtime_ns % 1_000_000 == 0:
+                        content = snap_path.read_bytes()
+                        sha = hashlib.sha256(content).hexdigest()[:12]
+                        if sha != cached:
+                            _snapshot_hashes[key] = sha
+                        else:
+                            sha = cached
+                    else:
+                        sha = cached
+                else:
+                    content = snap_path.read_bytes()
+                    sha = hashlib.sha256(content).hexdigest()[:12]
+                    _snapshot_hashes[key] = sha
                 parts.append(f"snapshot:{snap_path.name}:{sha}")
             except OSError:  # pragma: no cover
                 continue  # pragma: no cover
