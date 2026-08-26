@@ -1,13 +1,14 @@
-"""EN 50160 date rule — validates and normalizes European DD/MM/YYYY dates.
+"""European date rule — validates and normalizes European DD/MM/YYYY dates.
 
-This module historically cited "CENELEC EN 50160:2010 Voltage characteristics of
-electricity". That provenance was inaccurate: EN 50160 is a power-quality
-standard and does not define calendar date formats. European ``DD/MM/YYYY``
-ordering is a civilian locale convention documented in Unicode CLDR (locale
-data for en-GB/fr/de etc.) and in national practice (BS 3733, DIN 1355).
-The provenance below is corrected to Unicode CLDR (aligns with Country/Currency
-capabilities). File name is retained for compatibility; the ``PUBLICATION``
-inside is authoritative.
+This module historically cited "CENELEC EN 50160:2010" and then Unicode CLDR
+as the source for ``DD/MM/YYYY`` ordering. Both attributions are inaccurate
+as normative sources for numeric date ordering: ``DD/MM/YYYY`` is not defined
+by a single power-quality or locale-data specification but is a civilian
+locale convention (en-GB, de-DE, fr-FR, etc.) evidenced across territory
+data and national practice (BS 3733, DIN 1355, etc.). The rule is therefore
+attributed as a derived convention rather than to a generic CLDR or
+specification publication. File name is retained for compatibility; the
+``PUBLICATION`` inside is authoritative.
 
 The rule validates both slash grammars for the same cross-validation reason
 as the US rule (see its docstring and audit B3).
@@ -22,18 +23,18 @@ from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
 PUBLICATION = Provenance(
-    authority="Unicode CLDR",
-    specification_name="Unicode CLDR",
-    kind="specification",
-    reference_url="https://cldr.unicode.org/",
-    version="47",
+    authority="Derived convention",
+    specification_name="European locale — DD/MM/YYYY",
+    kind="convention",
+    reference_url="",
+    version=None,
     lifecycle="active",
     publication_year=2025,
 )
 
 
 class Section4DateFormat(Rule[DateNotation]):
-    """Unicode CLDR — European date format DD/MM/YYYY.
+    """Derived convention — European locale date ordering (DD/MM/YYYY).
 
     Validates ``DD/MM/YYYY`` with two-digit year expansion. Also validates
     ``MM/DD/YYYY`` spans (via ``us_calendar_date`` semantics) under European
@@ -42,13 +43,13 @@ class Section4DateFormat(Rule[DateNotation]):
     Notation mapping (European grammar):
         N1 = day, N2 = month, N3 = year
 
-    Provenance: Unicode CLDR date patterns (European DD/MM/YYYY ordering).
+    Provenance: Derived convention (European civilian DD/MM/YYYY).
     """
 
-    name = "Section 4-date-format"
+    name = "Derived-European-date-format"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Date and time patterns — DD/MM/YYYY"
+    citation = "Derived convention — DD/MM/YYYY (European locale)"
     target_semantics = frozenset({"us_calendar_date", "european_calendar_date"})
     requires_features = frozenset()
 

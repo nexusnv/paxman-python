@@ -1,6 +1,6 @@
 """ISO 8601 date rule — validates and normalizes dates to ISO format.
 
-Provenance: ISO 8601-1:2019 §4.3.1 calendar date (extended format YYYY-MM-DD).
+Provenance: ISO 8601-1:2019 §5.2.1.1 calendar date (extended format YYYY-MM-DD).
 This is the strict fixed-width path: 4-digit year (>=1000) and 2-digit
 month/day are required at recognition time; single-digit ``2026-1-5`` is
 ``MISSING`` (not ``INVALID``). The slash-ISO grammar shares this rule's
@@ -27,7 +27,7 @@ PUBLICATION = Provenance(
 
 
 class Section431CalendarDate(Rule[DateNotation]):
-    """ISO 8601-1:2019 Section 4.3.1 — Calendar date (strict extended format).
+    """ISO 8601-1:2019 Section 5.2.1.1 — Calendar date (strict extended format).
 
     Validates both the dash-delimited ISO grammar (strict 2-digit month/day)
     and the slash-delimited lenient variant (which shares the same position
@@ -40,10 +40,10 @@ class Section431CalendarDate(Rule[DateNotation]):
         N1 = year, N2 = month, N3 = day
     """
 
-    name = "Section 4.3.1-calendar-date"
+    name = "Section 5.2.1.1-calendar-date"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Section 4.3.1 (calendar date)"
+    citation = "Section 5.2.1.1 (calendar date)"
     target_semantics = frozenset({"iso8601_calendar_date"})
     requires_features = frozenset()
 

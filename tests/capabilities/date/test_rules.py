@@ -17,7 +17,7 @@ from paxman.core.domain import RuleStrategy
 
 @pytest.mark.capability
 class TestSection431CalendarDate:
-    """ISO 8601 Section 4.3.1 — calendar date rule tests."""
+    """ISO 8601 Section 5.2.1.1 — calendar date rule tests."""
 
     def test_matches_valid_input(self) -> None:
         rule = Section431CalendarDate()
@@ -46,7 +46,7 @@ class TestSection431CalendarDate:
 
     def test_rule_name(self) -> None:
         rule = Section431CalendarDate()
-        assert rule.name == "Section 4.3.1-calendar-date"
+        assert rule.name == "Section 5.2.1.1-calendar-date"
 
     def test_strategy_is_parser(self) -> None:
         rule = Section431CalendarDate()
@@ -55,7 +55,7 @@ class TestSection431CalendarDate:
 
 @pytest.mark.capability
 class TestSection1DateFormat:
-    """US federal date format rule tests."""
+    """Derived convention — US locale date format rule tests."""
 
     def test_matches_valid_input(self) -> None:
         rule = Section1DateFormat()
@@ -115,14 +115,14 @@ class TestSection1DateFormat:
 
     def test_provenance_attributes(self) -> None:
         rule = Section1DateFormat()
-        assert rule.provenance.authority == "U.S. Government Publishing Office"
-        assert rule.provenance.specification_name == "Style Manual"
-        assert rule.provenance.publication_year == 2016
+        assert rule.provenance.authority == "Derived convention"
+        assert rule.provenance.specification_name == "US locale — MM/DD/YYYY"
+        assert rule.provenance.publication_year == 2025
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
         rule = Section1DateFormat()
-        assert rule.name == "Section 1-date-format"
+        assert rule.name == "Derived-US-date-format"
 
     def test_strategy_is_parser(self) -> None:
         rule = Section1DateFormat()
@@ -131,7 +131,7 @@ class TestSection1DateFormat:
 
 @pytest.mark.capability
 class TestEN50160Section4DateFormat:
-    """EN 50160 Section 4 date format rule tests."""
+    """Derived convention — European locale date format rule tests."""
 
     def test_valid_european_date(self) -> None:
         """Valid European date is accepted."""
@@ -188,15 +188,15 @@ class TestEN50160Section4DateFormat:
     def test_provenance_attributes(self) -> None:
         """Provenance is correctly set."""
         rule = Section4DateFormat()
-        assert rule.provenance.authority == "Unicode CLDR"
-        assert rule.provenance.specification_name == "Unicode CLDR"
+        assert rule.provenance.authority == "Derived convention"
+        assert rule.provenance.specification_name == "European locale — DD/MM/YYYY"
         assert rule.provenance.publication_year == 2025
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
         """Rule name is correct."""
         rule = Section4DateFormat()
-        assert rule.name == "Section 4-date-format"
+        assert rule.name == "Derived-European-date-format"
 
     def test_strategy_is_parser(self) -> None:
         """Strategy is PARSER."""

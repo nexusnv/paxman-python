@@ -1,6 +1,6 @@
 """ISO 8601 date recognition grammar (staged pipeline).
 
-Recognizes strict YYYY-MM-DD extended format (ISO 8601-1:2019 §4.3.1).
+Recognizes strict YYYY-MM-DD extended format (ISO 8601-1:2019 §5.2.1.1).
 Requires 4-digit year and 2-digit month/day with dash delimiter; single-digit
 month/day (``2026-1-5``) is not recognized and is ``MISSING`` — use the
 slash variants for lenient 1-2 digit handling. The digit lookarounds are
@@ -28,7 +28,7 @@ class ISO8601DateGrammar(PipelineGrammar[DateNotation]):
     """ISO 8601 date recognition: strict YYYY-MM-DD (extended format).
 
     Strict fixed-width: ``YYYY-MM-DD`` with ``YYYY`` 4-digit and ``MM``/``DD``
-    exactly 2-digit, dash-delimited, per ISO 8601-1:2019 §4.3.1. Single-digit
+    exactly 2-digit, dash-delimited, per ISO 8601-1:2019 §5.2.1.1. Single-digit
     components (``2026-1-5``) are not recognized here — they are ``MISSING``;
     slash grammars handle lenient 1-2 digit month/day with zero-padding.
 

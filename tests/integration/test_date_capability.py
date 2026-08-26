@@ -113,7 +113,7 @@ class TestDateCapabilityIntegration:
         formatter then renders it in the requested US format.
         """
         contract = Date.create_contract(
-            pinned_rules=["Section 4.3.1-calendar-date"], output_format="US"
+            pinned_rules=["Section 5.2.1.1-calendar-date"], output_format="US"
         )
         result = paxman.canonicalize("2026-01-15", contract)
         assert result.status == Resolution.SUCCESS
