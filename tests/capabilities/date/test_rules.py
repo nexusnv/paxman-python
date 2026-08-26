@@ -117,7 +117,7 @@ class TestSection1DateFormat:
         rule = Section1DateFormat()
         assert rule.provenance.authority == "Derived convention"
         assert rule.provenance.specification_name == "US locale — MM/DD/YYYY"
-        assert rule.provenance.publication_year == 2025
+        assert rule.provenance.publication_year == 2023
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:
@@ -190,7 +190,7 @@ class TestEN50160Section4DateFormat:
         rule = Section4DateFormat()
         assert rule.provenance.authority == "Derived convention"
         assert rule.provenance.specification_name == "European locale — DD/MM/YYYY"
-        assert rule.provenance.publication_year == 2025
+        assert rule.provenance.publication_year == 2010
         assert rule.provenance.lifecycle == "active"
 
     def test_rule_name(self) -> None:

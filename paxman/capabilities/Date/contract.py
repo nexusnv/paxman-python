@@ -8,6 +8,16 @@ from typing import ClassVar
 from paxman.core.contract import CapabilityContract
 from paxman.core.errors import ContractError
 
+# Legacy rule-name aliases — preserve pinned_rules/excluded_rules selection
+# after the audit renames (Section 1/4 → Derived, 4.3.1 → 5.2.1.1).
+# Canonical names are the derived/5.2.1.1 forms; the Section-form identifiers
+# are resolved here so existing contracts keep working.
+_LEGACY_RULE_NAME_MAP: dict[str, str] = {
+    "Section 1-date-format": "Derived-US-date-format",
+    "Section 4-date-format": "Derived-European-date-format",
+    "Section 4.3.1-calendar-date": "Section 5.2.1.1-calendar-date",
+}
+
 
 @dataclass(frozen=True)
 class DateContract(CapabilityContract):
@@ -33,6 +43,18 @@ class DateContract(CapabilityContract):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        # Resolve legacy rule names so pinned_rules / excluded_rules remain
+        # compatible with contracts that used Section-form identifiers.
+        if self.pinned_rules is not None:
+            mapped = tuple(_LEGACY_RULE_NAME_MAP.get(n, n) for n in self.pinned_rules)
+            if mapped != self.pinned_rules:
+                object.__setattr__(self, "pinned_rules", mapped)
+        if self.excluded_rules:
+            mapped_ex = tuple(
+                _LEGACY_RULE_NAME_MAP.get(n, n) for n in self.excluded_rules
+            )
+            if mapped_ex != self.excluded_rules:
+                object.__setattr__(self, "excluded_rules", mapped_ex)
         if self.two_digit_base_year is not None:
             base = self.two_digit_base_year
             if not 0 <= base <= 9999:
