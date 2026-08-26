@@ -147,3 +147,46 @@ class TestDateContract:
         """Unoffered output_format values raise ContractError."""
         with pytest.raises(ContractError):
             DateContract(output_format=fmt)
+
+
+@pytest.mark.capability
+class TestDateContractLegacyAndYear:
+    """Regression for legacy rule-name aliases and year filtering."""
+
+    def test_legacy_section_1_resolves_to_canonical(self) -> None:
+        c = DateContract(pinned_rules=("Section 1-date-format",))
+        assert c.pinned_rules == ("Derived-US-date-format",)
+
+    def test_legacy_section_4_resolves_to_canonical(self) -> None:
+        c = DateContract(pinned_rules=("Section 4-date-format",))
+        assert c.pinned_rules == ("Derived-European-date-format",)
+
+    def test_legacy_section_431_resolves_to_canonical(self) -> None:
+        c = DateContract(pinned_rules=("Section 4.3.1-calendar-date",))
+        assert c.pinned_rules == ("Section 5.2.1.1-calendar-date",)
+
+    def test_legacy_excluded_resolves(self) -> None:
+        c = DateContract(excluded_rules=("Section 1-date-format",))
+        assert c.excluded_rules == ("Derived-US-date-format",)
+
+    def test_canonical_names_unchanged(self) -> None:
+        c = DateContract(pinned_rules=("Derived-US-date-format",))
+        assert c.pinned_rules == ("Derived-US-date-format",)
+
+    def test_year_2024_includes_both_regional_rules(self) -> None:
+        import paxman
+        from paxman.core.discovery import register_capability, reset_registry
+
+        reset_registry()
+        register_capability(DateCapability())
+        try:
+            contract = DateContract(year=2024)
+            r_us = paxman.canonicalize("07/26/2024", contract)
+            r_eu = paxman.canonicalize("26/07/2024", contract)
+            assert r_us.candidates and r_eu.candidates
+            # Both regional rules have publication_year <=2024 (2023 and 2010)
+            # so both should be active; US input is ambiguous (2 values)
+            # but must not be MISSING/INVALID due to year filtering.
+            assert r_us.candidates[0].provenance[0].publication_year <= 2024
+        finally:
+            reset_registry()

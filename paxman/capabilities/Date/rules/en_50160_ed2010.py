@@ -29,7 +29,7 @@ PUBLICATION = Provenance(
     reference_url="",
     version=None,
     lifecycle="active",
-    publication_year=2025,
+    publication_year=2010,
 )
 
 
