@@ -1,6 +1,6 @@
 # PAXMAN CORE KNOWLEDGE BASE
 
-**Scope:** `paxman/core/` — the foundation layer and import-linter leaf. 8 modules plus the `grammar/` subpackage (capability-agnostic recognition-layer machinery: `BoundaryGuard`, `AmountComposer`, `LexiconAlternation`, `PipelineGrammar`, stage types). Imports from nothing inside `paxman.*`; every other package imports from here.
+**Scope:** `paxman/core/` — the foundation layer and import-linter leaf. 8 modules plus the `grammar/` subpackage (capability-agnostic recognition-layer machinery: kernel surface `ScanContext`/`MatcherSpec`/`engine_loop`/`matchers/`/`anchors`/`boundary_spec`/`normalizers` plus legacy `BoundaryGuard`/`AmountComposer`/`LexiconAlternation`/`PipelineGrammar`/stage types which remain for unmigrated grammars). Imports from nothing inside `paxman.*`; every other package imports from here.
 
 ## OVERVIEW
 Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs), the contract surface (`Contract` protocol, `CapabilityContract` base, `output_format` policy), the capability registry, the community extension registries (`extensions.py`), shared recognition machinery (`grammar/`), and the error hierarchy. Everything `paxman.api` and `paxman.engine` shuffle through the pipeline is defined here.
@@ -17,7 +17,7 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 | Add a capability class | `paxman/core/capability.py` → subclass `Capability` |
 | Registry / freezing behavior | `paxman/core/discovery.py` (+ `list_registered_capabilities()`, `is_registry_frozen()`) |
 | Community grammar/rule extensions | `paxman/core/extensions.py` → `register_grammar()` / `register_rule()`; contracts opt in via `extra_grammars`; registries freeze with the capability registry |
-| Shared recognition machinery (stages, boundary guard, lexicon alternation, pipeline grammar) | `paxman/core/grammar/` |
+| Shared recognition machinery — kernel (`ScanContext`, `MatcherSpec`, `engine_loop`, `matchers/`, `anchors`, `boundary_spec`, `normalizers`; legacy `stages`, `BoundaryGuard`, `LexiconAlternation`, `PipelineGrammar` remain) | `paxman/core/grammar/` |
 | New exception type | `paxman/core/errors.py` → subclass `PaxmanError` |
 | Top-level re-exports | `paxman/core/__init__.py` |
 

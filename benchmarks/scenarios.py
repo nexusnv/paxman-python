@@ -177,6 +177,28 @@ def _url_contract() -> object:
     return URL.create_contract()
 
 
+def _freeze_register() -> None:
+    from paxman.api.bootstrap import register_all_shipped
+
+    register_all_shipped()
+
+
+def _freeze_contract() -> object:
+    return object()
+
+
+# Recognition-only payloads: si_unit over increasing text sizes (ADR Part IV)
+# Deterministic, exercises the trie scan hot path without validation.
+def _si_text(size: int) -> str:
+    base = "kg " + "x " * 20
+    return (base * ((size // len(base)) + 1))[:size]
+
+
+_SI_64B = _si_text(64)
+_SI_2KB = _si_text(2048)
+_SI_16KB = _si_text(16384)
+
+
 SCENARIOS: list[dict] = [
     {
         "capability": "country",
@@ -237,5 +259,29 @@ SCENARIOS: list[dict] = [
         "text": "https://example.com/path",
         "register": _url_register,
         "contract_factory": _url_contract,
+    },
+    {
+        "capability": "freeze",
+        "text": "freeze",
+        "register": _freeze_register,
+        "contract_factory": _freeze_contract,
+    },
+    {
+        "capability": "si_unit-recognition-64B",
+        "text": _SI_64B,
+        "register": _si_unit_register,
+        "contract_factory": _si_unit_contract,
+    },
+    {
+        "capability": "si_unit-recognition-2KB",
+        "text": _SI_2KB,
+        "register": _si_unit_register,
+        "contract_factory": _si_unit_contract,
+    },
+    {
+        "capability": "si_unit-recognition-16KB",
+        "text": _SI_16KB,
+        "register": _si_unit_register,
+        "contract_factory": _si_unit_contract,
     },
 ]
