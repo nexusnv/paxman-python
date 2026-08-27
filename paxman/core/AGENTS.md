@@ -34,6 +34,16 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 - **Exceptions:** new types subclass `PaxmanError`. `RecognitionError`/`ValidationError` carry `rule` (+ `original_error`, `None` for structural failures) and render as `"[rule] message"`.
 - **Imports:** prefer `from paxman.core import ...` — `__init__.py` re-exports the domain vocabulary and registry functions.
 
+### Kernel invariants (ADR-0009)
+- `BoundarySpec` frozensets O(1) — word/anchor guards use `frozenset` membership.
+- Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` — `starts`/`ends` parallel arrays.
+- View `source_starts`/`source_ends` + `offsets` property — views carry source offset maps.
+- `CountryNameFold` single-pass NFD with `_NFD_CACHE` — one-pass fold, cached.
+- `validate_emit` at construction — span/raw_text invariants fail fast at emit.
+- Matcher digests memoised — per-matcher digest cached.
+- `PipelineGrammar` `matchers` delegation — `recognize()` delegates to `run_matchers()`.
+- Common-word suppression 67 + 6 kinds (`regex`/`lexicon`/`scanner`/`combinator`/`candidates`/`label`, `Property` deleted) — `COMMON_WORDS` + `suppressible` + `suppress_common_words`.
+
 ## ANTI-PATTERNS (THIS PACKAGE)
 - No import of `paxman.api` / `paxman.engine` / `paxman.capabilities` from here — breaks the import-linter leaf.
 - No `slots=True` on contract dataclasses (root convention: contracts frozen, no slots).

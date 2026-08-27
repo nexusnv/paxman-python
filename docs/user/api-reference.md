@@ -109,6 +109,7 @@ contract = Email.create_contract(
     year=None,  # int | None — only rules with publication_year <= year
     output_format=None,  # str | None — None / "default" / default / offered, else ContractError
     extra_grammars=(),  # tuple[str, ...] — opt-in community grammars
+    suppress_common_words=False,  # bool — suppress word-bounded short-code hits in COMMON_WORDS (67)
     # capability-specific — varies by capability
     include_obfuscated=False,  # example: Email only
 )
@@ -157,6 +158,7 @@ Current defaults and offered alternatives:
 | SI Unit | `allow_split_word_prefixes` | `bool` | `False` | `kilo gram` → `kg` |
 | SI Unit | `allow_multi_solidus` | `bool` | `False` | `kg/m/s` preserved |
 | Date | `two_digit_base_year` | `int \| None` | `None` | Base for 2-digit year expansion |
+| common | `suppress_common_words` | `bool` | `False` | suppress word-bounded short-code hits in `COMMON_WORDS` (67) |
 
 Validation: `default_currency` / `dollar_sign_currency` must be uppercase alpha-3; `default_country` must be uppercase alpha-2; `precision` must be one of the three values — otherwise `ContractError` at construction time.
 
@@ -201,6 +203,7 @@ class Provenance:
 @dataclass(frozen=True)
 class VersionStamp:
     paxman_version: str
+    recognition_revision: str  # kernel recognition revision (default "0")
 
 
 class Resolution(Enum):

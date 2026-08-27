@@ -459,6 +459,8 @@ Every capability provides a `create_contract()` factory method with common and c
 | `excluded_rules` | `Sequence[str]` | Rule names to exclude from validation |
 | `pinned_rules` | `Sequence[str]` | Pin to specific rules (overrides `excluded_rules`) |
 | `year` | `int` | Temporal filter — only rules with `publication_year ≤ year` run |
+| `extra_grammars` | `tuple[str, ...]` | Community grammar names to opt in (appended after shipped grammars) |
+| `suppress_common_words` | `bool` | Suppress common-word noise on scan (e.g. `to` → Tonga); default `False` (ADR-0009 §16) |
 
 ### Capability-Specific Parameters
 
@@ -517,7 +519,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with fourteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with fifteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re

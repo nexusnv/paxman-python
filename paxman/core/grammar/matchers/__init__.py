@@ -1,4 +1,7 @@
-"""Matcher kinds — re-export matchers."""
+"""Matcher kinds — re-export the 6 kernel matchers.
+
+(regex/lexicon/scanner/combinator/candidates/label).
+Property deleted per ADR-0009 §9."""
 
 from __future__ import annotations
 

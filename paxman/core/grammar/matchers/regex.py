@@ -6,10 +6,9 @@ Phone tel-URI/00. Contract: ``re.compile(pattern, flags).finditer(view.subject)`
 with notation_fn, offset-translated at emit. Patterns carry bounds so worst-case
 is linear. No backreferences.
 
-This kind is declared for completeness (ADR §9.1) and is
-available for the ``BIC``/``Date`` candidates migration (Phase 3). No shipped
-grammar uses it on the kernel path yet — legacy ``RegexStage`` remains the
-shipped path until per-grammar parity shards are green.
+Migrated: Date consolidated grammar uses 4 RegexMatcher leaves via
+CandidatesMatcher strategy="all"; Symbol split-prefix uses RegexMatcher for WS.
+Remaining legacy RegexStage users stay off-kernel until parity.
 """
 
 from __future__ import annotations

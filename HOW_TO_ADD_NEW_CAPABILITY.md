@@ -257,7 +257,7 @@ class StandardMyDomainGrammar(Grammar[MyDomainNotation]):
 
 Recognize by syntactic *shape*: fixed widths, delimiters, or character classes. Compile the pattern at module scope, iterate with `re.finditer()`, map capture groups to notation fields, and sanitize the raw token (strip separators, case-fold, length-guard) before storing it in the notation. Recognition is shape-only — rules own semantic validity.
 
-Choose Regex when the representation has a distinctive, enumerable shape. All Date, Email, IP, ISBN, and Phone grammars, plus Country's `alpha2`/`alpha3`/`numeric` grammars, are Regex grammars. Three recurring sub-patterns:
+Choose Regex when the representation has a distinctive, enumerable shape. All Email, IP, ISBN, and many Phone/Country grammars are Regex; Date is CandidatesMatcher; Language/URL/Phone E.164 are ScannerMatcher; SIUnit uses Lexicon+Combinator. Three recurring sub-patterns:
 
 - **Compile once, iterate with `finditer()`** — never compile inside `recognize()` (it runs for every input).
 - **Sanitize the matched token** — the notation value is a *cleaned* raw token, never a canonical value. Phone strips separators (a local `strip_separators` in each Phone grammar), Country uppercases, ISBN strips separators and guards length. `raw_text` is always the original span, so `len(raw_text) == end - start` keeps holding.
@@ -1063,15 +1063,15 @@ Grammar names follow the pattern `{format}_recognition`:
 | Email | `standard_recognition` | `user@domain.tld` |
 | Email | `obfuscated_recognition` | `user at domain dot tld` |
 | Email | `localhost_recognition` | `user@localhost` |
-| Date | `iso8601_recognition` | `YYYY-MM-DD` |
-| Date | `us_recognition` | `MM/DD/YYYY` |
-| Date | `european_recognition` | `DD/MM/YYYY` |
+| Date | `date` (candidates: `iso8601`, `slash_iso`, `us`, `european`) | `YYYY-MM-DD` / `YYYY/MM/DD` / `MM/DD/YYYY` / `DD/MM/YYYY` via `CandidatesMatcher` `all` |
 | Country | `alpha2_recognition` | `US` (2 letters) |
 | Country | `alpha3_recognition` | `USA` (3 letters) |
 | Country | `numeric_recognition` | `840` (1-3 digits) |
 | Country | `name_recognition` | `United States` |
 | IP | `ipv4_recognition` | `192.168.1.1` |
 | IP | `ipv6_recognition` | `2001:db8::1` |
+
+> Legacy per-format Date files (`iso8601`/`us`/`european`) remain on disk inert — the shipped grammar is the single `date` CandidatesMatcher above.
 
 ### Pattern: Rule Naming Convention
 

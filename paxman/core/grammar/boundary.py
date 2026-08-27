@@ -4,6 +4,10 @@ Each guard produces a compiled alternation-ready regex via `wrap(alternation)`,
 or exposes its `(lookbehind, lookahead)` pair for `LexiconStage` injection.
 No grammar file hard-codes a lookaround literal after migration — each grammar
 references a `BoundaryGuard` instance (ADR-0009 §10).
+
+Legacy path: BoundaryGuard for RegexStage/LexiconStage; kernel path: BoundarySpec
+declarative checks. Unmigrated grammars still reference guards; §10 target is
+guard-free kernel.
 """
 
 from __future__ import annotations

@@ -2,6 +2,10 @@
 
 Thin wrapper over combinator ordered alt with per-candidate semantics
 routing (strategy first|all). Date 4→1 is the first customer (ADR §9.6).
+
+Frozen singletons (_DATE_CANDIDATES) store per-call routing in ContextVars
+(_flat_ctx/_counts_ctx) for thread+asyncio isolation; _flat/_emit_counts kept
+for introspection.
 """
 
 from __future__ import annotations

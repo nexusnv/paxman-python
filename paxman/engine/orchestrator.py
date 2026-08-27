@@ -38,6 +38,8 @@ except ImportError:
 
     def get_flat_for_matcher(m: Any) -> list[tuple[int, int, int]]:  # type: ignore[no-redef]
         return cast(list[tuple[int, int, int]], getattr(m, "_flat", []))
+
+
 from paxman.core.errors import (
     CapabilityError,
     ContractError,
@@ -55,7 +57,7 @@ def _resolve_version() -> str:
     try:
         return _get_version("paxman")
     except (ImportError, ValueError, TypeError, AttributeError, RuntimeError):
-        return "0.1.0"
+        return "0.2.0"
 
 
 PAXMAN_VERSION = _resolve_version()

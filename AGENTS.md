@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-08-22
-**Commit:** d7737f0
-**Branch:** chores/pre-release-housekeeping
+**Generated:** 2026-08-27
+**Commit:** 4677ff9
+**Branch:** fix/adr0009-kernel-remediation
 
 ## OVERVIEW
 Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 15 capabilities (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
@@ -40,6 +40,7 @@ docs/               # adr/, development/, recipes/, user/
 | Presentation seam | `paxman/capabilities/<Name>/capability.py` → `format_value()` |
 | Regenerate generated data | `tools/regenerate_isbn_range_data.py` (ISBN range), `tools/regenerate_si_prefix_data.py` (SIUnit prefixed units), `tools/regenerate_idna_uts46_data.py` (URL IDNA mapping), `tools/regenerate_currency_data.py` (Currency + Money from `paxman/shared_data/currency_snapshot.json`) |
 | CLI behavior | `paxman/cli.py` (`--list`, `--json`, stdin; contract flags are API-only) |
+| Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
 | Merge-blocking commands | `.github/workflows/ci.yml` (authoritative) |
 
 ## CODE MAP
@@ -103,6 +104,6 @@ Full pre-PR gate: `uv run ruff check . && uv run ruff format --check . && uv run
 - CONTEXT.md is the domain glossary for the full shipped set (fifteen capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
 - No `pyrightconfig.json` — pyright config is inline `[tool.pyright]` in pyproject.toml. No `.editorconfig`.
 - Data modules live under `rules/data/` and `grammar/data/` — plain module-level tables separating data from logic. Generated modules (edit via snapshot + regenerate, never by hand): ISBN range message (`tools/regenerate_isbn_range_data.py`), URL IDNA UTS #46 mapping (`tools/regenerate_idna_uts46_data.py`), SIUnit prefixed-unit and grammar token tables (`tools/regenerate_si_prefix_data.py`), and the Currency + Money data set (`tools/regenerate_currency_data.py`, from `paxman/shared_data/currency_snapshot.json`). Unmarked data files are edited directly.
-- Library + CLI: `[project.scripts] paxman = "paxman.cli:main"` and `python -m paxman`; CLI supports `--list`, `--json`, stdin input. Version 0.1.0.
+- Library + CLI: `[project.scripts] paxman = "paxman.cli:main"` and `python -m paxman`; CLI supports `--list`, `--json`, stdin input. Version 0.2.0.
 - Publishing: `.github/workflows/publish.yml` uses PyPI Trusted Publishing (OIDC) with a Git-tag ↔ `pyproject.toml` version safety check; `paxman/py.typed` ships PEP 561 conformance.
 - Coverage: global `fail_under = 95`; `paxman/cli.py` and `paxman/__main__.py` are omitted from coverage (smoke-tested via e2e).

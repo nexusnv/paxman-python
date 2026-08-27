@@ -148,12 +148,14 @@ document context.
 
 ## 6. Scope statement
 
+For single-mention input use `canonicalize()`; for scanning a document for many mentions use the batch API `paxman.scan()` which shares one `ScanContext` across capabilities. Caller-owned segmentation (split-then-canonicalize as shown above) remains correct when you need tight control, but `scan()` is now the preferred library-owned batch helper.
+
 Extraction stays **caller-owned forever** ([M1](../reports/2026-08-17-architecture-review.md),
 [ADR-0004](../adr/0004-single-value-invariant.md)). This recipe is the sanctioned
 pattern for multi-entity input, and requests for built-in document extraction
-are out of scope by charter, not by limitation. Paxman will not ship a
-"find all emails/phones/dates in this document" API — the split-then-canonicalize
-loop above is the intended interface.
+are out of scope by charter, with `scan()` as the library-owned batch helper — not by limitation. By charter, Paxman will not ship a
+"find all emails/phones/dates in this document" API beyond `scan()` — the split-then-canonicalize
+loop above remains the intended interface for caller-controlled segmentation.
 
 ---
 

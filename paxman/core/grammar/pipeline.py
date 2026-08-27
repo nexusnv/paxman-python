@@ -1,4 +1,7 @@
-"""PipelineGrammar base — fixed-order pipeline with optional stages."""
+"""PipelineGrammar base — fixed-order pipeline with optional stages.
+
+OR engine-owned matchers delegation. When matchers is set, recognize()
+delegates to run_matchers (kernel single path); legacy leaves it None."""
 
 from __future__ import annotations
 

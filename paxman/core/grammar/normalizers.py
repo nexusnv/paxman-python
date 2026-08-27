@@ -1,4 +1,7 @@
-"""Normalizers — first-class, composable, provenance-aware."""
+"""Normalizers — first-class, composable, provenance-aware.
+
+Two-array (starts,ends) offset mapping; CountryNameFold is single-pass NFD
+with cache."""
 
 from __future__ import annotations
 

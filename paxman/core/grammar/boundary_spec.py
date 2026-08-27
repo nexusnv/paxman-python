@@ -1,4 +1,7 @@
-"""BoundarySpec data — declarative, checked at hit positions."""
+"""BoundarySpec data — declarative, checked at hit positions.
+
+Single-char entries lower to frozenset O(1) membership,
+multi-char to bounded regex."""
 
 from __future__ import annotations
 

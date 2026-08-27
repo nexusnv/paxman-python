@@ -1,4 +1,6 @@
-"""Engine-owned match loop L0+L1+L2."""
+"""Engine-owned match loop L0 (lazy views) → T0 anchors → T1 shape match.
+
+B1 common-word suppression; see _VIEW_REGISTRY country_normalized."""
 
 from __future__ import annotations
 

@@ -650,7 +650,7 @@ for candidate in result.candidates:
 
 ### Capability Versioning
 - Capabilities do **not** declare their own versions — the `Capability` surface carries only `name`, grammars, rules, and the presentation seam.
-- Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.1.0"`); source of truth is `version = "0.1.0"` in `pyproject.toml`.
+ - Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.2.0"`); source of truth is `version = "0.2.0"` in `pyproject.toml`.
 - Referenced in `VersionStamp.paxman_version`
 
 ### Contract Protocol
@@ -714,7 +714,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (14 capabilities), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (15 capabilities), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -753,14 +753,12 @@ paxman/
     │   └── rules/
     │       ├── rfc_5322_ed2008.py
     │       └── rfc_6761_ed2012.py
-    ├── Date/                      # grammar/ (3) + rules/ (3) — ISO 8601, US federal, EN 50160
+    ├── Date/                      # grammar/ (1: date_recognition.py via CandidatesMatcher 4 candidates - iso8601, slash_iso, us, european, strategy all) + rules/ (3) — ISO 8601, US federal, EN 50160
     │   ├── capability.py          # DateCapability
     │   ├── contract.py            # DateContract
     │   ├── notation.py            # DateNotation dataclass
     │   ├── grammar/
-    │   │   ├── iso8601_recognition.py
-    │   │   ├── us_recognition.py
-    │   │   └── european_recognition.py
+    │   │   └── date_recognition.py  # CandidatesMatcher (4 candidates); legacy iso8601/us/european files remain on disk inert
     │   └── rules/
     │       ├── iso_8601_ed2019.py
     │       ├── us_federal_rules_ed2023.py
@@ -856,6 +854,13 @@ paxman/
 | `paxman.engine` | Pipeline orchestration |
 | `paxman.api` | Public API entry points |
 
+### Kernel notes (ADR-0009)
+- Common-word suppression: `COMMON_WORDS` 67 via `BoundarySpec` WORD guard (`suppressible`, contract `suppress_common_words` default off).
+- Country `country_normalized` view — NFD-normalized view for lexicon scanning.
+- `BoundarySpec` frozensets O(1) word/anchor checks.
+- Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` (`starts`/`ends` parallel arrays).
+- `PipelineGrammar` `matchers` delegation — `recognize()` delegates to `run_matchers()`.
+
 ---
 
 ## Testing Strategy
@@ -873,7 +878,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (14 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (15 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

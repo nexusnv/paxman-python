@@ -1,7 +1,7 @@
 # TESTS KNOWLEDGE BASE
 
 ## OVERVIEW
-Tests are layered by scope; directories organize tests, and each module, class, or function explicitly applies the pytest marker for its layer (defined in pyproject `[tool.pytest.ini_options]`). CI runs the union of markers. 5 layers; all 12 shipped capability packages have landed and are covered here.
+Tests are layered by scope; directories organize tests, and each module, class, or function explicitly applies the pytest marker for its layer (defined in pyproject `[tool.pytest.ini_options]`). CI runs the union of markers. 5 layers; all 15 shipped capability packages have landed and are covered here.
 
 ## STRUCTURE
 ```text
@@ -30,6 +30,7 @@ tests/
 | Bootstrap / CLI | `tests/unit/test_bootstrap.py`, `tests/e2e/test_bootstrap.py` |
 | Community extension seam | `tests/unit/test_extensions.py`, `tests/integration/test_grammar_extensions.py` |
 | Full pipeline end-to-end | `tests/e2e/test_canonicalize.py` |
+| Benchmark harness | `benchmarks/harness.py` (freeze outside timed region, freeze-cost + recognition-only scenarios) |
 
 ## CONVENTIONS
 - One layer per directory. New test placement: `unit/` for core-only behavior, `capabilities/<cap>/` for one capability's grammar/rules/capability, `integration/` for pipeline + cross-capability flows, `property/` for hypothesis, `e2e/` for full `canonicalize()`.

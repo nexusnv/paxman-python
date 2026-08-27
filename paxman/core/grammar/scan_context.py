@@ -1,4 +1,7 @@
-"""ScanContext substrate — one word-span pass, lazy views with offset discipline."""
+"""ScanContext substrate — one word-span pass, lazy two-array views.
+
+(source_starts/source_ends) with offset discipline. Views materialized once
+per name; shared substrate for scan() batch."""
 
 from __future__ import annotations
 

@@ -369,9 +369,9 @@ class ScanContext:
     def view(self, name: str, normalizer: Normalizer) -> View: ...
 
 
-# View = (subject: str, offsets: tuple[int, ...] | None)
-#   length-preserving normalizers → offsets=None (identity, zero cost)
-#   length-changing normalizers  → offsets map subject→original positions
+# View = (subject: str, starts: tuple[int, ...] | None, ends: tuple[int, ...] | None)
+#   length-preserving normalizers → starts=None, ends=None (identity, zero cost)
+#   length-changing normalizers  → starts/ends map subject→original positions (two-array)
 ```
 
 Three binding design rules:
@@ -396,19 +396,16 @@ Three binding design rules:
   scanner-side alternative (a scanner can skip separators as inline state — Phone E.164
   needs no compacted view, Part III).
 
-  **Offset-map invariant (binding whenever a view carries `offsets`):**
+  **Offset-map invariant (binding whenever a view carries `starts`/`ends`):**
 
-  - `len(offsets) == len(subject) + 1`.
-  - `offsets[i]` is the original-text offset at which the **source of subject character
-    `i` begins**: `text[offsets[i]:offsets[i+1]]` is the (non-empty) source interval of
-    `subject[i]`.
-  - A half-open view span `[s, e)` translates to the original span
-    `[offsets[s], offsets[e])` — `offsets[e]` is the exclusive end by construction, since
-    it is where the source of `subject[e]` would begin.
-  - Degenerate case: length-preserving views carry `offsets=None`; there the translation
-    is the identity and `text[o_start:o_end] == subject[s:e]` holds exactly.
-  - The engine's existing `raw_text == text[start:end]` validation remains the net safety
-    net for **every** emitted match, regardless of view.
+   - `len(starts) == len(ends) == len(subject)`.
+   - `text[starts[i]:ends[i]]` is the (non-empty) source interval of `subject[i]`.
+   - A half-open view span `[s, e)` translates to the original span
+     `[starts[s], ends[e-1])` (empty span `[s,s)` → `[starts[s], starts[s])`; degenerate empty view → `(0,0)`) via `View.original_span(s, e)`.
+   - Degenerate case: length-preserving views carry `starts=None, ends=None`; there the translation
+     is the identity and `text[o_start:o_end] == subject[s:e]` holds exactly.
+   - The engine's existing `raw_text == text[start:end]` validation remains the net safety
+     net for **every** emitted match, regardless of view.
 
 ## 7. Normalizers — first-class, composable, provenance-aware
 
@@ -419,9 +416,11 @@ class Normalizer(Protocol):
     name: str
     provenance: Provenance | None  # citeable if the transform has authority
 
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]: ...
 
-    # returns (subject, offsets_or_None)
+    # returns (subject, starts_or_None, ends_or_None) — two-array; §6 D3 invariant
 
 
 @dataclass(frozen=True, slots=True)
@@ -619,6 +618,8 @@ class BoundarySpec:
     right: tuple[str, ...] | None
     mode: Literal["zero_width", "consuming"] = "zero_width"
 ```
+
+Compiled `BoundarySpec` precomputes `left_chars`/`right_chars` as `frozenset[str]` (single-char classes → O(1) membership) and only falls back to compiled `re.Pattern` for multi-char lookarounds (`left_multi`/`right_multi`); `check_boundary` is thus O(1) per hit for the common single-char presets.
 
 The kernel resolves boundaries as **checks at hit positions**
 (`context.check(start, end, spec)` — O(hits)), never as lookarounds evaluated at scan
@@ -1147,7 +1148,7 @@ See the table in Part VI.
    `MultipleMentionsError` guidance; resolved at Phase 4. The F1 regression test (Phase 1)
    locks the *behaviour* before the API lands.
 2. **Suppression data** — whether `suppress_common_words` ever ships; if so, off by default
-   and corpus-neutral (§16 — deferred, non-binding).
+   and corpus-neutral (§16 — deferred, non-binding). **Resolved in Rev. 4 — shipped off-by-default, `COMMON_WORDS` = 67 word-bounded short-code suppressions; see §16 and `Country` `suppress_common_words` contract flag.**
 3. **Trie threshold drift** — the ~500-token crossover is measured on current hardware and
    tables; the benchmark tracks it (informational). Adjusting the constant is a patch, not
    an ADR.
