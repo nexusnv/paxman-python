@@ -148,6 +148,7 @@ Language's plan calls for a `Pre` that replaces `en_US → en-US` while preservi
 @dataclass(frozen=True, slots=True)
 class NormalizedViewStage(Generic[NotationT]):
     normalizer: Callable[[str], str]  # pure function: text -> normalized_text
+
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         state.scratch["normalized"] = self.normalizer(state.text)
         return state
@@ -181,15 +182,17 @@ Paxman's zero-dep constraint rules out `pyahocorasick` as a runtime dep, but a p
 class AutomatonStage(Generic[NotationT]):
     tokens: frozenset[str] | set[str] | list[str] | tuple[str, ...]
     boundary: BoundaryGuard
-    longest_first: bool = True        # longest wins = Trie deepest leaf wins
+    longest_first: bool = True  # longest wins = Trie deepest leaf wins
     notation_fn: Callable[[str], NotationT] | None = None
-    flags: int = 0                   # IGNORECASE thread via lowercased Trie keys
+    flags: int = 0  # IGNORECASE thread via lowercased Trie keys
 
-    _trie: Trie = field(init=False)        # built in __post_init__, pure
+    _trie: Trie = field(init=False)  # built in __post_init__, pure
+
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         src = state.scratch.get("normalized", state.text)  # P1 hook
-        for hit in self._trie.scan(src):   # yields (token, start, end)
-            if not self.boundary.allows(src, hit.start, hit.end): continue
+        for hit in self._trie.scan(src):  # yields (token, start, end)
+            if not self.boundary.allows(src, hit.start, hit.end):
+                continue
             ...
 ```
 
@@ -215,7 +218,8 @@ A `ScannerStage` walks `text` character-by-character, tracking state (inside-par
 ```python
 @dataclass(frozen=True, slots=True)
 class ScannerStage(Generic[NotationT]):
-    scan: Callable[[str, int], tuple[int,int, NotationT] | None]
+    scan: Callable[[str, int], tuple[int, int, NotationT] | None]
+
     # called per start index: pure function, returns (start,end,notation) or None to advance by 1
     # grammar file supplies the scan closure capturing capability constants
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]: ...
@@ -262,8 +266,13 @@ A `FormatCandidateStage` is the stdlib precedent `strptime(format1) else strptim
 ```python
 @dataclass(frozen=True, slots=True)
 class FormatCandidateStage(Generic[NotationT]):
-    candidates: tuple[RegexStage[NotationT], ...]  # each candidate is a tiny RegexStage with its own pattern/guard/notation_fn
-    strategy: Literal["first"] = "first"          # first accepting span wins; "all" keeps ambiguity observable
+    candidates: tuple[
+        RegexStage[NotationT], ...
+    ]  # each candidate is a tiny RegexStage with its own pattern/guard/notation_fn
+    strategy: Literal["first"] = (
+        "first"  # first accepting span wins; "all" keeps ambiguity observable
+    )
+
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         for cand in self.candidates:
             for m in cand._compiled.finditer(state.text):
@@ -405,11 +414,15 @@ Ordering rationale: P1a+b unblock Language (the only future that genuinely canno
 class NormalizedViewStage(Generic[NotationT]):
     normalizer: Callable[[str], str]
     offsets: tuple[int, ...] | None = field(init=False, default=None)
+
     def __post_init__(self) -> None: ...
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         state.scratch["__normalized"] = self.normalizer(state.text)
         # length-preserving: offsets identity; else store map for downstream translate()
-        return PipelineState(text=state.text, matches=state.matches, scratch=dict(state.scratch))
+        return PipelineState(
+            text=state.text, matches=state.matches, scratch=dict(state.scratch)
+        )
+
 
 # Downstream opt-in: LexiconStage/RegexStage add `source="text"|"__normalized"`
 @dataclass(frozen=True, slots=True)
@@ -418,10 +431,19 @@ class RegexStage(Generic[NotationT]):
     notation_fn: Callable[[re.Match[str]], NotationT] | None
     flags: int = 0
     source: str = "text"  # or "__normalized" — view selector, R/O in run()
+
     def run(self, state):
-        subject = state.scratch.get(self.source, state.text) if self.source != "text" else state.text
+        subject = (
+            state.scratch.get(self.source, state.text)
+            if self.source != "text"
+            else state.text
+        )
         for m in self._compiled.finditer(subject):
-            start, end = translate(m.start(), m.end(), offsets) if self.source != "text" else (m.start(), m.end())
+            start, end = (
+                translate(m.start(), m.end(), offsets)
+                if self.source != "text"
+                else (m.start(), m.end())
+            )
             ...
 ```
 
@@ -437,14 +459,23 @@ Pure-Python Trie with `scan(text) -> list[(token,start,end)]`, longest-at-positi
 @dataclass(frozen=True, slots=True)
 class ScannerStage(Generic[NotationT]):
     scan_one: Callable[[str, int], tuple[int, int, NotationT] | None]
+
     def run(self, state):
-        n = len(state.text); i = 0
+        n = len(state.text)
+        i = 0
         out = list(state.matches)
         while i < n:
             hit = self.scan_one(state.text, i)
             if hit is not None:
                 start, end, notation = hit
-                out.append(RecognitionMatch(notation=notation, start=start, end=end, raw_text=state.text[start:end]))
+                out.append(
+                    RecognitionMatch(
+                        notation=notation,
+                        start=start,
+                        end=end,
+                        raw_text=state.text[start:end],
+                    )
+                )
                 i = end
             else:
                 i += 1
@@ -457,6 +488,8 @@ Grammar-file closure pattern (mirrors today's `strip_separators` locality):
 def _url_scan(text: str, i: int) -> tuple[int, int, URLNotation] | None:
     # scheme_char guard, then balanced-parens track with depth, bare-scheme drop
     ...
+
+
 class AbsoluteURIRecognition(PipelineGrammar[URLNotation]):
     scanner = ScannerStage(scan_one=_url_scan)
 ```

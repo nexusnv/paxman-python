@@ -242,11 +242,12 @@ The minimal shared structure, deliberately *dumber* than spaCy's `Doc` (no POS, 
 ```python
 @dataclass(frozen=True, slots=True)
 class ScanContext:
-    text: str                                   # original, immutable
-    word_spans: tuple[tuple[int, int], ...]     # one re.finditer(r"\w+") pass, C-speed
-    _views: dict[str, View]                     # lazy, keyed by view name
+    text: str  # original, immutable
+    word_spans: tuple[tuple[int, int], ...]  # one re.finditer(r"\w+") pass, C-speed
+    _views: dict[str, View]  # lazy, keyed by view name
 
     def view(self, name: str, normalizer: Callable[[str], str]) -> View: ...
+
     # View = (subject: str, offsets: tuple[int, ...] | None)
     #   length-preserving normalizers → offsets=None (identity, zero cost)
     #   length-changing normalizers  → offsets maps subject→original
@@ -266,12 +267,12 @@ A grammar becomes a thin declaration over matcher specs. One `MatcherSpec` kind 
 @dataclass(frozen=True, slots=True)
 class MatcherSpec(Generic[NotationT]):
     kind: Literal["regex", "lexicon", "scanner", "combinator", "property"]
-    payload: ...            # pattern: str | tokens: tuple[str, ...]
-                            #   | scan: ScannerFn | expr: CombExpr
-    view: str | None        # None = original text; else view name (D2)
+    payload: ...  # pattern: str | tokens: tuple[str, ...]
+    #   | scan: ScannerFn | expr: CombExpr
+    view: str | None  # None = original text; else view name (D2)
     boundary: BoundarySpec  # declarative, see D4
-    anchors: AnchorSet      # literal/class necessary conditions (D5)
-    emit: EmitFn            # (raw_span, context) -> NotationT
+    anchors: AnchorSet  # literal/class necessary conditions (D5)
+    emit: EmitFn  # (raw_span, context) -> NotationT
 ```
 
 - **D4 — `BoundarySpec` is data, not lookarounds.** `BoundarySpec(left=CharClass.WORD, right=CharClass.WORD | CharClass.DIGIT)` or `word_sign`, `digit`, custom class tuples. The kernel resolves boundaries as *checks at hit positions* (`context.check(start, end, spec)` — O(hits)), not as lookarounds compiled into scanning patterns (O(positions)). The eleven `BoundaryGuard` factories become a table of `BoundarySpec` values; the consuming-lookaround special cases (`ipv6_token`) become scanner-kind specs where consuming anchors are natural. Property classes for boundary/`property` specs come from **generated range tables** (the ICU UnicodeSet lesson): `tools/regenerate_unicode_property_data.py` emits sorted-range tuples; membership is `bisect` — no `\p{...}` needed, no `regex` dependency.

@@ -362,11 +362,12 @@ no vectors; determinism and zero-dep forbid:
 ```python
 @dataclass(frozen=True, slots=True)
 class ScanContext:
-    text: str                                   # original, immutable
-    word_spans: tuple[tuple[int, int], ...]     # one re.finditer(r"\w+") pass, C-speed
-    _views: dict[str, View]                     # lazy, keyed by view name
+    text: str  # original, immutable
+    word_spans: tuple[tuple[int, int], ...]  # one re.finditer(r"\w+") pass, C-speed
+    _views: dict[str, View]  # lazy, keyed by view name
 
     def view(self, name: str, normalizer: Normalizer) -> View: ...
+
 
 # View = (subject: str, offsets: tuple[int, ...] | None)
 #   length-preserving normalizers → offsets=None (identity, zero cost)
@@ -416,13 +417,16 @@ Views are materialized by normalizers that carry citeable provenance:
 ```python
 class Normalizer(Protocol):
     name: str
-    provenance: Provenance | None   # citeable if the transform has authority
+    provenance: Provenance | None  # citeable if the transform has authority
+
     def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
+
     # returns (subject, offsets_or_None)
+
 
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
-    steps: tuple[Normalizer, ...]   # composable, mirrors HF tokenizers Sequence
+    steps: tuple[Normalizer, ...]  # composable, mirrors HF tokenizers Sequence
 ```
 
 **Provenance semantics (clarification):** `Normalizer.provenance` is **declaration-level
@@ -455,14 +459,17 @@ in as kinds:
 ```python
 @dataclass(frozen=True, slots=True)
 class MatcherSpec(Generic[NotationT]):
-    kind: Literal["regex", "lexicon", "scanner", "combinator",
-                  "property", "candidates", "label"]
-    payload: ...                      # per-kind, see §9
-    view: str | None                  # None = original text; else view name (D2)
-    boundary: BoundarySpec | None     # declarative, see §10
-    anchors: AnchorSet                # necessary conditions, cheap tier, see §11
-    emit: EmitFn                      # (raw_span, context) -> NotationT
-    requires_features: frozenset[str] = frozenset()   # declared, mirrors Rule.requires_features
+    kind: Literal[
+        "regex", "lexicon", "scanner", "combinator", "property", "candidates", "label"
+    ]
+    payload: ...  # per-kind, see §9
+    view: str | None  # None = original text; else view name (D2)
+    boundary: BoundarySpec | None  # declarative, see §10
+    anchors: AnchorSet  # necessary conditions, cheap tier, see §11
+    emit: EmitFn  # (raw_span, context) -> NotationT
+    requires_features: frozenset[str] = (
+        frozenset()
+    )  # declared, mirrors Rule.requires_features
 ```
 
 **`requires_features` semantics (binding):** a matcher whose `requires_features` is
@@ -608,7 +615,7 @@ core)` respectively) — they add *named* kinds without new machinery.
 ```python
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    left: tuple[str, ...] | None     # char-class membership; None = no constraint
+    left: tuple[str, ...] | None  # char-class membership; None = no constraint
     right: tuple[str, ...] | None
     mode: Literal["zero_width", "consuming"] = "zero_width"
 ```
@@ -680,21 +687,28 @@ collection, and `format_value()` are all **unchanged**. The kernel replaces only
 
 ```python
 # Illustrative — engine-owned, capability-agnostic
-def _run_matchers(text: str, compiled: Sequence[CompiledGrammar]) -> list[RecognitionMatch]:
-    context = ScanContext.of(text)                    # L0: word spans; views lazy
+def _run_matchers(
+    text: str, compiled: Sequence[CompiledGrammar]
+) -> list[RecognitionMatch]:
+    context = ScanContext.of(text)  # L0: word spans; views lazy
     out: list[RecognitionMatch] = []
-    for grammar in compiled:                          # active set, fixed order
+    for grammar in compiled:  # active set, fixed order
         for matcher in grammar.matchers:
-            if not matcher.anchors.pass_(text):       # T0 — skip, C-speed
+            if not matcher.anchors.pass_(text):  # T0 — skip, C-speed
                 continue
-            view = context.view(matcher.view)         # lazy materialization (D2)
-            for span in matcher.match(view):          # T1 — kind-specific
-                o_start, o_end = view.original_span(*span)   # offset translate (D3)
-                out.append(RecognitionMatch(
-                    notation=matcher.emit(span, context),    # T2
-                    start=o_start, end=o_end, raw_text=text[o_start:o_end]))
+            view = context.view(matcher.view)  # lazy materialization (D2)
+            for span in matcher.match(view):  # T1 — kind-specific
+                o_start, o_end = view.original_span(*span)  # offset translate (D3)
+                out.append(
+                    RecognitionMatch(
+                        notation=matcher.emit(span, context),  # T2
+                        start=o_start,
+                        end=o_end,
+                        raw_text=text[o_start:o_end],
+                    )
+                )
         # engine validates raw_text == text[start:end] at the boundary (existing check)
-    return out                                          # → existing assembly (L2)
+    return out  # → existing assembly (L2)
 ```
 
 No DAG, no threading — see §15.
@@ -723,11 +737,11 @@ identity:
 ```python
 @dataclass(frozen=True, slots=True)
 class Snapshot:
-    name: str          # "currency" | "iban_registry" | "iana_language" | "unicode_property" | …
-    source_url: str    # authoritative fetch URL
-    version: str       # "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08" | …
-    fetched_at: str    # ISO date
-    data: object       # typed frozen payload
+    name: str  # "currency" | "iban_registry" | "iana_language" | "unicode_property" | …
+    source_url: str  # authoritative fetch URL
+    version: str  # "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08" | …
+    fetched_at: str  # ISO date
+    data: object  # typed frozen payload
 ```
 
 - **Every generated module embeds `Source / Version / SHA` in its header; CI regenerates and
@@ -1022,7 +1036,7 @@ place. Every other input is byte-identical under the parity gate.
 
   ```python
   # Exact value — unchanged:
-  paxman.canonicalize("United States", contract)            # SUCCESS "US"
+  paxman.canonicalize("United States", contract)  # SUCCESS "US"
 
   # Prose with embedded values — the new honest paths:
   try:
