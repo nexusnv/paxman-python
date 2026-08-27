@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "lesson": "0002-views-and-offsets",
+  "captured_at_utc": "2026-08-27T05:15:06.291Z",
+  "rounds": [
+    {
+      "caption": "StripSeparators (“compact” view) hit subject [0, 13) — separators deleted",
+      "targets": [
+        [
+          0,
+          16
+        ]
+      ],
+      "attempts": 1,
+      "miss_picks": [],
+      "first_try": true,
+      "declared_empty": false
+    }
+  ],
+  "retrieval": [],
+  "exercise_complete": null
+}

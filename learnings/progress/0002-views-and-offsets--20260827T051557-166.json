@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "lesson": "0002-views-and-offsets",
+  "captured_at_utc": "2026-08-27T05:15:52.838Z",
+  "rounds": [
+    {
+      "caption": "CaseFold identity — word-anchored “kg” hit at subject [10, 12)",
+      "targets": [
+        [
+          10,
+          12
+        ]
+      ],
+      "attempts": 1,
+      "miss_picks": [],
+      "first_try": true,
+      "declared_empty": false
+    }
+  ],
+  "retrieval": [
+    {
+      "q": 0,
+      "accepted": [
+        "none",
+        "null",
+        "nothing"
+      ],
+      "given": "none",
+      "ok": true
+    }
+  ],
+  "exercise_complete": {
+    "total_attempts": 0,
+    "replays": 0,
+    "rounds_total": 5
+  }
+}

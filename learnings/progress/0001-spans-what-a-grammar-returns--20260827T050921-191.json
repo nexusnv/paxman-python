@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "lesson": "0001-spans-what-a-grammar-returns",
+  "captured_at_utc": "2026-08-27T05:09:17.199Z",
+  "rounds": [
+    {
+      "caption": "Country name_recognition, input “840” — a numeric code, not a name",
+      "targets": [],
+      "attempts": 1,
+      "miss_picks": [],
+      "first_try": true,
+      "declared_empty": true
+    }
+  ],
+  "retrieval": [
+    {
+      "q": 0,
+      "accepted": [
+        "text",
+        "the text",
+        "input",
+        "raw text"
+      ],
+      "given": "input",
+      "ok": true
+    },
+    {
+      "q": 1,
+      "accepted": [
+        "end",
+        "end minus start",
+        "end-start"
+      ],
+      "given": "end",
+      "ok": true
+    },
+    {
+      "q": 2,
+      "accepted": [
+        "rules",
+        "rule",
+        "validation",
+        "the rules"
+      ],
+      "given": "validation",
+      "ok": true
+    }
+  ],
+  "exercise_complete": {
+    "total_attempts": 0,
+    "replays": 0,
+    "rounds_total": 4
+  }
+}
