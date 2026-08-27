@@ -66,7 +66,7 @@ _PREFIX_LEX = LexiconMatcher(
 )
 
 _WS_MATCHER = RegexMatcher(
-    pattern=" ",
+    pattern=r"\s+",
     boundary=None,
     view=None,
     anchors=AnchorSet(),

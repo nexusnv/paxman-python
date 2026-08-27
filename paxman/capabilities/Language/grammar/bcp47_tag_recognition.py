@@ -251,13 +251,8 @@ def _bcp47_scan(view: View, pos: int) -> tuple[int, LanguageNotation] | None:
     n = len(subj)
     if pos < 0 or pos >= n:
         return None
-    # Grandfathered — longest-first
-    lower_slice = subj[pos:].lower()
-    for gt in _GRANDFATHERED_SORTED:
-        if lower_slice.startswith(gt):
-            end = pos + len(gt)
-            tag = subj[pos:end]
-            return (end, _notation_from_tag(tag))
+    # Grandfathered handled via _is_valid_tag in maximal-run loop;
+    # longest valid tag wins (covers art-lojban vs art-lojban0).
     # Maximal hyphen-alnum run starting at pos
     run_end = pos
     while run_end < n and (subj[run_end].isalnum() or subj[run_end] == "-"):
