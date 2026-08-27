@@ -1,75 +1,105 @@
-"""Absolute-URI recognition grammar for the URL capability (staged pipeline).
+"""Absolute-URI recognition grammar for the URL capability (ScannerMatcher).
 
 Recognizes absolute-URI/IRI spans (RFC 3986 section 4.2, RFC 3987 section
 2.2) as scheme-anchored shape matches. Shape-only per ADR §5: validity is the
 rule layer's job — the grammar never validates the scheme, host, or port,
 and carries no scheme table.
 
-The leading lookbehind (via BoundaryGuard.scheme_char()) rejects a scheme
-preceded by a scheme-legal character. A PostStage applies the Appendix C
-paren-balance trim and the ADR §9.3 bare-scheme drop (ADR-0008 S5) so the emitted
-span is byte-identical to the legacy recognize().
+ScannerMatcher on the IDNAFold view (ADR-0009 §9.3, A4 offset maps): the
+IDNA normalizer strips tab/newline/carriage-return with two-array offset
+maps so the scanner rides the view's ``original_span`` discipline. The
+scanner reproduces the legacy Appendix C paren-balance trim and ADR §9.3
+bare-scheme drop that the retired PostStage applied, so emitted spans are
+byte-identical to the legacy ``recognize()``.
 """
 
 from __future__ import annotations
 
-import re
-
 from paxman.capabilities.URL.notation import URLNotation
-from paxman.core.domain import RecognitionMatch
-from paxman.core.grammar import (
-    BoundaryGuard,
-    PipelineGrammar,
-    PostStage,
-    RegexStage,
-    StandardPre,
-)
-
-# Body: scheme anchor (ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ":") then
-# at least one URI/IRI body character (RFC 3986 section 2 + RFC 3987
-# section 2.2 ucschar, plus tab/newline for Appendix C multi-line URIs),
-# bounded by whitespace/control/delimiter characters on the right. The
-# leading lookbehind is supplied by BoundaryGuard.scheme_char() (ADR-0008
-# ADR-0009 §10) so no hard-coded lookaround literal remains in this file.
-_URL_BODY = (
-    r"[A-Za-z][A-Za-z0-9+.\-]*:"
-    r'[^ <>"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*[^ <>"\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'
-)
-_GUARD = BoundaryGuard.scheme_char()
-_URL_PATTERN = _GUARD.lookbehind + _URL_BODY
+from paxman.core.grammar import BoundarySpec, ScannerMatcher, StandardPre
+from paxman.core.grammar.pipeline import PipelineGrammar
+from paxman.core.grammar.scan_context import ScanContext, View
 
 
-def _url_notation(match: re.Match[str]) -> URLNotation:
-    """Map a raw absolute-URI match to its verbatim-text notation."""
-    return URLNotation(text=match.group(0))
+def _is_forbidden(ch: str) -> bool:
+    """Return True if ``ch`` is a URI delimiter / control per the legacy regex.
 
-
-def _url_trim(
-    match: RecognitionMatch[URLNotation],
-) -> RecognitionMatch[URLNotation] | None:
-    """Appendix C paren-balance trim + ADR §9.3 bare-scheme drop.
-
-    Drops trailing ")" only while it outnumbers "(" (counting once then
-    trimming the run equals the legacy loop in one pass). After trimming,
-    a span reduced to the bare scheme (no body past the colon) is dropped
-    entirely (ADR §9.3) — it is not a valid absolute-URI match.
+    Legacy pattern ``[ ^ <>"\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]``
+    forbids space, ``<``, ``>``, ``"``, and the control ranges
+    ``\\x00-\\x08``, ``\\x0B``, ``\\x0C``, ``\\x0E-\\x1F``, ``\\x7F``.
+    Tab (\\x09), LF (\\x0A) and CR (\\x0D) are *allowed* body chars — they
+    are stripped by the IDNAFold view and therefore never appear in
+    ``view.subject``, but their absence there still maps back to the original
+    span via ``original_span``.
     """
-    raw_span = match.raw_text
-    excess = raw_span.count(")") - raw_span.count("(")
+    if ch in (" ", "<", ">", '"'):
+        return True
+    o = ord(ch)
+    if 0x00 <= o <= 0x08:
+        return True
+    if o == 0x0B or o == 0x0C:
+        return True
+    if 0x0E <= o <= 0x1F:
+        return True
+    return o == 0x7F
+
+
+def _url_scan(view: View, pos: int) -> tuple[int, URLNotation] | None:
+    """Scanner function: (view, pos) -> (end, Notation) | None.
+
+    Mirrors the legacy absolute-URI pattern plus trim in one
+    pass on the IDNAFold view: scheme anchor, forbidden-delimiter-greedy
+    body, paren-balance trim, bare-scheme drop.
+    """
+    subj = view.subject
+    n = len(subj)
+    if pos < 0 or pos >= n:
+        return None
+    ch0 = subj[pos]
+    if not (ch0.isascii() and ch0.isalpha()):
+        return None
+    i = pos + 1
+    while i < n:
+        c = subj[i]
+        if not (c.isascii() and (c.isalnum() or c in "+.-")):
+            break
+        i += 1
+    if i >= n or subj[i] != ":":
+        return None
+    colon = i
+    body_start = colon + 1
+    if body_start >= n:
+        return None
+    if _is_forbidden(subj[body_start]):
+        return None
+    j = body_start
+    while j < n and not _is_forbidden(subj[j]):
+        j += 1
+    raw_end = j
+    slice_text = subj[pos:raw_end]
+    excess = slice_text.count(")") - slice_text.count("(")
     trim = 0
-    while trim < excess and raw_span[-(trim + 1)] == ")":
+    while trim < excess and slice_text[-(trim + 1)] == ")":
         trim += 1
     if trim:
-        raw_span = raw_span[:-trim]
-    scheme_end = raw_span.find(":")
-    if len(raw_span) <= scheme_end + 1:
+        raw_end -= trim
+    if raw_end - pos <= colon - pos + 1:
         return None
-    return RecognitionMatch(
-        notation=URLNotation(text=raw_span),
-        start=match.start,
-        end=match.start + len(raw_span),
-        raw_text=raw_span,
-    )
+    return (raw_end, URLNotation(text=subj[pos:raw_end]))
+
+
+def _url_emit(span: tuple[int, int], ctx: ScanContext) -> URLNotation:
+    s, e = span
+    raw = ctx.text[s:e]
+    return URLNotation(text=raw)
+
+
+_URL_SCANNER = ScannerMatcher(
+    scan=_url_scan,
+    view_name="idna",
+    boundary=BoundarySpec.SCHEME_CHAR_LEFT,
+    emit=_url_emit,
+)
 
 
 class AbsoluteUriRecognition(PipelineGrammar[URLNotation]):
@@ -80,5 +110,4 @@ class AbsoluteUriRecognition(PipelineGrammar[URLNotation]):
     single_value = True
 
     pre = StandardPre[URLNotation](empty_guard=True)
-    regex = RegexStage[URLNotation](pattern=_URL_PATTERN, notation_fn=_url_notation)
-    post = PostStage[URLNotation](transform=_url_trim)
+    matchers = (_URL_SCANNER,)
