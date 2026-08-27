@@ -15,7 +15,6 @@ from paxman.core.grammar.matchers.candidates import CandidatesMatcher
 from paxman.core.grammar.matchers.combinator import CombinatorMatcher
 from paxman.core.grammar.matchers.label import LabelMatcher
 from paxman.core.grammar.matchers.lexicon import LexiconMatcher
-from paxman.core.grammar.matchers.property import PropertyMatcher
 from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.normalizers import (
     AccentStrip,
@@ -28,34 +27,6 @@ from paxman.core.grammar.normalizers import (
     SymbolFold,
 )
 from paxman.core.grammar.scan_context import ScanContext, View
-
-
-def test_property_contains_empty() -> None:
-    m = PropertyMatcher(ranges=())
-    assert m._contains(65) is False
-    assert (
-        m.match(View(subject="A", source_starts=None, source_ends=None, _text_len=1))
-        == []
-    )
-
-
-def test_property_contains_hit_and_miss() -> None:
-    m = PropertyMatcher(ranges=((0x41, 0x5A), (0x61, 0x7A)))
-    assert m._contains(0x41) is True
-    assert m._contains(0x5A) is True
-    assert m._contains(0x42) is True
-    assert m._contains(0x60) is False
-    assert m._contains(0x61) is True
-    assert m._contains(0x20) is False
-    assert m._contains(0x7B) is False
-
-
-def test_property_with_view_name_and_boundary() -> None:
-    m = PropertyMatcher(
-        ranges=((48, 57),), view_name="orig", boundary=BoundarySpec.DIGIT
-    )
-    assert m.view_name == "orig"
-    assert m.boundary == BoundarySpec.DIGIT
 
 
 def test_scan_context_offset_invariant_violation() -> None:
@@ -481,10 +452,6 @@ def test_emit_arity_validated_at_construction() -> None:
 
         RegexMatcher(pattern="hello", emit=bad_emit_1)  # type: ignore[arg-type]
 
-    # PropertyMatcher with bad arity also fails at construction
-    with pytest.raises(TypeError, match="must have 2 params"):
-        PropertyMatcher(ranges=((48, 57),), emit=bad_emit_1)  # type: ignore[arg-type]
-
     # ScannerMatcher with bad arity also fails at construction
     from paxman.core.grammar.matchers.scanner import ScannerMatcher
 
@@ -503,8 +470,6 @@ def test_emit_arity_validated_at_construction() -> None:
 
     rm = RegexMatcher2(pattern="hello", emit=ok_emit)  # type: ignore[arg-type]
     assert rm.emit is ok_emit
-    pm = PropertyMatcher(ranges=((48, 57),), emit=ok_emit)  # type: ignore[arg-type]
-    assert pm.emit is ok_emit
     sm = ScannerMatcher(scan=dummy_scan, emit=ok_emit)  # type: ignore[arg-type]
     assert sm.emit is ok_emit
     cm = CombinatorMatcher(expr=("alt", ["a"]), emit=ok_emit)  # type: ignore[arg-type]

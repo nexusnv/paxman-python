@@ -16,45 +16,9 @@ from paxman.core.discovery import (
     reset_registry,
 )
 from paxman.core.grammar.boundary_spec import BoundarySpec
-from paxman.core.grammar.matchers.property import PropertyMatcher
 from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.matchers.scanner import ScannerMatcher
 from paxman.core.grammar.scan_context import View
-
-
-def test_property_matcher_non_empty_ranges_with_boundary() -> None:
-    # Non-empty ranges with boundary — exercises the match loop that is
-    # otherwise uncovered because UNICODE_RANGES is () in 0.2.0.
-    # Ranges for ASCII digits 48-57 and uppercase 65-90.
-    m = PropertyMatcher(ranges=((48, 57), (65, 90)), boundary=BoundarySpec.WORD)
-    # Text with digit run and letter run separated by space — should find two spans
-    view = View(
-        subject="abc 123 XYZ", source_starts=None, source_ends=None, _text_len=11
-    )
-    # Only digits and uppercase are in ranges, so "123" and "XYZ" should be found
-    # But "abc" is lowercase not in ranges, so not found.
-    spans = m.match(view)
-    # The property matcher finds maximal contiguous runs where every cp is in ranges
-    # " 123 " -> "123" at 4-7, " XYZ" -> "XYZ" at 8-11 but boundary WORD may filter
-    # We just assert it returns something and respects boundary
-    assert isinstance(spans, list)
-
-    # No boundary — should find digit run
-    m2 = PropertyMatcher(ranges=((48, 57),))
-    view2 = View(subject="a1b22c", source_starts=None, source_ends=None, _text_len=6)
-    spans2 = m2.match(view2)
-    # Should find "1" at 1-2 and "22" at 3-5
-    assert (1, 2) in spans2
-    assert (3, 5) in spans2
-
-    # Empty ranges early return already covered elsewhere, but ensure
-    m_empty = PropertyMatcher(ranges=())
-    assert (
-        m_empty.match(
-            View(subject="abc", source_starts=None, source_ends=None, _text_len=3)
-        )
-        == []
-    )
 
 
 def test_regex_matcher_match_and_boundary() -> None:

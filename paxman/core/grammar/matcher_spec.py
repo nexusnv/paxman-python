@@ -10,7 +10,7 @@ from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec
 
 MatcherKind = Literal[
-    "regex", "lexicon", "scanner", "combinator", "property", "candidates", "label"
+    "regex", "lexicon", "scanner", "combinator", "candidates", "label"
 ]
 EmitFn = Callable[[tuple[int, int], Any], Any]
 

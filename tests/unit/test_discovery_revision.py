@@ -39,7 +39,6 @@ def test_repeated_freeze_uses_cached_digests() -> None:
         reset_registry,
     )
     from paxman.core.grammar.matchers.lexicon import LexiconMatcher
-    from paxman.core.grammar.matchers.property import PropertyMatcher
     from paxman.core.grammar.matchers.regex import RegexMatcher
     from paxman.core.grammar.matchers.scanner import ScannerMatcher
     from paxman.core.grammar.scan_context import View
@@ -62,13 +61,8 @@ def test_repeated_freeze_uses_cached_digests() -> None:
     scan_d = getattr(scan, "digest", None)
     assert isinstance(scan_d, str) and len(scan_d) > 0
 
-    prop = PropertyMatcher(ranges=((65, 90), (97, 122)))
-    assert hasattr(prop, "digest")
-    prop_d = getattr(prop, "digest", None)
-    assert isinstance(prop_d, str) and len(prop_d) > 0
-
     lex_digest_id = id(lex_d)
-    _ = (reg_d, scan_d, prop_d)
+    _ = (reg_d, scan_d)
 
     from paxman.capabilities.Country.capability import CountryCapability
     from paxman.core.discovery import register_capability
@@ -156,18 +150,6 @@ def test_scanner_digest_purity() -> None:
 
     s5 = ScannerMatcher(scan=_scan_a, max_window=10, boundary=BoundarySpec.WORD)
     assert getattr(s1, "digest", None) != getattr(s5, "digest", None)
-
-
-def test_property_digest_purity() -> None:
-    from paxman.core.grammar.matchers.property import PropertyMatcher
-
-    a = PropertyMatcher(ranges=((65, 90),))
-    b = PropertyMatcher(ranges=((65, 90),))
-    c = PropertyMatcher(ranges=((65, 90), (97, 122)))
-    assert getattr(a, "digest", None) == getattr(b, "digest", None)
-    assert getattr(a, "digest", None) != getattr(c, "digest", None), (
-        "ranges change must change digest"
-    )
 
 
 def test_snapshot_hash_memo_dict_exists() -> None:
