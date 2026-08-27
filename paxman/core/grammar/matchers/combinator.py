@@ -31,10 +31,9 @@ def _collect_leaves(expr: Any, out: list[Any]) -> None:
         ):
             kind = cast(str, t[0])
             if kind == "seq" or kind == "alt":
-                children = t[1] if len(t) > 1 else []
+                children: Any = t[1] if len(t) > 1 else cast(list[Any], [])
                 if isinstance(children, (list, tuple)):
-                    cl = cast(list[Any], list(children))
-                    for ch in cl:
+                    for ch in cast(Any, children):
                         _collect_leaves(ch, out)
                 return
             if kind == "opt":
@@ -52,8 +51,8 @@ def _collect_leaves(expr: Any, out: list[Any]) -> None:
                 if child2 is not None:
                     _collect_leaves(child2, out)
                 return
-    if hasattr(expr, "match"):
-        attr = getattr(expr, "match", None)
+    if hasattr(cast(Any, expr), "match"):
+        attr = getattr(cast(Any, expr), "match", None)
         if callable(attr):
             out.append(expr)
 
@@ -73,23 +72,21 @@ def _eval_expr(
         ):
             kind = cast(str, t[0])
             if kind == "seq":
-                children: Any = t[1] if len(t) > 1 else []
+                children: Any = t[1] if len(t) > 1 else cast(list[Any], [])
                 cur = pos
                 if not isinstance(children, (list, tuple)):
                     return None
-                cl = cast(list[Any], list(children))
-                for child in cl:
+                for child in cast(Any, children):
                     nxt = _eval_expr(child, view, cur, leaf_maps)
                     if nxt is None:
                         return None
                     cur = nxt
                 return cur
             if kind == "alt":
-                branches: Any = t[1] if len(t) > 1 else []
+                branches: Any = t[1] if len(t) > 1 else cast(list[Any], [])
                 if not isinstance(branches, (list, tuple)):
                     return None
-                bl = cast(list[Any], list(branches))
-                for branch in bl:
+                for branch in cast(Any, branches):
                     nxt = _eval_expr(branch, view, pos, leaf_maps)
                     if nxt is not None:
                         return nxt
@@ -138,10 +135,10 @@ def _eval_expr(
                 if child2 is None:
                     return pos
                 return _eval_expr(child2, view, pos, leaf_maps)
-    if hasattr(expr, "match"):
-        attr2 = getattr(expr, "match", None)
+    if hasattr(cast(Any, expr), "match"):
+        attr2 = getattr(cast(Any, expr), "match", None)
         if callable(attr2):
-            mp = leaf_maps.get(id(expr))
+            mp = leaf_maps.get(id(cast(Any, expr)))
             if mp is None:
                 return None
             return mp.get(pos)

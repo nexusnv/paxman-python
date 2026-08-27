@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
@@ -35,10 +35,18 @@ class CandidatesMatcher:
     kind: str = field(default="candidates", init=False)
     digest: str = field(init=False, repr=False, default="")
     _flat: list[tuple[int, int, int]] = field(
-        default_factory=list, init=False, repr=False, hash=False, compare=False
+        default_factory=lambda: cast(list[tuple[int, int, int]], []),
+        init=False,
+        repr=False,
+        hash=False,
+        compare=False,
     )
     _emit_counts: dict[tuple[int, int], int] = field(
-        default_factory=dict, init=False, repr=False, hash=False, compare=False
+        default_factory=lambda: cast(dict[tuple[int, int], int], {}),
+        init=False,
+        repr=False,
+        hash=False,
+        compare=False,
     )
 
     def __post_init__(self) -> None:
@@ -90,11 +98,14 @@ class CandidatesMatcher:
         per_candidate_spans: list[list[tuple[int, int]]] = []
         for cand in self.candidates:
             try:
-                spans = cand.match(view)  # type: ignore[union-attr]
-                if not isinstance(spans, list):
-                    spans = []
+                cand_any: Any = cand
+                spans_any: Any = cand_any.match(view)
+                if isinstance(spans_any, list):
+                    spans = cast(list[tuple[int, int]], spans_any)
+                else:
+                    spans = cast(list[tuple[int, int]], [])
             except Exception:
-                spans = []
+                spans = cast(list[tuple[int, int]], [])
             per_candidate_spans.append(spans)
         flat: list[tuple[int, int, int]] = []
         for idx, spans in enumerate(per_candidate_spans):

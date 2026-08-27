@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, TypeVar
+from collections.abc import Sequence
+from typing import Any, ClassVar, TypeVar, cast
 
 from paxman.core.domain import Grammar, RecognitionMatch
 from paxman.core.grammar.stages import PipelineState, Stage
@@ -34,7 +35,7 @@ class PipelineGrammar(Grammar[NotationT]):
         if _matchers is not None:
             from paxman.core.grammar.engine_loop import run_matchers
 
-            return run_matchers(text, [self])  # type: ignore[arg-type]
+            return run_matchers(text, cast(Sequence[Any], [self]))
         state: PipelineState[NotationT] = PipelineState(
             text=text, matches=[], scratch={}
         )

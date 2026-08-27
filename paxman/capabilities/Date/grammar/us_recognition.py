@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, ClassVar
+
 from paxman.capabilities.Date.grammar.date_recognition import US_MATCHER
 from paxman.capabilities.Date.notation import DateNotation
 from paxman.core.grammar import PipelineGrammar, StandardPre
@@ -13,4 +15,4 @@ class USDateGrammar(PipelineGrammar[DateNotation]):
     single_value = True
 
     pre = StandardPre[DateNotation](empty_guard=True)
-    matchers = (US_MATCHER,)  # type: ignore[assignment]
+    matchers: ClassVar[tuple[Any, ...] | None] = (US_MATCHER,)

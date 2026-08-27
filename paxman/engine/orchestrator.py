@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.metadata import version as _get_version
-from typing import Any
+from typing import Any, cast
 
 from paxman.core.capability import Capability
 from paxman.core.capability_contract import CapabilityContract
@@ -30,7 +30,7 @@ from paxman.core.domain import (
 try:
     from paxman.core.grammar.matchers.candidates import CandidatesMatcher
 except ImportError:
-    CandidatesMatcher = None  # type: ignore[assignment,misc]
+    CandidatesMatcher = cast(Any, None)
 from paxman.core.errors import (
     CapabilityError,
     ContractError,

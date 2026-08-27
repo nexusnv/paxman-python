@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from paxman.core.grammar.boundary_spec import BoundarySpec
@@ -73,7 +73,8 @@ class ScanContext:
         raw: object = normalizer(self.text)
         assert isinstance(raw, tuple)
         if len(raw) == 2:
-            subject_obj, offsets_obj = raw  # type: ignore[misc]
+            raw2 = cast(tuple[str, tuple[int, ...] | None], raw)
+            subject_obj, offsets_obj = raw2
             assert isinstance(subject_obj, str)
             subject: str = subject_obj
             if offsets_obj is None:
@@ -81,7 +82,8 @@ class ScanContext:
                 ends: tuple[int, ...] | None = None
             else:
                 assert isinstance(offsets_obj, tuple)
-                starts = tuple(offsets_obj[:-1])  # type: ignore[arg-type]
+                offsets_tuple = cast(tuple[int, ...], offsets_obj)
+                starts = tuple(offsets_tuple[:-1])
                 if len(starts) == 0:
                     starts = ()
                     ends = ()
@@ -91,27 +93,32 @@ class ScanContext:
                     assert len(ends) == len(subject)
         else:
             assert len(raw) == 3
-            subject, starts, ends = raw  # type: ignore[misc]
+            raw3 = cast(tuple[str, tuple[int, ...] | None, tuple[int, ...] | None], raw)
+            subject, starts, ends = raw3
             assert isinstance(subject, str)
             if starts is not None and ends is not None:
                 assert isinstance(starts, tuple)
                 assert isinstance(ends, tuple)
-                assert len(starts) == len(subject), (
-                    f"starts len {len(starts)} != subject len {len(subject)}"
+                starts_nn = cast(tuple[int, ...], starts)
+                ends_nn = cast(tuple[int, ...], ends)
+                assert len(starts_nn) == len(subject), (
+                    f"starts len {len(starts_nn)} != subject len {len(subject)}"
                 )
-                assert len(ends) == len(subject), (
-                    f"ends len {len(ends)} != subject len {len(subject)}"
+                assert len(ends_nn) == len(subject), (
+                    f"ends len {len(ends_nn)} != subject len {len(subject)}"
                 )
                 for i in range(len(subject)):
-                    assert 0 <= starts[i] < ends[i] <= len(self.text), (  # type: ignore[index]
+                    assert 0 <= starts_nn[i] < ends_nn[i] <= len(self.text), (
                         f"offset interval empty or OOB at {i}: "
-                        f"{starts[i]}->{ends[i]} len(text)={len(self.text)}"  # type: ignore[index]
+                        f"{starts_nn[i]}->{ends_nn[i]} len(text)={len(self.text)}"
                     )
                     if i > 0:
-                        assert starts[i] >= starts[i - 1], (  # type: ignore[index]
+                        assert starts_nn[i] >= starts_nn[i - 1], (
                             f"starts non-decreasing violated at {i}: "
-                            f"{starts[i - 1]}->{starts[i]}"  # type: ignore[index]
+                            f"{starts_nn[i - 1]}->{starts_nn[i]}"
                         )
+                starts = starts_nn
+                ends = ends_nn
             elif starts is None and ends is None:
                 pass
             else:

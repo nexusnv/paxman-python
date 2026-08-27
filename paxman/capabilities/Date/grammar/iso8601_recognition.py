@@ -5,6 +5,8 @@ Kept for import compatibility; capability now uses DateGrammar (4 candidates).
 
 from __future__ import annotations
 
+from typing import Any, ClassVar
+
 from paxman.capabilities.Date.grammar.date_recognition import ISO_MATCHER
 from paxman.capabilities.Date.notation import DateNotation
 from paxman.core.grammar import PipelineGrammar, StandardPre
@@ -18,4 +20,4 @@ class ISO8601DateGrammar(PipelineGrammar[DateNotation]):
     single_value = True
 
     pre = StandardPre[DateNotation](empty_guard=True)
-    matchers = (ISO_MATCHER,)  # type: ignore[assignment]
+    matchers: ClassVar[tuple[Any, ...] | None] = (ISO_MATCHER,)
