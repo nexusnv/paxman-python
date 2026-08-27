@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Paxman recognition glossary &amp; file map</title>
+<link rel="stylesheet" href="../assets/course.css">
+<style>
+dl.gloss dt { font-family: var(--sans); font-weight: 600; font-size: 0.9rem; margin-top: 0.9rem; }
+dl.gloss dd { margin-left: 1.1rem; }
+.status-tag {
+  font-family: var(--mono); font-size: 0.62rem;
+  border: 1px solid #bbb; border-radius: 3px; padding: 0 0.35em;
+  color: #777; vertical-align: middle; margin-left: 0.4em; white-space: nowrap;
+}
+.avoid { color: #777; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="lesson-kicker">Reference · print me</div>
+  <h1>Paxman recognition layer — glossary &amp; file map</h1>
+  <p class="subtitle">The compressed vocabulary of <code>paxman/capabilities/*/grammar/</code> and
+     <code>paxman/core/grammar/</code>. Terms graduate here only once demonstrated in practice.</p>
+</header>
+
+<section id="glossary">
+<h2>Terms</h2>
+<dl class="gloss">
+
+<dt id="t-recognition">Recognition<span class="status-tag">L0001</span></dt>
+<dd>The syntactic act of finding <em>where</em> representations occur in raw text. Recognition never
+validates, never deduplicates across sources, never assigns canonical meaning.
+_Avoid_: parsing, extraction, matching (too loose).</dd>
+
+<dt id="t-validation">Validation</dt>
+<dd>The semantic counterpart: rules check recognized notations against authoritative specifications
+and produce canonical values with provenance. Distinct layer from recognition.
+_Reserved for later lessons_.</dd>
+
+<dt id="t-span">Span (half-open)<span class="status-tag">L0001</span></dt>
+<dd>A character interval written <code>[start, end)</code>: start included, end excluded — identical
+to Python slice/range convention. End is always <strong>one past</strong> the last matched character.
+_Avoid_: “position pair”, index math without the bracket notation.</dd>
+
+<dt id="t-match">RecognitionMatch<span class="status-tag">L0001</span></dt>
+<dd>Frozen dataclass (<span class="filepath">paxman/core/domain.py</span>): fields
+<code>notation</code>, <code>start</code>, <code>end</code>, <code>raw_text</code>, with invariant
+<code>len(raw_text) == end − start</code> enforced at construction. Spans are relative to the
+<strong>original input text</strong>.
+_Avoid_: bare notation, tuple spans.</dd>
+
+<dt id="t-grammar">Grammar<span class="status-tag">L0001</span></dt>
+<dd>A capability-level class satisfying the <code>Grammar</code> ABC: implements
+<code>recognize(text) → list[RecognitionMatch]</code> plus identity (<code>name</code>,
+non-empty <code>semantics</code>). Emits matches; owns no cross-match policy.
+_Avoid_: parser, lexer, validator.</dd>
+
+<dt id="t-notation">Notation<span class="status-tag">L0001</span></dt>
+<dd>A per-capability typed record describing the <em>shape</em> of what was found (e.g.
+<code>CountryNotation(shape="name", value=raw)</code>). Carries no canonical meaning and no
+validity judgment. One notation type per capability (<code>NotationT</code> generic).</dd>
+
+<dt id="t-kernel">Kernel</dt>
+<dd><span class="filepath">paxman/core/grammar/</span> — shared machinery every grammar composes:
+scan context &amp; views, normalizers, matchers, boundary specs. Covered from Lesson 0002 onward.</dd>
+
+<dt id="t-engine-policy">Engine policy (dedup &amp; order)</dt>
+<dd>The engine owns all cross-match decisions: within one grammar, a match fully contained in a
+longer match is dropped (“longer wins”); identical spans keep the first-emitted. Matches from
+<em>different</em> grammars are both preserved (ambiguity stays observable). Final order is
+document order: <code>(start, end, active-set index, grammar name)</code>.</dd>
+
+</dl>
+</section>
+
+<section id="map">
+<h2>File map — where to look when reading</h2>
+<table>
+<tr><th>Path</th><th>What lives there</th></tr>
+<tr><td class="mono">paxman/core/domain.py</td><td><code>Grammar</code> ABC (~L299), <code>RecognitionMatch</code> (~L68) — the contract source of truth</td></tr>
+<tr><td class="mono">paxman/core/grammar/</td><td>Kernel: scan_context, normalizers, boundary_spec, lexicon, composer, engine_loop</td></tr>
+<tr><td class="mono">paxman/core/grammar/matchers/</td><td>lexicon · regex · scanner · combinator · label · property · candidates</td></tr>
+<tr><td class="mono">paxman/capabilities/&lt;Cap&gt;/grammar/</td><td>One module per representation form (&lt;name&gt;_recognition.py)</td></tr>
+<tr><td class="mono">paxman/capabilities/&lt;Cap&gt;/capability.py</td><td><code>get_grammars()</code> wiring — the registry of that capability's grammars</td></tr>
+<tr><td class="mono">ARCHITECTURE.md L17–48</td><td>Separation principle + Recognition Pipeline Contract</td></tr>
+<tr><td class="mono">HOW_TO_ADD_NEW_GRAMMAR.md</td><td>Step-by-step guide incl. strategy choice &amp; TDD flow</td></tr>
+</table>
+</section>
+
+<section id="refs">
+<h2>Cited sources</h2>
+<ul>
+<li><span class="filepath">ARCHITECTURE.md</span> lines 17–48 (separation; pipeline contract; dedup/ordering).</li>
+<li><span class="filepath">paxman/core/domain.py</span> <code>RecognitionMatch</code>/<code>Grammar</code> docstrings.</li>
+<li><span class="filepath">paxman/capabilities/Country/grammar/name_recognition.py</span> docstring examples (“USA” stays “USA”; “840” → []).</li>
+<li><a href="https://docs.python.org/3/library/re.html#match-objects">Python `re` match objects</a> — the regex analogue vocabulary used in lessons.</li>
+<li>Singh, V., “Replace or Retrieve Keywords In Documents at Scale”, <a href="https://arxiv.org/abs/1711.00046">arXiv:1711.00046</a> — FlashText; basis of the kernel's trie matcher (later lesson).</li>
+</ul>
+</section>
+
+<footer class="lesson-footer">
+<p>Maintained by your teach-workspace agent. Terms appear only after the learner demonstrates them;
+aliases listed under each term are banned in favor of the headword.</p>
+</footer>
+
+</body>
+</html>

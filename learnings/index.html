@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paxman recognition layer · course home</title>
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="lesson-kicker">Teaching workspace · course home</div>
+  <h1>Reading paxman's recognition layer</h1>
+  <p class="subtitle">A guided path from regex fluency to reading any grammar file in
+     <span class="filepath">paxman/capabilities/*/grammar/</span> unaided.</p>
+</header>
+
+<section id="progress">
+  <h2>Your path</h2>
+  <p id="course-progress"></p>
+  <ol id="lesson-list"><!-- cards rendered by the manifest below --></ol>
+</section>
+
+<section id="companion">
+  <h2>Companion material</h2>
+  <ul>
+    <li><a href="reference/recognition-glossary.html">Recognition-layer glossary &amp; file map</a>
+        — the printable vocabulary every lesson builds on; terms appear here only once you've used them.</li>
+    <li><a href="MISSION.md">MISSION.md</a> — why this course exists (your goals define each lesson).</li>
+    <li><a href="RESOURCES.md">RESOURCES.md</a> — curated primary sources behind every claim.</li>
+  </ul>
+</section>
+
+<section id="serve">
+  <h2>Serving these files</h2>
+  <pre><code>uv run python -m http.server 8000 --directory learnings</code></pre>
+  <p>Then open <code>http://localhost:8000/</code>. All links are relative, so any static server
+  rooted at <span class="filepath">learnings/</span> works.</p>
+</section>
+
+<footer class="lesson-footer">
+<p><strong>The agent is your teacher.</strong> After each lesson, report which exercise rounds you
+missed and ask anything that felt hand-wavy — answers become the next lesson's calibration.</p>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+ * Course manifest — THE single place to register lessons.
+ *
+ * To publish a new lesson:
+ *   1. Save it as  lessons/<number>-<slug>.html   (number zero-padded,
+ *      incrementing — matching the existing naming pattern).
+ *   2. Flip this entry's status to "live" and fill in its slug.
+ *   3. Add a fresh {status:"planned"} row for what comes next if you
+ *      want the roadmap visible.
+ * The cards below re-render automatically from this array.
+ * ------------------------------------------------------------------ */
+var COURSE = {
+  lessons: [
+    { n: "0001", slug: "spans-what-a-grammar-returns",
+      title: "Spans: what a grammar returns",
+      blurb: "The one contract every grammar satisfies \u2014 RecognitionMatch, half-open [start,end), why recognition never decides meaning.",
+      status: "live" },
+    { n: "0002", slug: "", title: "Views &amp; the offset discipline",
+      blurb: "ScanContext, normalizers, and how matches made on transformed text still report original-coordinate spans.",
+      status: "planned" },
+    { n: "0003", slug: "", title: "Matchers: alternation, trie (FlashText), scanner",
+      blurb: "LexiconMatcher's two engines, size-gating at 500 tokens, longest-match-first tries, and the scanner discipline.",
+      status: "planned" },
+    { n: "0004", slug: "", title: "Boundaries &amp; anchors as data",
+      blurb: "BoundarySpec and AnchorSet: declarative lookarounds, mirroring (?<!\u2026)/(?!\u2026) without regex.",
+      status: "planned" },
+    { n: "0005", slug: "", title: "Engine policy: dedup &amp; document-order",
+      blurb: "\u201cLonger wins\u201d within a grammar, ambiguity preserved across grammars, the (start, end, active-set, name) total order.",
+      status: "planned" },
+    { n: "0006", slug: "", title: "Practicum: trace an input end-to-end",
+      blurb: "One input through recognition \u2192 engine \u2192 validation; then draft a grammar against HOW_TO_ADD_NEW_GRAMMAR.md.",
+      status: "planned" }
+  ]
+};
+
+(function () {
+  var list = document.getElementById("lesson-list");
+  var live = COURSE.lessons.filter(function (l) { return l.status === "live"; }).length;
+
+  document.getElementById("course-progress").innerHTML =
+    "<strong>" + live + "</strong> of " + COURSE.lessons.length +
+    " lessons published" + (live === COURSE.lessons.length ? " \u2014 course complete." :
+      " \u00b7 start with <a href=\"lessons/" + COURSE.lessons[live - 1].n + "-" +
+      COURSE.lessons[live - 1].slug + ".html\">the newest lesson below</a>.");
+
+  var nextUpDone = false;
+  COURSE.lessons.forEach(function (l) {
+    var li = document.createElement("li");
+    li.className = "lesson-card " + l.status;
+    var head = document.createElement("span");
+    head.className = "lc-number";
+    head.textContent = l.n;
+    li.appendChild(head);
+    var body = document.createElement("div");
+    body.className = "lc-body";
+    var title = document.createElement(l.status === "live" ? "a" : "span");
+    title.className = "lc-title";
+    title.innerHTML = l.title;
+    if (l.status === "live") {
+      title.href = "lessons/" + l.n + "-" + l.slug + ".html";
+    } else {
+      title.classList.add("lc-muted");
+      li.classList.add("is-next");
+    }
+    body.appendChild(title);
+    var blurb = document.createElement("p");
+    blurb.className = "lc-blurb";
+    blurb.innerHTML = l.blurb;
+    body.appendChild(blurb);
+    li.appendChild(body);
+    var badge = document.createElement("span");
+    badge.className = "lc-badge";
+    badge.textContent = l.status === "live"
+      ? (nextUpDone ? "available" : "start here")
+      : "planned";
+    if (!nextUpDone && l.status === "live") nextUpDone = true;
+    li.appendChild(badge);
+    list.appendChild(li);
+  });
+})();
+</script>
+</body>
+</html>

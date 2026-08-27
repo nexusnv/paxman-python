@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0001 · Spans: what a grammar returns</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="lesson-kicker">Paxman onboarding · Recognition layer · Lesson 0001</div>
+  <h1>Spans: what a grammar returns</h1>
+  <p class="subtitle">One rule governs every file under <code>paxman/capabilities/*/grammar/</code> —
+     learn it once, read them all.</p>
+</header>
+
+<nav class="crumbs"><a href="../index.html">Course index</a> ·
+<a href="../reference/recognition-glossary.html">Reference: recognition glossary</a></nav>
+
+<section id="why">
+<h2>Why this is your first stop</h2>
+<p>Your mission is reading paxman's recognition layer fluently. Every capability ships several
+grammar files (<span class="filepath">paxman/capabilities/SIUnit/grammar/name_recognition.py</span>,
+<span class="filepath">…/Country/grammar/alpha2_recognition.py</span>, …), and they all satisfy one
+interface. Master that interface today and every one of those files becomes 80% familiar.</p>
+</section>
+
+<section id="bridge">
+<h2>Start from what you know: <code>re.finditer</code></h2>
+<p>You already do recognition in Python. When a regex finds <code>"kilogram"</code> inside
+<code>"Add 5 kilogram"</code>, <code>m.span()</code> hands you back more than the string — it hands
+you a <em>location</em>: <code>(6, 14)</code>. The start index, an end index, the matched text.</p>
+<p>Paxman's entire recognition layer is built on that idea, formalized:</p>
+<blockquote><p>A grammar answers <strong>where</strong> something appears in raw text — never what
+it means, never whether it is valid.</p>
+<cite>ARCHITECTURE.md, “Separation of Recognition and Validation”</cite></blockquote>
+<p>In regex terms: think of each shipped grammar as one giant pattern run through
+<code>finditer</code> — with the semantics strictly limited so that a second stage can decide
+meaning later.</p>
+</section>
+
+<section id="contract">
+<h2>The contract, in code</h2>
+<p>From <a href="../reference/recognition-glossary.html#g-domain">the source of truth</a>,
+<span class="filepath">paxman/core/domain.py</span>:</p>
+<pre><code>@dataclass(frozen=True, slots=True)
+class RecognitionMatch(Generic[NotationT]):
+    """A span-bearing recognition produced by a grammar.
+
+    ``start`` and ``end`` are half-open character offsets into the input
+    text passed to ``Grammar.recognize()``; ``raw_text`` is the matched
+    substring, so ``len(raw_text) == end - start`` always holds.
+    """
+
+    notation: NotationT
+    start: int
+    end: int
+    raw_text: str</code></pre>
+<p>(The constructor also validates both facts above — negative spans and mismatched lengths are
+impossible.) And the abstract method every grammar must implement,
+<span class="filepath">paxman/core/domain.py</span> ~line 301:</p>
+<pre><code>@abstractmethod
+def recognize(self, text: str) -> list[RecognitionMatch[NotationT]]:
+    """Extract span-bearing recognition matches from raw text. …"""</code></pre>
+
+<table>
+<tr><th>Field</th><th>Meaning</th><th>Regex analogue</th></tr>
+<tr><td class="mono">notation</td><td>a small structured record of <em>what shape</em> of thing was found (position included implicitly)</td><td>group names + their values</td></tr>
+<tr><td class="mono">start</td><td>index of first matched character, relative to the <strong>original input</strong></td><td><code>m.start()</code></td></tr>
+<tr><td class="mono">end</td><td><strong>one past</strong> the last matched character (half-open)</td><td><code>m.end()</code></td></tr>
+<tr><td class="mono">raw_text</td><td>exactly <code>text[start:end]</code>, original casing preserved</td><td><code>m.group(0)</code></td></tr>
+</table>
+
+<div class="callout">
+<span class="callout-label">The half-open habit</span>
+<code>[start, end)</code> means <em>start included, end excluded</em> — the same convention as
+Python's <code>range()</code> and <code>slices</code>, which makes <code>text[start:end]</code> and
+<code>text[start:end].len()</code> come out right without mental gymnastics. If you ever write an
+off-by-one here, the dataclass raises before it leaves the factory.
+</div>
+</section>
+
+<section id="recognition-only">
+<h2>Recognize ≠ validate ≠ decide meaning</h2>
+<p>This is the part that surprises newcomers most. Look at the Country name grammar's own docstring
+(<span class="filepath">paxman/capabilities/Country/grammar/name_recognition.py</span>):</p>
+<pre><code>Examples: "United States" → value="United States"
+          "USA" → value="USA"
+Non-examples: "840" → [] (no name match)
+              "XYZ" → [] (unknown name)</code></pre>
+<p>The grammar emits <code>"USA"</code> <strong>unchanged</strong> — not <code>"US"</code>, not a
+canonical code, not a boolean “is valid”. Deciding that USA means ISO alpha-2 <code>US</code>, with
+provenance, is the job of the <em>validation rules</em>, a separate layer the engine runs after
+recognition. A single input can even be recognized by two grammars at once (think of
+<code>01/02/2026</code> under US and European date readings) — the engine keeps both so ambiguity
+stays observable, deduplicating only within one grammar (“longer wins”) and ordering everything into
+document order itself (<a href="#refs">ARCHITECTURE.md §Recognition Pipeline Contract</a>).</p>
+<p>So when you read any grammar file, you are asking one question only: <strong>“which substrings
+would this light up?”</strong></p>
+</section>
+
+<section id="exercise">
+<h2>Practice: hand-predict spans</h2>
+<div class="exercise-shell" id="exercise-mount"></div>
+<p style="font-family:var(--sans);font-size:.8rem;color:#666">
+Scoring note: fewer clicks = sharper recall. Replay until every round falls on the first try.</p>
+</section>
+
+<section id="recall">
+<h2>Retrieval checks</h2>
+<p>Type from memory, then press Enter. If the hint appears, resist scrolling up — struggling to
+retrieve is what builds durable memory.</p>
+<div class="q-block"><label>1. A grammar's <code>recognize()</code> method takes raw
+<input type="text" data-accept="text|the text|input|raw text" data-success="✓ — and never anything mutated from it."> and returns a list of span-bearing matches.</label></div>
+<div class="q-block"><label>2. The invariant enforced at construction: <code>len(raw_text) ==
+<input type="text" data-accept="end|end minus start|end-start" data-success="✓ Exactly the half-open arithmetic." style="width:9rem"> − start</code>.</label></div>
+<div class="q-block"><label>3. Given input <code>"USA"</code>, which layer decides it means country
+<code>US</code>: grammars or rules?
+<input type="text" data-accept="rules|rule|validation|the rules" data-success="✓ Grammars find spans; rules assign meaning with provenance." style="width:7rem"></label></div>
+</section>
+
+<section id="primary">
+<h2>Read this next (primary source)</h2>
+<ul>
+<li><strong>Highest value, five minutes:</strong> <span class="filepath">ARCHITECTURE.md</span>,
+sections <em>Separation of Recognition and Validation</em> and <em>Recognition Pipeline Contract</em>
+(lines 17–48). This is the authoritative statement of everything asserted above.</li>
+<li><strong>Sixty seconds, external:</strong>
+<a href="https://docs.python.org/3/library/re.html#match-objects">Python docs · Match objects</a> —
+skim the description of <code>span()</code>; notice how little new vocabulary lesson 001 needed beyond it.</li>
+</ul>
+</section>
+
+<footer class="lesson-footer">
+<p><strong>Questions welcome, always.</strong> Ask your agent-teacher anything in this session —
+e.g. “why frozen dataclasses everywhere?”, or “what does <code>NotationT</code> buy us?”.
+No question is too basic; gaps are cheapest to fill now.</p>
+<p class="next-up"><strong>Next up — Lesson 0002:</strong> <em>Views &amp; the offset discipline</em>:
+how a grammar that matches on a lowercased or de-accented copy of the text still reports spans in
+original coordinates (<code>ScanContext</code>, normalizers, why <code>state.text</code> may never
+change).</p>
+</footer>
+
+<script src="../assets/span-picker.js"></script>
+<script src="../assets/answer-check.js"></script>
+<script>
+PaxmanTeach.spanPicker({
+  mount: "#exercise-mount",
+  simulate: "SIUnit NameGrammar / Country NameGrammar (verified repo behavior)",
+  rounds: [
+    { caption: "SIUnit name_recognition, input \u201cAdd 5 kilogram\u201d",
+      text: "Add 5 kilogram",
+      targets: [[6, 14]],
+      why: "" },
+    { caption: "SIUnit name_recognition folds case for matching — spans report ORIGINAL coordinates",
+      text: "KILOGRAM",
+      targets: [[0, 8]],
+      why: "raw_text keeps the uppercase input exactly as typed." },
+    { caption: "Multi-word lexicon tokens are one span (a \u201csplit-word prefix\u201d unit)",
+      text: "kilo gram",
+      targets: [[0, 9]],
+      why: "The whole phrase is a single token entry in the name lexicon." },
+    { caption: "Country name_recognition, input \u201c840\u201d — a numeric code, not a name",
+      text: "840",
+      targets: [],
+      why: "\u201c840\u201d belongs to a different grammar (numeric); here the result list is simply empty." }
+  ]
+});
+</script>
+</body>
+</html>
