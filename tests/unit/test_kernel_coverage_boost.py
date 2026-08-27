@@ -227,12 +227,25 @@ def test_label_matcher_and_candidates() -> None:
     assert lm2.matches_prefix("ISSN03178471") is True
     assert lm2.matches_prefix("ISSN 0317") is True
 
-    cm = CandidatesMatcher(candidates=("a", "b"), strategy="first")
+    cm = CandidatesMatcher(
+        candidates=(
+            RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet()),
+            RegexMatcher(pattern="b", boundary=None, view=None, anchors=AnchorSet()),
+        ),
+        strategy="first",
+    )
     assert cm.strategy == "first"
-    with pytest.raises(
-        NotImplementedError, match="CandidatesMatcher not yet implemented"
-    ):
-        cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1))
+    assert cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1)) == []
+    view_ab = View(subject="ab", source_starts=None, source_ends=None, _text_len=2)
+    assert cm.match(view_ab) == [(0, 1), (1, 2)]
+    cm_all = CandidatesMatcher(
+        candidates=(
+            RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet()),
+            RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet()),
+        ),
+        strategy="all",
+    )
+    assert cm_all.match(view_ab).count((0, 1)) == 2
 
     cb = CombinatorMatcher(
         expr=(

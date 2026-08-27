@@ -26,6 +26,11 @@ from paxman.core.domain import (
     ScanResult,
     VersionStamp,
 )
+
+try:
+    from paxman.core.grammar.matchers.candidates import CandidatesMatcher
+except ImportError:
+    CandidatesMatcher = None  # type: ignore[assignment,misc]
 from paxman.core.errors import (
     CapabilityError,
     ContractError,
@@ -73,6 +78,20 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     ]
     _assert_unique_names("grammar", all_grammars)
     semantics_by_name = {g.name: g.semantics for g in all_grammars}
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if (
+                    isinstance(m, CandidatesMatcher)
+                    and m.candidate_names
+                    and m.candidate_semantics
+                ):
+                    for cname, csem in zip(
+                        m.candidate_names,
+                        m.candidate_semantics,
+                        strict=True,
+                    ):
+                        semantics_by_name[cname] = csem
     all_rules = [
         *capability.get_rules(),
         *_activated_rules(capability, contract, semantics_by_name),
@@ -89,10 +108,23 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
 
     rules = _filter_rules(all_rules, contract)
     single_value_by_grammar_name = {g.name: g.single_value for g in all_grammars}
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if isinstance(m, CandidatesMatcher) and m.candidate_names:
+                    for cname in m.candidate_names:
+                        single_value_by_grammar_name[cname] = g.single_value
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
     _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
-    candidates = _dedup_candidates(collected)
+    keep_dup = False
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if isinstance(m, CandidatesMatcher) and m.strategy == "all":
+                    keep_dup = True
+                    break
+    candidates = _dedup_candidates(collected, keep_duplicate_spans=keep_dup)
 
     status = _determine_status(candidates, had_recognitions)
     canonical_value = _extract_canonical_value(candidates, status)
@@ -135,6 +167,20 @@ def run_scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult:
         ]
         _assert_unique_names("grammar", all_grammars)
         semantics_by_name = {g.name: g.semantics for g in all_grammars}
+        if CandidatesMatcher is not None:
+            for g in all_grammars:
+                for m in getattr(g, "matchers", None) or ():
+                    if (
+                        isinstance(m, CandidatesMatcher)
+                        and m.candidate_names
+                        and m.candidate_semantics
+                    ):
+                        for cname, csem in zip(
+                            m.candidate_names,
+                            m.candidate_semantics,
+                            strict=True,
+                        ):
+                            semantics_by_name[cname] = csem
         all_rules = [
             *capability.get_rules(),
             *_activated_rules(capability, contract, semantics_by_name),
@@ -286,16 +332,42 @@ def _recognize(
                         f"{text[match.start : match.end]!r}"
                     ),
                 )
-        for match in _dedup_spans(matches):
-            ordered.append(
-                (
-                    match.start,
-                    match.end,
-                    grammar_index[grammar.name],
-                    grammar.name,
-                    match,
+        keep_equal = False
+        if CandidatesMatcher is not None:
+            _ms = getattr(grammar, "matchers", None)
+            if _ms:
+                for _m in _ms:
+                    if isinstance(_m, CandidatesMatcher) and _m.strategy == "all":
+                        keep_equal = True
+                        break
+        deduped = _dedup_spans(matches, keep_equal=keep_equal)
+        cand_matcher = None
+        if CandidatesMatcher is not None:
+            for _m in getattr(grammar, "matchers", None) or ():
+                if isinstance(_m, CandidatesMatcher) and _m.candidate_names:
+                    cand_matcher = _m
+                    break
+        if cand_matcher is not None:
+            flat = getattr(cand_matcher, "_flat", [])
+            for i, match in enumerate(deduped):
+                cand_idx: int = 0
+                cand_name: str = grammar.name
+                if i < len(flat):
+                    _, _, cand_idx = flat[i]
+                    if cand_idx < len(cand_matcher.candidate_names):
+                        cand_name = cand_matcher.candidate_names[cand_idx]
+                ordered.append((match.start, match.end, cand_idx, cand_name, match))
+        else:
+            for match in deduped:
+                ordered.append(
+                    (
+                        match.start,
+                        match.end,
+                        grammar_index[grammar.name],
+                        grammar.name,
+                        match,
+                    )
                 )
-            )
 
     ordered.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
 
@@ -320,11 +392,15 @@ def _recognize(
 
 def _dedup_spans(
     matches: list[RecognitionMatch[Any]],
+    *,
+    keep_equal: bool = False,
 ) -> list[RecognitionMatch[Any]]:
     """Drop matches fully contained in a longer match from the SAME grammar.
 
     ``longer wins``: when two matches from one grammar overlap, the match
-    covering more of the input survives; an exact tie keeps the first.
+    covering more of the input survives; an exact tie keeps the first unless
+    ``keep_equal`` is True (candidates strategy "all" — keep duplicate spans
+    for AMBIGUOUS preservation).
     Runs strictly within one grammar's output — overlapping matches from
     different grammars are preserved so cross-grammar ambiguity stays
     observable.
@@ -332,8 +408,19 @@ def _dedup_spans(
     ordered = sorted(matches, key=lambda m: (m.start, -(m.end - m.start)))
     kept: list[RecognitionMatch[Any]] = []
     for match in ordered:
-        if any(other.start <= match.start and match.end <= other.end for other in kept):
-            continue
+        if keep_equal:
+            if any(
+                other.start <= match.start
+                and match.end <= other.end
+                and (other.start < match.start or match.end < other.end)
+                for other in kept
+            ):
+                continue
+        else:
+            if any(
+                other.start <= match.start and match.end <= other.end for other in kept
+            ):
+                continue
         kept.append(match)
     return kept
 
@@ -594,13 +681,11 @@ def _recognitions_to_mentions(
 
 def _dedup_candidates(
     collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
+    *,
+    keep_duplicate_spans: bool = False,
 ) -> list[Candidate]:
-    """Drop identical (value, recognition_rule, validation_rule) tuples.
-
-    Provenance is deterministic per (rule, grammar) pair, so collapsing on this
-    key preserves all information while keeping the candidate multiset stable
-    under any future over-declaration of ``target_semantics``.
-    """
+    if keep_duplicate_spans:
+        return [c for c, _ in collected]
     seen: set[tuple[str, str, str]] = set()
     deduped: list[Candidate] = []
     for candidate, _rep in collected:

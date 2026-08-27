@@ -50,7 +50,9 @@ class Section4DateFormat(Rule[DateNotation]):
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
     citation = "Derived convention — DD/MM/YYYY (European locale)"
-    target_semantics = frozenset({"us_calendar_date", "european_calendar_date"})
+    target_semantics = frozenset(
+        {"us_calendar_date", "european_calendar_date", "date_calendar_date"}
+    )
     requires_features = frozenset()
 
     def _interpret_two_digit_year(self, year_str: str, contract: Contract) -> int:

@@ -44,7 +44,7 @@ class Section431CalendarDate(Rule[DateNotation]):
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
     citation = "Section 5.2.1.1 (calendar date)"
-    target_semantics = frozenset({"iso8601_calendar_date"})
+    target_semantics = frozenset({"iso8601_calendar_date", "date_calendar_date"})
     requires_features = frozenset()
 
     def matches(self, notation: DateNotation, contract: Contract) -> bool:

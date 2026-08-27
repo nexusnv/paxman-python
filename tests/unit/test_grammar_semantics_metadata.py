@@ -25,7 +25,8 @@ from paxman.core.domain import Grammar, RecognitionMatch
 # (``iso8601_calendar_date``, ``rfc5322_addr_spec``, ``e164_international``)
 # and renamed singletons (``us_calendar_date``, ``european_calendar_date``).
 # A grammar in this set declares ``semantics`` differing from its ``name``
-# without failing the identity check.
+# without failing the identity check. ``date_calendar_date`` is the
+# consolidated Date candidate grammar (ADR §9.6).
 _COALESCED_SEMANTICS: frozenset[str] = frozenset(
     {
         "iso8601_calendar_date",
@@ -33,6 +34,7 @@ _COALESCED_SEMANTICS: frozenset[str] = frozenset(
         "european_calendar_date",
         "rfc5322_addr_spec",
         "e164_international",
+        "date_calendar_date",
     }
 )
 
@@ -75,9 +77,17 @@ class TestGrammarSemanticsMetadata:
         US/EU dates. Pin the name→id mapping explicitly (ADR-0003
         consistency-guard rationale).
         """
-        by_name = {grammar.name: grammar.semantics for grammar in Date().get_grammars()}
-        assert by_name["us_recognition"] == "us_calendar_date"
-        assert by_name["european_recognition"] == "european_calendar_date"
+        grammars = list(Date().get_grammars())
+        by_name = {grammar.name: grammar.semantics for grammar in grammars}
+        if len(grammars) == 1 and grammars[0].name == "date_recognition":
+            # Consolidated DateGrammar with candidates (ADR §9.6)
+            cand = grammars[0].matchers[0]  # type: ignore[union-attr]
+            cand_by_name = dict(zip(cand.candidate_names, cand.candidate_semantics, strict=True))
+            assert cand_by_name["us_recognition"] == "us_calendar_date"
+            assert cand_by_name["european_recognition"] == "european_calendar_date"
+        else:
+            assert by_name["us_recognition"] == "us_calendar_date"
+            assert by_name["european_recognition"] == "european_calendar_date"
 
 
 class TestGrammarSemanticsEnforcement:

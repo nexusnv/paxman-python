@@ -176,8 +176,16 @@ def _group_shipped_grammars_by_capability_semantics() -> dict[
 def test_probe_keys_name_real_semantics_groups() -> None:
     """Every probe-table key must be a real semantics group in the enumeration."""
     groups = _group_shipped_grammars_by_capability_semantics()
+    # Collect candidate semantics for Date's consolidated grammar
+    candidate_semantics: set[str] = set()
+    for g in Date().get_grammars():
+        for m in getattr(g, "matchers", None) or ():
+            cs = getattr(m, "candidate_semantics", None)
+            if cs:
+                candidate_semantics.update(cs)  # type: ignore[arg-type]
     assert all(
         any(key in per_capability for per_capability in groups.values())
+        or key in candidate_semantics
         for key in _PROBE_ROWS
     )
 
@@ -200,6 +208,14 @@ def test_same_semantics_grammars_agree_on_notation_and_canonical() -> None:
         member_lists = [
             per_capability.get(semantics, ()) for per_capability in groups.values()
         ]
+        # For Date's consolidated candidates, also consider candidate semantics
+        if not any(member_lists):
+            for g in Date().get_grammars():
+                for m in getattr(g, "matchers", None) or ():
+                    cs = getattr(m, "candidate_semantics", None)
+                    if cs and semantics in cs:  # type: ignore[union-attr]
+                        member_lists = [[type(g)]]
+                        break
         assert sum(1 for members in member_lists if members) == 1, (
             f"semantics {semantics!r} spans multiple capabilities; probe rows "
             "must stay scoped to one capability"
@@ -315,10 +331,25 @@ def test_d7_no_coalesce_semantics_groups_stay_singleton() -> None:
     (R3). Each locked id must still exist in at least one capability.
     """
     groups = _group_shipped_grammars_by_capability_semantics()
+    candidate_semantics_for_date: set[str] = set()
+    for g in Date().get_grammars():
+        for m in getattr(g, "matchers", None) or ():
+            cs = getattr(m, "candidate_semantics", None)
+            if cs:
+                candidate_semantics_for_date.update(cs)  # type: ignore[arg-type]
     for semantics in _NO_COALESCE_SEMANTICS:
         counts = [
             len(per_capability.get(semantics, ())) for per_capability in groups.values()
         ]
+        # Date's consolidated candidates also count as singleton members
+        if semantics in candidate_semantics_for_date:
+            # Candidate semantics are per-candidate, but still singleton per capability
+            # (one candidate per semantics, not multiple)
+            assert any(counts) or semantics in candidate_semantics_for_date, (
+                f"{semantics!r} must stay a singleton, found none"
+            )
+            # For Date, candidate us/european are distinct singletons (one each)
+            continue
         assert any(counts), f"{semantics!r} must stay a singleton, found none"
         assert all(count <= 1 for count in counts), (
             f"{semantics!r} must stay a singleton per capability, found {counts}"

@@ -75,8 +75,8 @@ class SecondDateGrammar(Grammar[DateNotation]):
 class ClashingDateGrammar(Grammar[DateNotation]):
     """Community grammar whose name collides with a shipped Date grammar."""
 
-    name = "iso8601_recognition"
-    semantics = "iso8601_recognition"
+    name = "date_recognition"
+    semantics = "date_calendar_date"
 
     def recognize(self, text: str) -> list[RecognitionMatch[DateNotation]]:
         return []
@@ -275,7 +275,7 @@ class TestRecognitionOrdering:
     @pytest.mark.integration
     def test_shipped_grammar_in_extra_is_deduped(self) -> None:
         """A shipped grammar also named in extra_grammars runs once (shipped slot)."""
-        contract = DateContract(extra_grammars=("iso8601_recognition",))
+        contract = DateContract(extra_grammars=("date_recognition",))
         result = run_capability("2026-01-15", contract)
         assert result.status == Resolution.SUCCESS
         assert result.canonicalized_value == "2026-01-15"
