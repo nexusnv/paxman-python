@@ -235,7 +235,10 @@ def test_label_matcher_and_candidates() -> None:
         strategy="first",
     )
     assert cm.strategy == "first"
-    assert cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1)) == []
+    assert (
+        cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1))
+        == []
+    )
     view_ab = View(subject="ab", source_starts=None, source_ends=None, _text_len=2)
     assert cm.match(view_ab) == [(0, 1), (1, 2)]
     cm_all = CandidatesMatcher(

@@ -1,39 +1,19 @@
-"""IBAN recognition — CCDD+BBAN with optional IBAN label and paper spacing."""
+"""IBAN recognition — label kind (ADR §9.7) with glued reject."""
 
 from __future__ import annotations
 
-import re
+import re as _re
 
 from paxman.capabilities.IBAN.notation import IBANNotation
-from paxman.core.grammar.boundary import BoundaryGuard
-from paxman.core.grammar.pipeline import PipelineGrammar
-from paxman.core.grammar.stages import RegexStage, StandardPre
-
-# Label separator is [\s:-]+ (one-or-more), never zero-width: a glued
-# "IBANDE89..." must not fuse into a mention (ISBN-13 precedent).
-# Two alternatives: electronic (contiguous 15-34) and paper (groups-of-four
-# with single spaces). Paper uses groups-of-four to prevent greedy absorption
-# of trailing English words (e.g. "DE89 ... 00 now" should not include "now");
-# the word_only lookahead plus the 30-char cap still blocks >34-char runs,
-# while a glued alnum tail <=30 chars (e.g. DE89...Y) is absorbed by design
-# and rejected downstream via mod-97 (INVALID).
-# Body uses inline (?ai:...) to restrict case-folding and character classes
-# to ASCII (reject K and Unicode digits) while BoundaryGuard.word_only()
-# remains Unicode-aware (no global re.ASCII).
-_IBAN_BODY = (
-    r"(?:(?ai:IBAN)[\s:-]+)?"
-    r"(?P<compact>(?ai:(?:[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}"
-    r"|[A-Z]{2}[0-9]{2}(?: [A-Z0-9]{4}){2,7}(?: [A-Z0-9]{1,4})?)))"
-)
-_IBAN_PATTERN = (
-    BoundaryGuard.word_only().lookbehind
-    + _IBAN_BODY
-    + BoundaryGuard.word_only().lookahead
-)
+from paxman.core.grammar import BoundarySpec, PipelineGrammar, StandardPre
+from paxman.core.grammar.matchers.label import LabelMatcher
+from paxman.core.grammar.scan_context import ScanContext
 
 
-def _iban_notation(match: re.Match[str]) -> IBANNotation:
-    raw_compact = match.group("compact")
+def _iban_emit(span: tuple[int, int], ctx: ScanContext) -> IBANNotation:
+    raw = ctx.text[span[0] : span[1]]
+    m = _re.search(_IBAN_CORE, raw)
+    raw_compact = m.group(0) if m is not None else raw
     compact = "".join(ch for ch in raw_compact if ch.isalnum()).upper()
     country_code = compact[0:2]
     check_digits = compact[2:4]
@@ -43,11 +23,27 @@ def _iban_notation(match: re.Match[str]) -> IBANNotation:
     )
 
 
+_IBAN_CORE = (
+    r"(?ai:(?:[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}"
+    r"|[A-Z]{2}[0-9]{2}(?: [A-Z0-9]{4}){2,7}(?: [A-Z0-9]{1,4})?))"
+)
+
+_IBAN_LABEL_MATCHER = LabelMatcher(
+    labels=frozenset({"IBAN"}),
+    separator=r"[\s:-]+",
+    glued_policy="reject",
+    pattern=_IBAN_CORE,
+    flags=0,
+    boundary=BoundarySpec.WORD,
+    emit=_iban_emit,
+)
+
+
 class IBANRecognitionGrammar(PipelineGrammar[IBANNotation]):
-    """IBAN recognition — CCDD+BBAN with optional IBAN label and paper spacing."""
+    """IBAN recognition — CCDD+BBAN with optional IBAN label (glued reject)."""
 
     name = "iban_recognition"
     semantics = "iban_recognition"
     single_value = True
     pre = StandardPre[IBANNotation](empty_guard=True)
-    regex = RegexStage[IBANNotation](pattern=_IBAN_PATTERN, notation_fn=_iban_notation)
+    matchers = (_IBAN_LABEL_MATCHER,)

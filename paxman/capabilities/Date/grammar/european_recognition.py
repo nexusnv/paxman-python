@@ -1,7 +1,5 @@
 """European date recognition — wrapper for consolidated date."""
 
-
-
 from __future__ import annotations
 
 from paxman.capabilities.Date.grammar.date_recognition import EUROPEAN_MATCHER

@@ -82,7 +82,9 @@ class TestGrammarSemanticsMetadata:
         if len(grammars) == 1 and grammars[0].name == "date_recognition":
             # Consolidated DateGrammar with candidates (ADR §9.6)
             cand = grammars[0].matchers[0]  # type: ignore[union-attr]
-            cand_by_name = dict(zip(cand.candidate_names, cand.candidate_semantics, strict=True))
+            cand_by_name = dict(
+                zip(cand.candidate_names, cand.candidate_semantics, strict=True)
+            )
             assert cand_by_name["us_recognition"] == "us_calendar_date"
             assert cand_by_name["european_recognition"] == "european_calendar_date"
         else:
