@@ -6,6 +6,7 @@ routing (strategy first|all). Date 4→1 is the first customer (ADR §9.6).
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import re
 from collections.abc import Callable
@@ -18,6 +19,55 @@ from paxman.core.grammar.matchers._emit_validation import (
     validate_emit as _validate_emit,
 )
 from paxman.core.grammar.scan_context import ScanContext, View
+
+# Context-local storage for per-call routing state. The matcher singletons
+# (_DATE_CANDIDATES, etc.) are frozen module globals; storing flat/counts on
+# `self` would race under concurrent canonicalize/scan. ContextVars give
+# per-context (thread + asyncio task) isolation. Instance fields `_flat`
+# / `_emit_counts` are kept for single-threaded test introspection via
+# `getattr(matcher, "_flat")`.
+_flat_ctx: Any = contextvars.ContextVar("_candidates_flat", default=None)
+_counts_ctx: Any = contextvars.ContextVar("_candidates_counts", default=None)
+
+
+def _tl_set_flat(matcher_id: int, flat: list[tuple[int, int, int]]) -> None:
+    cur = _flat_ctx.get()
+    m = dict(cur) if cur is not None else {}
+    m[matcher_id] = flat
+    _flat_ctx.set(m)
+    cur_c = _counts_ctx.get()
+    cm = dict(cur_c) if cur_c is not None else {}
+    cm[matcher_id] = {}
+    _counts_ctx.set(cm)
+
+
+def _tl_get_flat(matcher_id: int) -> list[tuple[int, int, int]] | None:
+    cur = _flat_ctx.get()
+    if cur is None:
+        return None
+    return cur.get(matcher_id)
+
+
+def _tl_get_counts(matcher_id: int) -> dict[tuple[int, int], int] | None:
+    cur = _counts_ctx.get()
+    if cur is None:
+        return None
+    return cur.get(matcher_id)
+
+
+def _tl_set_counts(matcher_id: int, counts: dict[tuple[int, int], int]) -> None:
+    cur = _counts_ctx.get()
+    m = dict(cur) if cur is not None else {}
+    m[matcher_id] = counts
+    _counts_ctx.set(m)
+
+
+def get_flat_for_matcher(matcher: Any) -> list[tuple[int, int, int]]:
+    """Return current flat for a matcher — context-local first, else instance field."""
+    fl = _tl_get_flat(id(matcher))
+    if fl is not None:
+        return fl
+    return cast(list[tuple[int, int, int]], getattr(matcher, "_flat", []))
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +152,7 @@ class CandidatesMatcher:
             self._emit_counts.clear()
         except (AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_emit_counts", {})
+        _tl_set_flat(id(self), [])
         per_candidate_spans: list[list[tuple[int, int]]] = []
         for cand in self.candidates:
             try:
@@ -172,11 +223,18 @@ class CandidatesMatcher:
             self._emit_counts.clear()
         except (AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_emit_counts", {})
+        _tl_set_flat(id(self), stored_flat)
         return result
 
     def _emit_match(self, span: tuple[int, int], ctx: ScanContext) -> Any:
-        flat: list[tuple[int, int, int]] = getattr(self, "_flat", [])
-        counts: dict[tuple[int, int], int] = getattr(self, "_emit_counts", {})
+        flat = _tl_get_flat(id(self))
+        if flat is None:
+            flat = cast(list[tuple[int, int, int]], getattr(self, "_flat", []))
+        counts = _tl_get_counts(id(self))
+        if counts is None:
+            counts = cast(dict[tuple[int, int], int], getattr(self, "_emit_counts", {}))
+            _tl_set_counts(id(self), dict(counts))
+            counts = _tl_get_counts(id(self)) or {}
         key = (span[0], span[1])
         occ: list[int] = [idx for s, e, idx in flat if s == span[0] and e == span[1]]
         if not occ:
@@ -190,7 +248,15 @@ class CandidatesMatcher:
         if cnt >= len(occ):
             cnt = len(occ) - 1
         cand_idx = occ[cnt]
-        counts[key] = cnt + 1
+        new_counts = dict(counts)
+        new_counts[key] = cnt + 1
+        _tl_set_counts(id(self), new_counts)
+        try:
+            inst_counts = getattr(self, "_emit_counts", None)
+            if isinstance(inst_counts, dict):
+                inst_counts[key] = cnt + 1
+        except (AttributeError, TypeError, RuntimeError):
+            pass
         cand = self.candidates[cand_idx]
         em = getattr(cand, "emit", None)
         if callable(em):

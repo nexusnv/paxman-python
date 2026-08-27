@@ -29,9 +29,15 @@ from paxman.core.domain import (
 )
 
 try:
-    from paxman.core.grammar.matchers.candidates import CandidatesMatcher
+    from paxman.core.grammar.matchers.candidates import (
+        CandidatesMatcher,  # type: ignore[attr-defined]
+        get_flat_for_matcher,  # type: ignore[attr-defined]
+    )
 except ImportError:
     CandidatesMatcher = cast(Any, None)
+
+    def get_flat_for_matcher(m: Any) -> list[tuple[int, int, int]]:  # type: ignore[no-redef]
+        return cast(list[tuple[int, int, int]], getattr(m, "_flat", []))
 from paxman.core.errors import (
     CapabilityError,
     ContractError,
@@ -361,7 +367,7 @@ def _recognize(
                     cand_matcher = _m
                     break
         if cand_matcher is not None:
-            flat = getattr(cand_matcher, "_flat", [])
+            flat = get_flat_for_matcher(cand_matcher)
             for i, match in enumerate(deduped):
                 cand_idx: int = 0
                 cand_name: str = grammar.name
