@@ -109,7 +109,9 @@
       });
       opts.attempts++;
       if (matchIdx !== -1) {
-        succeed([span], null);
+        /* round.why is shown on correct rounds too (and always on empty
+           rounds) — set it whenever there is something worth teaching. */
+        succeed([span], round.why || null);
       } else if (round.targets.length === 0 && opts.emptyButtonUsed && !opts.triedEmptyThisRound) {
         /* fallthrough: wrong positive pick on an empty round */
         paint(span, "miss");
