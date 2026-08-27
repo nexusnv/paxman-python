@@ -15,7 +15,16 @@ __all__ = ["IBANCapability", "IBANContract", "IBANNotation"]
 
 
 class IBANCapability(Capability[IBANNotation]):
-    """IBAN canonicalization — electronic compact with paper presentation."""
+    """IBAN canonicalization — electronic compact with paper presentation.
+
+    Recognizes electronic contiguous (15-34 alnum) and paper groups-of-four
+    (single-space, IBAN: label optional) via :class:`IBANRecognitionGrammar`
+    and validates via :class:`Section4IBANStructureMOD97` (ISO 13616-1:2020
+    + SWIFT IBAN Registry 111 codes + ISO/IEC 7064 MOD 97-10). Single-value:
+    two distinct IBANs in one call raise ``MultipleMentionsError`` — see
+    ``docs/recipes/segmentation.md``. ``format_value`` renders ``paper``
+    as space-separated quartets; ``electronic`` (default) is compact.
+    """
 
     name = "iban"
 

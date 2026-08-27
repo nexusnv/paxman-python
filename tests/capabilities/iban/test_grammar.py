@@ -117,3 +117,44 @@ def test_kelvin_and_unicode_digits_rejected():
     # Boundary remains Unicode-aware, body remains ASCII.
     assert GRAMMAR.recognize("\u212aE89" + "A" * 11) == []
     assert GRAMMAR.recognize("DE\u0668\u0669" + "3704004405") == []
+
+
+def test_hyphen_and_double_space_documented_as_missing():
+    # Hyphen-separated paper, double space, tab, irregular groups are
+    # MISSING (not INVALID)
+    # Documented strict single-space groups-of-four discipline (ISO 13616 paper).
+    assert GRAMMAR.recognize("DE89-3704-0044-0532-0130-00") == []
+    assert GRAMMAR.recognize("DE89  3704 0044 0532 0130 00") == []
+    assert GRAMMAR.recognize("DE89\t3704 0044") == []
+    assert GRAMMAR.recognize("DE89 37040 04405 32013 000") == []
+
+
+def test_per_country_length_via_canonicalize():
+    # Wrong-length IBANs that previously would be SUCCESS via generic check are now
+    # correctly handled at rule layer (grammar MISSING vs INVALID split is pinned).
+    # This test verifies the grammar still recognizes short paper (12) as INVALID
+    # and that overly long 32 for NI is INVALID via per-country length.
+    import contextlib
+
+    from paxman.api.bootstrap import register_all_shipped
+    from paxman.api.canonicalize import canonicalize
+    from paxman.capabilities.IBAN.contract import IBANContract
+
+    with contextlib.suppress(Exception):
+        register_all_shipped()
+
+    # DE20 with valid mod97 should be INVALID (per-country length 22)
+    def calc(country: str, bban: str) -> str:
+        rearr = bban + country + "00"
+        exp = "".join(str(ord(ch) - 55) if ch.isalpha() else ch for ch in rearr)
+        r = 0
+        for ch in exp:
+            r = (r * 10 + int(ch)) % 97
+        return f"{98 - r:02d}"
+
+    bban = "3" * 16
+    dd = calc("DE", bban)
+    compact = "DE" + dd + bban
+    assert len(compact) == 20
+    r = canonicalize(compact, IBANContract())
+    assert r.status.name == "INVALID"

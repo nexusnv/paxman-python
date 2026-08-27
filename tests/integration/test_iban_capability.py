@@ -95,7 +95,7 @@ def test_longest_vectors():
     contract = IBANCapability.create_contract()
     for compact in [
         "LC55HEMM000100010012001200023015",
-        "NI92BAMC000000000000000003123123",
+        "NI79BAMC00000000000003123123",
     ]:
         r = paxman.canonicalize(compact, contract)
         assert r.status == Resolution.SUCCESS, compact
