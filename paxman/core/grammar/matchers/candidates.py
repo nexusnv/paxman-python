@@ -7,6 +7,7 @@ routing (strategy first|all). Date 4→1 is the first customer (ADR §9.6).
 from __future__ import annotations
 
 import hashlib
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast
@@ -66,7 +67,13 @@ class CandidatesMatcher:
             else:
                 try:
                     cand_digests.append(repr(c))
-                except Exception:
+                except (
+                    ValueError,
+                    TypeError,
+                    AttributeError,
+                    RecursionError,
+                    RuntimeError,
+                ):
                     cand_digests.append(str(c))
         view_repr = (
             self.view_name
@@ -89,11 +96,11 @@ class CandidatesMatcher:
     def match(self, view: View) -> list[tuple[int, int]]:
         try:
             self._flat.clear()
-        except Exception:
+        except (AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_flat", [])
         try:
             self._emit_counts.clear()
-        except Exception:
+        except (AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_emit_counts", {})
         per_candidate_spans: list[list[tuple[int, int]]] = []
         for cand in self.candidates:
@@ -104,7 +111,13 @@ class CandidatesMatcher:
                     spans = cast(list[tuple[int, int]], spans_any)
                 else:
                     spans = cast(list[tuple[int, int]], [])
-            except Exception:
+            except (
+                re.error,
+                ValueError,
+                TypeError,
+                AttributeError,
+                RuntimeError,
+            ):
                 spans = cast(list[tuple[int, int]], [])
             per_candidate_spans.append(spans)
         flat: list[tuple[int, int, int]] = []
@@ -153,11 +166,11 @@ class CandidatesMatcher:
         try:
             self._flat.clear()
             self._flat.extend(stored_flat)
-        except Exception:
+        except (AttributeError, TypeError, ValueError, RuntimeError):
             object.__setattr__(self, "_flat", stored_flat)
         try:
             self._emit_counts.clear()
-        except Exception:
+        except (AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_emit_counts", {})
         return result
 

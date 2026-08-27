@@ -108,12 +108,12 @@ def _eval_expr(
                 if len(t) > 2:
                     try:
                         min_rep = int(cast(Any, t[2]))
-                    except Exception:
+                    except (ValueError, TypeError):
                         min_rep = 0
                 if len(t) > 3:
                     try:
                         max_rep = int(cast(Any, t[3]))
-                    except Exception:
+                    except (ValueError, TypeError):
                         max_rep = None
                 cur = pos
                 count = 0
@@ -189,7 +189,7 @@ class CombinatorMatcher:
             object.__setattr__(self, "view", self.view_name)
         try:
             expr_repr = repr(self.expr)
-        except Exception:
+        except (ValueError, TypeError, AttributeError, RecursionError, RuntimeError):
             expr_repr = str(self.expr)
         view_repr = (
             self.view_name
@@ -225,7 +225,7 @@ class CombinatorMatcher:
                 res = cast(Any, lf).match(view)
                 if isinstance(res, list):
                     spans = cast(list[tuple[int, int]], res)
-            except Exception:
+            except (re.error, ValueError, TypeError, AttributeError, RuntimeError):
                 spans = []
             mp: dict[int, int] = {}
             for s, e in spans:
@@ -252,7 +252,13 @@ class CombinatorMatcher:
                 if self.predicate is not None:
                     try:
                         ok = self.predicate(subj[pos:end], subj)
-                    except Exception:
+                    except (
+                        re.error,
+                        ValueError,
+                        TypeError,
+                        AttributeError,
+                        RuntimeError,
+                    ):
                         ok = False
                     if not ok:
                         pos += 1

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.metadata import version as _get_version
@@ -47,7 +48,7 @@ def _resolve_version() -> str:
     """Resolve the installed paxman package version."""
     try:
         return _get_version("paxman")
-    except Exception:
+    except (ImportError, ValueError, TypeError, AttributeError, RuntimeError):
         return "0.1.0"
 
 
@@ -297,7 +298,13 @@ def _recognize(
         if _matchers:
             try:
                 matches = run_matchers_with_context(shared_ctx, [grammar], contract)
-            except Exception as exc:
+            except (
+                re.error,
+                ValueError,
+                TypeError,
+                AttributeError,
+                RuntimeError,
+            ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,
                     message=f"Grammar failed: {exc}",
@@ -306,7 +313,13 @@ def _recognize(
         else:
             try:
                 matches = grammar.recognize(text)
-            except Exception as exc:
+            except (
+                re.error,
+                ValueError,
+                TypeError,
+                AttributeError,
+                RuntimeError,
+            ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,
                     message=f"Grammar failed: {exc}",
@@ -545,7 +558,7 @@ def _collect_candidates(
                             recognition,
                         )
                     )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 — intentional top-level boundary: any Rule failure must surface as ValidationError per error contract; unexpected types are not silently swallowed (they are wrapped with context and provenance)
                 raise ValidationError(
                     rule=rule.name,
                     message=f"Validation failed: {exc}",
