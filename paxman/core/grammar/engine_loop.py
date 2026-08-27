@@ -89,6 +89,8 @@ def _run_matchers_with_context(
                 continue
             # L0 view materialization (lazy, one per ScanContext)
             view_name = getattr(matcher, "view", None)
+            if view_name is None:
+                view_name = getattr(matcher, "view_name", None)
             view = _resolve_view(context, view_name)
             emit_fn = getattr(matcher, "emit", None)
             if not callable(emit_fn):

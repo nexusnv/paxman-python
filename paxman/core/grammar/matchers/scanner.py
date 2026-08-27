@@ -34,6 +34,7 @@ ScanFn = Callable[[View, int], tuple[int, Any] | None]
 class ScannerMatcher:
     scan: ScanFn
     view_name: str | None = None
+    view: str | None = None
     anchors: AnchorSet = field(default_factory=AnchorSet)
     boundary: BoundarySpec | None = None
     emit: Callable[[tuple[int, int], Any], Any] | None = None
@@ -43,6 +44,10 @@ class ScannerMatcher:
 
     def __post_init__(self) -> None:
         _validate_emit(self.emit, type(self).__name__)
+        if self.view is not None and self.view_name is None:
+            object.__setattr__(self, "view_name", self.view)
+        elif self.view_name is not None and self.view is None:
+            object.__setattr__(self, "view", self.view_name)
         qualname = getattr(self.scan, "__qualname__", type(self.scan).__name__)
         boundary_repr = repr(self.boundary) if self.boundary is not None else "None"
         view_repr = self.view_name if self.view_name is not None else "None"

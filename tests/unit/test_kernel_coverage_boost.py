@@ -235,7 +235,10 @@ def test_label_matcher_and_candidates() -> None:
         cm.match(View(subject="x", source_starts=None, source_ends=None, _text_len=1))
 
     cb = CombinatorMatcher(
-        expr=("alt", [RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet())])
+        expr=(
+            "alt",
+            [RegexMatcher(pattern="a", boundary=None, view=None, anchors=AnchorSet())],
+        )
     )
     view_cb = View(subject="ab", source_starts=None, source_ends=None, _text_len=2)
     assert cb.match(view_cb) == [(0, 1)]
