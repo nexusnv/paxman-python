@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0002 · Views &amp; the offset discipline</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="lesson-kicker">Paxman onboarding · Recognition layer · Lesson 0002</div>
+  <h1>Views &amp; the offset discipline</h1>
+  <p class="subtitle">How paxman matches on a transformed copy of your text yet reports every span
+     in coordinates of the text you actually passed in.</p>
+</header>
+
+<nav class="crumbs"><a href="../index.html">Course index</a> ·
+<a href="../reference/recognition-glossary.html">Reference: recognition glossary</a></nav>
+
+<section id="recap-win">
+<h2>First, bank the win from Lesson 0001</h2>
+<p><a href="0001-spans-what-a-grammar-returns.html">Last time</a>: every grammar implements
+<code>recognize(text)</code> returning <code>RecognitionMatch</code>s whose spans live in the
+<strong>original input's</strong> coordinates. Today you learn how that survives when matching has
+to happen on something that isn't the original input — folded case, stripped accents, deleted
+separators.</p>
+</section>
+
+<section id="bridge">
+<h2>The bridge from regex: the translation problem</h2>
+<p>You've probably done this in pure regex:</p>
+<pre><code>m = re.search(r"kilogram", text.lower())   # matched on a COPY
+m.span()                                   # …but these offsets point into the copy!</code></pre>
+<p>If <code>text.lower()</code> had changed any lengths, <code>m.start()</code> would be a lie
+about <code>text</code>. <code>.lower()</code> luckily preserves length — but accent-stripping,
+dropping separators, or collapsing whitespace do not. Paxman's answer: transformations always
+travel with a <em>map back</em>.</p>
+<blockquote><p>A <strong>view</strong> is a normalized copy of the text plus an offset map back to
+the original. Matches happen on views; spans are always reported through the map.</p></blockquote>
+</section>
+
+<section id="machinery">
+<h2>The machinery, in code</h2>
+<p>All three pieces live in <span class="filepath">paxman/core/grammar/scan_context.py</span>.
+The map itself:</p>
+<pre><code>@dataclass(frozen=True, slots=True)
+class View:
+    subject: str                      # the normalized copy
+    offsets: tuple[int, ...] | None   # None means "same length, 1:1"
+
+    def original_span(self, s: int, e: int) -> tuple[int, int]:
+        if self.offsets is None:
+            return (s, e)
+        return (self.offsets[s], self.offsets[e])</code></pre>
+<p>A normalizer produces exactly that pair (<span class="filepath">normalizers.py</span>,
+<code>Normalizer</code> protocol):</p>
+<pre><code>def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...</code></pre>
+<p>And <code>ScanContext.view(name, normalizer)</code> builds each view lazily, caches it by name,
+and asserts two invariants before trusting it: <code>len(offsets) == len(subject) + 1</code>, and
+every interval <code>[offsets[i], offsets[i+1])</code> is non-empty and inside the text. The final
+entry is a sentinel mapping "just past the end of the subject". Matchability aside, that structure
+is why a map can never silently misalign.</p>
+
+<table>
+<tr><th>Normalizer archetype</th><th>Returns</th><th>Shipped examples (verified)</th></tr>
+<tr><td>length-preserving fold</td><td class="mono">(copy, None)</td><td><span class="filepath">CaseFold</span> (lowercase),
+<span class="filepath">SeparatorFold</span> (<code>_</code>→<code>-</code>),
+<span class="filepath">SymbolFold</span> (µ→μ, ²→2 — one char out per char in)</td></tr>
+<tr><td>deletion with a map</td><td class="mono">(copy, offsets)</td><td><span class="filepath">StripSeparators</span> — kernel's <code>"compact"</code> view: deletes every space, paren, dot, hyphen</td></tr>
+<tr><td>reshape with a map</td><td class="mono">(copy, offsets)</td><td><span class="filepath">CountryNameFold</span> — strips accents, folds separators to spaces, drops punctuation, collapses whitespace runs</td></tr>
+</table>
+<p>(Each normalizer carries its own <code>Provenance</code> — CLDR, BCP&nbsp;47, BIPM — because even
+"how we fold text" is a spec-backed decision here.)</p>
+</section>
+
+<section id="trace">
+<h2>Worked trace: follow one character home</h2>
+<p>Input <code>"Côte d’Ivoire"</code> (13 chars) under <code>CountryNameFold</code>:</p>
+<table>
+<tr><th>subject char</th><th>c</th><th>o</th><th>t</th><th>e</th><th>␣</th><th>d</th><th>i</th><th>v</th><th>o</th><th>i</th><th>r</th><th>e</th></tr>
+<tr><td>original index</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td></tr>
+</table>
+<p>The combining mark on <code>ô</code> evaporated, the apostrophe at index 6 was dropped, so the
+subject is 12 chars plus one sentinel entry — 13 offsets total. Now read matches off the map:</p>
+<ul>
+<li>subject hit <code>[0, 12)</code> → <code>original_span(0, 12)</code> = <code>(0, 13)</code> — the
+whole input, apostrophe and all.</li>
+<li>subject hit <code>[5, 6)</code> (just <code>"d"</code>) → <code>(5, 7)</code> — the dropped
+apostrophe got <strong>absorbed into the region</strong>. That's legal: <code>raw_text</code> is
+simply <code>text[5:7]</code>, deleted characters included.</li>
+</ul>
+<div class="callout">
+<span class="callout-label">The boundary rule</span>
+Span boundaries map <em>as boundaries</em>, not characters: subject position <code>b</code> lands on
+the original index where the next surviving character begins. Everything the normalizer discarded
+between two survivors therefore falls <em>inside</em> mapped regions, never outside them.
+</div>
+</section>
+
+<section id="why">
+<h2>Why the engine cares</h2>
+<p>Deduplication ("<a href="../reference/recognition-glossary.html#t-engine-policy">longer wins</a>")
+compares spans numerically. If one grammar reported spans in view coordinates and another in
+original ones, containment math would be garbage. So the stage contract forbids the shortcut:
+<span class="filepath">core/grammar/stages.py</span> — <em>"stages must place normalized or
+transformed views in scratch… preserving RecognitionMatch offsets relative to the original
+input"</em>; <code>state.text</code> must come through unchanged. Views are why grammars can be
+aggressive with folding and stay honest about position anyway.</p>
+</section>
+
+<section id="exercise">
+<h2>Practice: translate spans yourself</h2>
+<p>Each round shows the original input and a hit reported <em>in subject coordinates</em>. Click the
+first and last characters of the corresponding span in the <strong>original</strong> — exactly what
+<code>view.original_span()</code> computes.</p>
+<div class="exercise-shell" id="exercise-mount"></div>
+</section>
+
+<section id="recall">
+<h2>Retrieval checks</h2>
+<div class="q-block"><label>1. A normalizer returns <code>(subject, offsets)</code>; when offsets is
+<input type="text" data-accept="none|null|nothing" data-success="✓ Same-length fold — spans transfer unchanged." style="width:6rem">, the copy has identical indexing.</label></div>
+<div class="q-block"><label>2. Map invariant: <code>len(offsets) == len(subject) +
+<input type="text" data-accept="1|one" data-success="✓ The sentinel maps just-past-the-end." style="width:4rem"></code>.</label></div>
+<div class="q-block"><label>3. Characters discarded between two surviving ones get
+<input type="text" data-accept="absorbed|included" data-success="✓ They fall inside the mapped region — raw_text keeps them." style="width:7rem"> into the reported original span.</label></div>
+</section>
+
+<section id="primary">
+<h2>Read this next (primary source)</h2>
+<ul>
+<li><strong>Highest value, ten minutes:</strong>
+<span class="filepath">paxman/core/grammar/scan_context.py</span> — it's ~80 lines. Read
+<code>View</code> and <code>ScanContext.view()</code> until the two asserts feel inevitable.</li>
+<li><strong>Then skim:</strong> <span class="filepath">paxman/core/grammar/normalizers.py</span> —
+spot the three archetypes among the real classes, and note the per-normalizer provenance.</li>
+<li><strong>Connections:</strong> <span class="filepath">Country/grammar/name_recognition.py</span>
+shows the full dance in situ — view request, matcher, <code>original_span</code> loop, plus a
+whole-input parity check kept deliberately redundant.</li>
+</ul>
+</section>
+
+<footer class="lesson-footer">
+<p><strong>Ask your teacher anything</strong> — e.g. “why cache views by name?”, “what breaks if a
+matcher forgot the map?”, or request another hand-trace on text of your choosing.</p>
+<p class="next-up"><strong>Next up — Lesson 0003:</strong> <em>Matchers: alternation, trie
+(FlashText), scanner</em>: the engines that actually find hits inside those views, size-gated
+between compiled alternation and a FlashText-style trie.</p>
+</footer>
+
+<script src="../assets/span-picker.js"></script>
+<script src="../assets/answer-check.js"></script>
+<script>
+PaxmanTeach.spanPicker({
+  mount: "#exercise-mount",
+  simulate: "kernel views (verified against scan_context.py / normalizers.py)",
+  rounds: [
+    { caption: "CountryNameFold hit subject\u00a0[0,\u202f12) \u2014 input: \u201cC\u00f4te d\u2019Ivoire\u201d",
+      text: "C\u00f4te d\u2019Ivoire",
+      targets: [[0, 13]],
+      why: "(0, offsets[12]) = (0, 13): mark-strip and the dropped apostrophe land INSIDE the region." },
+    { caption: "Same view, tiny hit: subject\u00a0[5,\u202f6) \u2014 \u201cd\u201d alone",
+      text: "C\u00f4te d\u2019Ivoire",
+      targets: [[5, 7]],
+      why: "(5, offsets[6]) = (5, 7): the end boundary jumps over the discarded \u2019, absorbing it." },
+    { caption: "StripSeparators (\u201ccompact\u201d view) hit subject\u00a0[0,\u202f13) \u2014 separators deleted",
+      text: "+44 20 7946-0987",
+      targets: [[0, 16]],
+      why: "All 13 kept chars map to their original indices; sentinel closes at len(text)=16." },
+    { caption: "SymbolFold (\u00b5\u2192\u03bc, \u00b2\u21923): length preserved \u2014 hit [0,\u202f2)",
+      text: "\u00b5g/mL",
+      targets: [[0, 2]],
+      why: "One-char swaps keep offsets None \u2192 identity: subject [0,2) IS original [0,2)." },
+    { caption: "CaseFold identity \u2014 word-anchored \u201ckg\u201d hit at subject\u00a0[10,\u202f12)",
+      text: "approx 70 kg",
+      targets: [[10, 12]],
+      why: "Lowercasing preserves length: no map, no translation \u2014 the easy case worth recognizing fast." }
+  ]
+});
+</script>
+</body>
+</html>

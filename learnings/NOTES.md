@@ -20,7 +20,7 @@
 2. **Views & the offset discipline**: `ScanContext`, lazy `View` objects, normalizers
    (`CaseFold`, `AccentStrip`, `StripSeparators`), why `state.text` never mutates,
    length-preserving vs offset-map normalization. Regex analogue: matches on transformed text
-   mapped back to original indices.
+   mapped back to original indices. *(built)*
 3. **Matchers**: `LexiconMatcher` (alternation ≤500 tokens / trie >500, FlashText-style
    longest-match-first, word-anchored), `RegexMatcher`, `ScannerMatcher`
    ((ctx,pos)→(end,notation)|None, non-overlapping advance).
