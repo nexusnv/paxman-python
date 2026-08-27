@@ -14,7 +14,7 @@ paxman/
 ├── cli.py          # CLI: `paxman` console script / `python -m paxman` (--list, --json, stdin)
 ├── __main__.py     # python -m paxman entry
 ├── engine/         # run_capability() pipeline orchestrator
-├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop + legacy stages)
+├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop/matchers/anchors/boundary_spec/normalizers + legacy stages)
 ├── capabilities/   # 15 self-contained capability packages
 ├── shared_data/    # cross-capability source snapshots (currency_snapshot.json → Currency + Money data)
 └── py.typed        # PEP 561 marker

@@ -1,7 +1,7 @@
 # CAPABILITIES KNOWLEDGE BASE
 
 ## OVERVIEW
-The deepest directory in the repo (174 py files): 12 shipped capability packages (Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Money, Phone, SI Unit, URL), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
+The deepest directory in the repo (174 py files): 15 shipped capability packages (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
 
 **Authoritative spec:** the root `HOW_TO_ADD_NEW_CAPABILITY.md` (62KB — read it before touching this directory). This file is the compact governance reference: intended architecture, hard rules, and known legacy exceptions. Where the two differ, HOW_TO wins.
 
@@ -57,12 +57,12 @@ Every capability must conform to the same structural surface. `CapabilityContrac
 - **Quality gates before merge** — `ruff check`, `ruff format --check`, `pyright` (strict), `import-linter lint`, `pytest` (95% coverage).
 
 ## ANTI-PATTERNS & LEGACY EXCEPTIONS
-- Don't force a representation into a regex that fights it — consult HOW_TO's recognition-strategy section (scanner, format-candidate, parser combinators, Unicode-property, automaton) before choosing.
+- Don't force a representation into a regex that fights it — consult HOW_TO's recognition-strategy section (Recognition Kernel kinds: regex/lexicon/scanner/combinator/candidates/label) before choosing.
 - Don't invert the two-locus gating model (e.g., gating recognition on authority features or gating validation on input-shape features) — it produces the wrong `Resolution` statuses.
 - Don't add `slots=True` to contracts.
 - Don't put authority data in `grammar/data/` or recognition keys in `rules/data/` — `grammar/data/` serves grammars (keys), `rules/data/` serves rules (authority mappings); the boundary is the point.
 - When extending an existing capability, check whether the file you're touching is a flagged legacy exception before copying its style; new code follows the intended architecture.
 
 ## NOTES
-- `__init__.py` exports all twelve shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN and ISSN are the minimal-surface members (1 grammar + 1 rule each).
+- `__init__.py` exports all fifteen shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN and ISSN are the minimal-surface members (1 grammar + 1 rule each).
 - Root AGENTS.md is authoritative for pipeline flow, domain objects, and quality gates; this file adds capability-package structure and governance specifics.

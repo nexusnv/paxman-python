@@ -292,18 +292,18 @@ class StandardEmailGrammar(Grammar[EmailNotation]):
 
 ### Date Capability Details
 
-The Date capability has **4 grammars** and **3 validation rules**:
+The Date capability has **1 grammar (`date`) with 4 candidates** and **3 validation rules** (ADR-0009 §9.6 `candidates` kind — Date 4→1):
 
 #### Grammars (Recognition)
 
-| Grammar | Delimiter | N1 (first) | N2 (second) | N3 (third) | Notes |
+| Candidate | Delimiter | N1 (first) | N2 (second) | N3 (third) | Notes |
 |---------|-----------|------------|-------------|------------|-------|
-| ISO | `-` | year | month | day | 4-digit year only |
-| Slash-ISO | `/` | year | month | day | 4-digit year; shares ISO position mapping |
-| US | `/` | month | day | year | Supports 2-digit years |
-| European | `/` | day | month | year | Supports 2-digit years |
+| iso8601 | `-` | year | month | day | 4-digit year only |
+| slash_iso | `/` | year | month | day | 4-digit year; shares ISO position mapping |
+| us | `/` | month | day | year | Supports 2-digit years |
+| european | `/` | day | month | year | Supports 2-digit years |
 
-**Note:** European, US, and slash-ISO grammars use `/` as delimiter. The ambiguity arises from different position mappings, not delimiters; a leading 4-digit year is unambiguous (slash-ISO only), while a leading 1–2-digit field is ambiguous between US and European.
+Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; legacy per-format files remain on disk until parity removal. European, US, and slash_iso candidates share `/` as delimiter. The ambiguity arises from different position mappings, not delimiters; a leading 4-digit year is unambiguous (slash_iso only), while a leading 1–2-digit field is ambiguous between US and European (`all` strategy keeps `01/02/2026` AMBIGUOUS).
 
 #### Validation Rules
 
