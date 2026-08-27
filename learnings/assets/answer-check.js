@@ -3,9 +3,24 @@
  * Usage: <label>Your answer: <input data-accept="end|the end"> </label>
  * Pressing Enter inside the input grades it (trimmed, case-insensitive).
  * Add class "q-block" wrappers around question HTML for shared styling.
+ *
+ * Telemetry: each grading pushes {type:"retrieval", q, accepted, given, ok}
+ * onto PaxmanTeach.telemetry (repeat gradings of one question replace their
+ * predecessor when progress.js aggregates).
  */
 (function () {
   "use strict";
+
+  var NS = (window.PaxmanTeach = window.PaxmanTeach || {});
+  NS.telemetry = NS.telemetry || [];
+  NS._qCounter = 0;
+
+  function qIndex(input) {
+    if (!input.dataset.qIdx) {
+      input.dataset.qIdx = String(NS._qCounter++);
+    }
+    return Number(input.dataset.qIdx);
+  }
 
   function grade(input) {
     var accepted = input.dataset.accept.split("|").map(function (s) {
@@ -19,7 +34,17 @@
       feedback.className = "q-feedback";
       block.appendChild(feedback);
     }
-    if (accepted.indexOf(given) !== -1) {
+    var ok = accepted.indexOf(given) !== -1;
+    if (given !== "") {
+      NS.telemetry.push({
+        type: "retrieval",
+        q: qIndex(input),
+        accepted: accepted,
+        given: given,
+        ok: ok,
+      });
+    }
+    if (ok) {
       input.classList.remove("q-bad");
       input.classList.add("q-ok");
       feedback.textContent = input.dataset.success || "\u2713 Correct.";

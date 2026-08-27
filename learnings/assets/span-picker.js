@@ -1,4 +1,4 @@
-/* paxman-teach — reusable character-span picker with instant feedback.
+/* paxman-teach — span picker instrumented for progress capture.
  *
  * Usage:
  *   PaxmanTeach.spanPicker({
@@ -12,11 +12,19 @@
  *
  * Spans are half-open [start, end): the learner clicks the FIRST matched char,
  * then the LAST matched char; end becomes lastIndex + 1 automatically.
+ *
+ * Telemetry: every finished round pushes a "round" event to
+ * PaxmanTeach.telemetry ({type:"round", round, caption, targets, attempts,
+ * miss_picks, first_try, declared_empty}); "Play again" bumps replayCount and a
+ * {type:"exercise_complete"} event carries totals. progress.js (if loaded)
+ * drains the queue and ships it to the capture endpoint.
  */
 (function () {
   "use strict";
 
   var NS = (window.PaxmanTeach = window.PaxmanTeach || {});
+  NS.telemetry = NS.telemetry || [];
+  function emit(ev) { NS.telemetry.push(ev); }
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -47,6 +55,8 @@
   function buildRound(container, round, state, opts) {
     container.innerHTML = "";
     state.first = null;
+    state.roundAttempts = 0;
+    state.missPicks = [];
 
     var promptRow = el("div", "sp-caption");
     if (round.caption) promptRow.appendChild(el("span", "sp-grammar", round.caption));
@@ -92,12 +102,26 @@
       });
     }
 
+    function finishRound(hit) {
+      emit({
+        type: "round",
+        round: state.roundIndex,
+        caption: round.caption || "",
+        targets: round.targets,
+        attempts: state.roundAttempts,
+        miss_picks: state.missPicks,
+        first_try: hit && state.roundAttempts === 1,
+        declared_empty: round.targets.length === 0,
+      });
+    }
+
     function succeed(hitRange, note) {
       clearTransient();
       hitRange.forEach(function (r) { paint(r, "hit"); });
       grid.setAttribute("data-solved", "true");
       setStatus("\u2713 Correct." + (note ? " " + note : ""), "ok");
       if (!opts.silent) opts.onSolved();
+      finishRound(true);
       setTimeout(function () { opts.advance(); }, 1600);
     }
 
@@ -108,12 +132,14 @@
         return t[0] === span[0] && t[1] === span[1];
       });
       opts.attempts++;
+      state.roundAttempts++;
       if (matchIdx !== -1) {
         /* round.why is shown on correct rounds too (and always on empty
            rounds) — set it whenever there is something worth teaching. */
         succeed([span], round.why || null);
       } else if (round.targets.length === 0 && opts.emptyButtonUsed && !opts.triedEmptyThisRound) {
         /* fallthrough: wrong positive pick on an empty round */
+        state.missPicks.push(span.slice());
         paint(span, "miss");
         opts.triedEmptyThisRound = false;
         setStatus(
@@ -121,6 +147,7 @@
           "bad"
         );
       } else {
+        state.missPicks.push(span.slice());
         paint(span, "miss");
         setStatus("\u2717 " + describeMiss(s, span[1], round.targets), "bad");
         setTimeout(function () { clearTransient(); }, 900);
@@ -151,6 +178,7 @@
       noneBtn.addEventListener("click", function () {
         if (grid.getAttribute("data-solved")) return;
         opts.attempts++;
+        state.roundAttempts++;
         opts.triedEmptyThisRound = true;
         succeed([], round.why);
       });
@@ -164,8 +192,8 @@
     var mount = typeof config.mount === "string"
       ? document.querySelector(config.mount)
       : config.mount;
-    var state = { roundIndex: 0, attempts: 0, firstSolve: true };
-    var outerState = { first: null };
+    var state = { roundIndex: 0, attempts: 0 };
+    var outerState = { first: null, roundAttempts: 0, missPicks: [], replayCount: 0 };
     var headline = el("div", "sp-headline");
     mount.appendChild(headline);
     var box = el("div", "sp-box");
@@ -198,6 +226,12 @@
     }
 
     function finish() {
+      emit({
+        type: "exercise_complete",
+        total_attempts: state.attempts,
+        replays: outerState.replayCount,
+        rounds_total: config.rounds.length,
+      });
       box.innerHTML = "";
       headline.textContent = "";
       scoreLine.innerHTML = "";
@@ -208,6 +242,7 @@
       var again = el("button", "sp-again-btn", "Play again");
       again.type = "button";
       again.addEventListener("click", function () {
+        outerState.replayCount++;
         state.attempts = 0;
         state.roundIndex = 0;
         render();

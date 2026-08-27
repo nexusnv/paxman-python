@@ -33,9 +33,13 @@
 
 <section id="serve">
   <h2>Serving these files</h2>
-  <pre><code>uv run python -m http.server 8000 --directory learnings</code></pre>
-  <p>Then open <code>http://localhost:8000/</code>. All links are relative, so any static server
-  rooted at <span class="filepath">learnings/</span> works.</p>
+  <pre><code>uv run python learnings/serve.py</code></pre>
+  <p>Then open <code>http://localhost:8000/</code>. This serves the course <em>and</em> runs the
+  capture endpoint: your exercise telemetry lands in
+  <span class="filepath">learnings/progress/</span> automatically (the chip in the corner confirms).
+  A plain static server also works — captures then stay in your browser until a capture server is
+  available. All links are relative, so any static server rooted at
+  <span class="filepath">learnings/</span> works.</p>
 </section>
 
 <footer class="lesson-footer">

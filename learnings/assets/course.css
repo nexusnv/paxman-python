@@ -237,7 +237,19 @@ a.lc-title:hover { background: var(--accent-soft); }
 .lesson-card.live .lc-badge { color: var(--accent); }
 .lesson-card.planned .lc-badge { color: #999; }
 
+/* ---- progress-capture chip ---- */
+.pt-chip {
+  position: fixed; right: 1rem; bottom: 1rem;
+  font-family: var(--sans); font-size: 0.68rem;
+  border: 1px solid var(--rule); border-radius: 999px;
+  background: #fffef9; color: #777;
+  padding: 0.25rem 0.8rem; box-shadow: 0 1px 3px rgba(60,50,20,0.12);
+}
+.pt-saved { border-color: var(--ok); color: var(--ok); }
+.pt-local, .pt-error { border-color: #b8860b; color: #b8860b; }
+
 @media print {
+  .pt-chip { display: none; }
   .lesson-card { break-inside: avoid; }
   body { max-width: none; padding: 0; font-size: 11pt; }
   .exercise-shell { box-shadow: none; break-inside: avoid; }
