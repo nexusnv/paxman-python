@@ -97,6 +97,56 @@ def canonicalize(text: str, contract: CapabilityContract) -> ExecutionResult
 
 ---
 
+## `paxman.scan()`
+
+Batch scan — one `ScanContext` substrate pass, per-capability `Mention` records.
+
+```python
+def scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `text` | `str` | Input text to scan (may contain many mentions). |
+| `contracts` | `Sequence[CapabilityContract]` | One contract per capability to scan; each carries its `suppress_common_words` and other flags. |
+
+**Returns** `ScanResult` — per-capability `mentions` dict sharing one substrate.
+
+**Raises**
+
+| Exception | Cause |
+|-----------|-------|
+| `TypeError` | `text` is not `str` or `contracts` is not a `Sequence` |
+| `CapabilityError` | A contract names an unregistered capability |
+
+The scan shares one `ScanContext` (word spans and lazy views) across all contracts, so querying many capabilities costs one substrate build. Suppression (`suppress_common_words`) is honored per-contract: a `Country` contract with `suppress_common_words=True` drops word-bounded hits like `to` → `TO` (Tonga) via `COMMON_WORDS` (67), while the same text scanned with `False` keeps them. For the honest F1 path on prose, `scan()` is the preferred successor to `MultipleMentionsError` on `canonicalize()` — see `docs/user/migration.md` and `docs/recipes/segmentation.md`.
+
+```python
+import paxman
+from paxman.capabilities.Country import Country
+from paxman.core.errors import MultipleMentionsError
+
+paxman.register_all_shipped()
+contract = Country.create_contract()
+
+# Prose with embedded values — the new honest path:
+try:
+    result = paxman.canonicalize("Ship to United States please", contract)
+except MultipleMentionsError:
+    # scan() shares one ScanContext substrate across all contracts in the batch
+    mentions = paxman.scan("Ship to United States please", [contract])
+    # mentions.mentions["country"] == [
+    #   Mention(span=(5, 7), grammar="alpha2_recognition", notation=...),
+    #   Mention(span=(8, 21), grammar="name_recognition", notation=...),
+    # ]
+    for m in mentions.mentions["country"]:
+        print(m.span, m.grammar, m.notation)
+```
+
+See [Segmentation](../recipes/segmentation.md) for when to use `scan()` vs caller-owned split-then-canonicalize.
+
+---
+
 ## Contracts — `SomeCapability.create_contract()`
 
 Every capability exposes a **keyword-only** factory. Common parameters come first, capability-specific ones after.

@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-08-27
-**Commit:** 4677ff9
-**Branch:** fix/adr0009-kernel-remediation
+**Generated:** 2026-08-28
+**Commit:** dcfc
+**Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
 Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 15 capabilities (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
@@ -40,7 +40,7 @@ docs/               # adr/, development/, recipes/, user/
 | Presentation seam | `paxman/capabilities/<Name>/capability.py` → `format_value()` |
 | Regenerate generated data | `tools/regenerate_isbn_range_data.py` (ISBN range), `tools/regenerate_si_prefix_data.py` (SIUnit prefixed units), `tools/regenerate_idna_uts46_data.py` (URL IDNA mapping), `tools/regenerate_currency_data.py` (Currency + Money from `paxman/shared_data/currency_snapshot.json`) |
 | CLI behavior | `paxman/cli.py` (`--list`, `--json`, stdin; contract flags are API-only) |
-| Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
+| Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/data/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
 | Merge-blocking commands | `.github/workflows/ci.yml` (authoritative) |
 
 ## CODE MAP

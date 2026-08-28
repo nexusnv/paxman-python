@@ -9,6 +9,8 @@ Run manually when the snapshot is refreshed. Standard library only.
 
 from __future__ import annotations
 
+import argparse
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -65,7 +67,7 @@ def _emit_rule_table(entries: list[tuple[str, list[tuple[str, str, int]]]]) -> s
     return "{\n" + "\n".join(blocks) + "\n}"
 
 
-def main() -> None:
+def _render() -> str:
     root = ET.parse(SNAPSHOT).getroot()
     serial = root.findtext("MessageSerialNumber", "")
     message_date = root.findtext("MessageDate", "")
@@ -97,7 +99,38 @@ def main() -> None:
     )
     if "output_format" in doc:  # purity guard — see test_no_output_format_token
         raise RuntimeError("generated module must not contain 'output_format'")
-    OUTPUT.write_text(doc, encoding="utf-8")
+    return doc
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Regenerate ISBN Range Message.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="regenerate in memory and exit non-zero if drift",
+    )
+    args = parser.parse_args()
+    rendered = _render()
+    if args.check:
+        if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != rendered:
+            print(
+                f"DRIFT: {OUTPUT.relative_to(_REPO_ROOT)} differs from generated output",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        print("all ISBN Range Message generated data modules are up to date")
+        return
+    OUTPUT.write_text(rendered, encoding="utf-8")
+    # Re-parse to count for log (or use rendered length)
+    root = ET.parse(SNAPSHOT).getroot()
+    prefixes = [
+        (e.findtext("Prefix", ""), _collect_rules(e))
+        for e in root.findall("EAN.UCCPrefixes/EAN.UCC")
+    ]
+    groups = [
+        (g.findtext("Prefix", ""), _collect_rules(g))
+        for g in root.findall("RegistrationGroups/Group")
+    ]
     emitted = sum(len(r) for _, r in prefixes) + sum(len(r) for _, r in groups)
     print(f"wrote {OUTPUT}: {emitted} rules")
 

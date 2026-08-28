@@ -55,6 +55,12 @@ jobs:
       - name: Check generated SIUnit data drift
         run: uv run python tools/regenerate_si_prefix_data.py --check
 
+      - name: Check generated IDNA UTS46 data drift
+        run: uv run python tools/regenerate_idna_uts46_data.py --check
+
+      - name: Check generated ISBN Range data drift
+        run: uv run python tools/regenerate_isbn_range_data.py --check
+
       - name: Check generated BIC data drift
         run: uv run python tools/regenerate_bic_data.py --check
 

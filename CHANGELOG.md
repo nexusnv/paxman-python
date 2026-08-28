@@ -1,0 +1,130 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0] - 2026-08-28
+
+Recognition Kernel (ADR-0009 Rev.4). Pre-1.0 minor bump `0.1.0 → 0.2.0` with one
+intentional breaking fix (F1) and span-presentation breaking change (two-array
+offset maps). All other inputs are byte-identical under the parity gate. See
+`docs/user/migration.md` and `docs/adr/0009-recognition-kernel.md` for the full
+migration guide.
+
+### BREAKING
+
+- **Country `name_recognition` — F1 correctness fix (ADR-0009):** Whole-input
+  country-name lookup moved to an in-text word-anchored trie on the
+  `CountryNameFold` view. Short-code grammars (`alpha2`) now honestly compete
+  with the name grammar instead of silently winning when the name was invisible
+  in prose.
+
+  | Input class | Before (0.1.x) | After (0.2.0) |
+  |---|---|---|
+  | Exact name, whole input (`"United States"`) | `SUCCESS "US"` | `SUCCESS "US"` — unchanged |
+  | Name embedded in prose (`"Ship to United States please"`) | `SUCCESS "TO"` (Tonga) — wrong | `MultipleMentionsError` under a `single_value` contract; both mentions via `paxman.scan()` |
+  | Short code as ordinary word (`"to"` in prose) | recognized as alpha-2 | recognized; competes with name mention — no silent win |
+  | All other inputs | — | byte-identical (parity gate) |
+
+  Migrate prose with embedded values via `paxman.scan()` or the
+  caller-owned split-then-canonicalize recipe (`docs/recipes/segmentation.md`).
+
+- **Two-array offset maps (ADR-0009 Rev.4, breaking in spans only):**
+  `Normalizer` now returns `(subject, starts, ends)` with
+  `len(starts)==len(ends)==len(subject)` and
+  `View.original_span(s, e) -> (starts[s], ends[e-1])` when mapped.
+  Trailing dropped punctuation is no longer absorbed into the span:
+
+  | Input | Before | After |
+  |---|---|---|
+  | `"United States."` name mention | `(0, 14)` `raw_text="United States."` | `(0, 13)` `raw_text="United States"` |
+  | `"United States of America,"` | `(0, 25)` includes `,` | `(0, 24)` trimmed |
+  | `"+1 (555) 123-4567"` via `StripSeparators` | sentinel `ends[-1]==len(text)` | per-char `ends`, `original_span(0,n)==(0,17)` exact |
+
+  Whole-input canonical values are unchanged; only `span`/`raw_text`
+  presentation shifts. `raw_text == text[start:end]` is now an engine
+  invariant. Golden samples asserting `(0, 14)` for `"United States."` should
+  assert `(0, 13)`.
+
+### Added
+
+- **`paxman.scan(text, contracts) -> ScanResult` batch API + `Mention`/`ScanResult` model + `paxman scan` CLI** — one `ScanContext` substrate pass
+  shared across all contracts in the batch; mentions are maximal clusters under
+  the existing total-order + containment policy (ADR-0009 §§6, 11, 13).
+- **`VersionStamp.recognition_revision`** — hash of the compiled matcher set +
+  snapshot SHAs (ADR-0009 §13). Same-snapshot diff signal: if
+  `recognition_revision` changes, recognition behavior changed for at least one
+  capability even when `paxman_version` is unchanged. Store both fields for
+  audit trails (`docs/user/migration.md`).
+- **Common-word suppression for `scan()` (ADR-0009 §16, B1)** — off by
+  default, additive. `CapabilityContract.suppress_common_words: bool = False`
+  (frozen, no slots), forwarded by every `create_contract(..., suppress_common_words=False)`.
+  Table `paxman/core/grammar/data/common_words.py:COMMON_WORDS` (67 entries,
+  Google 1000 ∩ ISO 3166 α2/α3 + ISO 4217 + ISO 639, `assert len==67`,
+  `USD` deliberately excluded). Short-code matchers marked `suppressible=True`
+  (`Country` alpha2/alpha3/numeric, `Currency` code, `Language` language_code;
+  all `BoundarySpec.WORD`-bounded). Engine skips emit when
+  `contract.suppress_common_words and matcher.suppressible and text[span].lower() in COMMON_WORDS`.
+  CLI: `paxman scan --suppress-common-words`. Bare-code `canonicalize("to")`
+  stays `SUCCESS "TO"` when the flag is off.
+- **Recognition Kernel infrastructure (ADR-0009)** — `ScanContext` lazy views,
+  `MatcherSpec` 6 kinds (`regex`/`lexicon`/`scanner`/`combinator`/`candidates`/`label`)
+  with `BoundarySpec` presets and `AnchorSet` T0 prefilter, two-array
+  `Normalizer` protocol, `CandidatesMatcher` (`Date` 4→1 consolidation, strategy
+  `"all"` preserving `01/02/2026` `AMBIGUOUS`), snapshot rails
+  (`paxman/shared_data/*_snapshot.json` + `tools/regenerate_*` + CI drift gate)
+  and derived recognition keys (BIC country codes, Language IANA subset).
+- **15 shipped capabilities** — `BIC`, `Country`, `Currency`, `Date`, `Email`,
+  `IBAN`, `IP`, `ISBN`, `ISSN`, `Language`, `Money`, `ORCID`, `Phone`,
+  `SIUnit`, `URL` (`paxman/api/bootstrap.py:_SHIPPED`, alphabetical; see
+  `README.md` capability table). Register via `paxman.register_all_shipped()`
+  or `paxman.register_capability(Cap())`.
+
+### Changed
+
+- **Date grammars consolidated 4→1** — ISO 8601, slash-ISO, US, and European
+  formats now live in a single `CandidatesMatcher` with `strategy="all"`;
+  `README.md` table shows `Date | Dates | 1 (date) | 3`.
+- **Performance** — `LexiconMatcher` auto-selects regex alternation (≤~500
+  tokens) vs word-anchored dict trie (>~500), measured 2.4–6.5× at 650/820
+  tokens; `SIUnit` split-prefix migrated to `seq(prefix, ws, unit)` combinator
+  replacing a 19,530-token product trie; `ScanContext` construction moved out
+  of the per-grammar hot path for `scan()` batch reuse.
+
+### Removed
+
+- **`PropertyMatcher` / `unicode_ranges` kind** — generator
+  `tools/regenerate_unicode_property_data.py` and its snapshot/data modules
+  deleted in `8116145` (single-customer kind deferred per ADR-0009 §9.5
+  until a second property recurs). No remaining `Property` grammar.
+
+### Fixed
+
+- **Boundary/lexicon correctness** — `BoundarySpec` O(1) frozensets, shared
+  `ScanContext` word spans, and trie word-anchoring fix the F1 prose defect
+  while preserving the parity gate for all non-F1 inputs.
+- **CI drift gates** — 8 drift checks (currency, si_prefix, idna_uts46,
+  isbn_range, bic, iban_registry, iana_language, language) + `git diff --exit-code`
+  and informational benchmark remain merge-blocking per `.github/workflows/ci.yml`.
+
+### Migrations
+
+Migrate prose with embedded values via `paxman.scan()` or the caller-owned
+split-then-canonicalize recipe (`docs/recipes/segmentation.md`). For whole-input
+values, no change. Golden samples asserting `(0, 14)` for `"United States."`
+should assert `(0, 13)` per two-array offset map. See `docs/user/migration.md`
+and `docs/adr/0009-recognition-kernel.md` for the full guide.
+
+## [0.1.0] - 2026-08-22
+
+- Initial release — first-time user experience + publish workflow (Trusted
+  Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
+  `0.1.0`, tag `v0.1.0`).
+
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/nexusnv/paxman-python/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/nexusnv/paxman-python/releases/tag/v0.1.0
