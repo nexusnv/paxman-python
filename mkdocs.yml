@@ -8,10 +8,7 @@ site_author: Paxman Authors
 site_url: https://paxman.readthedocs.io/
 repo_url: https://github.com/nexusnv/paxman-python
 repo_name: nexusnv/paxman-python
-edit_uri: edit/main/docs/
-
-# From v0.2.0 onwards — earlier tags (v0.1.x) have no stable user docs.
-copyright: Copyright &copy; 2026 Paxman Authors. Docs since v0.2.0.
+edit_uri: edit/main/docs/user/
 
 theme:
   name: material
@@ -42,38 +39,37 @@ theme:
   icon:
     logo: material/book-open-page-variant
 
-# Where the docs live — user docs are the published site, recipes are included.
-docs_dir: docs
+# Where the user docs live — only docs/user is published.
+docs_dir: docs/user
 site_dir: site
 
 nav:
-  - Home: user/index.md
-  - Getting Started: user/getting-started.md
+  - Home: index.md
+  - Getting Started: getting-started.md
   - Concepts:
-      - Overview: user/concepts/index.md
-      - Capabilities: user/concepts/capabilities.md
-      - Contracts: user/concepts/contracts.md
-      - Pipeline: user/concepts/pipeline.md
-      - Execution Result: user/concepts/execution-result.md
-      - Provenance: user/concepts/provenance.md
-      - Candidates & Ambiguity: user/concepts/candidates-and-ambiguity.md
-      - Errors: user/concepts/errors.md
+      - Overview: concepts/index.md
+      - Capabilities: concepts/capabilities.md
+      - Contracts: concepts/contracts.md
+      - Pipeline: concepts/pipeline.md
+      - Execution Result: concepts/execution-result.md
+      - Provenance: concepts/provenance.md
+      - Candidates & Ambiguity: concepts/candidates-and-ambiguity.md
+      - Errors: concepts/errors.md
   - Capabilities:
-      - Overview: user/capabilities/index.md
-      - Email: user/capabilities/email.md
-      - Country: user/capabilities/country.md
-      - Currency: user/capabilities/currency.md
-      - Date: user/capabilities/date.md
-      - IP: user/capabilities/ip.md
-      - ISBN: user/capabilities/isbn.md
-      - Money: user/capabilities/money.md
-      - Phone: user/capabilities/phone.md
-      - SI Unit: user/capabilities/si-unit.md
-      - URL: user/capabilities/url.md
-  - API Reference: user/api-reference.md
-  - Extending: user/extending.md
-  - Migration: user/migration.md
-  - Segmentation Recipe: recipes/segmentation.md
+      - Overview: capabilities/index.md
+      - Email: capabilities/email.md
+      - Country: capabilities/country.md
+      - Currency: capabilities/currency.md
+      - Date: capabilities/date.md
+      - IP: capabilities/ip.md
+      - ISBN: capabilities/isbn.md
+      - Money: capabilities/money.md
+      - Phone: capabilities/phone.md
+      - SI Unit: capabilities/si-unit.md
+      - URL: capabilities/url.md
+  - API Reference: api-reference.md
+  - Extending: extending.md
+  - Migration: migration.md
 
 markdown_extensions:
   - admonition
