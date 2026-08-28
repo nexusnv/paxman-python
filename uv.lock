@@ -723,13 +723,6 @@ name = "paxman"
 version = "0.2.0"
 source = { editable = "." }
 
-[package.optional-dependencies]
-docs = [
-    { name = "mkdocs" },
-    { name = "mkdocs-material" },
-    { name = "pymdown-extensions" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "hypothesis" },
@@ -746,12 +739,6 @@ docs = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6" },
-    { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
-    { name = "pymdown-extensions", marker = "extra == 'docs'", specifier = ">=10.0" },
-]
-provides-extras = ["docs"]
 
 [package.metadata.requires-dev]
 dev = [

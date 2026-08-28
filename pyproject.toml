@@ -23,13 +23,6 @@ Homepage = "https://github.com/nexusnv/paxman-python"
 Repository = "https://github.com/nexusnv/paxman-python"
 Issues = "https://github.com/nexusnv/paxman-python"
 
-[project.optional-dependencies]
-docs = [
-    "mkdocs>=1.6",
-    "mkdocs-material>=9.5",
-    "pymdown-extensions>=10.0",
-]
-
 [project.scripts]
 paxman = "paxman.cli:main"
 
