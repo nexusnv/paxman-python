@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "lesson": "0001-spans-what-a-grammar-returns",
+  "captured_at_utc": "2026-08-27T05:08:40.747Z",
+  "rounds": [
+    {
+      "caption": "SIUnit name_recognition folds case for matching — spans report ORIGINAL coordinates",
+      "targets": [
+        [
+          0,
+          8
+        ]
+      ],
+      "attempts": 1,
+      "miss_picks": [],
+      "first_try": true,
+      "declared_empty": false
+    }
+  ],
+  "retrieval": [],
+  "exercise_complete": null
+}

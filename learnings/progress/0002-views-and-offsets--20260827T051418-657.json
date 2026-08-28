@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "lesson": "0002-views-and-offsets",
+  "captured_at_utc": "2026-08-27T05:14:14.356Z",
+  "rounds": [
+    {
+      "caption": "CountryNameFold hit subject [0, 12) — input: “Côte d’Ivoire”",
+      "targets": [
+        [
+          0,
+          13
+        ]
+      ],
+      "attempts": 1,
+      "miss_picks": [],
+      "first_try": true,
+      "declared_empty": false
+    }
+  ],
+  "retrieval": [],
+  "exercise_complete": null
+}
