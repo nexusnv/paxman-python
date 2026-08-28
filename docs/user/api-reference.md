@@ -2,7 +2,7 @@
 title: "API Reference"
 ---
 
-This page is the concise reference for the public Python surface you import. For the mental model behind these types, see [Concepts](concepts/index.md).
+This page is the concise reference for the public Python surface you import. For the mental model behind these types, see [Concepts](concepts/).
 
 ---
 
@@ -56,7 +56,7 @@ flowchart LR
 |----------|-----------|--------------|
 | `paxman.register_all_shipped()` | `() -> None` | Registers every capability shipped in this release. Idempotent by name. |
 | `paxman.register_capability(cap)` | `(cap: Capability) -> None` | Registers one capability instance, e.g. `Email()`. Fails if the name already exists or the registry is frozen. |
-| `paxman.register_grammar(name, cls)` | `(capability_name: str, grammar_cls: type[Grammar]) -> None` | Registers a community grammar (see [Extending](extending.md)). Must happen before the first call. |
+| `paxman.register_grammar(name, cls)` | `(capability_name: str, grammar_cls: type[Grammar]) -> None` | Registers a community grammar (see [Extending](extending/)). Must happen before the first call. |
 | `paxman.register_rule(name, cls)` | `(capability_name: str, rule_cls: type[Rule]) -> None` | Registers a community rule. Must happen before the first call. |
 
 ```python
@@ -95,7 +95,7 @@ def canonicalize(text: str, contract: CapabilityContract) -> ExecutionResult
 | `RecognitionError` | Grammar raised or returned a malformed match (`rule`, `original_error`) |
 | `ValidationError` | Rule raised inside `matches()`/`normalize()` (`rule`, `original_error`) |
 
-`MISSING` / `INVALID` / `AMBIGUOUS` do **not** raise — they are `ExecutionResult.status` values (see [Execution Result](concepts/execution-result.md) and [Candidates & Ambiguity](concepts/candidates-and-ambiguity.md)).
+`MISSING` / `INVALID` / `AMBIGUOUS` do **not** raise — they are `ExecutionResult.status` values (see [Execution Result](concepts/execution-result/) and [Candidates & Ambiguity](concepts/candidates-and-ambiguity/)).
 
 ---
 
@@ -167,7 +167,7 @@ contract = Email.create_contract(
 )
 ```
 
-The contract is a **frozen dataclass** — construct it, pass it, inspect it, but do not mutate it. See [Contracts](concepts/contracts.md) for the full common-plus-specific table.
+The contract is a **frozen dataclass** — construct it, pass it, inspect it, but do not mutate it. See [Contracts](concepts/contracts/) for the full common-plus-specific table.
 
 ### `output_format` policy (identical for every capability)
 
@@ -265,7 +265,7 @@ class Resolution(Enum):
     AMBIGUOUS = "ambiguous"
 ```
 
-**Reading the result** (see also [Execution Result](concepts/execution-result.md)):
+**Reading the result** (see also [Execution Result](concepts/execution-result/)):
 
 ```python
 from paxman.core.domain import Resolution
@@ -284,7 +284,7 @@ else:
 
 ## Errors
 
-All exceptions inherit from `PaxmanError`. See [Errors](concepts/errors.md) for handling patterns.
+All exceptions inherit from `PaxmanError`. See [Errors](concepts/errors/) for handling patterns.
 
 | Exception | Signal type | Typical cause |
 |-----------|-------------|---------------|
@@ -313,4 +313,4 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | SI unit expressions | SI Unit | `SIUnit.create_contract(...)` |
 | Absolute URLs / IRIs | URL | `URL.create_contract(...)` |
 
-New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/index.md) details its recognized forms, output formats, contract flags, and provenance.
+New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

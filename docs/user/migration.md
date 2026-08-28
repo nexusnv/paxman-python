@@ -264,13 +264,13 @@ for text, contract, expected in checks:
 
 Spec tables (CLDR, ISBN Range Message, URL IDNA) are regenerated from snapshots and live inside the library. When a spec evolves (new country names, new currency symbols, new IDNA mappings), the release notes will note it. Use `contract.year` to pin to specs published up to a given year when reproducibility against a point-in-time authority matters; combine it with a pinned `paxman` version in your environment for full reproducibility.
 
-See [Contracts](concepts/contracts.md) for `year` filtering, [Provenance](concepts/provenance.md) for `publication_year` on each citation, and [Execution Result](concepts/execution-result.md) for `version_stamp`.
+See [Contracts](concepts/contracts/) for `year` filtering, [Provenance](concepts/provenance/) for `publication_year` on each citation, and [Execution Result](concepts/execution-result/) for `version_stamp`.
 
 ---
 
 ## See also
 
-- [API Reference](api-reference.md) — registration, contracts, and statuses
-- [Concepts — Pipeline](concepts/pipeline.md) — why statuses are stable (recognition → validation → resolution)
-- [Extending](extending.md) — keeping community grammars/rules compatible across upgrades
+- [API Reference](api-reference/) — registration, contracts, and statuses
+- [Concepts — Pipeline](concepts/pipeline/) — why statuses are stable (recognition → validation → resolution)
+- [Extending](extending/) — keeping community grammars/rules compatible across upgrades
 - [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — caller-owned splitting for multi-entity text

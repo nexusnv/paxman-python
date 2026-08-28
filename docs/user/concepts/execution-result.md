@@ -53,7 +53,7 @@ stateDiagram-v2
 | `SUCCESS` | Exactly one canonical value, validated | `str` | `(start, end)` of that value | one or more agreeing candidates |
 | `AMBIGUOUS` | One mention, two or more authorities that disagree | `None` | `None` | two+ disagreeing candidates |
 
-`MISSING` vs `INVALID` is not a wording choice — it is a pipeline signal (see [Pipeline](pipeline.md)): `MISSING` means recognition found nothing; `INVALID` means recognition found something but validation rejected it. That tells you whether to try a different recognition flag or a different validation rule.
+`MISSING` vs `INVALID` is not a wording choice — it is a pipeline signal (see [Pipeline](pipeline/)): `MISSING` means recognition found nothing; `INVALID` means recognition found something but validation rejected it. That tells you whether to try a different recognition flag or a different validation rule.
 
 **Python tip — always branch on `status`, not truthiness:**
 
@@ -150,4 +150,4 @@ Check `status` first, use `canonicalized_value` only on `SUCCESS`, and fall back
 
 The execution result is like a lab report. It says *what the verdict was* (SUCCESS/MISSING/INVALID/AMBIGUOUS), *what the cleaned-up value is if there is one*, *where in the original text it was found*, and *which rulebooks were consulted*. You always get the same report format — only the verdict changes.
 
-Next: [Provenance →](provenance.md) — who vouches for the answer and how to cite it.
+Next: [Provenance →](provenance/) — who vouches for the answer and how to cite it.

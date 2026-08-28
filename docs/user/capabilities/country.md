@@ -67,7 +67,7 @@ contract = Country.create_contract(
 - `include_localized` gates the CLDR localized-name rule; when `False`, `Alemania` is recognized but **no rule validates it** → `INVALID`.
 - `include_historical` gates ISO 3166-3; a historical name that validates returns the **historical entity's own former code** (e.g. `Burma` → `BU`), not a successor state's code.
 
-Historical names can also be viewed as excluding the current ISO 3166-1 name rules and pinning to the 3166-3 rule — the contract controls which specs are consulted (see [Contracts](../concepts/contracts.md)).
+Historical names can also be viewed as excluding the current ISO 3166-1 name rules and pinning to the 3166-3 rule — the contract controls which specs are consulted (see [Contracts](../concepts/contracts/)).
 
 ---
 
@@ -139,4 +139,4 @@ for text in rows:
 
 Each candidate's `validation_rule` carries the section, and `candidate.provenance[0].publication_year` the year.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result/), [Provenance](../concepts/provenance/), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

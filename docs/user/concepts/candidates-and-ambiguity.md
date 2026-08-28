@@ -18,7 +18,7 @@ candidate.span  # where in the input it sat
 candidate.provenance  # which authority vouches for it
 ```
 
-Candidates are deduplicated by `(value, recognition_rule, validation_rule)`. If two rules happen to converge on the same string, they collapse to one distinct value — that is agreement, not ambiguity (see [Execution Result](execution-result.md)).
+Candidates are deduplicated by `(value, recognition_rule, validation_rule)`. If two rules happen to converge on the same string, they collapse to one distinct value — that is agreement, not ambiguity (see [Execution Result](execution-result/)).
 
 ```mermaid
 flowchart TB
@@ -72,7 +72,7 @@ Concrete examples:
 
 ## How to handle `AMBIGUOUS`
 
-You have three tools, all through the contract (see [Contracts](contracts.md)):
+You have three tools, all through the contract (see [Contracts](contracts/)):
 
 ### 1. Pin to a specific spec
 
@@ -118,7 +118,7 @@ Output:
   '2026-02-01' via Section Y ... (Authority B: Spec B) span=(0, 10)
 ```
 
-That evidence is the provenance story for each reading (see [Provenance](provenance.md)) — it is what lets you or your user decide, rather than Paxman deciding silently.
+That evidence is the provenance story for each reading (see [Provenance](provenance/)) — it is what lets you or your user decide, rather than Paxman deciding silently.
 
 ### Notebook pattern — keep ambiguous rows for review
 
@@ -148,4 +148,4 @@ for text in rows:
 
 Candidates are like second opinions from different experts looking at the same X-ray. If both experts agree, you have one answer. If they disagree and both are credible, the honest report is *these experts disagree, here is why* — not a silent pick. `AMBIGUOUS` is that honest report, and `candidates` is the list of opinions with their citations so you can decide.
 
-Next: [Errors →](errors.md) — what raises an exception instead of returning a status.
+Next: [Errors →](errors/) — what raises an exception instead of returning a status.

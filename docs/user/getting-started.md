@@ -82,7 +82,7 @@ contract = Email.create_contract()
 contract2 = Email.create_contract(include_obfuscated=True)
 ```
 
-You will learn all the knobs a contract offers in [Contracts](concepts/contracts.md). For now, know that:
+You will learn all the knobs a contract offers in [Contracts](concepts/contracts/). For now, know that:
 
 - `excluded_rules`, `pinned_rules`, `year`, and `output_format` exist on **every** contract.
 - Some contracts add their own flags (e.g. `include_localized` for Country, `default_country` for Phone).
@@ -146,7 +146,7 @@ for c in result.candidates:
     print(c.value, c.provenance[0].specification_name, c.span)
 ```
 
-What the statuses mean (covered in depth in [Execution Result](concepts/execution-result.md)):
+What the statuses mean (covered in depth in [Execution Result](concepts/execution-result/)):
 
 | Status | Meaning | What to do |
 |--------|---------|------------|
@@ -155,7 +155,7 @@ What the statuses mean (covered in depth in [Execution Result](concepts/executio
 | `INVALID` | Looked like it, but no spec accepted it | The input is malformed |
 | `AMBIGUOUS` | One mention, two specs that disagree (e.g. `01/02/2026`) | Narrow the contract or ask the user |
 
-Provenance (which spec validated the answer) is always on `candidate.provenance` — see [Provenance](concepts/provenance.md).
+Provenance (which spec validated the answer) is always on `candidate.provenance` — see [Provenance](concepts/provenance/).
 
 ---
 
@@ -214,15 +214,15 @@ No extra handling for `MISSING`/`INVALID` is needed beyond checking `status` —
 
 ## 7. What to do when something goes wrong
 
-- **Unexpected `MISSING`** — did you enable the right recognition flag? (e.g. `include_obfuscated` for Email, `include_localized` for Country — see [Contracts](concepts/contracts.md)).
+- **Unexpected `MISSING`** — did you enable the right recognition flag? (e.g. `include_obfuscated` for Email, `include_localized` for Country — see [Contracts](concepts/contracts/)).
 - **Unexpected `INVALID`** — the pattern was seen but no spec accepted it. Check whether you excluded the relevant rule, or whether the input is genuinely malformed.
-- **Unexpected `AMBIGUOUS`** — one input legitimately means two things under different specs. See [Candidates & Ambiguity](concepts/candidates-and-ambiguity.md).
-- **Exception instead of a result** — see [Errors](concepts/errors.md). Common cases: registering after the first call, or a malformed contract.
+- **Unexpected `AMBIGUOUS`** — one input legitimately means two things under different specs. See [Candidates & Ambiguity](concepts/candidates-and-ambiguity/).
+- **Exception instead of a result** — see [Errors](concepts/errors/). Common cases: registering after the first call, or a malformed contract.
 
 ---
 
 ## Next steps
 
-- [Concepts →](concepts/index.md) — build the full mental model.
+- [Concepts →](concepts/) — build the full mental model.
 - [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — handle text with multiple entities.
 - Read the [README](https://github.com/nexusnv/paxman-python#readme) for a quick reference table of every capability and its examples.

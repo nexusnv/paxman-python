@@ -120,4 +120,4 @@ for text in rows:
 - **WHATWG URL Standard** — absolute-URI / IRI validation and serialization.
 - **UTS #46 / IDNA** — mapping of internationalized hosts.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result/), [Provenance](../concepts/provenance/), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

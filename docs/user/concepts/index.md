@@ -41,13 +41,13 @@ You provide **text + a contract** that selects a **capability**. Paxman runs its
 
 | Concept | One-line summary | When you need it |
 |---------|-----------------|------------------|
-| [Capabilities](capabilities.md) | A capability is one kind of identifier Paxman knows how to canonicalize (email, country, URL, …). The set grows over time. | Choosing what to import, deciding whether Paxman covers your data |
-| [Contracts](contracts.md) | A contract configures a capability — which patterns to look for, which specs to enforce, how to render the answer. | Enabling optional formats, pinning to a spec version, selecting an output form |
-| [Pipeline](pipeline.md) | The three stages inside `canonicalize()`: recognition → validation → resolution. | Understanding why an input is `MISSING` vs `INVALID` vs `AMBIGUOUS` |
-| [Execution Result](execution-result.md) | The object you get back: `status`, `canonicalized_value`, `candidates`, `span`, `version_stamp`. | Reading answers in code or a notebook |
-| [Provenance](provenance.md) | The authority citation attached to every validated value — which spec, which version, which section. | Auditing, citing sources, comparing Paxman against another system |
-| [Candidates & Ambiguity](candidates-and-ambiguity.md) | Why one input can produce multiple valid answers and how Paxman surfaces that without guessing. | Handling `AMBIGUOUS` in your application |
-| [Errors](errors.md) | What raises an exception (setup, caller misuse, or pipeline failure) vs what returns a status (domain answer). | Debugging setup and contract mistakes |
+| [Capabilities](capabilities/) | A capability is one kind of identifier Paxman knows how to canonicalize (email, country, URL, …). The set grows over time. | Choosing what to import, deciding whether Paxman covers your data |
+| [Contracts](contracts/) | A contract configures a capability — which patterns to look for, which specs to enforce, how to render the answer. | Enabling optional formats, pinning to a spec version, selecting an output form |
+| [Pipeline](pipeline/) | The three stages inside `canonicalize()`: recognition → validation → resolution. | Understanding why an input is `MISSING` vs `INVALID` vs `AMBIGUOUS` |
+| [Execution Result](execution-result/) | The object you get back: `status`, `canonicalized_value`, `candidates`, `span`, `version_stamp`. | Reading answers in code or a notebook |
+| [Provenance](provenance/) | The authority citation attached to every validated value — which spec, which version, which section. | Auditing, citing sources, comparing Paxman against another system |
+| [Candidates & Ambiguity](candidates-and-ambiguity/) | Why one input can produce multiple valid answers and how Paxman surfaces that without guessing. | Handling `AMBIGUOUS` in your application |
+| [Errors](errors/) | What raises an exception (setup, caller misuse, or pipeline failure) vs what returns a status (domain answer). | Debugging setup and contract mistakes |
 
 ---
 
@@ -84,9 +84,9 @@ flowchart TB
 ## Reading order
 
 - **New to Paxman?** Read in order: Capabilities → Contracts → Pipeline → Execution Result. Skim Provenance, Candidates, and Errors as needed.
-- **Cleaning data in a notebook?** Jump to [Pipeline](pipeline.md) (to predict outcomes) and [Execution Result](execution-result.md) (to handle statuses), then [Candidates & Ambiguity](candidates-and-ambiguity.md) if you hit `AMBIGUOUS`.
-- **Integrating into an app?** Read [Contracts](contracts.md) and [Errors](errors.md) carefully — they cover the knobs and the failure modes you need to handle.
+- **Cleaning data in a notebook?** Jump to [Pipeline](pipeline/) (to predict outcomes) and [Execution Result](execution-result/) (to handle statuses), then [Candidates & Ambiguity](candidates-and-ambiguity/) if you hit `AMBIGUOUS`.
+- **Integrating into an app?** Read [Contracts](contracts/) and [Errors](errors/) carefully — they cover the knobs and the failure modes you need to handle.
 
 > **A note on the capability list:** the set of capabilities grows across releases. This hub lists examples from the current release; never treat a count in these docs as final. Check `paxman.capabilities` or the latest release notes for the current set.
 
-Next: [Capabilities →](capabilities.md)
+Next: [Capabilities →](capabilities/)

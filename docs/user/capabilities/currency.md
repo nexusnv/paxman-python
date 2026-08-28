@@ -2,7 +2,7 @@
 title: "Currency"
 ---
 
-Canonicalizes **one currency identifier** per call — a code, a symbol, or a display name — to the uppercase ISO 4217 alpha-3 code. No amounts: `"USD 500"` is the [Money](money.md) capability's domain.
+Canonicalizes **one currency identifier** per call — a code, a symbol, or a display name — to the uppercase ISO 4217 alpha-3 code. No amounts: `"USD 500"` is the [Money](money/) capability's domain.
 
 > **In plain language:** give it `"usd"`, `"€"`, `"euro"`, or `"$"` and it tells you which currency code the spec says that identifier means. A bare shared symbol like `"$"` is deliberately `INVALID` unless you say which currency you mean.
 
@@ -72,7 +72,7 @@ paxman.canonicalize(
 ).status.value  # "invalid" — MYR is not a $ candidate
 ```
 
-See [Contracts](../concepts/contracts.md) and the [API Reference](../api-reference.md#contracts--somecapabilitycreate_contract).
+See [Contracts](../concepts/contracts/) and the [API Reference](../api-reference/#contracts--somecapabilitycreate_contract).
 
 ---
 
@@ -136,6 +136,6 @@ for text in ["usd", "euro", "€", "$", "US$", "notacurrency"]:
 - **ISO 4217** — alpha-3 currency codes.
 - **CLDR** — currency symbols and display names.
 
-Compare [Money](money.md) when your input includes amounts; Currency is identifier-only.
+Compare [Money](money/) when your input includes amounts; Currency is identifier-only.
 
-See also: [Money](money.md), [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md).
+See also: [Money](money/), [Execution Result](../concepts/execution-result/), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity/).

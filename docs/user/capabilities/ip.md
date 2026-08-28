@@ -13,7 +13,7 @@ Canonicalizes **one IP address** per call to its normalized textual form.
 | Recognizes | Does not recognize |
 |------------|--------------------|
 | IPv4 dotted-decimal (`192.168.1.1`) | CIDR notation (`192.168.1.0/24`) — address only |
-| IPv6 (compressed or expanded, e.g. `2001:db8::1`) | Hostnames — use [URL](url.md) |
+| IPv6 (compressed or expanded, e.g. `2001:db8::1`) | Hostnames — use [URL](url/) |
 
 ---
 
@@ -117,4 +117,4 @@ for text in [
 - **RFC 791** — IPv4 address validation.
 - **RFC 5952** — IPv6 text representation and canonical compression.
 
-See also: [URL](url.md), [Execution Result](../concepts/execution-result.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
+See also: [URL](url/), [Execution Result](../concepts/execution-result/), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

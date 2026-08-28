@@ -15,7 +15,7 @@ contract = X.create_contract(...)  # domain flags here
 result = paxman.canonicalize(text, contract)
 ```
 
-For the shared concepts behind these pages see [Contracts](../concepts/contracts.md), [Pipeline](../concepts/pipeline.md), [Execution Result](../concepts/execution-result.md), and the [API Reference](../api-reference.md).
+For the shared concepts behind these pages see [Contracts](../concepts/contracts/), [Pipeline](../concepts/pipeline/), [Execution Result](../concepts/execution-result/), and the [API Reference](../api-reference/).
 
 ---
 
@@ -23,16 +23,16 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 
 | Your data looks like… | Read |
 |-----------------------|------|
-| `user@example.com`, `user at example dot com` | [Email](email.md) |
-| `2026-01-15`, `01/02/2026`, `2026/01/15` | [Date](date.md) |
-| `US`, `United States`, `Alemania` | [Country](country.md) |
-| `USD`, `$`, `euro`, `¥` (identifiers without amounts) | [Currency](currency.md) |
-| `192.168.1.1`, `2001:db8::1` | [IP](ip.md) |
-| `9780306406157`, `0306406152` | [ISBN](isbn.md) |
-| `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money.md) |
-| `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone.md) |
-| `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit.md) |
-| `https://example.com`, `http://münchen.de` | [URL](url.md) |
+| `user@example.com`, `user at example dot com` | [Email](email/) |
+| `2026-01-15`, `01/02/2026`, `2026/01/15` | [Date](date/) |
+| `US`, `United States`, `Alemania` | [Country](country/) |
+| `USD`, `$`, `euro`, `¥` (identifiers without amounts) | [Currency](currency/) |
+| `192.168.1.1`, `2001:db8::1` | [IP](ip/) |
+| `9780306406157`, `0306406152` | [ISBN](isbn/) |
+| `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money/) |
+| `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone/) |
+| `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit/) |
+| `https://example.com`, `http://münchen.de` | [URL](url/) |
 
 > The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
 
@@ -71,7 +71,7 @@ Start with the capability that matches your column; if you need more than one, r
 
 ## One mention per call
 
-Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline](../concepts/pipeline.md)). Text that contains two different entities with different canonical values raises `MultipleMentionsError` rather than returning a merged answer — split first, then loop.
+Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline](../concepts/pipeline/)). Text that contains two different entities with different canonical values raises `MultipleMentionsError` rather than returning a merged answer — split first, then loop.
 
 ```python
 from paxman.core.errors import MultipleMentionsError

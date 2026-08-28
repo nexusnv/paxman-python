@@ -4,7 +4,7 @@ title: "Money"
 
 Canonicalizes **one money amount paired with a currency** per call to `CODE amount` padded to ISO 4217 minor units.
 
-> **In plain language:** give it `"USD500"` or `"1.000,50 EUR"` and it hands back `"USD 500.00"` / `"EUR 1000.50"` if the specs say the amount and currency go together. Currency without an amount — or an amount without a currency — is not Money's domain (see [Currency](currency.md)).
+> **In plain language:** give it `"USD500"` or `"1.000,50 EUR"` and it hands back `"USD 500.00"` / `"EUR 1000.50"` if the specs say the amount and currency go together. Currency without an amount — or an amount without a currency — is not Money's domain (see [Currency](currency/)).
 
 ---
 
@@ -12,7 +12,7 @@ Canonicalizes **one money amount paired with a currency** per call to `CODE amou
 
 | Recognizes (currency + amount adjacent) | Does not recognize |
 |-----------------------------------------|--------------------|
-| `USD500`, `USD 500.00`, `EUR 1.000,50` | Currency identifier alone (`USD`) — use [Currency](currency.md) |
+| `USD500`, `USD 500.00`, `EUR 1.000,50` | Currency identifier alone (`USD`) — use [Currency](currency/) |
 | `€500`, `¥1000`, `US$ 500` (qualified symbol) | Bare shared symbol without disambiguation (`$500` with default contract) — recognized but `INVALID` |
 | `1.000,50 EUR` — European comma-decimal: last separator is the decimal point | Amount-glued tokens without a clean boundary — `MISSING` |
 | `$500` with `dollar_sign_currency="USD"` — opt-in for shared symbols | Bare `$` without `dollar_sign_currency` — `INVALID` |
@@ -148,6 +148,6 @@ for text in rows:
 - **ISO 4217** — currency codes and minor units.
 - **CLDR** — currency symbols and display names.
 
-Compare [Currency](currency.md) for identifier-only canonicalization (no amount).
+Compare [Currency](currency/) for identifier-only canonicalization (no amount).
 
-See also: [Execution Result](../concepts/execution-result.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result/), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

@@ -16,7 +16,7 @@ Canonicalizes **one email address** per call — standard, obfuscated, or localh
 | Obfuscated `user at example dot com` (only when `include_obfuscated=True`) | Arbitrary prose that happens to mention a domain without address structure |
 | `admin@localhost` (only when `include_localhost=True`, the default) | |
 
-Grammars are syntax-only; whether the match is *valid* is decided by the rules (see [Pipeline](../concepts/pipeline.md)).
+Grammars are syntax-only; whether the match is *valid* is decided by the rules (see [Pipeline](../concepts/pipeline/)).
 
 ---
 
@@ -53,7 +53,7 @@ contract = Email.create_contract(
 - Use `excluded_rules` / `pinned_rules` / `year` to control **which rules validate** — a recognized input that no rule accepts becomes `INVALID`.
 - `output_format` is ignored beyond validation; it only shapes the rendered string.
 
-See [Contracts](../concepts/contracts.md) and the [API Reference](../api-reference.md#contracts--somecapabilitycreate_contract) for the full policy.
+See [Contracts](../concepts/contracts/) and the [API Reference](../api-reference/#contracts--somecapabilitycreate_contract) for the full policy.
 
 ---
 
@@ -146,4 +146,4 @@ for c in result.candidates:
 
 On `SUCCESS`, `result.span` is the exact `[start, end)` of the email in the original input — useful for highlighting in UIs or logging. On `MISSING` / `INVALID` it is `None`; on `AMBIGUOUS` (rare for Email) use each `candidate.span`.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result/), [Provenance](../concepts/provenance/), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

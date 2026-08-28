@@ -42,7 +42,7 @@ All Paxman exceptions inherit from `PaxmanError`.
 | Exception | When it is raised | What to do |
 |-----------|-------------------|------------|
 | `CapabilityError` | Unknown capability name, duplicate capability/grammar name, or registering after the registry has frozen | Register before the first `canonicalize()`; check spelling; avoid duplicate names |
-| `ContractError` | Malformed contract — unknown `pinned_rules` entry, unknown `output_format`, unknown semantics in `extra_grammars`, or a rule's required feature missing from the contract | Fix the contract — see [Contracts](contracts.md) |
+| `ContractError` | Malformed contract — unknown `pinned_rules` entry, unknown `output_format`, unknown semantics in `extra_grammars`, or a rule's required feature missing from the contract | Fix the contract — see [Contracts](contracts/) |
 | `MultipleMentionsError` | One call contained two or more **separate** mentions that resolved to **different** values — un-segmented multi-entity input | Split the input first — see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) |
 | `RecognitionError` | A grammar failed structurally (exception inside `recognize()`) or returned a malformed match (bad span or `raw_text`) | Treat as a bug in a grammar (shipped or community); carries `rule` and `original_error` |
 | `ValidationError` | A rule raised unexpectedly inside `matches()` / `normalize()` | Treat as a bug in a rule; carries `rule` and `original_error` |
@@ -123,6 +123,6 @@ Statuses are the library saying *I looked, and here is what the specs say* — e
 
 ## Where to go from here
 
-- [Getting Started](../getting-started.md) — register and call correctly the first time
-- [Concepts — Overview](index.md) — rebuild the full mental model
+- [Getting Started](../getting-started/) — register and call correctly the first time
+- [Concepts — Overview](index/) — rebuild the full mental model
 - [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — the correct way to handle text with multiple entities

@@ -244,7 +244,7 @@ For multi-entity text, combine this with the [Segmentation Recipe](https://githu
 
 ## See also
 
-- [Contracts](concepts/contracts.md) — `extra_grammars` on every contract
-- [API Reference](api-reference.md#registration) — `register_grammar` / `register_rule`
-- [Pipeline](concepts/pipeline.md) — where grammars and rules run
-- [Errors](concepts/errors.md) — `CapabilityError` / `ContractError` for bad names or late registration
+- [Contracts](concepts/contracts/) — `extra_grammars` on every contract
+- [API Reference](api-reference/#registration) — `register_grammar` / `register_rule`
+- [Pipeline](concepts/pipeline/) — where grammars and rules run
+- [Errors](concepts/errors/) — `CapabilityError` / `ContractError` for bad names or late registration

@@ -4,7 +4,7 @@ title: "Capabilities"
 
 A **capability** is one kind of identifier Paxman knows how to canonicalize. Each capability is a self-contained package — its own patterns, its own specifications, its own rendering — that plugs into the shared pipeline.
 
-You pick a capability by picking a contract (see [Contracts](contracts.md)). The two are paired: `Email.create_contract()` selects the Email capability, `Country.create_contract()` selects Country, and so on.
+You pick a capability by picking a contract (see [Contracts](contracts/)). The two are paired: `Email.create_contract()` selects the Email capability, `Country.create_contract()` selects Country, and so on.
 
 ---
 
@@ -54,7 +54,7 @@ flowchart TB
 - **Notation** — internal shape (not part of the public API).
 - **Grammars** — recognizers that scan your text and emit span-bearing matches. Pure syntax — no spec judgment.
 - **Rules** — validators that check each match against an authoritative spec (RFC, ISO standard, etc.) and produce a canonical value plus provenance.
-- **Contract** — the user-facing configuration (see [Contracts](contracts.md)).
+- **Contract** — the user-facing configuration (see [Contracts](contracts/)).
 - **`format_value`** — the sole rendering step, controlled by `output_format` on the contract.
 
 You never interact with notations, grammars, or rules directly — you configure them through the contract and read their outcome in the result.
@@ -78,7 +78,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **SI Unit** | SI unit expressions | symbols, names, product/quotient compounds | canonical symbol form (`"kg"`, `"m/s2"`) |
 | **URL** | Absolute URIs / IRIs | absolute URIs (WHATWG URL Standard) | WHATWG serialization (lowercased host, etc.) |
 
-> This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts.md) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/index.md).
+> This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts/) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/).
 
 ---
 
@@ -107,4 +107,4 @@ paxman.register_capability(Country())
 
 Think of a capability like a department that handles one kind of paperwork. The Country department knows passports and country codes; the Email department knows addresses. You hand your paper to the right department by handing it a contract stamped with that department's name. Only that department looks at it. Other departments never see it.
 
-Next: [Contracts →](contracts.md) — how to configure what the chosen capability does.
+Next: [Contracts →](contracts/) — how to configure what the chosen capability does.

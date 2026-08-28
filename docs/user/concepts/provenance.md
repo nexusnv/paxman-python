@@ -71,8 +71,8 @@ for c in result.candidates:
 ## Provenance on every candidate, not just success
 
 - On `SUCCESS`, `result.candidates` contains one or more candidates that all agree on `value` — each still carries its own provenance, so you see which spec(s) converged.
-- On `AMBIGUOUS`, `candidates` shows the competing provenances that disagree — this is precisely the evidence you need to resolve the ambiguity (see [Candidates & Ambiguity](candidates-and-ambiguity.md)).
-- On `MISSING` / `INVALID`, `candidates` is empty — no spec validated the input, so there is nothing to cite. That emptiness is itself informative (see [Execution Result](execution-result.md)).
+- On `AMBIGUOUS`, `candidates` shows the competing provenances that disagree — this is precisely the evidence you need to resolve the ambiguity (see [Candidates & Ambiguity](candidates-and-ambiguity/)).
+- On `MISSING` / `INVALID`, `candidates` is empty — no spec validated the input, so there is nothing to cite. That emptiness is itself informative (see [Execution Result](execution-result/)).
 
 ---
 
@@ -80,4 +80,4 @@ for c in result.candidates:
 
 Provenance is the footnote on the answer. Instead of "Paxman says `Alemania` is `DE`," provenance lets you say "Paxman says `Alemania` is `DE` per Unicode CLDR, validated under the CLDR localized-name rule, publication year 2025" — a claim you can check, cite, and reproduce.
 
-Next: [Candidates & Ambiguity →](candidates-and-ambiguity.md) — when provenance disagrees and what to do about it.
+Next: [Candidates & Ambiguity →](candidates-and-ambiguity/) — when provenance disagrees and what to do about it.

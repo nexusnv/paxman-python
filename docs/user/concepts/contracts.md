@@ -23,7 +23,7 @@ The returned object is a frozen dataclass — you can inspect it, but not mutate
 result = paxman.canonicalize("Alemania", country_contract)
 ```
 
-The contract's `capability_name` field (set automatically) is how the engine selects the matching capability — see [Capabilities](capabilities.md).
+The contract's `capability_name` field (set automatically) is how the engine selects the matching capability — see [Capabilities](capabilities/).
 
 ---
 
@@ -100,7 +100,7 @@ Beyond the common fields, each contract adds flags that make sense for its domai
 
 ## How flags map to the pipeline
 
-A useful mental model: the two groups of flags gate the two groups of pipeline stages (see [Pipeline](pipeline.md)).
+A useful mental model: the two groups of flags gate the two groups of pipeline stages (see [Pipeline](pipeline/)).
 
 ```mermaid
 flowchart LR
@@ -174,4 +174,4 @@ Any non-offered value raises `ContractError` — you get a fast, typed failure i
 
 Think of a contract as a work order you hand to a department. It says: *here is the kind of job (capability), here are the tools you may use (which grammars and rules), and here is how I want the answer formatted (output_format)*. The department may have extra switches that only make sense for its work (e.g. Country's "also accept historical names"), but the top of the form — excluded/pinned rules, year, output format — looks the same in every department.
 
-Next: [Pipeline →](pipeline.md) — what Paxman does with that work order.
+Next: [Pipeline →](pipeline/) — what Paxman does with that work order.
