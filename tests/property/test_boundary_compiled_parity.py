@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -12,6 +13,8 @@ from paxman.core.grammar.boundary_spec import (
     check_boundary,
     check_boundary_compiled,
 )
+
+pytestmark = [pytest.mark.property]
 
 
 def _oracle(subject: str, start: int, end: int, spec: BoundarySpec) -> bool:

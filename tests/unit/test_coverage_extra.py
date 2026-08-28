@@ -52,7 +52,7 @@ def test_scanner_matcher_match_and_boundary() -> None:
 
     m = ScannerMatcher(scan=scan_fn, boundary=BoundarySpec.WORD, max_window=10)
     view = View(
-        subject=" foo bar foo", source_starts=None, source_ends=None, _text_len=13
+        subject=" foo bar foo", source_starts=None, source_ends=None, _text_len=12
     )
     spans = m.match(view)
     # Should find "foo" at word boundaries

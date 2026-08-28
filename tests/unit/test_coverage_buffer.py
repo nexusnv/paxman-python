@@ -285,10 +285,7 @@ def test_iana_private_rule_covers() -> None:
     n12 = _bcp47("en-GB-oed", grandfathered="en-gb-oed")
     assert rule.normalize(n12, contract) == "en-GB-oxendict"
     n13 = _bcp47("x-foo", privateuse="x-foo")
-    assert (
-        rule.normalize(n13, contract) == "x-foo-bar"
-        or rule.normalize(n13, contract) == "x-foo"
-    )
+    assert rule.normalize(n13, contract) == "x-foo"
     # normalize with empty parts returns compact
     n14 = LanguageNotation(
         language="",
@@ -373,9 +370,7 @@ def test_isbn_to_isbn13_branches() -> None:
     assert rule.normalize(n, contract) == "ABCDEFGHIJ"
     # isbn10 valid length but digits[:9] non-digit -> False
     n2 = ISBNNotation(shape="isbn10", digits="0306406152")
-    assert (
-        rule.matches(n2, contract) is False or True
-    )  # depends on range validation; just exercise
+    assert rule.matches(n2, contract) is True
     # isbn13 path: normalize returns digits
     n3 = ISBNNotation(shape="isbn13", digits="9780306406157")
     assert rule.normalize(n3, contract) == "9780306406157"
@@ -435,7 +430,7 @@ def test_isbn_users_manual_and_iso2108_branches() -> None:
     r42 = Section42Gs1Prefix()
     assert r42.matches(n7, contract) is False
     assert r42.matches(n8, contract) is False
-    assert r42.matches(n, contract) is True or False  # just exercise
+    assert r42.matches(n, contract) is True
 
 
 # ---------------------------------------------------------------------------
@@ -651,9 +646,7 @@ def test_bcp47_well_formed_empty_and_duplicate_singleton() -> None:
     assert _is_well_formed("en--US") is False
     # single letter not x
     assert _is_well_formed("a") is False
-    assert (
-        _is_well_formed("x") is True or _is_well_formed("x") is False
-    )  # x alone is extension? but len 1 x is allowed? Actually _is_well_formed checks tag=="x"? It returns False for len==1 !=x but x passes regex? But x bare? regex for privateuse is x(-...)+ so x alone fails _is_well_formed? Let's just exercise  # noqa: E501
+    assert _is_well_formed("x") is False
     n = LanguageNotation(
         language="",
         extlang="",

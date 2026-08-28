@@ -135,8 +135,10 @@ def test_mutate_matcher_country_proves_delegation() -> None:
     )
     # Patch instance attribute — delegation reads self.matchers
     object.__setattr__(g, "matchers", (fake,))  # PipelineGrammar.matchers is ClassVar
-    # After delegation, old token must disappear, new token must appear
-    assert g.recognize("United States") == []  # mutation not reflected
+    # After delegation, old token must disappear (empty result reflects mutation)
+    assert (
+        g.recognize("United States") == []
+    )  # patched matchers mutation reflected as empty
     out = g.recognize("xyzzymutatetoken")
     assert len(out) == 1
     assert out[0].raw_text == "xyzzymutatetoken"

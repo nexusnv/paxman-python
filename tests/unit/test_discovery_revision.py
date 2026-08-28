@@ -79,13 +79,13 @@ def test_repeated_freeze_uses_cached_digests() -> None:
     assert getattr(lex, "digest", None) == getattr(
         LexiconMatcher(tokens=frozenset({"hello", "world"})), "digest", None
     )
-    assert id(getattr(lex, "digest", None)) == lex_digest_id or True
+    # digest is computed once at construction, so the string object is retained
+    assert id(getattr(lex, "digest", None)) == lex_digest_id
 
     for _ in range(3):
         assert hasattr(LexiconMatcher(tokens=frozenset({"a", "b"})), "digest")
 
     reset_registry()
-    assert True
 
 
 def test_lexicon_digest_purity_same_tokens_equal() -> None:
@@ -166,7 +166,8 @@ def test_discovery_freeze_reads_digest_not_sorted_tokens() -> None:
     """Ensure freeze_registry source reads matcher.digest."""
     from pathlib import Path
 
-    src = Path("paxman/core/discovery.py").read_text(encoding="utf-8")
+    repo_root = Path(__file__).resolve().parents[2]
+    src = (repo_root / "paxman" / "core" / "discovery.py").read_text(encoding="utf-8")
     assert (
         "matcher.digest" in src
         or 'getattr(matcher, "digest"' in src

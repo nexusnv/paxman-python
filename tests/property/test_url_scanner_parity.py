@@ -24,7 +24,7 @@ def test_url_uses_scanner_matcher() -> None:
     assert len(matchers) == 1
     m = matchers[0]
     assert isinstance(m, ScannerMatcher)
-    assert m.view_name == "idna" or m.view == "idna"
+    assert m.view_name == "idna"
     assert m.boundary == BoundarySpec.SCHEME_CHAR_LEFT
     src = pathlib.Path(
         "paxman/capabilities/URL/grammar/absolute_uri_recognition.py"

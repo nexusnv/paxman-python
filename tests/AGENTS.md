@@ -8,7 +8,7 @@ Tests are layered by scope; directories organize tests, and each module, class, 
 tests/
 ├── conftest.py       # loads hypothesis "ci" profile
 ├── unit/             # -m unit        core domain, registry, extensions, bootstrap, contracts, purity scans
-├── capabilities/     # -m capability  per-capability, lowercase dirs (country, currency, date, email, iban, ip, isbn, issn, money, phone, si_unit, url)
+├── capabilities/     # -m capability  per-capability, lowercase dirs (bic, country, currency, date, email, iban, ip, isbn, issn, language, money, orcid, phone, si_unit, url)
 ├── integration/      # -m integration pipeline, ambiguity, temporal, feature gating, format_value seam, extensions, benchmark harness
 ├── property/         # -m property    hypothesis property tests (incl. grammar-stage parity)
 └── e2e/              # -m e2e         canonicalize() end-to-end + bootstrap

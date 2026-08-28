@@ -54,8 +54,11 @@ class NormalizerSequence:
                     cur_ends = off_ends
                 else:
                     assert cur_starts is not None and cur_ends is not None
+                    assert len(cur_starts) > 0 and len(cur_ends) > 0
                     composed_starts = tuple(cur_starts[o] for o in off_starts)
-                    composed_ends = tuple(cur_ends[o] for o in off_starts)
+                    composed_ends = tuple(
+                        cur_ends[o - 1] if o > 0 else cur_ends[0] for o in off_ends
+                    )
                     cur_starts = composed_starts
                     cur_ends = composed_ends
                 cur = nxt

@@ -343,12 +343,23 @@ def test_d7_no_coalesce_semantics_groups_stay_singleton() -> None:
         ]
         # Date's consolidated candidates also count as singleton members
         if semantics in candidate_semantics_for_date:
-            # Candidate semantics are per-candidate, but still singleton per capability
-            # (one candidate per semantics, not multiple)
-            assert any(counts) or semantics in candidate_semantics_for_date, (
-                f"{semantics!r} must stay a singleton, found none"
+            total_candidates = sum(
+                1
+                for g in Date().get_grammars()
+                for m in getattr(g, "matchers", None) or ()
+                for s in getattr(m, "candidate_semantics", ()) or ()
+                if s == semantics
             )
-            # For Date, candidate us/european are distinct singletons (one each)
+            assert total_candidates == 1, (
+                f"{semantics!r} must appear exactly once in Date candidates, found {total_candidates}"  # noqa: E501
+            )
+            assert all(c <= 1 for c in counts), (
+                f"{semantics!r} must stay a singleton per capability, found {counts}"
+            )
+            # Candidate semantics must be the sole occurrence (no grammar member)
+            assert sum(counts) == 0, (
+                f"{semantics!r} candidate semantics must not also appear as grammar semantics, found {counts}"  # noqa: E501
+            )
             continue
         assert any(counts), f"{semantics!r} must stay a singleton, found none"
         assert all(count <= 1 for count in counts), (

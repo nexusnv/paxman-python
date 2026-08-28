@@ -119,10 +119,8 @@ def test_combinator_opt_rep_label() -> None:
     )
     ctx = ScanContext.of("y")
     view = ctx.view("__orig__", lambda t: (t, None, None))
-    # opt should tolerate miss
-    assert (
-        comb_opt.match(view) == [] or comb_opt.match(view) == [(0, 0)] or True
-    )  # RED fails via NotImplemented before logic
+    # top-level opt must not emit a zero-length span on a miss
+    assert comb_opt.match(view) == []
     # rep
     comb_rep = CombinatorMatcher(
         expr=(
@@ -133,7 +131,7 @@ def test_combinator_opt_rep_label() -> None:
     )
     ctx2 = ScanContext.of("aaa")
     view2 = ctx2.view("__orig__", lambda t: (t, None, None))
-    assert comb_rep.match(view2) is not None
+    assert comb_rep.match(view2) == [(0, 3)]
     # label
     comb_label = CombinatorMatcher(
         expr=(

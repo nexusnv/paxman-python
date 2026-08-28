@@ -81,6 +81,7 @@ class TestGrammarSemanticsMetadata:
         by_name = {grammar.name: grammar.semantics for grammar in grammars}
         if len(grammars) == 1 and grammars[0].name == "date_recognition":
             # Consolidated DateGrammar with candidates (ADR §9.6)
+            assert grammars[0].semantics == "date_calendar_date"
             cand = grammars[0].matchers[0]  # type: ignore[union-attr]
             cand_by_name = dict(
                 zip(cand.candidate_names, cand.candidate_semantics, strict=True)
