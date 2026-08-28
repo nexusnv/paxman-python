@@ -1,4 +1,6 @@
-# Execution Result
+---
+title: "Execution Result"
+---
 
 `paxman.canonicalize()` always returns the same object shape — an `ExecutionResult` — whether the answer is a clean success, a missing input, an invalid value, or a genuine ambiguity. Learn to read it once, and you can handle every capability the same way.
 

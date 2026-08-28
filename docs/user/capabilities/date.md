@@ -1,4 +1,6 @@
-# Date
+---
+title: "Date"
+---
 
 Canonicalizes **one calendar date** per call to ISO `YYYY-MM-DD` — or to US form when requested.
 
@@ -131,4 +133,4 @@ for c in result.candidates:
     )
 ```
 
-See also: [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

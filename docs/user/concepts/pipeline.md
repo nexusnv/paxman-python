@@ -1,4 +1,6 @@
-# Pipeline
+---
+title: "Pipeline"
+---
 
 Every `paxman.canonicalize(text, contract)` call runs the same deterministic pipeline. Understanding its three stages — **recognition → validation → resolution** — explains every status you will ever see.
 
@@ -103,7 +105,7 @@ flowchart TB
   - `MISSING` vs `INVALID` depends precisely on whether recognition found *anything* — the pipeline remembers `had_recognitions`.
   - `SUCCESS` means exactly one distinct canonical value survived.
   - `AMBIGUOUS` means one logical mention produced two or more distinct values (e.g. `"01/02/2026"` → US `2026-01-02` vs European `2026-02-01`). This is a genuine spec conflict, not an input with two mentions.
-- **Single-mention invariant:** Paxman resolves one entity per call. If recognition found two *non-overlapping* mentions that resolve to different values (e.g. two email addresses with different canonical values), the engine fails fast with `MultipleMentionsError` instead of returning a misleading aggregate. See the [Segmentation Recipe](../../recipes/segmentation.md).
+- **Single-mention invariant:** Paxman resolves one entity per call. If recognition found two *non-overlapping* mentions that resolve to different values (e.g. two email addresses with different canonical values), the engine fails fast with `MultipleMentionsError` instead of returning a misleading aggregate. See the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
 
 The single canonical value on `SUCCESS` is then passed through the capability's `format_value` with your contract's `output_format`, and the top-level `ExecutionResult.span` is set to the span of the resolved candidate.
 

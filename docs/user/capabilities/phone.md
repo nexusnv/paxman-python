@@ -1,4 +1,6 @@
-# Phone
+---
+title: "Phone"
+---
 
 Canonicalizes **one phone number** per call to E.164 (or to tel-URI / national form when requested).
 
@@ -130,4 +132,4 @@ for text in rows:
 - **RFC 3966** — `tel:` URI.
 - **NANP** — North American Numbering Plan (when relevant).
 
-See also: [Execution Result](../concepts/execution-result.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

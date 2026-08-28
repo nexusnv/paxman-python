@@ -1,4 +1,6 @@
-# Getting Started
+---
+title: "Getting Started"
+---
 
 This guide gets you from zero to your first `canonicalize()` call in about two minutes. It is written for all three audiences — **Python developers, notebook researchers, and operators** — so it shows each step both as plain Python and as you would run it in a Jupyter cell.
 
@@ -8,25 +10,25 @@ This guide gets you from zero to your first `canonicalize()` call in about two m
 
 Paxman requires **Python 3.11+** and has **zero runtime dependencies**.
 
-=== "pip"
+### pip
 
-    ```bash
-    pip install paxman
-    ```
+```bash
+pip install paxman
+```
 
-=== "uv (recommended for projects)"
+### uv (recommended for projects)
 
-    ```bash
-    uv add paxman
-    ```
+```bash
+uv add paxman
+```
 
-=== "Jupyter / notebook"
+### Jupyter / notebook
 
-    In a notebook cell:
+In a notebook cell:
 
-    ```python
-    %pip install paxman
-    ```
+```python
+%pip install paxman
+```
 
 Check the install:
 
@@ -124,7 +126,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ### One mention per call
 
-Paxman resolves **one entity per `canonicalize()` call**. If your text contains two different entities (e.g. `"alice@example.com and bob@example.org"` → two distinct values), it raises `MultipleMentionsError` instead of guessing. This is intentional — the caller owns segmentation. For that pattern see the [Segmentation Recipe](../recipes/segmentation.md): split first, then loop.
+Paxman resolves **one entity per `canonicalize()` call**. If your text contains two different entities (e.g. `"alice@example.com and bob@example.org"` → two distinct values), it raises `MultipleMentionsError` instead of guessing. This is intentional — the caller owns segmentation. For that pattern see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md): split first, then loop.
 
 ---
 
@@ -222,5 +224,5 @@ No extra handling for `MISSING`/`INVALID` is needed beyond checking `status` —
 ## Next steps
 
 - [Concepts →](concepts/index.md) — build the full mental model.
-- [Segmentation Recipe](../recipes/segmentation.md) — handle text with multiple entities.
-- Read the [README](../../README.md) for a quick reference table of every capability and its examples.
+- [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — handle text with multiple entities.
+- Read the [README](https://github.com/nexusnv/paxman-python#readme) for a quick reference table of every capability and its examples.

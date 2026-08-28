@@ -1,7 +1,10 @@
-# Paxman — User Documentation
+---
+title: "Paxman — User Documentation"
+---
 
-!!! note "Docs since v0.2.0"
-    User documentation is versioned from **v0.2.0** onwards (first stable docs, ADR-0009 Recognition Kernel). Earlier tags (`v0.1.x`) have no published user docs. When you select a version on Read the Docs, choose `stable` (v0.2.0) or `latest` (main). See [Migration](migration.md) for the v0.1.x → v0.2.0 breaking change (F1 fix) and the full changelog.
+:::note[Docs since v0.2.0]
+User documentation is versioned from **v0.2.0** onwards (first stable docs, ADR-0009 Recognition Kernel). Earlier tags (`v0.1.x`) have no published user docs. Docs are now hosted on GitHub Pages at https://nexusnv.github.io/paxman-python/ . See [Migration](migration.md) for the v0.1.x → v0.2.0 breaking change (F1 fix) and the full changelog.
+:::
 
 Paxman is a **canonicalization library**: you give it messy, human-written text and it tells you what that text *means* according to the specification that defines it — not a guess, a cited answer.
 
@@ -27,7 +30,7 @@ If you can run `pip install paxman` and write a few lines of Python, you can use
 
 | Does | Does not |
 |------|----------|
-| Resolves **one mention per call** to a single canonical value when the specifications agree | Extract *all* mentions from a paragraph — you split the text first (see the [Segmentation Recipe](../recipes/segmentation.md)) |
+| Resolves **one mention per call** to a single canonical value when the specifications agree | Extract *all* mentions from a paragraph — you split the text first (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)) |
 | Returns the **same output for the same input** every time (deterministic) | Learn from data or make probabilistic guesses |
 | Tells you **which specification** validated the answer (provenance) | Contact a network service or clock to decide |
 
@@ -65,7 +68,7 @@ Three steps, every time: **register** → **create a contract** → **canonicali
 | [API Reference](api-reference.md) | Signatures, types, and error table for every public import |
 | [Extending](extending.md) | Add your own grammars & rules via `extra_grammars` |
 | [Migration](migration.md) | Versioning and upgrade checklist (SemVer) |
-| [Segmentation Recipe](../recipes/segmentation.md) | How to handle text with more than one entity |
+| [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) | How to handle text with more than one entity |
 
 ### Concepts in detail
 

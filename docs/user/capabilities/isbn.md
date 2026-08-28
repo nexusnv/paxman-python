@@ -1,4 +1,6 @@
-# ISBN
+---
+title: "ISBN"
+---
 
 Canonicalizes **one ISBN identifier** per call with check-digit validation, converting legacy ISBN-10 to ISBN-13 when enabled.
 
@@ -117,4 +119,4 @@ for text in ["9780306406157", "0306406152", "9780306406150", "hello"]:
 - **ISBN Users' Manual** — ISBN-13 / ISBN-10 check-digit logic.
 - **ISBN Range Message** — registrant-range hyphenation and provenance (only with `include_range_validation=True`).
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

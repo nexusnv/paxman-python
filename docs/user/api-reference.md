@@ -1,4 +1,6 @@
-# API Reference
+---
+title: "API Reference"
+---
 
 This page is the concise reference for the public Python surface you import. For the mental model behind these types, see [Concepts](concepts/index.md).
 
@@ -78,7 +80,7 @@ def canonicalize(text: str, contract: CapabilityContract) -> ExecutionResult
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `text` | `str` | Raw input. One presumed mention per call (see [Segmentation](../recipes/segmentation.md)). |
+| `text` | `str` | Raw input. One presumed mention per call (see [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)). |
 | `contract` | `CapabilityContract` | Created via `SomeCapability.create_contract(...)`. Carries `capability_name` so no separate name argument is needed. |
 
 **Returns** `ExecutionResult` — always, for every domain outcome including missing or invalid input. Domain outcomes are statuses, not exceptions.
@@ -143,7 +145,7 @@ except MultipleMentionsError:
         print(m.span, m.grammar, m.notation)
 ```
 
-See [Segmentation](../recipes/segmentation.md) for when to use `scan()` vs caller-owned split-then-canonicalize.
+See [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) for when to use `scan()` vs caller-owned split-then-canonicalize.
 
 ---
 

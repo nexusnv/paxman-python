@@ -1,4 +1,6 @@
-# Migration — Staying Current
+---
+title: "Migration — Staying Current"
+---
 
 Paxman follows **Semantic Versioning**. The capability set, the contract surface, and the data tables grow across releases — your code should be ready to move forward without surprise.
 
@@ -232,7 +234,7 @@ flowchart TB
 3. **Pin output if it matters** — if your downstream expects a specific rendering (e.g. `Phone` `rfc3966`), construct the contract with `output_format="rfc3966"` rather than relying on the current default.
 4. **Re-run your golden samples** — keep a small file of `(text, contract) → canonicalized_value` samples for the capabilities you use, assert them in CI, and compare after the upgrade. Determinism means a change is intentional, not noise.
 5. **Log or store `version_stamp`** — for audit trails, persist `result.version_stamp.paxman_version` alongside `canonicalized_value` so you can explain which build produced which answer.
-6. **Segmentation review** — if you added a new capability or flag, confirm the caller-owned split-then-canonicalize loop (see [Segmentation](../recipes/segmentation.md)) still routes each piece to the right capability/contract.
+6. **Segmentation review** — if you added a new capability or flag, confirm the caller-owned split-then-canonicalize loop (see [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)) still routes each piece to the right capability/contract.
 
 Minimal golden-sample harness:
 
@@ -271,4 +273,4 @@ See [Contracts](concepts/contracts.md) for `year` filtering, [Provenance](concep
 - [API Reference](api-reference.md) — registration, contracts, and statuses
 - [Concepts — Pipeline](concepts/pipeline.md) — why statuses are stable (recognition → validation → resolution)
 - [Extending](extending.md) — keeping community grammars/rules compatible across upgrades
-- [Segmentation](../recipes/segmentation.md) — caller-owned splitting for multi-entity text
+- [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — caller-owned splitting for multi-entity text

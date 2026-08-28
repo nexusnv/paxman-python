@@ -1,4 +1,6 @@
-# SI Unit
+---
+title: "SI Unit"
+---
 
 Canonicalizes **one SI unit expression** per call — a symbol, a name, or a product/quotient compound — to its canonical symbol.
 
@@ -121,4 +123,4 @@ for text in [
 - **BIPM SI Brochure (9th ed.)** — base units, derived units, non-SI units accepted for use, prefixes, names.
 - **ISO 80000-1** — compound expressions.
 
-See also: [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Candidates & Ambiguity](../concepts/candidates-and-ambiguity.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

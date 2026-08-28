@@ -1,4 +1,6 @@
-# Capabilities — Overview
+---
+title: "Capabilities — Overview"
+---
 
 Each page below is a self-contained guide for one kind of identifier Paxman can canonicalize. Read the one that matches your data, copy the notebook snippet, and adapt the contract flags to your needs.
 
@@ -63,7 +65,7 @@ Every capability page answers the same questions in the same order:
 6. **Notebook snippet** — runnable cleaning loop for a column.
 7. **Provenance** — which specifications vouch for the answer.
 
-Start with the capability that matches your column; if you need more than one, register both and loop per cell (see the [Segmentation Recipe](../../recipes/segmentation.md) for text that mixes kinds).
+Start with the capability that matches your column; if you need more than one, register both and loop per cell (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) for text that mixes kinds).
 
 ---
 

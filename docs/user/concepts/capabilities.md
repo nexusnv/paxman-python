@@ -1,4 +1,6 @@
-# Capabilities
+---
+title: "Capabilities"
+---
 
 A **capability** is one kind of identifier Paxman knows how to canonicalize. Each capability is a self-contained package — its own patterns, its own specifications, its own rendering — that plugs into the shared pipeline.
 
@@ -76,7 +78,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **SI Unit** | SI unit expressions | symbols, names, product/quotient compounds | canonical symbol form (`"kg"`, `"m/s2"`) |
 | **URL** | Absolute URIs / IRIs | absolute URIs (WHATWG URL Standard) | WHATWG serialization (lowercased host, etc.) |
 
-> This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts.md) and the [README](../../../README.md) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/index.md).
+> This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts.md) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/index.md).
 
 ---
 

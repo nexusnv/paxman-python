@@ -1,4 +1,6 @@
-# Candidates & Ambiguity
+---
+title: "Candidates & Ambiguity"
+---
 
 One input can legitimately mean two different things. Paxman does not guess — it shows you the disagreement. This page explains what a **candidate** is, how `AMBIGUOUS` differs from other statuses, and what to do about it.
 
@@ -64,7 +66,7 @@ Concrete examples:
 
 - `MISSING` — no grammar matched at all (the text does not look like this entity).
 - `INVALID` — a grammar matched but no spec accepted it (looks like the entity but is malformed).
-- `MultipleMentionsError` — two **separate** mentions with different values in one call (see the [Segmentation Recipe](../../recipes/segmentation.md)). That raises an exception rather than returning a status, because it signals you need to split the input first.
+- `MultipleMentionsError` — two **separate** mentions with different values in one call (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)). That raises an exception rather than returning a status, because it signals you need to split the input first.
 
 ---
 

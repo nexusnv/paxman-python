@@ -1,4 +1,6 @@
-# IP
+---
+title: "IP"
+---
 
 Canonicalizes **one IP address** per call to its normalized textual form.
 
@@ -115,4 +117,4 @@ for text in [
 - **RFC 791** — IPv4 address validation.
 - **RFC 5952** — IPv6 text representation and canonical compression.
 
-See also: [URL](url.md), [Execution Result](../concepts/execution-result.md), [Segmentation](../../recipes/segmentation.md).
+See also: [URL](url.md), [Execution Result](../concepts/execution-result.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

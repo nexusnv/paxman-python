@@ -1,6 +1,8 @@
 .omo
 .worktrees/
 site/
+website/dist/
+website/node_modules/
 # Python
 __pycache__/
 *.py[cod]

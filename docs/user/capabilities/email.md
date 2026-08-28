@@ -1,4 +1,6 @@
-# Email
+---
+title: "Email"
+---
 
 Canonicalizes **one email address** per call — standard, obfuscated, or localhost — to a lowercased `addr-spec`.
 
@@ -67,7 +69,7 @@ See [Contracts](../concepts/contracts.md) and the [API Reference](../api-referen
 | `admin@localhost` | `include_localhost=False` | `MISSING` | grammar not active |
 | `admin@localhost` | `excluded_rules=["Section 6.3-localhost"]` | `INVALID` | recognized but no rule accepts it |
 | `@@` | any | `MISSING` | no email pattern at all |
-| `alice@example.com and bob@example.org` | any | raises `MultipleMentionsError` | two distinct mentions — split first (see [Segmentation](../../recipes/segmentation.md)) |
+| `alice@example.com and bob@example.org` | any | raises `MultipleMentionsError` | two distinct mentions — split first (see [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)) |
 
 ```mermaid
 flowchart TB
@@ -144,4 +146,4 @@ for c in result.candidates:
 
 On `SUCCESS`, `result.span` is the exact `[start, end)` of the email in the original input — useful for highlighting in UIs or logging. On `MISSING` / `INVALID` it is `None`; on `AMBIGUOUS` (rare for Email) use each `candidate.span`.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

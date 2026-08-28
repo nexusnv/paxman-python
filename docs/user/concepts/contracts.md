@@ -1,4 +1,6 @@
-# Contracts
+---
+title: "Contracts"
+---
 
 A **contract** is the configuration object you pass alongside your text to `paxman.canonicalize()`. It answers three questions: *which capability to use, which patterns should count, and how the answer should look*. Every capability provides the same contract surface so you only learn it once.
 

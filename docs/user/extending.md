@@ -1,4 +1,6 @@
-# Extending Paxman — Community Grammars & Rules
+---
+title: "Extending Paxman — Community Grammars & Rules"
+---
 
 Paxman ships with capabilities that already cover their domain, but every capability is **closed for modification yet open for extension**: you can add new recognition and validation without forking the library. A new grammar finds a new form; a new rule says which spec accepts it.
 
@@ -236,7 +238,7 @@ contract_with_dot = Date.create_contract(
 # Notebook — run the startup cell once, then create contracts per cell as above
 ```
 
-For multi-entity text, combine this with the [Segmentation Recipe](../recipes/segmentation.md) — segment first, then `canonicalize()` each piece with the opted-in contract.
+For multi-entity text, combine this with the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) — segment first, then `canonicalize()` each piece with the opted-in contract.
 
 ---
 

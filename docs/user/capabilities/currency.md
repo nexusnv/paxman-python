@@ -1,4 +1,6 @@
-# Currency
+---
+title: "Currency"
+---
 
 Canonicalizes **one currency identifier** per call — a code, a symbol, or a display name — to the uppercase ISO 4217 alpha-3 code. No amounts: `"USD 500"` is the [Money](money.md) capability's domain.
 

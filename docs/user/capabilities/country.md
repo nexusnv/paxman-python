@@ -1,4 +1,6 @@
-# Country
+---
+title: "Country"
+---
 
 Canonicalizes **one country mention** per call — a code or a name — to a canonical code.
 
@@ -137,4 +139,4 @@ for text in rows:
 
 Each candidate's `validation_rule` carries the section, and `candidate.provenance[0].publication_year` the year.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

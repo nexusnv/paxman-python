@@ -6,48 +6,82 @@ on:
     tags:
       - "v*.*.*"
     paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - ".readthedocs.yaml"
-      - "pyproject.toml"
+      - "docs/user/**"
+      - "website/**"
       - "paxman/**"
+      - "pyproject.toml"
   pull_request:
     branches: [main]
     paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - ".readthedocs.yaml"
-      - "pyproject.toml"
+      - "docs/user/**"
+      - "website/**"
       - "paxman/**"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Pages deploy needs single concurrency; builds can run in parallel per ref.
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-docs:
-    name: Build docs (MkDocs --strict)
+    name: Build docs (Astro Starlight)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
-
-      - name: Set up Python
-        run: uv python install 3.13
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
 
       - name: Install docs dependencies
-        run: uv sync --group docs --python 3.13
+        working-directory: website
+        run: npm ci
 
-      - name: Build docs with MkDocs
-        run: uv run --group docs mkdocs build
+      - name: Build docs with Astro
+        working-directory: website
+        run: npm run build
 
-      - name: Upload site artifact
+      # PRs: keep artifact for preview / debugging (no Pages deploy).
+      - name: Upload site artifact (PR preview)
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: site
-          path: site/
+          path: website/dist/
           if-no-files-found: error
+
+      # main / tags: publish via GitHub Pages (actions/deploy-pages).
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: build-docs
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

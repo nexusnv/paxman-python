@@ -1,4 +1,6 @@
-# Money
+---
+title: "Money"
+---
 
 Canonicalizes **one money amount paired with a currency** per call to `CODE amount` padded to ISO 4217 minor units.
 
@@ -148,4 +150,4 @@ for text in rows:
 
 Compare [Currency](currency.md) for identifier-only canonicalization (no amount).
 
-See also: [Execution Result](../concepts/execution-result.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

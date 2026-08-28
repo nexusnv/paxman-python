@@ -1,4 +1,6 @@
-# URL
+---
+title: "URL"
+---
 
 Canonicalizes **one absolute URI / IRI** per call per the **WHATWG URL Standard** (plus UTS #46 IDNA for internationalized hosts), preserving percent-encoding byte-for-byte.
 
@@ -118,4 +120,4 @@ for text in rows:
 - **WHATWG URL Standard** — absolute-URI / IRI validation and serialization.
 - **UTS #46 / IDNA** — mapping of internationalized hosts.
 
-See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](../../recipes/segmentation.md).
+See also: [Execution Result](../concepts/execution-result.md), [Provenance](../concepts/provenance.md), [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).
