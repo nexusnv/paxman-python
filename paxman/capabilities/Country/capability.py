@@ -80,6 +80,7 @@ class CountryCapability(Capability[CountryNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         include_localized: bool = False,
         include_historical: bool = False,
     ) -> CountryContract:
@@ -105,6 +106,7 @@ class CountryCapability(Capability[CountryNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             include_localized=include_localized,
             include_historical=include_historical,
         )

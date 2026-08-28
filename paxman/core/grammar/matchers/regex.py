@@ -6,14 +6,14 @@ Phone tel-URI/00. Contract: ``re.compile(pattern, flags).finditer(view.subject)`
 with notation_fn, offset-translated at emit. Patterns carry bounds so worst-case
 is linear. No backreferences.
 
-This kind is declared for completeness (plan Task 7 module layout) and is
-available for the ``BIC``/``Date`` candidates migration (Phase 3). No shipped
-grammar uses it on the kernel path yet — legacy ``RegexStage`` remains the
-shipped path until per-grammar parity shards are green.
+Migrated: Date consolidated grammar uses 4 RegexMatcher leaves via
+CandidatesMatcher strategy="all"; Symbol split-prefix uses RegexMatcher for WS.
+Remaining legacy RegexStage users stay off-kernel until parity.
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -21,6 +21,9 @@ from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 _check_boundary = check_boundary  # legacy alias for tests
@@ -37,19 +40,22 @@ class RegexMatcher:
     anchors: AnchorSet = field(default_factory=AnchorSet)
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+    suppressible: bool = False
     kind: str = field(default="regex", init=False)
     _compiled: re.Pattern[str] = field(init=False, repr=False)
+    digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
-        # Compile at construction (freeze-time per ADR §13 for MatcherSpec path;
-        # for direct RegexMatcher construction we compile eagerly).
-        # No backreferences — catched by lint; catastrophic constructions should
-        # be reviewed per ADR §9.1.
+        _validate_emit(self.emit, type(self).__name__)
         try:
             compiled = re.compile(self.pattern, self.flags)
         except re.error as exc:
             raise ValueError(f"Invalid regex pattern {self.pattern!r}: {exc}") from exc
         object.__setattr__(self, "_compiled", compiled)
+        digest_val = hashlib.sha256(
+            f"{self.pattern}\x00{self.flags}".encode()
+        ).hexdigest()
+        object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
         out: list[tuple[int, int]] = []

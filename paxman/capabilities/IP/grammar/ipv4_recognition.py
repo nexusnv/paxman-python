@@ -1,8 +1,8 @@
 """IPv4 recognition grammar (staged pipeline).
 
 Extracts dotted-decimal IPv4 addresses. The word boundaries are kept verbatim
-(``\\b`` is a word boundary, not a hard-coded lookaround class — ADR-0008
-D5). Syntax only: the grammar never validates the address.
+(``\\b`` is a word boundary, not a hard-coded lookaround class —
+ADR-0009 §10). Syntax only: the grammar never validates the address.
 """
 
 from __future__ import annotations

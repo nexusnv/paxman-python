@@ -4,7 +4,7 @@ Recognizes "user at domain dot tld" and "user at domain.tld". The two legacy
 patterns (dot-form and at-only form) are merged into one alternation; the
 notation factory branches on which alternative matched. Word boundaries are
 kept verbatim (``\\b`` is a word boundary, not a hard-coded lookaround class —
-ADR-0008 D5). Syntax only: the grammar never validates the address.
+ADR-0009 §10). Syntax only: the grammar never validates the address.
 """
 
 from __future__ import annotations

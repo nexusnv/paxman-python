@@ -394,7 +394,11 @@ class TestNameGrammar:
         """Punctuation is stripped for membership, raw token preserved."""
         results = self.grammar.recognize("U.S.A.")
         assert len(results) == 1
-        assert results[0].notation.value == "U.S.A."
+        # trailing punctuation is dropped per two-array exact-end (ADR D3 Rev.4)
+        assert results[0].notation.value == "U.S.A"
+        assert results[0].start == 0
+        assert results[0].end == 5
+        assert results[0].raw_text == "U.S.A"
 
     def test_strips_apostrophes(self) -> None:
         """Apostrophes are stripped for membership, raw token preserved."""

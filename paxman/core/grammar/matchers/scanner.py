@@ -5,7 +5,7 @@ kernel's loop tries the scanner at each position, advances to ``end`` on hit,
 ``pos+1`` on miss (libphonenumber non-overlapping discipline). Bounds are
 carried as data (``max_window``). No shipped grammar uses it on the kernel
 path yet — URL paren-balance and Phone E.164 remain on ``PostStage`` until
-their parity shards are green (plan Task 7). This implementation enforces
+their parity shards are green (ADR §9.3). This implementation enforces
 ``max_window``, ``boundary`` (including ``consuming`` inner-span only per
 ADR §10), and ``requires_features`` via the engine loop; the matcher itself
 only caps ``end`` to ``max_window`` and checks boundaries at hit positions.
@@ -13,12 +13,16 @@ only caps ``end`` to ``max_window`` and checks boundaries at hit positions.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from paxman.core.grammar.anchors import AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec, check_boundary
+from paxman.core.grammar.matchers._emit_validation import (
+    validate_emit as _validate_emit,
+)
 from paxman.core.grammar.scan_context import View
 
 _check_boundary = check_boundary  # legacy alias for tests
@@ -30,11 +34,27 @@ ScanFn = Callable[[View, int], tuple[int, Any] | None]
 class ScannerMatcher:
     scan: ScanFn
     view_name: str | None = None
+    view: str | None = None
     anchors: AnchorSet = field(default_factory=AnchorSet)
     boundary: BoundarySpec | None = None
     emit: Callable[[tuple[int, int], Any], Any] | None = None
     max_window: int = 2048
     requires_features: frozenset[str] = field(default_factory=lambda: frozenset[str]())
+    digest: str = field(init=False, repr=False, default="")
+
+    def __post_init__(self) -> None:
+        _validate_emit(self.emit, type(self).__name__)
+        if self.view is not None and self.view_name is None:
+            object.__setattr__(self, "view_name", self.view)
+        elif self.view_name is not None and self.view is None:
+            object.__setattr__(self, "view", self.view_name)
+        qualname = getattr(self.scan, "__qualname__", type(self.scan).__name__)
+        boundary_repr = repr(self.boundary) if self.boundary is not None else "None"
+        view_repr = self.view_name if self.view_name is not None else "None"
+        digest_val = hashlib.sha256(
+            f"{qualname}\x00{self.max_window}\x00{view_repr}\x00{boundary_repr}".encode()
+        ).hexdigest()
+        object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
         out: list[tuple[int, int]] = []

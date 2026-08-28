@@ -1,8 +1,12 @@
-"""PipelineGrammar base — fixed-order pipeline with optional stages."""
+"""PipelineGrammar base — fixed-order pipeline with optional stages.
+
+OR engine-owned matchers delegation. When matchers is set, recognize()
+delegates to run_matchers (kernel single path); legacy leaves it None."""
 
 from __future__ import annotations
 
-from typing import ClassVar, TypeVar
+from collections.abc import Sequence
+from typing import Any, ClassVar, TypeVar, cast
 
 from paxman.core.domain import Grammar, RecognitionMatch
 from paxman.core.grammar.stages import PipelineState, Stage
@@ -24,7 +28,17 @@ class PipelineGrammar(Grammar[NotationT]):
     composer: Stage[NotationT] | None = None
     post: Stage[NotationT] | None = None
 
+    # Declarative matcher set — when set, recognize() delegates to the
+    # engine-owned loop (single recognition path). Legacy grammars leave
+    # this None and keep the stage loop.
+    matchers: ClassVar[tuple[Any, ...] | None] = None
+
     def recognize(self, text: str) -> list[RecognitionMatch[NotationT]]:
+        _matchers = getattr(self, "matchers", None)
+        if _matchers is not None:
+            from paxman.core.grammar.engine_loop import run_matchers
+
+            return run_matchers(text, cast(Sequence[Any], [self]))
         state: PipelineState[NotationT] = PipelineState(
             text=text, matches=[], scratch={}
         )

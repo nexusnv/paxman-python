@@ -26,7 +26,7 @@ from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
 # Full name→symbol resolution: maintained official names + generated
-# prefixed names (D8). No key overlap by construction (Task 4).
+# prefixed names (ADR §14). No key overlap by construction.
 FULL_NAME_TO_SYMBOL = NAME_TO_SYMBOL | PREFIXED_NAME_TO_SYMBOL
 
 PUBLICATION = Provenance(
@@ -159,9 +159,9 @@ class SectionPrefixes(Rule[SIUnitNotation]):
 class SectionNames(Rule[SIUnitNotation]):
     """SI Brochure Tables 1, 3–4, 8–9 — unit names resolve to symbols.
 
-    The name grammar case-folds (D4), so this lookup is exact. The table is
+    The name grammar case-folds (ADR §6 D4), so this lookup is exact. The table is
     FULL_NAME_TO_SYMBOL (maintained official names + generated prefixed
-    names, D8): "megahertz" -> "MHz", "kilometre" -> "km", "microgram" -> "µg".
+    names, ADR §14): "megahertz" -> "MHz", "kilometre" -> "km", "microgram" -> "µg".
     """
 
     name = "Section-names"

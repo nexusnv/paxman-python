@@ -1,7 +1,7 @@
 """ISBN-10 recognition grammar (staged pipeline).
 
 Recognizes 10-digit ISBNs with optional label and separators. The leading
-digit-glued guard is supplied by BoundaryGuard.isbn10_lead() (ADR-0008 D5) so
+digit-glued guard is supplied by BoundaryGuard.isbn10_lead() (ADR-0009 §10) so
 no hard-coded lookaround literal remains in this file. The trailing boundary is
 handled by ``\\b`` (the previous ``isbn_trail`` lookbehind after the final digit
 was inert). The hyphen/space tolerance is regex-native (the lookahead extracts

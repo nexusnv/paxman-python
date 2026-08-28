@@ -31,7 +31,7 @@ from paxman.core.grammar import (
 # characters immediately before it belong to an international number. The
 # trailing lookahead (also from the guard) rejects a digit immediately after
 # the number. No hard-coded lookaround literal remains in this file (ADR-0008
-# D5).
+# ADR-0009 §10).
 _NATIONAL_BODY = r"(?:1[\s.\-]?)?\(?([2-9]\d{2})\)?[\s.\-]?(\d{3})[\s.\-]?(\d{4})"
 _GUARD = BoundaryGuard.phone_national()
 _NATIONAL_PATTERN = _GUARD.lookbehind + _NATIONAL_BODY + _GUARD.lookahead

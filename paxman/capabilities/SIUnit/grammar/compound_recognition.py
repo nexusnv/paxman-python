@@ -37,7 +37,7 @@ _SEP = f"[{COMPOUND_SEPARATORS}]"
 _FACTOR = rf"(?:{_UNIT}|\({_UNIT}(?:{_SEP}{_UNIT}){{0,3}}\))"
 # The word_sign guard reproduces the legacy compound lookarounds exactly
 # (no degree prefix in the compound boundary) — no hard-coded lookaround in
-# this file (ADR-0008 D5).
+# this file (ADR-0009 §10).
 _GUARD = BoundaryGuard.word_sign()
 _COMPOUND_PATTERN = (
     _GUARD.lookbehind

@@ -56,6 +56,7 @@ class MoneyCapability(Capability[MoneyNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         precision: Literal["strict", "truncate", "round"] = "strict",
         dollar_sign_currency: str | None = None,
     ) -> MoneyContract:
@@ -89,6 +90,7 @@ class MoneyCapability(Capability[MoneyNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             precision=precision,
             dollar_sign_currency=dollar_sign_currency,
         )

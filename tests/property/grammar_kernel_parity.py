@@ -22,3 +22,21 @@ def assert_kernel_parity(old: Grammar[Any], new: Grammar[Any], text: str) -> Non
         assert o.notation == n.notation, (
             f"notation {o.notation!r} vs {n.notation!r} for {text!r}"
         )
+
+
+def assert_delegation_parity(grammar: Grammar[Any], text: str) -> None:
+    """Gating assertion: PipelineGrammar delegation to engine loop.
+
+    For any grammar that declares ``matchers``, ``g.recognize(text)``
+    must be identical to ``run_matchers(text, [g])``. If delegation is
+    reverted to a hand-rolled body, a token mutation will diverge and
+    this assertion fails. This locks the single-path invariant (A7/R10).
+    """
+    from paxman.core.grammar.engine_loop import run_matchers  # noqa: PLC0415
+
+    via_recognize = grammar.recognize(text)
+    via_engine = run_matchers(text, [grammar])
+    assert via_recognize == via_engine, (
+        f"delegation mismatch for {type(grammar).__name__!r} text={text!r}: "
+        f"recognize={via_recognize!r} vs run_matchers={via_engine!r}"
+    )

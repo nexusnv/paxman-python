@@ -30,7 +30,7 @@ No stage does another stage's job. That separation is what makes results predict
 
 ## Stage 1 — Recognition
 
-Grammars scan your input for syntactic patterns. Each grammar is focused — e.g. for Email there are grammars for standard addresses, for `user at domain dot com` style obfuscation, and for `localhost` addresses. For Date there are grammars for ISO, US, European, and slash-ISO forms.
+Grammars scan your input for syntactic patterns. Each grammar is focused — e.g. for Email there are grammars for standard addresses, for `user at domain dot com` style obfuscation, and for `localhost` addresses. For Date there is one grammar with four candidates (iso8601, slash_iso, US, European) via CandidatesMatcher.
 
 Key properties:
 

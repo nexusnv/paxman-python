@@ -1,14 +1,14 @@
 # TESTS KNOWLEDGE BASE
 
 ## OVERVIEW
-Tests are layered by scope; directories organize tests, and each module, class, or function explicitly applies the pytest marker for its layer (defined in pyproject `[tool.pytest.ini_options]`). CI runs the union of markers. 5 layers; all 12 shipped capability packages have landed and are covered here.
+Tests are layered by scope; directories organize tests, and each module, class, or function explicitly applies the pytest marker for its layer (defined in pyproject `[tool.pytest.ini_options]`). CI runs the union of markers. 5 layers; all 15 shipped capability packages have landed and are covered here.
 
 ## STRUCTURE
 ```text
 tests/
 ├── conftest.py       # loads hypothesis "ci" profile
 ├── unit/             # -m unit        core domain, registry, extensions, bootstrap, contracts, purity scans
-├── capabilities/     # -m capability  per-capability, lowercase dirs (country, currency, date, email, iban, ip, isbn, issn, money, phone, si_unit, url)
+├── capabilities/     # -m capability  per-capability, lowercase dirs (bic, country, currency, date, email, iban, ip, isbn, issn, language, money, orcid, phone, si_unit, url)
 ├── integration/      # -m integration pipeline, ambiguity, temporal, feature gating, format_value seam, extensions, benchmark harness
 ├── property/         # -m property    hypothesis property tests (incl. grammar-stage parity)
 └── e2e/              # -m e2e         canonicalize() end-to-end + bootstrap
@@ -30,6 +30,7 @@ tests/
 | Bootstrap / CLI | `tests/unit/test_bootstrap.py`, `tests/e2e/test_bootstrap.py` |
 | Community extension seam | `tests/unit/test_extensions.py`, `tests/integration/test_grammar_extensions.py` |
 | Full pipeline end-to-end | `tests/e2e/test_canonicalize.py` |
+| Benchmark harness | `benchmarks/harness.py` (freeze outside timed region, freeze-cost + recognition-only scenarios) |
 
 ## CONVENTIONS
 - One layer per directory. New test placement: `unit/` for core-only behavior, `capabilities/<cap>/` for one capability's grammar/rules/capability, `integration/` for pipeline + cross-capability flows, `property/` for hypothesis, `e2e/` for full `canonicalize()`.

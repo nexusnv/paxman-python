@@ -71,7 +71,7 @@ class Capability(ABC, Generic[NotationT]):
 class ContractFactory(Protocol):
     """Factory protocol for capability contract creation.
 
-    Every shipped capability class (twelve as of 0.1.0) satisfies it by declaring
+    Every shipped capability class (fifteen as of 0.2.0) satisfies it by declaring
     ``create_contract`` with the unanimous common parameter block.
     """
 

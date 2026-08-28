@@ -148,9 +148,9 @@ class ISINNotation:
     """
 
     country_code: str  # e.g. "US", "XS", "EZ" — always length 2, A-Z
-    nsin: str          # e.g. "037833100" — always length 9, A-Z0-9
-    check_digit: str   # e.g. "5" — always length 1, 0-9
-    compact: str       # e.g. "US0378331005" — exactly 12, equals cc+nsin+check
+    nsin: str  # e.g. "037833100" — always length 9, A-Z0-9
+    check_digit: str  # e.g. "5" — always length 1, 0-9
+    compact: str  # e.g. "US0378331005" — exactly 12, equals cc+nsin+check
 ```
 
 **Considered alternative — single field `compact` only:** `ISSNNotation` `digits`-only shape. A single `compact` field would suffice for the combined structure+Luhn rule, but the four-field decomposition is preferred because:
@@ -413,7 +413,9 @@ class Section4IsinStructureCheckDigit(Rule[ISINNotation]):
     name = "Section 4-isin-structure-check-digit"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Structure clause + normative check-digit annex (modulus 10 Double-Add-Double)"
+    citation = (
+        "Structure clause + normative check-digit annex (modulus 10 Double-Add-Double)"
+    )
     target_semantics = frozenset({"isin_recognition"})
     requires_features = frozenset()
 
@@ -719,22 +721,29 @@ plus ISO 3166-1 alpha-2 official list; record the Guidelines version in the
 rule's Provenance.version. Never hand-edit entries without a source.
 """
 
-ISO_3166_1_ALPHA_2: frozenset[str] = frozenset({
-    # ~249 official + user-assigned alpha-2 entries (snapshot)
-})
+ISO_3166_1_ALPHA_2: frozenset[str] = frozenset(
+    {
+        # ~249 official + user-assigned alpha-2 entries (snapshot)
+    }
+)
 
-SPECIAL_PREFIXES: frozenset[str] = frozenset({
-    "EU",  # European Union issues
-    "XS",  # international securities (clearing-org allocated)
-    "EZ",  # OTC derivatives (DSB)
-    "ZZ",  # OTC derivatives (DSB)
-    "XT",  # digital tokens (DTI / ISO 24165)
-    "XA", "XB", "XC", "XD",  # substitute agencies (CGS / NSD / WM / SIX)
-    "XF",  # internally assigned non-unique numbers
-    "XK",  # Kosovo user-assigned
-    "QS",  # Euroclear France internal
-    "QT",  # Switzerland internal
-})
+SPECIAL_PREFIXES: frozenset[str] = frozenset(
+    {
+        "EU",  # European Union issues
+        "XS",  # international securities (clearing-org allocated)
+        "EZ",  # OTC derivatives (DSB)
+        "ZZ",  # OTC derivatives (DSB)
+        "XT",  # digital tokens (DTI / ISO 24165)
+        "XA",
+        "XB",
+        "XC",
+        "XD",  # substitute agencies (CGS / NSD / WM / SIX)
+        "XF",  # internally assigned non-unique numbers
+        "XK",  # Kosovo user-assigned
+        "QS",  # Euroclear France internal
+        "QT",  # Switzerland internal
+    }
+)
 ```
 
 ---

@@ -57,6 +57,7 @@ class CurrencyCapability(Capability[CurrencyNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         default_currency: str | None = None,
     ) -> CurrencyContract:
         """Factory method for creating contracts with proper defaults.
@@ -85,6 +86,7 @@ class CurrencyCapability(Capability[CurrencyNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             default_currency=default_currency,
         )
 

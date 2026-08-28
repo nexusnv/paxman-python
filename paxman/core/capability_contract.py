@@ -53,6 +53,7 @@ class CapabilityContract(ABC):
     extra_grammars: tuple[str, ...] = ()
     """Community grammar names to opt in, appended after ``active_grammars``.
     Unknown names are silently skipped by the engine."""
+    suppress_common_words: bool = False
 
     def __post_init__(self) -> None:
         """Validate and normalize ``output_format``.

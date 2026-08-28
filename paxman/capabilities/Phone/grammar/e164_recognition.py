@@ -1,31 +1,26 @@
-"""E.164 international number recognition grammar (staged pipeline).
+"""E.164 international number recognition grammar (ScannerMatcher).
 
 Recognizes a leading "+" followed by digits with optional separators
 (space, dash, dot, parens). The grammar is intentionally loose — validation
-happens in rules. The negative lookbehind (via BoundaryGuard.e164()) excludes
-word characters, ":", and "." so email plus-tags, algebra, decimals, and
-"tel:+..." are NOT double-matched. The trailing digit-ending lookbehind
+happens in rules. The negative lookbehind (via BoundarySpec.E164_LEFT)
+excludes word characters, ":" and "." so email plus-tags, algebra, decimals,
+and "tel:+..." are NOT double-matched. The trailing digit-ending guard
 forces the match to end on a digit so trailing separators/whitespace/
-punctuation are not swallowed. A PostStage trims runaway matches at the
-15-digit E.164 window (ADR-0008 S5) so a following number is not merged into
-the span.
+punctuation are not swallowed. The 15-digit E.164 window is a
+separator-skipping bounded window with ``max_window`` as data (ADR-0009
+§9.3); the span fixup ``end = start + len(trimmed)`` is preserved exactly
+so a following number is not merged into the span.
 """
 
 from __future__ import annotations
 
-import functools
 import re
 
 from paxman.capabilities.Phone.grammar._common import strip_separators
 from paxman.capabilities.Phone.notation import PhoneNotation
-from paxman.core.domain import RecognitionMatch
-from paxman.core.grammar import (
-    BoundaryGuard,
-    PipelineGrammar,
-    PostStage,
-    RegexStage,
-    StandardPre,
-)
+from paxman.core.grammar import BoundarySpec, ScannerMatcher, StandardPre
+from paxman.core.grammar.pipeline import PipelineGrammar
+from paxman.core.grammar.scan_context import ScanContext, View
 
 # Maximum E.164 number length in digits (spec limit; the grammar trims
 # runaway matches at this boundary). Duplicated from the rule module on
@@ -34,12 +29,19 @@ from paxman.core.grammar import (
 # rules/e164_ed2010.py:_MAX_E164_DIGITS.
 _MAX_E164_DIGITS = 15
 
+# Char window carrying the 15-digit bound as data; separators inflate raw
+# length beyond the digit count, so the char window is larger than 15 to
+# hold a full 15-digit number with separators and the leading "+". 32
+# safely covers "+x (xxx) xxx-xxxx" plus the runaway-trim case
+# "+15551234567 5551234567" (23 chars) and the oversized first-run case
+# "+12345678901234567890" (21 chars) while still bounding the scanner.
+_E164_MAX_WINDOW = 32
 
-@functools.lru_cache(maxsize=256)
+
 def _trim_to_e164_boundary(raw: str) -> str:
     """Trim a runaway raw match at the last digit-run group within the limit.
 
-    ``_E164_PATTERN``'s trailing character class consumes separators AND
+    ``_e164_scan``'s greedy character class consumes separators AND
     following digit runs, so "+15551234567 5551234567" is captured as one raw
     span. The raw match is trimmed back to the last complete digit-run group
     whose inclusion keeps the total digit count at or below
@@ -47,10 +49,6 @@ def _trim_to_e164_boundary(raw: str) -> str:
     swallowed into the match. If the first run alone exceeds the limit, the
     raw match is kept whole: validation then rejects the oversized value
     instead of silently recognizing a truncated 15-digit prefix.
-
-    Cached so the paired ``_e164_notation`` / ``_e164_trim`` calls for the
-    same match reuse a single trimmed result instead of scanning digit runs
-    twice.
     """
     runs = list(re.finditer(r"\d+", raw))
     total = 0
@@ -63,31 +61,50 @@ def _trim_to_e164_boundary(raw: str) -> str:
     return raw
 
 
-# Body: "+" then digits with optional separators, ending on a digit. The
-# leading lookbehind is supplied by BoundaryGuard.e164() (ADR-0008 D5) so no
-# hard-coded lookaround literal remains in this file.
-_E164_BODY = r"\+\d[\d\s().\-]*(?<=\d)"
-_GUARD = BoundaryGuard.e164()
-_E164_PATTERN = _GUARD.lookbehind + _E164_BODY
+def _e164_scan(view: View, pos: int) -> tuple[int, PhoneNotation] | None:
+    """Scanner function: (view, pos) -> (end, Notation) | None.
+
+    Separator-skipping bounded window (ADR-0009 §9.3): at ``pos`` expects a
+    leading "+" followed by a digit, then greedily consumes digits and
+    separators ``[\\d\\s().\\-]`` ending on a digit, then applies the
+    15-digit run-aware trim (``end = start + len(trimmed)``).
+    """
+    subj = view.subject
+    n = len(subj)
+    if pos < 0 or pos >= n:
+        return None
+    if subj[pos] != "+":
+        return None
+    if pos + 1 >= n or not subj[pos + 1].isdigit():
+        return None
+    j = pos + 2
+    while j < n and (subj[j].isdigit() or subj[j] in "().-" or subj[j].isspace()):
+        j += 1
+    while j > pos and not subj[j - 1].isdigit():
+        j -= 1
+    if j <= pos + 1:
+        return None
+    raw = subj[pos:j]
+    trimmed = _trim_to_e164_boundary(raw)
+    trimmed_end = pos + len(trimmed)
+    return (
+        trimmed_end,
+        PhoneNotation(shape="e164", value=strip_separators(trimmed, plus=True)),
+    )
 
 
-def _e164_notation(match: re.Match[str]) -> PhoneNotation:
-    """Map a raw E.164 match to its digit-only notation (trimmed to 15 digits)."""
-    raw = _trim_to_e164_boundary(match.group(0))
+def _e164_emit(span: tuple[int, int], ctx: ScanContext) -> PhoneNotation:
+    s, e = span
+    raw = ctx.text[s:e]
     return PhoneNotation(shape="e164", value=strip_separators(raw, plus=True))
 
 
-def _e164_trim(
-    match: RecognitionMatch[PhoneNotation],
-) -> RecognitionMatch[PhoneNotation]:
-    """Adjust the span to the trimmed 15-digit window (end = start + len)."""
-    raw = _trim_to_e164_boundary(match.raw_text)
-    return RecognitionMatch(
-        notation=match.notation,
-        start=match.start,
-        end=match.start + len(raw),
-        raw_text=raw,
-    )
+_E164_SCANNER = ScannerMatcher(
+    scan=_e164_scan,
+    boundary=BoundarySpec.E164_LEFT,
+    emit=_e164_emit,
+    max_window=_E164_MAX_WINDOW,
+)
 
 
 class E164Grammar(PipelineGrammar[PhoneNotation]):
@@ -102,5 +119,4 @@ class E164Grammar(PipelineGrammar[PhoneNotation]):
     single_value = True
 
     pre = StandardPre[PhoneNotation](empty_guard=True)
-    regex = RegexStage[PhoneNotation](pattern=_E164_PATTERN, notation_fn=_e164_notation)
-    post = PostStage[PhoneNotation](transform=_e164_trim)
+    matchers = (_E164_SCANNER,)

@@ -61,13 +61,13 @@ Paxman ships with fifteen built-in capabilities:
 | **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Country** | Country codes/names | 4 (alpha2, alpha3, numeric, name) | 6 | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
-| **Date** | Dates | 4 (iso8601, us, european, slash_iso) | 3 | ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale) |
+| **Date** | Dates | 1 (date) | 3 | ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale) |
 | **Email** | Email addresses | 3 (standard, obfuscated, localhost) | 2 | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | 1 (iban) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
-| **Language** | Language identifiers | 3 (bcp47_tag, language_code, language_name) | 8 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
+| **Language** | Language identifiers | 3 (bcp47_tag, language_code, language_name) | 10 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
@@ -459,6 +459,8 @@ Every capability provides a `create_contract()` factory method with common and c
 | `excluded_rules` | `Sequence[str]` | Rule names to exclude from validation |
 | `pinned_rules` | `Sequence[str]` | Pin to specific rules (overrides `excluded_rules`) |
 | `year` | `int` | Temporal filter — only rules with `publication_year ≤ year` run |
+| `extra_grammars` | `tuple[str, ...]` | Community grammar names to opt in (appended after shipped grammars) |
+| `suppress_common_words` | `bool` | Suppress common-word noise on scan (e.g. `to` → Tonga); default `False` (ADR-0009 §16) |
 
 ### Capability-Specific Parameters
 
@@ -517,7 +519,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with fourteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with fifteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re
@@ -649,6 +651,10 @@ for Cap in (Money, Email, URL, Country):
 ```
 
 For inputs with multiple mentions of the same capability, split the text first — see [docs/recipes/segmentation.md](docs/recipes/segmentation.md). The CLI offers the same extraction without code: `python -m paxman email "Contact billing@example.com"`.
+
+For scan on prose, short-code noise (`to`→Tonga) can dominate: use the off-by-default
+`suppress_common_words` gate (ADR-0009 §16) — `Country.create_contract(suppress_common_words=True)` /
+`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency and bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note.
 
 ---
 

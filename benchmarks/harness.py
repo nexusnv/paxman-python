@@ -29,7 +29,7 @@ def run_once(
     capability: str, text: str, iterations: int = 100
 ) -> dict[str, float | str | int]:
     from paxman import canonicalize
-    from paxman.core.discovery import reset_registry
+    from paxman.core.discovery import freeze_registry, get_capability, reset_registry
 
     if iterations <= 0:
         raise ValueError(f"iterations must be a positive integer, got {iterations!r}")
@@ -39,12 +39,63 @@ def run_once(
     # Scenarios carry a factory: lambda: (contract, text)
     scenario = next(s for s in SCENARIOS if s["capability"] == capability)
     durations: list[float] = []
+
+    # Freeze-cost scenario: times reset + register + freeze only (reported separately)
+    if capability == "freeze":
+        for _ in range(iterations):
+            reset_registry()
+            start = time.perf_counter()
+            scenario["register"]()
+            freeze_registry()
+            durations.append((time.perf_counter() - start) * 1000)
+            reset_registry()
+        durations.sort()
+        p50 = durations[len(durations) // 2]
+        p95 = durations[int(len(durations) * 0.95)]
+        return {
+            "capability": capability,
+            "iterations": iterations,
+            "mean_ms": statistics.mean(durations),
+            "p50_ms": p50,
+            "p95_ms": p95,
+            "min_ms": min(durations),
+            "max_ms": max(durations),
+        }
+
+    # Recognition-only scenarios: grammar recognition only (no rules)
+    if "-recognition-" in capability:
+        base = capability.split("-recognition-")[0]
+        for _ in range(iterations):
+            reset_registry()
+            scenario["register"]()
+            freeze_registry()
+            cap = get_capability(base)
+            grammars = cap.get_grammars()
+            start = time.perf_counter()
+            for grammar in grammars:
+                grammar.recognize(text)
+            durations.append((time.perf_counter() - start) * 1000)
+            reset_registry()
+        durations.sort()
+        p50 = durations[len(durations) // 2]
+        p95 = durations[int(len(durations) * 0.95)]
+        return {
+            "capability": capability,
+            "iterations": iterations,
+            "mean_ms": statistics.mean(durations),
+            "p50_ms": p50,
+            "p95_ms": p95,
+            "min_ms": min(durations),
+            "max_ms": max(durations),
+        }
+
     for _ in range(iterations):
         reset_registry()
         # Register only the needed capability for this scenario
         # (isolates import cost if lazy)
         scenario["register"]()
         contract = scenario["contract_factory"]()
+        freeze_registry()
         start = time.perf_counter()
         canonicalize(text, contract)
         durations.append((time.perf_counter() - start) * 1000)

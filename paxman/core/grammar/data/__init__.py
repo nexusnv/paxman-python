@@ -1,3 +1,3 @@
-"""Core grammar data — unicode property ranges etc."""
+"""Core grammar data."""
 
 from __future__ import annotations

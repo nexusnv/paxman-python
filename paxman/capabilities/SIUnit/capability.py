@@ -71,6 +71,7 @@ class SIUnitCapability(Capability[SIUnitNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
         allow_multi_solidus: bool = False,
         allow_split_word_prefixes: bool = False,
     ) -> SIUnitContract:
@@ -104,6 +105,7 @@ class SIUnitCapability(Capability[SIUnitNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
             allow_multi_solidus=allow_multi_solidus,
             allow_split_word_prefixes=allow_split_word_prefixes,
         )

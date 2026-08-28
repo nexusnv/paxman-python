@@ -1,0 +1,71 @@
+{
+  "date": "2026-08-26",
+  "note": "pre-remediation numbers after A0 ruler fix (freeze outside timed region); before A1-A3 hot-path fixes. Do not overwrite baseline.json (Task C2).",
+  "iterations": 100,
+  "si_unit_pipeline_p50_ms": 0.493067956995219,
+  "si_unit_recognition_2KB_p50_ms": 12.239869975019246,
+  "si_unit_recognition_2KB_expected_ms": 19.7,
+  "freeze_p50_ms": 50.82796496571973,
+  "freeze_expected_ms": "50-75",
+  "warning_count": 68,
+  "harness_output": {
+    "scenarios": [
+      {
+        "capability": "country",
+        "p50_ms": 0.4955259471429288
+      },
+      {
+        "capability": "currency",
+        "p50_ms": 0.1938619916061163
+      },
+      {
+        "capability": "date",
+        "p50_ms": 0.20672497724050283
+      },
+      {
+        "capability": "email",
+        "p50_ms": 0.18414899161963165
+      },
+      {
+        "capability": "ip",
+        "p50_ms": 0.19971502411738038
+      },
+      {
+        "capability": "isbn",
+        "p50_ms": 0.27475203666836023
+      },
+      {
+        "capability": "money",
+        "p50_ms": 0.28479800000840425
+      },
+      {
+        "capability": "phone",
+        "p50_ms": 0.315743946865201
+      },
+      {
+        "capability": "si_unit",
+        "p50_ms": 0.493067956995219
+      },
+      {
+        "capability": "url",
+        "p50_ms": 0.32345198667794466
+      },
+      {
+        "capability": "freeze",
+        "p50_ms": 50.82796496571973
+      },
+      {
+        "capability": "si_unit-recognition-64B",
+        "p50_ms": 0.41087202022224665
+      },
+      {
+        "capability": "si_unit-recognition-2KB",
+        "p50_ms": 12.239869975019246
+      },
+      {
+        "capability": "si_unit-recognition-16KB",
+        "p50_ms": 434.87231195929646
+      }
+    ]
+  }
+}

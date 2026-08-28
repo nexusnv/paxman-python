@@ -1,27 +1,34 @@
-"""ISO 4217 alpha-3 currency code recognition grammar (staged pipeline).
+"""ISO 4217 alpha-3 currency code recognition grammar (kernel RegexMatcher).
 
 Recognizes a standalone 3-letter ASCII code shape (case-insensitive) as
-one span-bearing token. Case folding is the grammar's concern (Country
-alpha-2/alpha-3 precedent): the token is emitted uppercase so the rule is
-a pure table lookup. Syntax only: unknown codes are still matched —
-deciding validity is the rules' job.
+one span-bearing token. Case folding is the grammar's concern: the token
+is emitted uppercase so the rule is a pure table lookup. Syntax only.
+BoundarySpec.WORD_SIGN blocks sign-adjacent tokens (mirrors Money's code
+grammar). Suppressible short-code matcher (ADR-0009 §16).
 """
 
 from __future__ import annotations
 
-import re
-
 from paxman.capabilities.Currency.notation import CurrencyNotation
-from paxman.core.grammar import BoundaryGuard, PipelineGrammar, RegexStage, StandardPre
+from paxman.core.grammar import AnchorSet, BoundarySpec, PipelineGrammar, StandardPre
+from paxman.core.grammar.matchers.regex import RegexMatcher
+from paxman.core.grammar.scan_context import ScanContext
 
 
-def _code_notation(match: re.Match[str]) -> CurrencyNotation:
-    """Fold the matched 3-letter code to uppercase at recognition."""
-    return CurrencyNotation(text=match.group(0).upper(), shape="code")
+def _emit(span: tuple[int, int], ctx: ScanContext) -> CurrencyNotation:
+    s, e = span
+    raw = ctx.text[s:e]
+    return CurrencyNotation(text=raw.upper(), shape="code")
 
 
-_GUARD = BoundaryGuard.word_sign()
-_CODE_PATTERN = _GUARD.lookbehind + r"[A-Za-z]{3}" + _GUARD.lookahead
+_MATCHER = RegexMatcher(
+    pattern=r"[A-Za-z]{3}",
+    boundary=BoundarySpec.WORD_SIGN,
+    view=None,
+    anchors=AnchorSet(),
+    emit=_emit,
+    suppressible=True,
+)
 
 
 class CodeRecognition(PipelineGrammar[CurrencyNotation]):
@@ -44,7 +51,4 @@ class CodeRecognition(PipelineGrammar[CurrencyNotation]):
     single_value = True
 
     pre = StandardPre[CurrencyNotation](empty_guard=True)
-    regex = RegexStage(
-        pattern=_CODE_PATTERN,
-        notation_fn=_code_notation,
-    )
+    matchers = (_MATCHER,)

@@ -28,7 +28,7 @@ def _url_scan(view: View, pos: int) -> tuple[int, str] | None:
 @pytest.mark.property
 def test_scanner_nested_parens() -> None:
     view = ScanContext.of("Visit https://example.com/a(b(c)d)e now").view(
-        "orig", lambda t: (t, None)
+        "orig", lambda t: (t, None, None)
     )
     m = ScannerMatcher(scan=_url_scan)
     spans = m.match(view)

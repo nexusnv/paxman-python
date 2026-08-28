@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed — Draft 2026-08-24 (Rev.3).** On acceptance this ADR **supersedes**:
+**Accepted — 2026-08-26 (Rev.4).** This ADR **supersedes**:
 
 - **ADR-0008** (Staged Recognition Pipeline, Accepted 2026-08-20) — the fixed-order
   `pre → regex → lexicon → composer → post` pipeline becomes **Obsolete** (see its status
@@ -40,6 +40,7 @@ discarded.
 | Rev.1 | 2026-08-24 | Sisyphus | Expanded to a self-contained decision document: first-principles invariants; per-kind matcher contracts; `BoundarySpec` preset mapping; normalizer table; offset-map discipline; F1 fix + `scan()`/mention model; freeze compilation + `recognition_revision`; `Snapshot` data rails; shipped-capability mapping (15 capabilities / 36 grammars — corrected from the stale "33", which predated Language shipping); future-families mapping; performance model; verification strata; streaming design; comparative matrix. |
 | Rev.2 | 2026-08-24 | Sisyphus | **Review-driven corrections.** (1) Removed every citation of ephemeral working notes — measurements and mappings are now ADR-owned data with no external document dependencies. (2) Added the BREAKING CHANGE banner (Status) and the Compatibility subsection (Part VII): old→new behavior table, migration snippet, semver guidance (0.1.0 → 0.2.0), `recognition_revision` as the same-snapshot diff signal. (3) Demoted streaming and the suppression table from binding constraints to deferred, non-binding designs. (4) Specified `MatcherSpec.requires_features` omission semantics (matcher omitted at freeze; zero-active-matcher grammar → `MISSING`). (5) Specified the consuming-boundary span rule (anchors consumed for advance, never part of the emitted span — parity with `ipv6_token`). (6) Stated the offset-map invariant precisely (`offsets[i]` bounds subject char `i`'s source; span `[s,e)` → `[offsets[s], offsets[e])`). (7) Defined anchor primitives (`HAS_DIGIT` ≡ `re.search(r"\d", text)`). (8) Split Part IV into **Measured** (pre-kernel tree) vs **Projected** (kernel; confirmed per phase, never a gate). (9) Added the grammar-count enumeration footnote. (10) Clarified `Normalizer.provenance` as declaration-level metadata — `Resolution.provenance` stays rule-owned. (11) Corrected the `degree_word_sign` preset row (asymmetric guards). |
 | Rev.3 | 2026-08-24 | Sisyphus | **F1 parity exemption.** Clarified that `Country name_recognition` F1 migration is exempt from the byte-identical gate and is gated instead by the honest-behavior regression test (Part V abort criterion / Part VI Phase 1). |
+| Rev.4 | 2026-08-26 | Sisyphus | **Accepted + remediation amendments.** (a) Status Proposed→Accepted after post-landing evaluation (2026-08-26, findings R1–R12) and kernel remediation Part A (A1–A7): boundary O(1) checks (§10), per-matcher digest memoization (§13), emit-signature validation at construction (§13), two-array offset maps (§6 D3), single-pass CountryNameFold, ``view="country_normalized"`` alias removal, single recognition path via ``PipelineGrammar.recognize`` delegation; ADR-0008 already Obsolete. (b) D3 amendment (A4): offset-map invariant now two-array — ``[s,e)`` in view → ``[starts[s], ends[e-1])`` in original (was ``[offsets[s], offsets[e])``), length-preserving views stay ``offsets=None`` identity; general maps land with URL IDNA as first length-changing customer per D3 phasing. (c) §13 clarification: contract-dependent ``requires_features`` omission happens at match time (engine_loop compat shim) not at freeze — registry freezes without a contract; emit-signature validation moves to matcher construction (``_emit_validation``), engine loop keeps only ``callable(emit)`` guard. (d) Split-prefix deviation note: SIUnit ``_SPACED_SYMBOL_TOKENS`` (24×820=19,530) materialized as interim lexicon; target is combinator ``seq(prefix, ws, unit)`` per §9.4 — resolved by B2 (``CombinatorMatcher`` + 820-token base lexicon). (e) Suppression §16 deferred→shipped: common-word suppression table (``common_words.py``) ships off-by-default gated by ``suppress_common_words`` (B1) — ``scan()`` promotion gated on B1 landing. |
 
 ## Contents
 
@@ -361,15 +362,16 @@ no vectors; determinism and zero-dep forbid:
 ```python
 @dataclass(frozen=True, slots=True)
 class ScanContext:
-    text: str                                   # original, immutable
-    word_spans: tuple[tuple[int, int], ...]     # one re.finditer(r"\w+") pass, C-speed
-    _views: dict[str, View]                     # lazy, keyed by view name
+    text: str  # original, immutable
+    word_spans: tuple[tuple[int, int], ...]  # one re.finditer(r"\w+") pass, C-speed
+    _views: dict[str, View]  # lazy, keyed by view name
 
     def view(self, name: str, normalizer: Normalizer) -> View: ...
 
-# View = (subject: str, offsets: tuple[int, ...] | None)
-#   length-preserving normalizers → offsets=None (identity, zero cost)
-#   length-changing normalizers  → offsets map subject→original positions
+
+# View = (subject: str, starts: tuple[int, ...] | None, ends: tuple[int, ...] | None)
+#   length-preserving normalizers → starts=None, ends=None (identity, zero cost)
+#   length-changing normalizers  → starts/ends map subject→original positions (two-array)
 ```
 
 Three binding design rules:
@@ -394,19 +396,16 @@ Three binding design rules:
   scanner-side alternative (a scanner can skip separators as inline state — Phone E.164
   needs no compacted view, Part III).
 
-  **Offset-map invariant (binding whenever a view carries `offsets`):**
+  **Offset-map invariant (binding whenever a view carries `starts`/`ends`):**
 
-  - `len(offsets) == len(subject) + 1`.
-  - `offsets[i]` is the original-text offset at which the **source of subject character
-    `i` begins**: `text[offsets[i]:offsets[i+1]]` is the (non-empty) source interval of
-    `subject[i]`.
-  - A half-open view span `[s, e)` translates to the original span
-    `[offsets[s], offsets[e])` — `offsets[e]` is the exclusive end by construction, since
-    it is where the source of `subject[e]` would begin.
-  - Degenerate case: length-preserving views carry `offsets=None`; there the translation
-    is the identity and `text[o_start:o_end] == subject[s:e]` holds exactly.
-  - The engine's existing `raw_text == text[start:end]` validation remains the net safety
-    net for **every** emitted match, regardless of view.
+   - `len(starts) == len(ends) == len(subject)`.
+   - `text[starts[i]:ends[i]]` is the (non-empty) source interval of `subject[i]`.
+   - A half-open view span `[s, e)` translates to the original span
+     `[starts[s], ends[e-1])` (empty span `[s,s)` → `[starts[s], starts[s])`; degenerate empty view → `(0,0)`) via `View.original_span(s, e)`.
+   - Degenerate case: length-preserving views carry `starts=None, ends=None`; there the translation
+     is the identity and `text[o_start:o_end] == subject[s:e]` holds exactly.
+   - The engine's existing `raw_text == text[start:end]` validation remains the net safety
+     net for **every** emitted match, regardless of view.
 
 ## 7. Normalizers — first-class, composable, provenance-aware
 
@@ -415,13 +414,18 @@ Views are materialized by normalizers that carry citeable provenance:
 ```python
 class Normalizer(Protocol):
     name: str
-    provenance: Provenance | None   # citeable if the transform has authority
-    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
-    # returns (subject, offsets_or_None)
+    provenance: Provenance | None  # citeable if the transform has authority
+
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]: ...
+
+    # returns (subject, starts_or_None, ends_or_None) — two-array; §6 D3 invariant
+
 
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
-    steps: tuple[Normalizer, ...]   # composable, mirrors HF tokenizers Sequence
+    steps: tuple[Normalizer, ...]  # composable, mirrors HF tokenizers Sequence
 ```
 
 **Provenance semantics (clarification):** `Normalizer.provenance` is **declaration-level
@@ -454,14 +458,17 @@ in as kinds:
 ```python
 @dataclass(frozen=True, slots=True)
 class MatcherSpec(Generic[NotationT]):
-    kind: Literal["regex", "lexicon", "scanner", "combinator",
-                  "property", "candidates", "label"]
-    payload: ...                      # per-kind, see §9
-    view: str | None                  # None = original text; else view name (D2)
-    boundary: BoundarySpec | None     # declarative, see §10
-    anchors: AnchorSet                # necessary conditions, cheap tier, see §11
-    emit: EmitFn                      # (raw_span, context) -> NotationT
-    requires_features: frozenset[str] = frozenset()   # declared, mirrors Rule.requires_features
+    kind: Literal[
+        "regex", "lexicon", "scanner", "combinator", "property", "candidates", "label"
+    ]
+    payload: ...  # per-kind, see §9
+    view: str | None  # None = original text; else view name (D2)
+    boundary: BoundarySpec | None  # declarative, see §10
+    anchors: AnchorSet  # necessary conditions, cheap tier, see §11
+    emit: EmitFn  # (raw_span, context) -> NotationT
+    requires_features: frozenset[str] = (
+        frozenset()
+    )  # declared, mirrors Rule.requires_features
 ```
 
 **`requires_features` semantics (binding):** a matcher whose `requires_features` is
@@ -607,10 +614,12 @@ core)` respectively) — they add *named* kinds without new machinery.
 ```python
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    left: tuple[str, ...] | None     # char-class membership; None = no constraint
+    left: tuple[str, ...] | None  # char-class membership; None = no constraint
     right: tuple[str, ...] | None
     mode: Literal["zero_width", "consuming"] = "zero_width"
 ```
+
+Compiled `BoundarySpec` precomputes `left_chars`/`right_chars` as `frozenset[str]` (single-char classes → O(1) membership) and only falls back to compiled `re.Pattern` for multi-char lookarounds (`left_multi`/`right_multi`); `check_boundary` is thus O(1) per hit for the common single-char presets.
 
 The kernel resolves boundaries as **checks at hit positions**
 (`context.check(start, end, spec)` — O(hits)), never as lookarounds evaluated at scan
@@ -679,21 +688,28 @@ collection, and `format_value()` are all **unchanged**. The kernel replaces only
 
 ```python
 # Illustrative — engine-owned, capability-agnostic
-def _run_matchers(text: str, compiled: Sequence[CompiledGrammar]) -> list[RecognitionMatch]:
-    context = ScanContext.of(text)                    # L0: word spans; views lazy
+def _run_matchers(
+    text: str, compiled: Sequence[CompiledGrammar]
+) -> list[RecognitionMatch]:
+    context = ScanContext.of(text)  # L0: word spans; views lazy
     out: list[RecognitionMatch] = []
-    for grammar in compiled:                          # active set, fixed order
+    for grammar in compiled:  # active set, fixed order
         for matcher in grammar.matchers:
-            if not matcher.anchors.pass_(text):       # T0 — skip, C-speed
+            if not matcher.anchors.pass_(text):  # T0 — skip, C-speed
                 continue
-            view = context.view(matcher.view)         # lazy materialization (D2)
-            for span in matcher.match(view):          # T1 — kind-specific
-                o_start, o_end = view.original_span(*span)   # offset translate (D3)
-                out.append(RecognitionMatch(
-                    notation=matcher.emit(span, context),    # T2
-                    start=o_start, end=o_end, raw_text=text[o_start:o_end]))
+            view = context.view(matcher.view)  # lazy materialization (D2)
+            for span in matcher.match(view):  # T1 — kind-specific
+                o_start, o_end = view.original_span(*span)  # offset translate (D3)
+                out.append(
+                    RecognitionMatch(
+                        notation=matcher.emit(span, context),  # T2
+                        start=o_start,
+                        end=o_end,
+                        raw_text=text[o_start:o_end],
+                    )
+                )
         # engine validates raw_text == text[start:end] at the boundary (existing check)
-    return out                                          # → existing assembly (L2)
+    return out  # → existing assembly (L2)
 ```
 
 No DAG, no threading — see §15.
@@ -722,11 +738,11 @@ identity:
 ```python
 @dataclass(frozen=True, slots=True)
 class Snapshot:
-    name: str          # "currency" | "iban_registry" | "iana_language" | "unicode_property" | …
-    source_url: str    # authoritative fetch URL
-    version: str       # "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08" | …
-    fetched_at: str    # ISO date
-    data: object       # typed frozen payload
+    name: str  # "currency" | "iban_registry" | "iana_language" | "unicode_property" | …
+    source_url: str  # authoritative fetch URL
+    version: str  # "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08" | …
+    fetched_at: str  # ISO date
+    data: object  # typed frozen payload
 ```
 
 - **Every generated module embeds `Source / Version / SHA` in its header; CI regenerates and
@@ -1021,7 +1037,7 @@ place. Every other input is byte-identical under the parity gate.
 
   ```python
   # Exact value — unchanged:
-  paxman.canonicalize("United States", contract)            # SUCCESS "US"
+  paxman.canonicalize("United States", contract)  # SUCCESS "US"
 
   # Prose with embedded values — the new honest paths:
   try:
@@ -1132,7 +1148,7 @@ See the table in Part VI.
    `MultipleMentionsError` guidance; resolved at Phase 4. The F1 regression test (Phase 1)
    locks the *behaviour* before the API lands.
 2. **Suppression data** — whether `suppress_common_words` ever ships; if so, off by default
-   and corpus-neutral (§16 — deferred, non-binding).
+   and corpus-neutral (§16 — deferred, non-binding). **Resolved in Rev. 4 — shipped off-by-default, `COMMON_WORDS` = 67 word-bounded short-code suppressions; see §16 and `Country` `suppress_common_words` contract flag.**
 3. **Trie threshold drift** — the ~500-token crossover is measured on current hardware and
    tables; the benchmark tracks it (informational). Adjusting the constant is a patch, not
    an ADR.

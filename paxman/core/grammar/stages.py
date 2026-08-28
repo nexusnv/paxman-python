@@ -134,7 +134,7 @@ class PostStage(Generic[NotationT]):
     Used for span-trimming behaviors that the regex span alone cannot
     express — e.g. the E.164 15-digit window trim (end = start +
     len(trimmed_raw)) and the URL paren-balance trim with bare-scheme drop
-    (D16). The transform maps a ``RecognitionMatch`` to a (possibly
+    (ADR §9.3). The transform maps a ``RecognitionMatch`` to a (possibly
     different) ``RecognitionMatch``, or to ``None`` to drop the match
     entirely. Capability-specific trim logic lives in the grammar file's
     transform closure; this stage stays capability-agnostic.
@@ -160,7 +160,7 @@ class WholeInputLookup(Generic[NotationT]):
     """S2 whole-input membership — a LexiconStage variant for Country/name_recognition.
 
     The entire (trimmed) input is looked up against a set of normalized keys.
-    The emitted match carries the *original* trimmed text and span (D7), not the
+    The emitted match carries the *original* trimmed text and span (ADR §5), not the
     normalized key. ``normalizer`` is required: Country must pass its
     ``normalize_name`` so that the lookup key is derived deterministically rather
     than by a hard-coded ``lower()`` that would break other capabilities.

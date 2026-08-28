@@ -142,11 +142,13 @@ class PipelineGrammar(Grammar[NotationT]):
 
 ```python
 # paxman/core/grammar/stages.py — five stage types
-StandardPre(empty_guard=True)          # whitespace-only early exit, nothing else
-RegexStage(pattern, notation_fn, flags) # re.compile(pattern).finditer(text)
-LexiconStage(tokens, boundary, ...)     # BoundaryGuard.wrap(LexiconAlternation(tokens).alternation).finditer
+StandardPre(empty_guard=True)  # whitespace-only early exit, nothing else
+RegexStage(pattern, notation_fn, flags)  # re.compile(pattern).finditer(text)
+LexiconStage(
+    tokens, boundary, ...
+)  # BoundaryGuard.wrap(LexiconAlternation(tokens).alternation).finditer
 WholeInputLookup(keys, normalizer, ...)  # trimmed in frozenset membership, single span
-PostStage(transform)                     # RM -> RM|None per match (trim/drop)
+PostStage(transform)  # RM -> RM|None per match (trim/drop)
 # plus LexiconAlternation, BoundaryGuard, AmountComposer (in composer.py)
 ```
 
@@ -210,6 +212,7 @@ Replace `Stage` + `PipelineState` + `PipelineGrammar` with two concepts:
 # paxman/core/recognition/views.py (new)
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class InputView:
     """A materialized view of the original text with offset map.
@@ -218,34 +221,42 @@ class InputView:
     `offsets[i]` is the original-text offset of view offset i (len = len(text)+1).
     For length-preserving views offsets is None (identity, zero cost).
     """
-    name: str                          # "original" | "normalized" | "casefolded" | ...
+
+    name: str  # "original" | "normalized" | "casefolded" | ...
     text: str
-    offsets: tuple[int, ...] | None    # None = identity
+    offsets: tuple[int, ...] | None  # None = identity
 
     def original_span(self, v_start: int, v_end: int) -> tuple[int, int]:
         if self.offsets is None:
             return (v_start, v_end)
         return (self.offsets[v_start], self.offsets[v_end])
 
+
 @dataclass(frozen=True, slots=True)
 class RecognitionContext:
     """Threaded through recognizers — immutable, replacement-based."""
+
     original_text: str
-    views: dict[str, InputView]        # populated by Normalizers, read by Recognizers
-    matches: list[RecognitionMatch]    # accumulated, appended only
+    views: dict[str, InputView]  # populated by Normalizers, read by Recognizers
+    matches: list[RecognitionMatch]  # accumulated, appended only
+
 
 # paxman/core/recognition/recognizer.py (new)
 from typing import Protocol
 
+
 class Recognizer(Protocol[NotationT]):
     """Uniform recognizer contract — every strategy implements this."""
+
     name: str
-    semantics: str          # target_semantics for engine routing
-    view: str               # InputView name to scan (default "original")
-    single_value: bool      # for _enforce_single_value_invariant
+    semantics: str  # target_semantics for engine routing
+    view: str  # InputView name to scan (default "original")
+    single_value: bool  # for _enforce_single_value_invariant
     boundary: BoundarySpec | None  # uniform boundary declaration (see §5.6)
 
-    def recognize(self, ctx: RecognitionContext) -> list[RecognitionMatch[NotationT]]: ...
+    def recognize(
+        self, ctx: RecognitionContext
+    ) -> list[RecognitionMatch[NotationT]]: ...
 ```
 
 Key differences from `Stage`:
@@ -260,17 +271,22 @@ Key differences from `Stage`:
 # paxman/core/recognition/normalizer.py (new)
 from typing import Protocol
 
+
 class Normalizer(Protocol):
     name: str
     provenance: Provenance | None  # citeable if transformation has authority
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]: ...
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
+
     # returns (normalized_text, offsets_or_None)
+
 
 # Composable sequence — mirrors tokenizers.normalizers.Sequence
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
     steps: tuple[Normalizer, ...]
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]: ...
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
 ```
 
 Shipped normalizers (all pure, deterministic, no deps):
@@ -336,11 +352,13 @@ Every capability picks one or more recognizers from the kernel. Each is `O(N)` o
 class ComposerRecognizer(Generic[NotationT]):
     name: str
     semantics: str
-    left: Recognizer | None        # lexicon or shape
-    right: Recognizer | None       # shape (amount) or lexicon
+    left: Recognizer | None  # lexicon or shape
+    right: Recognizer | None  # shape (amount) or lexicon
     separator: re.Pattern[str] | None  # e.g. re.compile(r"\s?") vs r"[\s:-]+"
-    order: Literal["either","left_then_right","right_then_left"]
-    predicate: Callable[[str,str], bool] | None  # prefix constraint, e.g. Prefix.contains
+    order: Literal["either", "left_then_right", "right_then_left"]
+    predicate: (
+        Callable[[str, str], bool] | None
+    )  # prefix constraint, e.g. Prefix.contains
     boundary: BoundarySpec | None
     view: str = "original"
 ```
@@ -354,21 +372,45 @@ Each capability declares a **recognition plan** — a DAG of recognizers and nor
 ```python
 # paxman/capabilities/Language/grammar/__init__.py (illustrative)
 from paxman.core.recognition import NormalizerSequence, SeparatorFold, AccentStrip
-from paxman.core.recognition.recognizers import LexiconRecognizer, ScannerRecognizer, GrammarRecognizer, ComposerRecognizer
+from paxman.core.recognition.recognizers import (
+    LexiconRecognizer,
+    ScannerRecognizer,
+    GrammarRecognizer,
+    ComposerRecognizer,
+)
 
 LANGUAGE_PLAN = RecognitionPlan(
     normalizers=NormalizerSequence(steps=(SeparatorFold(), AccentStrip())),
     recognizers=(
-        LexiconRecognizer(name="language_code", semantics="bcp47_tag",
-                          view="normalized", tokens=ISO639_3_KEYS, boundary=WordBoundary),
-        LexiconRecognizer(name="iana_variant", semantics="bcp47_tag",
-                          view="normalized", tokens=IANA_VARIANT_KEYS, boundary=HyphenBoundary),
-        GrammarRecognizer(name="bcp47_tag", semantics="bcp47_tag",
-                          view="normalized", abnf=BCP47_ABNF, boundary=WordBoundary),
-        ComposerRecognizer(name="prefix_constrained_variant", semantics="bcp47_tag",
-                           left=LexiconRecognizer(tokens=LANGUAGE_KEYS),
-                           right=LexiconRecognizer(tokens=VARIANT_KEYS),
-                           separator=HyphenSep, predicate=prefix_ok),
+        LexiconRecognizer(
+            name="language_code",
+            semantics="bcp47_tag",
+            view="normalized",
+            tokens=ISO639_3_KEYS,
+            boundary=WordBoundary,
+        ),
+        LexiconRecognizer(
+            name="iana_variant",
+            semantics="bcp47_tag",
+            view="normalized",
+            tokens=IANA_VARIANT_KEYS,
+            boundary=HyphenBoundary,
+        ),
+        GrammarRecognizer(
+            name="bcp47_tag",
+            semantics="bcp47_tag",
+            view="normalized",
+            abnf=BCP47_ABNF,
+            boundary=WordBoundary,
+        ),
+        ComposerRecognizer(
+            name="prefix_constrained_variant",
+            semantics="bcp47_tag",
+            left=LexiconRecognizer(tokens=LANGUAGE_KEYS),
+            right=LexiconRecognizer(tokens=VARIANT_KEYS),
+            separator=HyphenSep,
+            predicate=prefix_ok,
+        ),
     ),
 )
 ```
@@ -392,7 +434,7 @@ class RecognitionEngine:
     plan: RecognitionPlan
 
     def recognize(self, text: str) -> list[RecognitionMatch]:
-        views = self._materialize_views(text)          # 1
+        views = self._materialize_views(text)  # 1
         all_matches: list[RecognitionMatch] = []
         for recognizer in self._topo_sort(self.plan.recognizers):  # 2
             view_text = views[recognizer.view].text
@@ -401,11 +443,18 @@ class RecognitionEngine:
             )
             for m in raw_matches:
                 v_start, v_end = m.start, m.end  # view offsets
-                o_start, o_end = views[recognizer.view].original_span(v_start, v_end)  # 3
-                all_matches.append(RecognitionMatch(
-                    notation=m.notation, start=o_start, end=o_end,
-                    raw_text=text[o_start:o_end]))
-        return self._dedup_and_sort(all_matches)       # 4 + 5
+                o_start, o_end = views[recognizer.view].original_span(
+                    v_start, v_end
+                )  # 3
+                all_matches.append(
+                    RecognitionMatch(
+                        notation=m.notation,
+                        start=o_start,
+                        end=o_end,
+                        raw_text=text[o_start:o_end],
+                    )
+                )
+        return self._dedup_and_sort(all_matches)  # 4 + 5
 ```
 
 The engine is capability-agnostic; `Capability.get_recognizers()` replaces `get_grammars()` (or wraps it with a compat shim during migration). `Capability` no longer needs `PipelineGrammar` subclasses — it returns a `RecognitionPlan`.
@@ -417,9 +466,11 @@ Replace 11 `BoundaryGuard` factories + verbatim `\b` with a single `BoundarySpec
 ```python
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    left: str | re.Pattern[str] | None   # lookbehind or consuming prefix; None = no constraint
+    left: (
+        str | re.Pattern[str] | None
+    )  # lookbehind or consuming prefix; None = no constraint
     right: str | re.Pattern[str] | None  # lookahead or consuming suffix
-    mode: Literal["zero_width","consuming"] = "zero_width"
+    mode: Literal["zero_width", "consuming"] = "zero_width"
     # Shipped presets:
     WORD = BoundarySpec(left=r"(?<!\w)", right=r"(?!\w)")
     WORD_SIGN = BoundarySpec(left=r"(?<![\w\-+\u2212])", right=r"(?![\w\-+\u2212])")
@@ -434,9 +485,11 @@ A recognizer declares `boundary=BoundarySpec.WORD` (or `None` for `Phone` E.164-
 ```python
 @dataclass(frozen=True, slots=True)
 class LabelSpec:
-    labels: frozenset[str]           # e.g. {"IBAN","BIC","SWIFT","ORCID","ISSN"}
-    separator: re.Pattern[str]       # e.g. re.compile(r"[\s:-]+") vs r"[\s:-]*"
-    glued_policy: Literal["reject","allow"]  # "IBANDE89…" → MISSING vs "ISSN03178471" → hit
+    labels: frozenset[str]  # e.g. {"IBAN","BIC","SWIFT","ORCID","ISSN"}
+    separator: re.Pattern[str]  # e.g. re.compile(r"[\s:-]+") vs r"[\s:-]*"
+    glued_policy: Literal[
+        "reject", "allow"
+    ]  # "IBANDE89…" → MISSING vs "ISSN03178471" → hit
 ```
 
 `LabelSpec` wraps a `ShapeRecognizer` or `LexiconRecognizer` to fuse optional label + value, handling glued-input policy and bare-scheme drop in one place. This unifies `IBAN`/`BIC`/`ORCID` `[\s:-]+` never-zero-width vs `ISSN` `[\s:-]*` inconsistency without a fifth stage.
@@ -480,11 +533,11 @@ A recognition-only revamp that leaves the surrounding system untouched will crea
 ```python
 @dataclass(frozen=True, slots=True)
 class Snapshot:
-    name: str                        # "currency" | "iban_registry" | "iana_language" | "unicode_property"
-    source_url: str                  # authoritative fetch URL
-    version: str                     # e.g. "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08"
-    fetched_at: str                  # ISO date
-    data: object                     # typed payload (frozen)
+    name: str  # "currency" | "iban_registry" | "iana_language" | "unicode_property"
+    source_url: str  # authoritative fetch URL
+    version: str  # e.g. "CLDR v47" | "SWIFT R100" | "IANA 2026-08-08"
+    fetched_at: str  # ISO date
+    data: object  # typed payload (frozen)
 ```
 
 Each snapshot has a generator `tools/regenerate_<name>_data.py` that writes to `paxman/shared_data/<name>_snapshot.json` and per-capability `grammar/data/` + `rules/data/` views. Drift is gated by `tests/unit/test_<name>_snapshot_parity.py` (same pattern as currency). For `Language` IANA registry (7990 `Type: language` rows + `Prefix` constraints), `IBAN` SWIFT Registry (90 country rows `length + BBAN regex`), and `Unicode` property tables, this prevents hand-copied drift.
@@ -657,12 +710,17 @@ from paxman.core.domain import RecognitionMatch
 
 NotationT = TypeVar("NotationT")
 
+
 class Recognizer(Protocol[NotationT]):
     name: str
     semantics: str
     view: str
     single_value: bool
-    def recognize(self, ctx: RecognitionContext) -> list[RecognitionMatch[NotationT]]: ...
+
+    def recognize(
+        self, ctx: RecognitionContext
+    ) -> list[RecognitionMatch[NotationT]]: ...
+
 
 @dataclass(frozen=True, slots=True)
 class RecognitionPlan(Generic[NotationT]):
@@ -676,11 +734,13 @@ class RecognitionPlan(Generic[NotationT]):
 # paxman/core/recognition/trie.py (pure Python, stdlib-only)
 from dataclasses import dataclass, field
 
+
 @dataclass(slots=True)
 class _Node:
     children: dict[str, _Node] = field(default_factory=dict)
     output: list[str] = field(default_factory=list)  # tokens ending here
     fail: _Node | None = None
+
 
 class Trie:
     def __init__(self, tokens: set[str], casefold: bool = False) -> None:
@@ -700,7 +760,7 @@ class Trie:
 
 ```python
 # urls.py — capability-local closure, no core import of capability data
-def _url_scan(view_text: str, i: int) -> tuple[int,int,URLNotation] | None:
+def _url_scan(view_text: str, i: int) -> tuple[int, int, URLNotation] | None:
     if not _is_scheme_start(view_text, i):
         return None
     scheme_end = view_text.find(":", i)

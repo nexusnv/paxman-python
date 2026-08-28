@@ -126,7 +126,7 @@ def _has_no_other_components(notation: LanguageNotation) -> bool:
 
 
 class SectionIANARegistry(Rule[LanguageNotation]):
-    """IANA Registry — language/script/region/variant membership (non-private)."""  # noqa: E501
+    """IANA Registry — language/script/region/variant membership (non-private)."""
 
     name = "Section-iana-registry"
     strategy = RuleStrategy.LOOKUP_TABLE

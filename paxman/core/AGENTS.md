@@ -1,6 +1,6 @@
 # PAXMAN CORE KNOWLEDGE BASE
 
-**Scope:** `paxman/core/` — the foundation layer and import-linter leaf. 8 modules plus the `grammar/` subpackage (capability-agnostic recognition-layer machinery: `BoundaryGuard`, `AmountComposer`, `LexiconAlternation`, `PipelineGrammar`, stage types). Imports from nothing inside `paxman.*`; every other package imports from here.
+**Scope:** `paxman/core/` — the foundation layer and import-linter leaf. 8 modules plus the `grammar/` subpackage (capability-agnostic recognition-layer machinery: kernel surface `ScanContext`/`MatcherSpec`/`engine_loop`/`matchers/`/`anchors`/`boundary_spec`/`normalizers` plus legacy `BoundaryGuard`/`AmountComposer`/`LexiconAlternation`/`PipelineGrammar`/stage types which remain for unmigrated grammars). Imports from nothing inside `paxman.*`; every other package imports from here.
 
 ## OVERVIEW
 Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs), the contract surface (`Contract` protocol, `CapabilityContract` base, `output_format` policy), the capability registry, the community extension registries (`extensions.py`), shared recognition machinery (`grammar/`), and the error hierarchy. Everything `paxman.api` and `paxman.engine` shuffle through the pipeline is defined here.
@@ -17,7 +17,7 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 | Add a capability class | `paxman/core/capability.py` → subclass `Capability` |
 | Registry / freezing behavior | `paxman/core/discovery.py` (+ `list_registered_capabilities()`, `is_registry_frozen()`) |
 | Community grammar/rule extensions | `paxman/core/extensions.py` → `register_grammar()` / `register_rule()`; contracts opt in via `extra_grammars`; registries freeze with the capability registry |
-| Shared recognition machinery (stages, boundary guard, lexicon alternation, pipeline grammar) | `paxman/core/grammar/` |
+| Shared recognition machinery — kernel (`ScanContext`, `MatcherSpec`, `engine_loop`, `matchers/`, `anchors`, `boundary_spec`, `normalizers`; legacy `stages`, `BoundaryGuard`, `LexiconAlternation`, `PipelineGrammar` remain) | `paxman/core/grammar/` |
 | New exception type | `paxman/core/errors.py` → subclass `PaxmanError` |
 | Top-level re-exports | `paxman/core/__init__.py` |
 
@@ -33,6 +33,16 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 - **Extension registries** (`extensions.py`): community grammars/rules registered explicitly before first `canonicalize()`; a contract opts a grammar in by naming it in `extra_grammars`; unknown names are silently skipped (deterministic no-op), and rules activate only when an opted-in id matches their `target_semantics`.
 - **Exceptions:** new types subclass `PaxmanError`. `RecognitionError`/`ValidationError` carry `rule` (+ `original_error`, `None` for structural failures) and render as `"[rule] message"`.
 - **Imports:** prefer `from paxman.core import ...` — `__init__.py` re-exports the domain vocabulary and registry functions.
+
+### Kernel invariants (ADR-0009)
+- `BoundarySpec` frozensets O(1) — word/anchor guards use `frozenset` membership.
+- Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` — `starts`/`ends` parallel arrays.
+- View `source_starts`/`source_ends` + `offsets` property — views carry source offset maps.
+- `CountryNameFold` single-pass NFD with `_NFD_CACHE` — one-pass fold, cached.
+- `validate_emit` at construction — span/raw_text invariants fail fast at emit.
+- Matcher digests memoised — per-matcher digest cached.
+- `PipelineGrammar` `matchers` delegation — `recognize()` delegates to `run_matchers()`.
+- Common-word suppression 67 + 6 kinds (`regex`/`lexicon`/`scanner`/`combinator`/`candidates`/`label`, `Property` deleted) — `COMMON_WORDS` + `suppressible` + `suppress_common_words`.
 
 ## ANTI-PATTERNS (THIS PACKAGE)
 - No import of `paxman.api` / `paxman.engine` / `paxman.capabilities` from here — breaks the import-linter leaf.

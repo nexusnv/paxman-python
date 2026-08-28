@@ -56,7 +56,9 @@
 ```python
 @dataclass(frozen=True, slots=True)
 class MatcherSpec(Generic[NotationT]):
-    kind: Literal["regex","lexicon","scanner","combinator","property","candidates","label"]
+    kind: Literal[
+        "regex", "lexicon", "scanner", "combinator", "property", "candidates", "label"
+    ]
     payload: ...  # per kind (§8–§9.7)
     view: str | None  # None = original text; else view name (D2)
     boundary: BoundarySpec | None  # declarative, see D6
@@ -70,9 +72,9 @@ class MatcherSpec(Generic[NotationT]):
 ```python
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    left: tuple[str,...] | None  # char-class membership; None = no constraint
-    right: tuple[str,...] | None
-    mode: Literal["zero_width","consuming"] = "zero_width"
+    left: tuple[str, ...] | None  # char-class membership; None = no constraint
+    right: tuple[str, ...] | None
+    mode: Literal["zero_width", "consuming"] = "zero_width"
 ```
 Kernel resolves as `context.check(start,end,spec)` at hit positions. **Consuming-mode span rule (binding):** anchors consumed for advance are never part of the emitted span — inner span only (parity with `ipv6_token`, whose delimiters are zero-width in span terms). The 11 shipped `BoundaryGuard` factories + verbatim `\b` become a preset table (see §10). No grammar hard-codes a lookaround literal after migration — it references a `BoundarySpec` preset.
 
@@ -86,11 +88,11 @@ Kernel resolves as `context.check(start,end,spec)` at hit positions. **Consuming
 ```python
 @dataclass(frozen=True, slots=True)
 class Snapshot:
-    name: str          # "currency" | "iban_registry" | "iana_language" | ...
+    name: str  # "currency" | "iban_registry" | "iana_language" | ...
     source_url: str
-    version: str       # "CLDR v47" | "SWIFT R100" | ...
-    fetched_at: str    # ISO date
-    data: object       # typed frozen payload
+    version: str  # "CLDR v47" | "SWIFT R100" | ...
+    fetched_at: str  # ISO date
+    data: object  # typed frozen payload
 ```
 Derived recognition keys are **generated projections** with a single source of truth (BIC `_COUNTRY_CODES` from rule data, Language name keys from CLDR display names, Currency/Money symbols from the shared snapshot — already generated). The grammar/data `key-only` vs `rules/data` authority boundary is untouched.
 
@@ -271,20 +273,24 @@ This task produces no commit; the branch creation is the artifact. Proceed to Ta
 Create `tests/unit/test_scan_context.py`:
 ```python
 """Unit tests for ScanContext substrate (D1–D3)."""
+
 from __future__ import annotations
 import pytest
 from paxman.core.grammar.scan_context import ScanContext
 
+
 def test_word_spans_single_pass() -> None:
     ctx = ScanContext.of("hello world 123")
     assert ctx.text == "hello world 123"
-    assert ctx.word_spans == ((0,5),(6,11),(12,15))
+    assert ctx.word_spans == ((0, 5), (6, 11), (12, 15))
     assert ctx.word_spans is ctx.word_spans  # memoised identity
+
 
 def test_empty_text() -> None:
     ctx = ScanContext.of("")
     assert ctx.word_spans == ()
     assert ctx.text == ""
+
 
 def test_view_identity_no_offsets() -> None:
     ctx = ScanContext.of("Hello World")
@@ -293,38 +299,42 @@ def test_view_identity_no_offsets() -> None:
     assert view.subject == "hello world"
     assert view.offsets is None
     # span translation is identity
-    assert view.original_span(0, 5) == (0,5)
+    assert view.original_span(0, 5) == (0, 5)
     assert ctx.text[0:5] == "Hello"
     assert view.subject[0:5] == "hello"
+
 
 def test_view_offset_map_invariant_length_changing() -> None:
     # Simulate en_US -> en-US (_ -> - is identity, but we test the general path)
     # Use a tiny length-changing normalizer: "a  b" -> "ab" (collapse double space)
-    def collapse_double(s: str) -> tuple[str, tuple[int,...] | None]:
+    def collapse_double(s: str) -> tuple[str, tuple[int, ...] | None]:
         if "  " not in s:
             return s, None
         # build offsets: subject "ab" from "a  b" (len 4 -> 2)
         # text "a  b": indices 0:a, 1:space,2:space,3:b -> subject "a b"? keep simple: "a  b"->"ab"
         # offsets len 3: offsets[0]=0, offsets[1]=3 (b comes from index 3), offsets[2]=4
-        return "ab", (0,3,4)
+        return "ab", (0, 3, 4)
+
     ctx = ScanContext.of("a  b")
     view = ctx.view("compact", collapse_double)
     assert view.subject == "ab"
-    assert view.offsets == (0,3,4)
+    assert view.offsets == (0, 3, 4)
     # D3 invariant: len(offsets)==len(subject)+1, each source interval non-empty
-    assert len(view.offsets) == len(view.subject)+1
+    assert len(view.offsets) == len(view.subject) + 1
     # view [0,1) "a" -> original [0,3) "a  " ??? no, offsets[1]=3 so "ab"[0:1] -> text[0:3]
-    assert view.original_span(0,1) == (0,3)
-    assert view.original_span(1,2) == (3,4)
-    assert view.original_span(0,2) == (0,4)
-    assert ctx.text[view.original_span(0,2)[0]:view.original_span(0,2)[1]] == "a  b"
+    assert view.original_span(0, 1) == (0, 3)
+    assert view.original_span(1, 2) == (3, 4)
+    assert view.original_span(0, 2) == (0, 4)
+    assert ctx.text[view.original_span(0, 2)[0] : view.original_span(0, 2)[1]] == "a  b"
+
 
 def test_raw_text_validation_contract() -> None:
     ctx = ScanContext.of("abc def")
     view = ctx.view("orig", lambda t: (t, None))
-    for s,e in [(0,3),(4,7)]:
-        o_s, o_e = view.original_span(s,e)
+    for s, e in [(0, 3), (4, 7)]:
+        o_s, o_e = view.original_span(s, e)
         assert ctx.text[o_s:o_e] == view.subject[s:e]
+
 
 def test_scan_context_is_frozen_slots() -> None:
     ctx = ScanContext.of("x")
@@ -333,11 +343,12 @@ def test_scan_context_is_frozen_slots() -> None:
     assert ScanContext.__dataclass_params__.slots is True
     assert ScanContext.__dataclass_params__.frozen is True
 
+
 def test_word_spans_shared_across_views() -> None:
     ctx = ScanContext.of("one two three")
     v1 = ctx.view("v1", lambda t: (t.lower(), None))
     v2 = ctx.view("v2", lambda t: (t.upper(), None))
-    assert ctx.word_spans == ((0,3),(4,7),(8,13))
+    assert ctx.word_spans == ((0, 3), (4, 7), (8, 13))
     assert v1.subject == "one two three"
     assert v2.subject == "ONE TWO THREE"
 ```
@@ -352,52 +363,63 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'paxman.core.grammar.s
 Create `paxman/core/grammar/scan_context.py`:
 ```python
 """ScanContext substrate — one word-span pass, lazy views with offset discipline (D1–D3)."""
+
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Callable
 
-_WordSpans = tuple[tuple[int,int], ...]
+_WordSpans = tuple[tuple[int, int], ...]
+
 
 @dataclass(frozen=True, slots=True)
 class View:
     """A typed view of the original text."""
+
     subject: str
-    offsets: tuple[int,...] | None  # None = identity (D2); else len(subject)+1 per D3
+    offsets: tuple[int, ...] | None  # None = identity (D2); else len(subject)+1 per D3
     _text_len: int = field(repr=False)
 
-    def original_span(self, s: int, e: int) -> tuple[int,int]:
+    def original_span(self, s: int, e: int) -> tuple[int, int]:
         """Translate a half-open view span [s,e) to original [o_s, o_e)."""
         if self.offsets is None:
             return (s, e)
         # D3: offsets[e] is exclusive end by construction
         return (self.offsets[s], self.offsets[e])
 
+
 @dataclass(frozen=True, slots=True)
 class ScanContext:
     """Shared substrate computed once per canonicalize/scan call (L0)."""
+
     text: str
     word_spans: _WordSpans
-    _views: dict[str, View] = field(default_factory=dict, repr=False, hash=False, compare=False)
+    _views: dict[str, View] = field(
+        default_factory=dict, repr=False, hash=False, compare=False
+    )
 
     @classmethod
     def of(cls, text: str) -> ScanContext:
-        spans: _WordSpans = tuple((m.start(), m.end()) for m in re.finditer(r"\w+", text))
+        spans: _WordSpans = tuple(
+            (m.start(), m.end()) for m in re.finditer(r"\w+", text)
+        )
         return cls(text=text, word_spans=spans, _views={})
 
-    def view(self, name: str, normalizer: Callable[[str], tuple[str, tuple[int,...] | None]]) -> View:
+    def view(
+        self, name: str, normalizer: Callable[[str], tuple[str, tuple[int, ...] | None]]
+    ) -> View:
         """Materialize or return cached view `name` via `normalizer(text)->(subject, offsets)`."""
         if name in self._views:
             return self._views[name]
         subject, offsets = normalizer(self.text)
         if offsets is not None:
             assert len(offsets) == len(subject) + 1, (
-                f"offset map invariant violated: len(offsets)={len(offsets)} != len(subject)+1={len(subject)+1}"
+                f"offset map invariant violated: len(offsets)={len(offsets)} != len(subject)+1={len(subject) + 1}"
             )
             # each source interval non-empty: offsets[i] < offsets[i+1]
             for i in range(len(subject)):
-                assert 0 <= offsets[i] < offsets[i+1] <= len(self.text), (
-                    f"offset interval empty or OOB at {i}: {offsets[i]}->{offsets[i+1]} len(text)={len(self.text)}"
+                assert 0 <= offsets[i] < offsets[i + 1] <= len(self.text), (
+                    f"offset interval empty or OOB at {i}: {offsets[i]}->{offsets[i + 1]} len(text)={len(self.text)}"
                 )
         view = View(subject=subject, offsets=offsets, _text_len=len(self.text))
         # frozen dataclass with mutable dict: use object.__setattr__ for cache
@@ -407,6 +429,7 @@ class ScanContext:
 Update `paxman/core/grammar/__init__.py` to re-export:
 ```python
 from paxman.core.grammar.scan_context import ScanContext, View
+
 __all__ += ["ScanContext", "View"]  # keep existing entries
 ```
 Note: `ScanContext.__dataclass_params__.slots` requires `frozen=True, slots=True` per the test; keep `_views` as `field(hash=False, compare=False)` so equality is by `text`/`word_spans` only. The `object.__setattr__` dance for caching inside a frozen dataclass is intentional — mirror `tests/unit/test_scan_context.py`'s `view()` call; if pyright complains about `dict` mutation on frozen, add a `# pyright: ignore[reportAttributeAccessIssue]` on that line (no `# type: ignore` in `paxman/` source per anti-pattern — use scoped ignore only if needed, otherwise make `_views` a plain `dict` attribute set in `__init__`).
@@ -453,14 +476,31 @@ Word-span pass cost measured at landing: ~X µs (single finditer, C-speed, D1)."
 Create `tests/unit/test_normalizers.py`:
 ```python
 """Normalizer unit tests — composable, provenance-aware, offset-disciplined (D4)."""
+
 from __future__ import annotations
 from paxman.core.grammar.normalizers import (
-    AccentStrip, CaseFold, IDNAFold, Normalizer, NormalizerSequence, SeparatorFold, StripSeparators, SymbolFold,
+    AccentStrip,
+    CaseFold,
+    IDNAFold,
+    Normalizer,
+    NormalizerSequence,
+    SeparatorFold,
+    StripSeparators,
+    SymbolFold,
 )
 from paxman.core.domain import Provenance
 from paxman.core.grammar.scan_context import ScanContext
 
-BIPM = Provenance(authority="BIPM", specification_name="SI Brochure", kind="specification", reference_url="https://www.bipm.org/", version="9", lifecycle="active", publication_year=2019)
+BIPM = Provenance(
+    authority="BIPM",
+    specification_name="SI Brochure",
+    kind="specification",
+    reference_url="https://www.bipm.org/",
+    version="9",
+    lifecycle="active",
+    publication_year=2019,
+)
+
 
 def test_casefold_identity_view() -> None:
     nf = CaseFold()
@@ -474,12 +514,14 @@ def test_casefold_identity_view() -> None:
     assert view.subject == "hello € world"
     assert view.offsets is None
 
+
 def test_separatorfold_bcp47() -> None:
     nf = SeparatorFold()
     assert nf.provenance is not None
     assert "BCP 47" in nf.provenance.specification_name
     assert SeparatorFold().normalize("en_US")[0] == "en-US"
     assert SeparatorFold().normalize("en_US")[1] is None
+
 
 def test_accentstrip_country() -> None:
     nf = AccentStrip()
@@ -488,7 +530,8 @@ def test_accentstrip_country() -> None:
     ctx = ScanContext.of("Côte d'Ivoire")
     view = ctx.view(nf.name, nf.normalize)
     # raw_text contract: original span must round-trip
-    assert ctx.text[view.original_span(0,4)[0]:view.original_span(0,4)[1]] == "Côte"
+    assert ctx.text[view.original_span(0, 4)[0] : view.original_span(0, 4)[1]] == "Côte"
+
 
 def test_symbolfold_si() -> None:
     nf = SymbolFold()
@@ -496,24 +539,29 @@ def test_symbolfold_si() -> None:
     assert nf.normalize("m²")[0] == "m2"
     assert nf.normalize("µm")[0] == "μm"  # µ -> μ
 
+
 def test_stripseparators_phone() -> None:
     nf = StripSeparators()
     subject, offsets = nf.normalize("+1 (555) 123-4567")
     assert subject == "+15551234567"
     assert offsets is not None  # compressing -> general map
-    assert len(offsets) == len(subject)+1
+    assert len(offsets) == len(subject) + 1
     ctx = ScanContext.of("+1 (555) 123-4567")
     view = ctx.view("compact", nf.normalize)
     # view [1,4) "155" -> original? offsets[1]=3 etc. Just assert invariant
-    o_s, o_e = view.original_span(1,4)
-    assert ctx.text[o_s:o_e] == "+1 (555"[:o_e] or ctx.text[o_s:o_e]  # at least valid slice
+    o_s, o_e = view.original_span(1, 4)
+    assert (
+        ctx.text[o_s:o_e] == "+1 (555"[:o_e] or ctx.text[o_s:o_e]
+    )  # at least valid slice
     assert 0 <= o_s < o_e <= len(ctx.text)
+
 
 def test_sequence_composable() -> None:
     seq = NormalizerSequence(steps=(CaseFold(), SeparatorFold()))
     # HF tokenizers Sequence model: steps applied left to right
     subject, offsets = seq.normalize("Hello_World")
     assert subject == "hello-world"
+
 
 def test_protocol_shape() -> None:
     assert isinstance(CaseFold(), Normalizer)  # type checker structural
@@ -530,23 +578,29 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'paxman.core.grammar.n
 Create `paxman/core/grammar/normalizers.py`:
 ```python
 """Normalizers — first-class, composable, provenance-aware (D4)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from paxman.core.domain import Provenance
 
+
 @runtime_checkable
 class Normalizer(Protocol):
     name: str
     provenance: Provenance | None
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]: ...
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]: ...
+
 
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
     steps: tuple[Normalizer, ...]
+
     @property
     def name(self) -> str:
         return "+".join(s.name for s in self.steps)
+
     @property
     def provenance(self) -> Provenance | None:
         # sequence provenance is the first non-None step (declaration-level metadata)
@@ -554,10 +608,11 @@ class NormalizerSequence:
             if s.provenance is not None:
                 return s.provenance
         return None
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         # length-changing steps must compose offset maps; for v1 identity-only steps, keep None
         cur = text
-        cur_offsets: tuple[int,...] | None = None
+        cur_offsets: tuple[int, ...] | None = None
         for step in self.steps:
             nxt, off = step.normalize(cur)
             # if any step is length-changing, we'd need to compose maps; until D3 lands, assert identity
@@ -567,51 +622,105 @@ class NormalizerSequence:
             cur, cur_offsets = nxt, off if off is not None else cur_offsets
         return cur, cur_offsets
 
+
 @dataclass(frozen=True, slots=True)
 class CaseFold:
     name: str = "casefolded"
     provenance: Provenance | None = None
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         return text.lower(), None
+
 
 @dataclass(frozen=True, slots=True)
 class SeparatorFold:
     name: str = "normalized"
-    provenance: Provenance | None = Provenance(authority="IETF", specification_name="BCP 47 §2.1", kind="specification", reference_url="https://www.rfc-editor.org/info/bcp47", version="47", lifecycle="active", publication_year=2009)
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+    provenance: Provenance | None = Provenance(
+        authority="IETF",
+        specification_name="BCP 47 §2.1",
+        kind="specification",
+        reference_url="https://www.rfc-editor.org/info/bcp47",
+        version="47",
+        lifecycle="active",
+        publication_year=2009,
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         return text.replace("_", "-"), None
+
 
 # Table-driven accent strip + lower (Country normalize_name). Use a small ASCII-fold table; keep stdlib-only.
 import unicodedata
+
+
 @dataclass(frozen=True, slots=True)
 class AccentStrip:
     name: str = "normalized"
-    provenance: Provenance | None = Provenance(authority="CLDR", specification_name="CLDR/ISO 3166", kind="specification", reference_url="https://cldr.unicode.org/", version="47", lifecycle="active", publication_year=2024)
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+    provenance: Provenance | None = Provenance(
+        authority="CLDR",
+        specification_name="CLDR/ISO 3166",
+        kind="specification",
+        reference_url="https://cldr.unicode.org/",
+        version="47",
+        lifecycle="active",
+        publication_year=2024,
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         # NFD strip combining marks, then lower
         nfd = unicodedata.normalize("NFD", text)
         stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
         return stripped.lower(), None
 
+
 @dataclass(frozen=True, slots=True)
 class SymbolFold:
     name: str = "normalized"
-    provenance: Provenance | None = Provenance(authority="BIPM", specification_name="SI Brochure", kind="specification", reference_url="https://www.bipm.org/en/measurement-units/", version="9", lifecycle="active", publication_year=2019)
-    _table: tuple[tuple[str,str],...] = (("²","2"),("³","3"),("µ","μ"),("Ω","Ω"),("Å","Å"),("°","°"))
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
-        for src,dst in self._table:
+    provenance: Provenance | None = Provenance(
+        authority="BIPM",
+        specification_name="SI Brochure",
+        kind="specification",
+        reference_url="https://www.bipm.org/en/measurement-units/",
+        version="9",
+        lifecycle="active",
+        publication_year=2019,
+    )
+    _table: tuple[tuple[str, str], ...] = (
+        ("²", "2"),
+        ("³", "3"),
+        ("µ", "μ"),
+        ("Ω", "Ω"),
+        ("Å", "Å"),
+        ("°", "°"),
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
+        for src, dst in self._table:
             text = text.replace(src, dst)
-        return text, None  # identity-first; general map per D3 when a length-changing table lands
+        return (
+            text,
+            None,
+        )  # identity-first; general map per D3 when a length-changing table lands
+
 
 @dataclass(frozen=True, slots=True)
 class StripSeparators:
     name: str = "compact"
-    provenance: Provenance | None = Provenance(authority="ITU-T", specification_name="E.164", kind="specification", reference_url="https://www.itu.int/rec/T-REC-E.164", version="15", lifecycle="active", publication_year=2010)
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+    provenance: Provenance | None = Provenance(
+        authority="ITU-T",
+        specification_name="E.164",
+        kind="specification",
+        reference_url="https://www.itu.int/rec/T-REC-E.164",
+        version="15",
+        lifecycle="active",
+        publication_year=2010,
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         # " ().-" -> "" compact digits: compressing, so build offsets
         subject_chars: list[str] = []
         offsets: list[int] = []
-        for i,ch in enumerate(text):
+        for i, ch in enumerate(text):
             if ch in " ().-":
                 continue
             offsets.append(i)
@@ -620,14 +729,26 @@ class StripSeparators:
         subject = "".join(subject_chars)
         return subject, tuple(offsets) if len(subject) != len(text) else None
 
+
 @dataclass(frozen=True, slots=True)
 class IDNAFold:
     name: str = "idna"
-    provenance: Provenance | None = Provenance(authority="Unicode", specification_name="UTS #46", kind="specification", reference_url="https://unicode.org/reports/tr46/", version="31", lifecycle="active", publication_year=2024)
-    def normalize(self, text: str) -> tuple[str, tuple[int,...] | None]:
+    provenance: Provenance | None = Provenance(
+        authority="Unicode",
+        specification_name="UTS #46",
+        kind="specification",
+        reference_url="https://unicode.org/reports/tr46/",
+        version="31",
+        lifecycle="active",
+        publication_year=2024,
+    )
+
+    def normalize(self, text: str) -> tuple[str, tuple[int, ...] | None]:
         # tab/newline strip + UTS46 MAPPED stub: for v1 identity-only; expanding map lands with D3 customer
-        cleaned = text.replace("\t","").replace("\n","").replace("\r","")
-        return cleaned, None if len(cleaned)==len(text) else tuple(range(len(cleaned)+1))  # placeholder expanding length
+        cleaned = text.replace("\t", "").replace("\n", "").replace("\r", "")
+        return cleaned, None if len(cleaned) == len(text) else tuple(
+            range(len(cleaned) + 1)
+        )  # placeholder expanding length
 ```
 Update `paxman/core/grammar/__init__.py` re-exports for all six plus `Normalizer`/`NormalizerSequence`. Keep `ScanContext.view` accepting any `Callable[[str], tuple[str, tuple[int,...]|None]]`; the `Normalizer.normalize` bound method satisfies it directly.
 
@@ -666,25 +787,31 @@ git commit -m "feat(core): add Normalizer protocol + shipped normalizers + Norma
 Create `tests/unit/test_boundary_spec.py`:
 ```python
 """BoundarySpec data — declarative, checked at hit positions (D6)."""
+
 from paxman.core.grammar.boundary_spec import BoundarySpec
+
 
 def test_word_spec_blocks_inside_token_via_hit_check() -> None:
     from paxman.core.grammar.scan_context import ScanContext
+
     ctx = ScanContext.of("x € y")
     spec = BoundarySpec.WORD  # word_only preset
     # check is at hit positions, not scan positions: char before start must be non-word
-    assert ctx.check_hit(ctx.text, 2, 3, spec) is True   # " € " -> pass
+    assert ctx.check_hit(ctx.text, 2, 3, spec) is True  # " € " -> pass
     assert ctx.check_hit("x€", 1, 2, spec) is False  # preceded by word char
+
 
 def test_consuming_mode_inner_span_only() -> None:
     from paxman.core.grammar.scan_context import ScanContext
+
     # ipv6_token consuming: delimiters consumed for advance but not in span
     ctx = ScanContext.of(" [2001:db8::1] ")
     spec = BoundarySpec.IPV6_TOKEN  # consuming advance, inner span only
     assert spec.mode == "consuming"
     # The kernel's consuming rule: emit span excludes delimiters
     span = (2, 13)  # inner "2001:db8::1" without brackets
-    assert ctx.text[span[0]:span[1]] == "2001:db8::1"
+    assert ctx.text[span[0] : span[1]] == "2001:db8::1"
+
 
 def test_preset_table_covers_11_factories() -> None:
     # the 11 guards verbatim -> presets (D6 §10 table)
@@ -697,24 +824,30 @@ def test_preset_table_covers_11_factories() -> None:
 Create `tests/unit/test_anchor_prefilter.py`:
 ```python
 """AnchorSet T0 prefilter — C-speed skip (D7)."""
+
 from paxman.core.grammar.anchors import AnchorSet, HasDigit, LiteralAnchor
 from paxman.core.grammar.scan_context import ScanContext
+
 
 def test_literal_anchor_c_speed() -> None:
     a = AnchorSet(literals=frozenset({":"}), classes=(), key_sets=())
     assert a.passes("https://x", ScanContext.of("https://x")) is True
     assert a.passes("hello", ScanContext.of("hello")) is False
 
+
 def test_class_anchor_has_digit() -> None:
     a = HasDigit().as_set()
     assert a.passes("Phone +1 555", ScanContext.of("Phone +1 555")) is True
     assert a.passes("hello", ScanContext.of("hello")) is False
 
+
 def test_key_set_anchor_word_start() -> None:
     from paxman.core.grammar.anchors import KeySetAnchor
-    a = AnchorSet(literals=frozenset(), classes=(), key_sets=(frozenset({"U","E"}),))
+
+    a = AnchorSet(literals=frozenset(), classes=(), key_sets=(frozenset({"U", "E"}),))
     assert a.passes("United States", ScanContext.of("United States")) is True
     assert a.passes("xyz", ScanContext.of("xyz")) is False
+
 
 def test_anchor_empty_passes() -> None:
     a = AnchorSet(literals=frozenset(), classes=(), key_sets=())
@@ -731,13 +864,17 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'paxman.core.grammar.b
 Create `paxman/core/grammar/boundary_spec.py`:
 ```python
 """BoundarySpec — declarative, checked at hit positions (D6)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    left: tuple[str,...] | None  # None = no constraint; else char-class membership strings
-    right: tuple[str,...] | None
+    left: (
+        tuple[str, ...] | None
+    )  # None = no constraint; else char-class membership strings
+    right: tuple[str, ...] | None
     mode: str = "zero_width"  # "zero_width" | "consuming"
 
     @property
@@ -757,25 +894,42 @@ class BoundarySpec:
     ISBN_TRAIL_LEFT: "BoundarySpec" = None  # type: ignore
     IPV6_TOKEN: "BoundarySpec" = None  # type: ignore
 
+
 # assign presets after class body (dataclass frozen workaround)
-BoundarySpec.WORD_SIGN = BoundarySpec(left=("[\\w\\-+\\u2212]",), right=("[\\w\\-+\\u2212]",), mode="zero_width")
-BoundarySpec.DEGREE_WORD_SIGN = BoundarySpec(left=("[°\\w\\-+\\u2212/·⋅]",), right=("[\\w\\-+\\u2212/·⋅]",), mode="zero_width")
+BoundarySpec.WORD_SIGN = BoundarySpec(
+    left=("[\\w\\-+\\u2212]",), right=("[\\w\\-+\\u2212]",), mode="zero_width"
+)
+BoundarySpec.DEGREE_WORD_SIGN = BoundarySpec(
+    left=("[°\\w\\-+\\u2212/·⋅]",), right=("[\\w\\-+\\u2212/·⋅]",), mode="zero_width"
+)
 BoundarySpec.DIGIT = BoundarySpec(left=("\\d",), right=("\\d",), mode="zero_width")
 BoundarySpec.WORD = BoundarySpec(left=("\\w",), right=("\\w",), mode="zero_width")
 BoundarySpec.E164_LEFT = BoundarySpec(left=("[\\w:.]",), right=None, mode="zero_width")
-BoundarySpec.E164_00_LEFT = BoundarySpec(left=("[\\w:.+]",), right=None, mode="zero_width")
-BoundarySpec.SCHEME_CHAR_LEFT = BoundarySpec(left=("[A-Za-z0-9+.\\-]",), right=None, mode="zero_width")
-BoundarySpec.PHONE_NATIONAL = BoundarySpec(left=("[\\d+]",), right=("\\d",), mode="zero_width")
-BoundarySpec.ISBN10_LEAD = BoundarySpec(left=("\\d", "\\d[ -]"), right=None, mode="zero_width")
-BoundarySpec.ISBN_TRAIL_LEFT = BoundarySpec(left=("[\\s:-]",), right=None, mode="zero_width")
-BoundarySpec.IPV6_TOKEN = BoundarySpec(left=("[\\s,;([ ]",), right=("[\\s,;().\\]]",), mode="consuming")
+BoundarySpec.E164_00_LEFT = BoundarySpec(
+    left=("[\\w:.+]",), right=None, mode="zero_width"
+)
+BoundarySpec.SCHEME_CHAR_LEFT = BoundarySpec(
+    left=("[A-Za-z0-9+.\\-]",), right=None, mode="zero_width"
+)
+BoundarySpec.PHONE_NATIONAL = BoundarySpec(
+    left=("[\\d+]",), right=("\\d",), mode="zero_width"
+)
+BoundarySpec.ISBN10_LEAD = BoundarySpec(
+    left=("\\d", "\\d[ -]"), right=None, mode="zero_width"
+)
+BoundarySpec.ISBN_TRAIL_LEFT = BoundarySpec(
+    left=("[\\s:-]",), right=None, mode="zero_width"
+)
+BoundarySpec.IPV6_TOKEN = BoundarySpec(
+    left=("[\\s,;([ ]",), right=("[\\s,;().\\]]",), mode="consuming"
+)
 ```
 Add `ScanContext.check_hit(text, start, end, spec)` helper in `scan_context.py`:
 ```python
 def check_hit(self, text: str, start: int, end: int, spec: BoundarySpec) -> bool:
     # declarative check at hit positions (O(hits)): inspect chars at boundaries
     if spec.left is not None and start > 0:
-        left_ch = text[start-1]
+        left_ch = text[start - 1]
         # if spec is consuming, left check is delimiter-based; simplified here
         if any(left_ch == c for c in spec.left):
             return False
@@ -788,17 +942,19 @@ def check_hit(self, text: str, start: int, end: int, spec: BoundarySpec) -> bool
 Create `paxman/core/grammar/anchors.py`:
 ```python
 """AnchorSet T0 prefilter — necessary conditions, C-speed (D7)."""
+
 from __future__ import annotations
 import re
 from dataclasses import dataclass
 from paxman.core.grammar.scan_context import ScanContext
 
+
 @dataclass(frozen=True, slots=True)
 class AnchorSet:
     literals: frozenset[str] = frozenset()
-    classes: tuple[str,...] = ()  # regex strings for re.search
-    key_sets: tuple[frozenset[str],...] = ()
-    _class_res: tuple[re.Pattern[str],...] = ()  # compiled at freeze
+    classes: tuple[str, ...] = ()  # regex strings for re.search
+    key_sets: tuple[frozenset[str], ...] = ()
+    _class_res: tuple[re.Pattern[str], ...] = ()  # compiled at freeze
 
     def passes(self, text: str, ctx: ScanContext) -> bool:
         for lit in self.literals:
@@ -808,18 +964,28 @@ class AnchorSet:
             if not pat.search(text):
                 return False
         for ks in self.key_sets:
-            if not any(ctx.text[s] in ks for s,e in ctx.word_spans):
+            if not any(ctx.text[s] in ks for s, e in ctx.word_spans):
                 return False
         return True
+
 
 @dataclass(frozen=True, slots=True)
 class HasDigit:
     def as_set(self) -> AnchorSet:
         import re
-        return AnchorSet(literals=frozenset(), classes=(r"\d",), key_sets=(), _class_res=(re.compile(r"\d"),))
+
+        return AnchorSet(
+            literals=frozenset(),
+            classes=(r"\d",),
+            key_sets=(),
+            _class_res=(re.compile(r"\d"),),
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class LiteralAnchor:
     literal: str
+
     def as_set(self) -> AnchorSet:
         return AnchorSet(literals=frozenset({self.literal}))
 ```
@@ -862,44 +1028,90 @@ git commit -m "feat(core): add BoundarySpec data + AnchorSet T0 prefilter"
 Create `tests/unit/test_matcher_spec.py`:
 ```python
 """MatcherSpec data + requires_features omission + anchor+bondary wiring (D5,D8)."""
+
 from paxman.core.grammar.matcher_spec import MatcherSpec, AnchorSet
 from paxman.core.grammar.boundary_spec import BoundarySpec
 
+
 def test_matcher_spec_is_data() -> None:
-    spec = MatcherSpec(kind="regex", payload=r"\d{4}-\d{2}-\d{2}", view=None, boundary=BoundarySpec.DIGIT, anchors=AnchorSet(), emit=lambda span,ctx: span, requires_features=frozenset())
+    spec = MatcherSpec(
+        kind="regex",
+        payload=r"\d{4}-\d{2}-\d{2}",
+        view=None,
+        boundary=BoundarySpec.DIGIT,
+        anchors=AnchorSet(),
+        emit=lambda span, ctx: span,
+        requires_features=frozenset(),
+    )
     assert spec.kind == "regex"
     assert spec.view is None
     assert spec.boundary == BoundarySpec.DIGIT
 
+
 def test_requires_features_omission() -> None:
     from paxman.core.grammar.scan_context import ScanContext
-    spec = MatcherSpec(kind="regex", payload=r"foo", view=None, boundary=None, anchors=AnchorSet(), emit=lambda s,ctx: s, requires_features=frozenset({"include_ipv6"}))
+
+    spec = MatcherSpec(
+        kind="regex",
+        payload=r"foo",
+        view=None,
+        boundary=None,
+        anchors=AnchorSet(),
+        emit=lambda s, ctx: s,
+        requires_features=frozenset({"include_ipv6"}),
+    )
     # at freeze, unsatisfied matchers are omitted — never a failure
     # simulate contract without include_ipv6
-    assert not hasattr(type("C", (), {"include_ipv6": False})(), "include_ipv6") or True  # placeholder
+    assert (
+        not hasattr(type("C", (), {"include_ipv6": False})(), "include_ipv6") or True
+    )  # placeholder
     # compiled set length 0 -> MISSING, not INVALID (checked in orchestrator)
     assert spec.requires_features == frozenset({"include_ipv6"})
 
+
 def test_view_selector() -> None:
-    spec = MatcherSpec(kind="lexicon", payload=frozenset({"hello"}), view="casefolded", boundary=BoundarySpec.WORD, anchors=AnchorSet(), emit=lambda s,ctx: s)
+    spec = MatcherSpec(
+        kind="lexicon",
+        payload=frozenset({"hello"}),
+        view="casefolded",
+        boundary=BoundarySpec.WORD,
+        anchors=AnchorSet(),
+        emit=lambda s, ctx: s,
+    )
     assert spec.view == "casefolded"
 
+
 def test_frozen_slots() -> None:
-    s = MatcherSpec(kind="regex", payload="x", view=None, boundary=None, anchors=AnchorSet(), emit=lambda s,ctx: s)
+    s = MatcherSpec(
+        kind="regex",
+        payload="x",
+        view=None,
+        boundary=None,
+        anchors=AnchorSet(),
+        emit=lambda s, ctx: s,
+    )
     assert MatcherSpec.__dataclass_params__.slots is True  # type: ignore[attr-defined]
     assert MatcherSpec.__dataclass_params__.frozen is True  # type: ignore[attr-defined]
 ```
 Create `tests/unit/test_compiled_freeze.py`:
 ```python
 """Freeze compilation + recognition_revision (D8)."""
+
 from paxman.core.domain import VersionStamp
-from paxman.core.discovery import freeze_registry, reset_registry, register_capability, is_registry_frozen
+from paxman.core.discovery import (
+    freeze_registry,
+    reset_registry,
+    register_capability,
+    is_registry_frozen,
+)
 from paxman.capabilities.Country.capability import CountryCapability
+
 
 def test_version_stamp_has_recognition_revision() -> None:
     vs = VersionStamp(paxman_version="0.1.0", recognition_revision="abc123")
     assert vs.recognition_revision == "abc123"
     assert vs.paxman_version == "0.1.0"
+
 
 def test_freeze_computes_recognition_revision() -> None:
     reset_registry()
@@ -908,6 +1120,7 @@ def test_freeze_computes_recognition_revision() -> None:
     assert is_registry_frozen() is True
     # recognition_revision is a hash of compiled matcher set (opaque string)
     from paxman.core.discovery import get_recognition_revision
+
     rev = get_recognition_revision()
     assert isinstance(rev, str) and len(rev) > 0
     reset_registry()
@@ -931,14 +1144,18 @@ class VersionStamp:
 Create `paxman/core/grammar/matcher_spec.py`:
 ```python
 """MatcherSpec — recognition as data (D5, D8)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Literal
 from paxman.core.grammar.boundary_spec import BoundarySpec
 from paxman.core.grammar.anchors import AnchorSet
 
-MatcherKind = Literal["regex","lexicon","scanner","combinator","property","candidates","label"]
-EmitFn = Callable[[tuple[int,int], Any], Any]
+MatcherKind = Literal[
+    "regex", "lexicon", "scanner", "combinator", "property", "candidates", "label"
+]
+EmitFn = Callable[[tuple[int, int], Any], Any]
+
 
 @dataclass(frozen=True, slots=True)
 class MatcherSpec:
@@ -954,10 +1171,12 @@ class MatcherSpec:
 Create `paxman/core/grammar/engine_loop.py`:
 ```python
 """Engine-owned match loop L0+L1+L2 (§12, D8)."""
+
 from __future__ import annotations
 from typing import Any, Sequence
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.scan_context import ScanContext
+
 
 def _run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[Any]]:
     """Illustrative engine-owned loop — capability-agnostic (ADR §12)."""
@@ -967,18 +1186,33 @@ def _run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[A
         for matcher in getattr(grammar, "matchers", ()):
             if not matcher.anchors.passes(text, context):
                 continue  # T0 skip
-            view = context.view(matcher.view or "__orig__", lambda t: (t, None)) if matcher.view else context.view("__orig__", lambda t: (t, None))
+            view = (
+                context.view(matcher.view or "__orig__", lambda t: (t, None))
+                if matcher.view
+                else context.view("__orig__", lambda t: (t, None))
+            )
             # T1 shape match is kind-specific; here we delegate to matcher.match(view)
             for span in matcher.match(view):  # type: ignore[attr-defined]
                 o_s, o_e = view.original_span(*span)
-                out.append(RecognitionMatch(notation=matcher.emit(span, context), start=o_s, end=o_e, raw_text=text[o_s:o_e]))
+                out.append(
+                    RecognitionMatch(
+                        notation=matcher.emit(span, context),
+                        start=o_s,
+                        end=o_e,
+                        raw_text=text[o_s:o_e],
+                    )
+                )
     return out
 ```
 In `paxman/core/discovery.py`, add:
 ```python
 _recognition_revision: str = "0"
+
+
 def get_recognition_revision() -> str:
     return _recognition_revision
+
+
 def freeze_registry() -> None:
     global _frozen, _recognition_revision
     if _frozen:
@@ -986,6 +1220,7 @@ def freeze_registry() -> None:
     _frozen = True
     # compile matchers: hash of (spec, snapshot) -> hex digest (placeholder sha256 of names)
     import hashlib
+
     parts = sorted(f"{cap.name}:{cap.version}" for cap in _registry.values())
     _recognition_revision = hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 ```
@@ -1030,30 +1265,48 @@ git commit -m "feat(core): add MatcherSpec + freeze compilation + engine-owned m
 Create `tests/property/grammar_kernel_parity.py`:
 ```python
 """Helper for kernel-vs-legacy byte-identical gate (D9)."""
+
 from __future__ import annotations
 from paxman.core.domain import Grammar
+
 
 def assert_kernel_parity(old: Grammar, new: Grammar, text: str) -> None:
     old_matches = old.recognize(text)
     new_matches = new.recognize(text)
-    assert len(old_matches) == len(new_matches), f"len mismatch for {text!r}: {old_matches} vs {new_matches}"
-    for o,n in zip(old_matches, new_matches):
+    assert len(old_matches) == len(new_matches), (
+        f"len mismatch for {text!r}: {old_matches} vs {new_matches}"
+    )
+    for o, n in zip(old_matches, new_matches):
         assert o.start == n.start, f"start mismatch for {text!r}: {o} vs {n}"
         assert o.end == n.end, f"end mismatch for {text!r}: {o} vs {n}"
-        assert o.raw_text == n.raw_text, f"raw_text {o.raw_text!r} vs {n.raw_text!r} for {text!r}"
-        assert o.notation == n.notation, f"notation {o.notation!r} vs {n.notation!r} for {text!r}"
+        assert o.raw_text == n.raw_text, (
+            f"raw_text {o.raw_text!r} vs {n.raw_text!r} for {text!r}"
+        )
+        assert o.notation == n.notation, (
+            f"notation {o.notation!r} vs {n.notation!r} for {text!r}"
+        )
 ```
 Create `tests/property/test_lexicon_parity.py`:
 ```python
 """Parity shard — lexicon trie vs alternation byte-identical (D9, Part V.2)."""
+
 import pytest
 from tests.property.grammar_kernel_parity import assert_kernel_parity
 
-CURATED: list[str] = ["Pay US$ and $", "Buy € now", "US$ 1,000", "m/s and km", "United States treaty"]
+CURATED: list[str] = [
+    "Pay US$ and $",
+    "Buy € now",
+    "US$ 1,000",
+    "m/s and km",
+    "United States treaty",
+]
+
 
 @pytest.mark.property
 def test_curated_corpus_parity_placeholder() -> None:
-    pytest.skip("Harness lands in Task 6; wire per-migration PR — no kind without its shard green.")
+    pytest.skip(
+        "Harness lands in Task 6; wire per-migration PR — no kind without its shard green."
+    )
 ```
 Replicate stubs for `test_scanner_parity.py` (depth corpora `https://x/a(b(c)d)e`), `test_view_parity.py` (`raw_text == text[start:end]` across random text, offset round-trip per D3), `test_combinator_parity.py` (ordered `alt` first-branch-wins, `seq` span capture).
 
@@ -1104,26 +1357,41 @@ Extend `tests/property/test_lexicon_parity.py` with real cases:
 ```python
 from tests.property.grammar_kernel_parity import assert_kernel_parity
 from paxman.capabilities.SIUnit.grammar.symbol_recognition import SymbolRecognition
-from tests.property._legacy_siunit_symbol import LegacySymbolRecognition  # snapshot of old regex alternation
+from tests.property._legacy_siunit_symbol import (
+    LegacySymbolRecognition,
+)  # snapshot of old regex alternation
+
 
 @pytest.mark.property
-@pytest.mark.parametrize("text", ["Pay 5 m/s and 2 km now", "x"*430 + "kilogram" + "y"*50, "m² and µm", "hello world"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Pay 5 m/s and 2 km now",
+        "x" * 430 + "kilogram" + "y" * 50,
+        "m² and µm",
+        "hello world",
+    ],
+)
 def test_siunit_symbol_byte_identical(text: str) -> None:
     assert_kernel_parity(LegacySymbolRecognition(), SymbolRecognition(), text)
 ```
 Add F1 honest-behavior regression test in `tests/integration/test_country_f1.py`:
 ```python
 """F1 regression: embedded names recognized, short codes compete honestly (D9 exemption)."""
+
 import paxman
 from paxman.capabilities.Country.capability import CountryCapability
 from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.errors import MultipleMentionsError
 
+
 def _contract():
     return CountryCapability.create_contract()
 
+
 def test_ship_to_united_states_is_multiple_mentions() -> None:
-    reset_registry(); register_capability(CountryCapability())
+    reset_registry()
+    register_capability(CountryCapability())
     # Before kernel: SUCCESS "TO" (Tonga) via alpha2 preposition. After: honest error.
     try:
         paxman.canonicalize("Ship to United States please", _contract())
@@ -1131,7 +1399,9 @@ def test_ship_to_united_states_is_multiple_mentions() -> None:
         assert "TO" not in str(e) or "United States" in str(e)  # both mentions exposed
         # also via scan() when it lands; for now the exception is the gate
         return
-    assert False, "expected MultipleMentionsError for embedded name + short code competition"
+    assert False, (
+        "expected MultipleMentionsError for embedded name + short code competition"
+    )
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -1145,14 +1415,17 @@ Expected: FAIL — new grammar still on `PipelineGrammar`/regex alternation or `
 Create `paxman/core/grammar/matchers/lexicon_matcher.py`:
 ```python
 """Lexicon matcher — size-gated alternation / word-anchored dict trie (D9.2)."""
+
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.lexicon import LexiconAlternation
 
+
 def _is_qualified(t: str) -> bool:
     return any(c.isascii() and c.isalpha() for c in t)
+
 
 @dataclass(frozen=True, slots=True)
 class LexiconMatcher:
@@ -1171,7 +1444,9 @@ class LexiconMatcher:
         if rep == "alternation":
             alt = LexiconAlternation(tokens=self.tokens, longest_first=True).alternation
             # use BoundarySpec check at hit positions; compile still wraps with spec for now
-            object.__setattr__(self, "_compiled", re.compile(rf"(?<!\\w)(?:{alt})(?!\\w)"))  # placeholder guard
+            object.__setattr__(
+                self, "_compiled", re.compile(rf"(?<!\\w)(?:{alt})(?!\\w)")
+            )  # placeholder guard
         else:
             # word-anchored dict trie (FlashText model, no failure links)
             trie: dict = {}
@@ -1182,7 +1457,7 @@ class LexiconMatcher:
                 node["_end"] = token
             object.__setattr__(self, "_trie", trie)
 
-    def match(self, view: Any) -> list[tuple[int,int]]:
+    def match(self, view: Any) -> list[tuple[int, int]]:
         # if trie: iterate word_spans from view.context, longest leaf wins per word start
         # if alternation: finditer on view.subject, yield spans on view then translate at engine_loop
         return []
@@ -1248,15 +1523,30 @@ from paxman.capabilities.URL.grammar.absolute_uri import AbsoluteUriGrammar
 from tests.property._legacy_url import LegacyUrlGrammar
 import pytest
 
+
 @pytest.mark.property
-@pytest.mark.parametrize("text", ["https://example.com/a(b(c)d)e", "https://x/path_(with_(nested)) and tail", "http://a/b(c", "Visit https://example.com/path_(x) now"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "https://example.com/a(b(c)d)e",
+        "https://x/path_(with_(nested)) and tail",
+        "http://a/b(c",
+        "Visit https://example.com/path_(x) now",
+    ],
+)
 def test_url_paren_balance_byte_identical(text: str) -> None:
     assert_kernel_parity(LegacyUrlGrammar(), AbsoluteUriGrammar(), text)
 
+
 def test_phone_e164_15_digit_window() -> None:
-    from paxman.capabilities.Phone.grammar.e164_recognition import E164RecognitionGrammar
+    from paxman.capabilities.Phone.grammar.e164_recognition import (
+        E164RecognitionGrammar,
+    )
     from tests.property._legacy_phone_e164 import LegacyE164Grammar
-    assert_kernel_parity(LegacyE164Grammar(), E164RecognitionGrammar(), "+1 555 123 4567 89012 9999")
+
+    assert_kernel_parity(
+        LegacyE164Grammar(), E164RecognitionGrammar(), "+1 555 123 4567 89012 9999"
+    )
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -1269,21 +1559,25 @@ Expected: FAIL — new grammars still on `RegexStage`+`PostStage` or scanner fil
 Create `paxman/core/grammar/matchers/scanner_matcher.py`:
 ```python
 """Scanner matcher — (context,pos)->(end,Notation)|None, non-overlapping advance (D9.3)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+
 @dataclass(frozen=True, slots=True)
 class ScannerMatcher:
-    scan: Callable[[Any, int], tuple[int, Any] | None]  # (ScanContext,pos)->(end,Notation)|None
+    scan: Callable[
+        [Any, int], tuple[int, Any] | None
+    ]  # (ScanContext,pos)->(end,Notation)|None
     view_name: str | None
     anchors: Any
     boundary: Any | None
     emit: Any
     max_window: int = 2048
 
-    def match(self, view: Any) -> list[tuple[int,int]]:
-        out: list[tuple[int,int]] = []
+    def match(self, view: Any) -> list[tuple[int, int]]:
+        out: list[tuple[int, int]] = []
         s = view.subject
         pos = 0
         while pos < len(s):
@@ -1344,35 +1638,51 @@ git commit -m "feat(recognition): scanner kind — URL paren-balance + Phone E.1
 Create `tests/unit/test_candidates_label.py`:
 ```python
 """Candidates + label unit tests — per-candidate semantics, glued_policy (D9.6–9.7)."""
+
 from paxman.core.grammar.matchers.candidates_matcher import CandidatesMatcher
+
 
 def test_date_us_vs_european_ambiguous_preserved() -> None:
     # Date payload on "01/02/2026" must stay AMBIGUOUS (us vs european distinct)
     # candidates with strategy="all" keeps both; first wins per span only when strategy="first"
-    assert True  # wire when Date/grammar/date_recognition.py becomes candidates — see task impl
+    assert (
+        True
+    )  # wire when Date/grammar/date_recognition.py becomes candidates — see task impl
+
 
 def test_label_glued_policy_reject_vs_allow() -> None:
     from paxman.core.grammar.matchers.label_matcher import LabelMatcher
-    reject = LabelMatcher(labels=frozenset({"IBAN"}), separator=r"[\s:-]+", glued_policy="reject")
-    allow = LabelMatcher(labels=frozenset({"ISSN"}), separator=r"[\s:-]*", glued_policy="allow")
+
+    reject = LabelMatcher(
+        labels=frozenset({"IBAN"}), separator=r"[\s:-]+", glued_policy="reject"
+    )
+    allow = LabelMatcher(
+        labels=frozenset({"ISSN"}), separator=r"[\s:-]*", glued_policy="allow"
+    )
     assert reject.matches_prefix("IBANDE89") is False
     assert allow.matches_prefix("ISSN03178471") is True
 
+
 def test_candidates_strategy_first_vs_all() -> None:
-    c_all = CandidatesMatcher(candidates=("a","b"), strategy="all")
-    c_first = CandidatesMatcher(candidates=("a","b"), strategy="first")
+    c_all = CandidatesMatcher(candidates=("a", "b"), strategy="all")
+    c_first = CandidatesMatcher(candidates=("a", "b"), strategy="first")
     assert c_all.strategy == "all"
     assert c_first.strategy == "first"
 ```
 
 Extend `tests/property/test_combinator_parity.py`:
 ```python
-from paxman.capabilities.Money.grammar.symbol_recognition import SymbolRecognition as MoneySymbol
+from paxman.capabilities.Money.grammar.symbol_recognition import (
+    SymbolRecognition as MoneySymbol,
+)
 from tests.property._legacy_money_symbol import LegacyMoneySymbol
 from tests.property.grammar_kernel_parity import assert_kernel_parity
 
+
 @pytest.mark.property
-@pytest.mark.parametrize("text", ["$500", "500 EUR", "USD500", "US$ 1,000", "Pay € 1.000,50 now"])
+@pytest.mark.parametrize(
+    "text", ["$500", "500 EUR", "USD500", "US$ 1,000", "Pay € 1.000,50 now"]
+)
 def test_money_combinator_byte_identical(text: str) -> None:
     assert_kernel_parity(LegacyMoneySymbol(), MoneySymbol(), text)
 ```
@@ -1387,9 +1697,11 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'paxman.core.grammar.ma
 Create `paxman/core/grammar/matchers/combinator_matcher.py`:
 ```python
 """Combinator matcher — seq/alt/opt/rep/label over child specs (D9.4)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
+
 
 @dataclass(frozen=True, slots=True)
 class CombinatorMatcher:
@@ -1398,9 +1710,9 @@ class CombinatorMatcher:
     anchors: Any
     boundary: Any | None
     emit: Any
-    predicate: Callable[[str,str], bool] | None = None  # e.g. IANA Prefix gating
+    predicate: Callable[[str, str], bool] | None = None  # e.g. IANA Prefix gating
 
-    def match(self, view: Any) -> list[tuple[int,int]]:
+    def match(self, view: Any) -> list[tuple[int, int]]:
         # left-to-right, span capture, alt is ordered deterministic-first-branch-wins (pest discipline)
         # cross-branch ambiguity at grammar level stays observable downstream
         return []
@@ -1471,26 +1783,41 @@ git commit -m "feat(recognition): combinator + candidates + label + property kin
 Create `tests/unit/test_snapshot_parity.py`:
 ```python
 """Snapshot parity — generated modules embed Source/Version/SHA; CI regenerate-and-diff (D10)."""
+
 import pathlib
+
 
 def test_iban_registry_generated_header() -> None:
     p = pathlib.Path("paxman/capabilities/IBAN/grammar/data/registry.py")
     text = p.read_text(encoding="utf-8")
     assert "Source:" in text and "Version:" in text and "SHA" in text
 
+
 def test_language_snapshot_parity() -> None:
     import json, hashlib, pathlib
+
     snap = pathlib.Path("paxman/shared_data/iana_language_snapshot.json")
     assert snap.exists()
     data = json.loads(snap.read_text())
     assert "version" in data and "source_url" in data
 
+
 def test_recognition_revision_changes_on_migration() -> None:
-    from paxman.core.discovery import reset_registry, register_capability, freeze_registry, get_recognition_revision
+    from paxman.core.discovery import (
+        reset_registry,
+        register_capability,
+        freeze_registry,
+        get_recognition_revision,
+    )
     from paxman.capabilities.Country.capability import CountryCapability
-    reset_registry(); register_capability(CountryCapability()); freeze_registry()
+
+    reset_registry()
+    register_capability(CountryCapability())
+    freeze_registry()
     rev_before = get_recognition_revision()
-    reset_registry(); register_capability(CountryCapability()); freeze_registry()
+    reset_registry()
+    register_capability(CountryCapability())
+    freeze_registry()
     assert get_recognition_revision() == rev_before  # deterministic
     reset_registry()
 ```
@@ -1552,29 +1879,36 @@ git commit -m "feat(core): Snapshot rails + freeze compilation + recognition_rev
 Create `tests/integration/test_scan_api.py`:
 ```python
 """Batch scan() API + Mention model (D11, §16)."""
+
 import paxman
 from paxman.capabilities.Country.capability import CountryCapability
 from paxman.core.discovery import reset_registry, register_capability
 
+
 def _contract():
     return CountryCapability.create_contract()
+
 
 def test_scan_exposes_both_mentions_for_ship_to_united_states() -> None:
     reset_registry()
     from paxman import scan  # new API
+
     register_capability(CountryCapability())
     result = scan("Ship to United States please", [_contract()])
     # expecting two mentions: (9,22) name_recognition + (5,7) alpha2_recognition
     spans = sorted((m.span[0], m.span[1]) for cap in result.mentions for m in cap)
-    assert (9,22) in spans and (5,7) in spans
+    assert (9, 22) in spans and (5, 7) in spans
+
 
 def test_canonicalize_single_value_still_raises() -> None:
     reset_registry()
     register_capability(CountryCapability())
     import pytest
     from paxman.core.errors import MultipleMentionsError
+
     with pytest.raises(MultipleMentionsError):
         paxman.canonicalize("Ship to United States please", _contract())
+
 
 def test_scan_substrate_shared_one_pass() -> None:
     # determinism: scan == flatten of per-capability recognizes on same text
@@ -1591,27 +1925,34 @@ Expected: FAIL with `ImportError: cannot import name 'scan' from 'paxman'`.
 Create `paxman/api/scan.py`:
 ```python
 """Batch scan API — one substrate pass, per-capability Mention records (D11, §16)."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 from paxman.core.capability_contract import CapabilityContract
 from paxman.core.domain import Candidate, GrammarRule
 
+
 @dataclass(frozen=True, slots=True)
 class Mention:
-    span: tuple[int,int]
+    span: tuple[int, int]
     grammar: str
     notation: object
-    candidates: tuple[Candidate,...] | None  # resolved when a single-mention contract applies
+    candidates: (
+        tuple[Candidate, ...] | None
+    )  # resolved when a single-mention contract applies
+
 
 @dataclass(frozen=True, slots=True)
 class ScanResult:
     text: str
-    mentions: dict[str, tuple[Mention,...]]  # capability_name -> mentions
+    mentions: dict[str, tuple[Mention, ...]]  # capability_name -> mentions
+
 
 def scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult:
     from paxman.core.discovery import freeze_registry
     from paxman.core.grammar.scan_context import ScanContext
+
     freeze_registry()
     ctx = ScanContext.of(text)
     # for each contract: run matchers under shared ctx, cluster into mentions, resolve candidates
@@ -1620,8 +1961,11 @@ def scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult:
 Wire `paxman/__init__.py` to re-export `scan`; update `VersionStamp` usage. Implement clustering: total order `(start,end, active-set index, grammar name)` + containment dedup (within-grammar longer-wins) then maximal-cluster into `Mention`s (overlapping spans → one mention; distinct non-overlapping → separate). In `cli.py` add:
 ```python
 if args.cmd == "scan":
-    result = scan(sys.stdin.read() if args.file=="-" else Path(args.file).read_text(), [contract])
-    print(json.dumps({k: [m.span for m in v] for k,v in result.mentions.items()}))
+    result = scan(
+        sys.stdin.read() if args.file == "-" else Path(args.file).read_text(),
+        [contract],
+    )
+    print(json.dumps({k: [m.span for m in v] for k, v in result.mentions.items()}))
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1662,13 +2006,22 @@ git commit -m "feat(api): batch scan() + Mention model + CLI (one substrate pass
 Create `tests/unit/test_derived_keys.py`:
 ```python
 """Derived recognition keys — single source of truth (F8, D10)."""
+
+
 def test_bic_country_codes_derived() -> None:
-    from paxman.capabilities.BIC.rules.iso_9362_ed2022 import COUNTRY_CODES as RULE_CODES
-    from paxman.capabilities.BIC.grammar.data.country_codes import COUNTRY_CODES as GRAMMAR_CODES
+    from paxman.capabilities.BIC.rules.iso_9362_ed2022 import (
+        COUNTRY_CODES as RULE_CODES,
+    )
+    from paxman.capabilities.BIC.grammar.data.country_codes import (
+        COUNTRY_CODES as GRAMMAR_CODES,
+    )
+
     assert GRAMMAR_CODES == RULE_CODES  # generated projection, not hand-duplicated
+
 
 def test_language_name_keys_derived() -> None:
     from paxman.capabilities.Language.grammar.data.names import NAME_TOKENS
+
     assert len(NAME_TOKENS) > 77  # full CLDR projection, not the stale hand 77
     assert "united states" not in NAME_TOKENS  # actually Country — just a shape check
 ```

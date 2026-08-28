@@ -80,7 +80,7 @@ Each capability is a self-contained domain module that provides:
 - **Validation Rules** — semantic rules that validate the notation against authoritative specifications
 - **A Contract** — a user-facing configuration object that toggles grammars, excludes rules, and passes parameters
 
-Capabilities are registered with the discovery registry before the first canonicalization call. The registry freezes on the first `canonicalize()` call and remains frozen for later runs, ensuring that the set of available capabilities is stable during execution. The sanctioned bulk form is `paxman.register_all_shipped()`, which registers all ten shipped capabilities in fixed alphabetical order; registration — single or bootstrap — must complete from a single thread before the first `canonicalize()` call, after which reads are safe from any thread.
+Capabilities are registered with the discovery registry before the first canonicalization call. The registry freezes on the first `canonicalize()` call and remains frozen for later runs, ensuring that the set of available capabilities is stable during execution. The sanctioned bulk form is `paxman.register_all_shipped()`, which registers all fifteen shipped capabilities in fixed alphabetical order; registration — single or bootstrap — must complete from a single thread before the first `canonicalize()` call, after which reads are safe from any thread. Recognition is via the Recognition Kernel (ADR-0009) — see that ADR for the substrate, matcher kinds, and boundary/anchor discipline; legacy pipeline stages remain for unmigrated grammars.
 
 ### Engine
 
@@ -223,19 +223,20 @@ These tools run as part of the development workflow and block merges when invari
 
 ## Date Capability Design
 
-The Date capability demonstrates the system's handling of ambiguous inputs through multiple grammars and validation rules.
+The Date capability demonstrates the system's handling of ambiguous inputs through a single grammar and multiple validation rules.
 
 ### Grammars
 
-Three grammars recognize date patterns with different position mappings:
+1 grammar (`date`) with 4 candidates (iso8601, slash_iso, us, european) via `CandidatesMatcher` strategy=`'all'`:
 
-| Grammar | Delimiter | N1 (first) | N2 (second) | N3 (third) | Notes |
-|---------|-----------|------------|-------------|------------|-------|
-| ISO | `-` | year | month | day | 4-digit year only |
-| US | `/` | month | day | year | Supports 2-digit years |
-| European | `/` | day | month | year | Supports 2-digit years |
+| Candidate | Delimiter | N1 (first) | N2 (second) | N3 (third) | Notes |
+|-----------|-----------|------------|-------------|------------|-------|
+| iso8601 | `-` | year | month | day | 4-digit year only |
+| slash_iso | `/` | year | month | day | 4-digit year first |
+| us | `/` | month | day | year | Supports 2-digit years |
+| european | `/` | day | month | year | Supports 2-digit years |
 
-European and US grammars both use `/` as delimiter. Ambiguity arises from different position mappings, not delimiters.
+Candidates share the single `DateGrammar` via `CandidatesMatcher`; `us` and `european` both use `/` so `strategy='all'` keeps `01/02/2026` as two recognitions and `AMBIGUOUS` stays observable.
 
 ### Validation Rules
 
@@ -251,8 +252,8 @@ All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input gramma
 
 ### Ambiguity Detection
 
-When the same input is recognized by multiple grammars, each grammar produces notation with different position mappings. For example, `"01/02/2026"` is recognized by both US and European grammars:
-- US grammar: N1=month=01, N2=day=02, N3=year=2026
-- European grammar: N1=day=01, N2=month=02, N3=year=2026
+When the same input matches multiple candidates, the single `DateGrammar` emits two `RecognitionMatch`es via `us` + `european` candidates with different position mappings. For example, `"01/02/2026"`:
+- `us` candidate: N1=month=01, N2=day=02, N3=year=2026
+- `european` candidate: N1=day=01, N2=month=02, N3=year=2026
 
-Each grammar's notation flows to its corresponding validation rule. If both rules validate and produce different canonical values, the system reports AMBIGUOUS.
+Each recognition flows to its corresponding validation rule. If both rules validate and produce different canonical values, the system reports AMBIGUOUS.

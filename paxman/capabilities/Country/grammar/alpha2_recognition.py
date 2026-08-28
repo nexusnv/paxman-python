@@ -1,25 +1,35 @@
-"""Alpha-2 country code recognition grammar (staged pipeline).
+"""Alpha-2 country code recognition grammar (kernel RegexMatcher).
 
-Recognizes exactly 2 ASCII letters as an alpha-2 country code shape. The word
-boundary is supplied by BoundaryGuard.word_only() (ADR-0008 D5) so no
-hard-coded lookaround literal remains in this file. Syntax only: the grammar
-never resolves the code to a country.
+Recognizes exactly 2 ASCII letters as an alpha-2 country code shape.
+BoundarySpec.WORD provides word-boundary discipline (ADR-0009 §10).
+Syntax only: never resolves the code to a country.
+Suppressible short-code matcher (ADR-0009 §16): with
+suppress_common_words=True the high-frequency word hits are skipped in
+the engine loop (provenance-neutral, default off).
 """
 
 from __future__ import annotations
 
-import re
-
 from paxman.capabilities.Country.notation import CountryNotation
-from paxman.core.grammar import BoundaryGuard, PipelineGrammar, RegexStage, StandardPre
+from paxman.core.grammar import AnchorSet, BoundarySpec, PipelineGrammar, StandardPre
+from paxman.core.grammar.matchers.regex import RegexMatcher
+from paxman.core.grammar.scan_context import ScanContext
 
-_GUARD = BoundaryGuard.word_only()
-_ALPHA2_PATTERN = _GUARD.lookbehind + r"[A-Za-z]{2}" + _GUARD.lookahead
+
+def _emit(span: tuple[int, int], ctx: ScanContext) -> CountryNotation:
+    s, e = span
+    raw = ctx.text[s:e]
+    return CountryNotation(shape="alpha2", value=raw.upper())
 
 
-def _alpha2_notation(match: re.Match[str]) -> CountryNotation:
-    """Map an alpha-2 match to its upper-cased notation."""
-    return CountryNotation(shape="alpha2", value=match.group(0).upper())
+_MATCHER = RegexMatcher(
+    pattern=r"[A-Za-z]{2}",
+    boundary=BoundarySpec.WORD,
+    view=None,
+    anchors=AnchorSet(),
+    emit=_emit,
+    suppressible=True,
+)
 
 
 class Alpha2Grammar(PipelineGrammar[CountryNotation]):
@@ -34,6 +44,4 @@ class Alpha2Grammar(PipelineGrammar[CountryNotation]):
     single_value = True
 
     pre = StandardPre[CountryNotation](empty_guard=True)
-    regex = RegexStage[CountryNotation](
-        pattern=_ALPHA2_PATTERN, notation_fn=_alpha2_notation
-    )
+    matchers = (_MATCHER,)
