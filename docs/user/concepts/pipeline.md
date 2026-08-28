@@ -64,7 +64,7 @@ Each recognition is checked against **rules** — each rule represents one secti
 flowchart TB
     M[Recognized match] --> R1{Rule: RFC 5322<br>addr-spec}
     M --> R2{Rule: RFC 6761<br>localhost}
-    R1 -->|matches| C1[Candidate:<br>user@example.com<br>provenance: IETF / RFC 5322]
+    R1 -->|matches| C1["Candidate:<br>user@example.com<br>provenance: IETF / RFC 5322"]
     R2 -->|no match| X1[dropped]
     M --> R3{Other rules...}
 

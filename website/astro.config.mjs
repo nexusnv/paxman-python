@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import rehypeMermaid from 'rehype-mermaid';
 
 // https://starlight.astro.build/reference/configuration/
 export default defineConfig({
@@ -11,6 +12,21 @@ export default defineConfig({
     resolve: {
       preserveSymlinks: true,
     },
+  },
+  markdown: {
+    rehypePlugins: [
+      [
+        rehypeMermaid,
+        {
+          strategy: 'img-svg',
+          dark: true,
+          mermaidConfig: {
+            theme: 'base',
+            themeVariables: { primaryColor: '#4f46e5' },
+          },
+        },
+      ],
+    ],
   },
   integrations: [
     starlight({
@@ -52,9 +68,6 @@ export default defineConfig({
         },
       ],
       expressiveCode: true,
-      // Mermaid is rendered client-side — keep ```mermaid blocks as-is;
-      // they degrade to code blocks until a mermaid integration is added.
-      // To enable live diagrams, add `starlight-mermaid` later.
     }),
   ],
 });
