@@ -10,6 +10,7 @@ for introspection.
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import hashlib
 import re
@@ -148,14 +149,6 @@ class CandidatesMatcher:
         object.__setattr__(self, "_emit_counts", {})
 
     def match(self, view: View) -> list[tuple[int, int]]:
-        try:
-            self._flat.clear()
-        except (AttributeError, TypeError, RuntimeError):
-            object.__setattr__(self, "_flat", [])
-        try:
-            self._emit_counts.clear()
-        except (AttributeError, TypeError, RuntimeError):
-            object.__setattr__(self, "_emit_counts", {})
         _tl_set_flat(id(self), [])
         per_candidate_spans: list[list[tuple[int, int]]] = []
         for cand in self.candidates:
@@ -218,14 +211,11 @@ class CandidatesMatcher:
                 ):
                     continue
                 stored_flat.append((s, e, idx))
-        try:
-            self._flat.clear()
-            self._flat.extend(stored_flat)
-        except (AttributeError, TypeError, ValueError, RuntimeError):
-            object.__setattr__(self, "_flat", stored_flat)
-        try:
-            self._emit_counts.clear()
-        except (AttributeError, TypeError, RuntimeError):
+        # Update instance fields atomically for single-threaded introspection;
+        # avoid clear()/extend() race on frozen singleton (4677ff9).
+        with contextlib.suppress(AttributeError, TypeError, RuntimeError):
+            object.__setattr__(self, "_flat", list(stored_flat))
+        with contextlib.suppress(AttributeError, TypeError, RuntimeError):
             object.__setattr__(self, "_emit_counts", {})
         _tl_set_flat(id(self), stored_flat)
         return result

@@ -6,7 +6,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.metadata import version as _get_version
-from typing import Any, cast
+from typing import Any
 
 from paxman.core.capability import Capability
 from paxman.core.capability_contract import CapabilityContract
@@ -27,19 +27,6 @@ from paxman.core.domain import (
     ScanResult,
     VersionStamp,
 )
-
-try:
-    from paxman.core.grammar.matchers.candidates import (
-        CandidatesMatcher,  # type: ignore[attr-defined]
-        get_flat_for_matcher,  # type: ignore[attr-defined]
-    )
-except ImportError:
-    CandidatesMatcher = cast(Any, None)
-
-    def get_flat_for_matcher(m: Any) -> list[tuple[int, int, int]]:  # type: ignore[no-redef]
-        return cast(list[tuple[int, int, int]], getattr(m, "_flat", []))
-
-
 from paxman.core.errors import (
     CapabilityError,
     ContractError,
@@ -49,6 +36,10 @@ from paxman.core.errors import (
 )
 from paxman.core.extensions import get_extended_grammars, get_extended_rules
 from paxman.core.grammar.engine_loop import run_matchers_with_context
+from paxman.core.grammar.matchers.candidates import (
+    CandidatesMatcher,
+    get_flat_for_matcher,
+)
 from paxman.core.grammar.scan_context import ScanContext
 
 
@@ -87,20 +78,19 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     ]
     _assert_unique_names("grammar", all_grammars)
     semantics_by_name = {g.name: g.semantics for g in all_grammars}
-    if CandidatesMatcher is not None:
-        for g in all_grammars:
-            for m in getattr(g, "matchers", None) or ():
-                if (
-                    isinstance(m, CandidatesMatcher)
-                    and m.candidate_names
-                    and m.candidate_semantics
+    for g in all_grammars:
+        for m in getattr(g, "matchers", None) or ():
+            if (
+                isinstance(m, CandidatesMatcher)
+                and m.candidate_names
+                and m.candidate_semantics
+            ):
+                for cname, csem in zip(
+                    m.candidate_names,
+                    m.candidate_semantics,
+                    strict=True,
                 ):
-                    for cname, csem in zip(
-                        m.candidate_names,
-                        m.candidate_semantics,
-                        strict=True,
-                    ):
-                        semantics_by_name[cname] = csem
+                    semantics_by_name[cname] = csem
     all_rules = [
         *capability.get_rules(),
         *_activated_rules(capability, contract, semantics_by_name),
@@ -117,22 +107,20 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
 
     rules = _filter_rules(all_rules, contract)
     single_value_by_grammar_name = {g.name: g.single_value for g in all_grammars}
-    if CandidatesMatcher is not None:
-        for g in all_grammars:
-            for m in getattr(g, "matchers", None) or ():
-                if isinstance(m, CandidatesMatcher) and m.candidate_names:
-                    for cname in m.candidate_names:
-                        single_value_by_grammar_name[cname] = g.single_value
+    for g in all_grammars:
+        for m in getattr(g, "matchers", None) or ():
+            if isinstance(m, CandidatesMatcher) and m.candidate_names:
+                for cname in m.candidate_names:
+                    single_value_by_grammar_name[cname] = g.single_value
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
     _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
     keep_dup = False
-    if CandidatesMatcher is not None:
-        for g in all_grammars:
-            for m in getattr(g, "matchers", None) or ():
-                if isinstance(m, CandidatesMatcher) and m.strategy == "all":
-                    keep_dup = True
-                    break
+    for g in all_grammars:
+        for m in getattr(g, "matchers", None) or ():
+            if isinstance(m, CandidatesMatcher) and m.strategy == "all":
+                keep_dup = True
+                break
     candidates = _dedup_candidates(collected, keep_duplicate_spans=keep_dup)
 
     status = _determine_status(candidates, had_recognitions)
@@ -176,20 +164,19 @@ def run_scan(text: str, contracts: Sequence[CapabilityContract]) -> ScanResult:
         ]
         _assert_unique_names("grammar", all_grammars)
         semantics_by_name = {g.name: g.semantics for g in all_grammars}
-        if CandidatesMatcher is not None:
-            for g in all_grammars:
-                for m in getattr(g, "matchers", None) or ():
-                    if (
-                        isinstance(m, CandidatesMatcher)
-                        and m.candidate_names
-                        and m.candidate_semantics
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if (
+                    isinstance(m, CandidatesMatcher)
+                    and m.candidate_names
+                    and m.candidate_semantics
+                ):
+                    for cname, csem in zip(
+                        m.candidate_names,
+                        m.candidate_semantics,
+                        strict=True,
                     ):
-                        for cname, csem in zip(
-                            m.candidate_names,
-                            m.candidate_semantics,
-                            strict=True,
-                        ):
-                            semantics_by_name[cname] = csem
+                        semantics_by_name[cname] = csem
         all_rules = [
             *capability.get_rules(),
             *_activated_rules(capability, contract, semantics_by_name),
@@ -312,6 +299,7 @@ def _recognize(
                 TypeError,
                 AttributeError,
                 RuntimeError,
+                AssertionError,
             ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,
@@ -327,6 +315,7 @@ def _recognize(
                 TypeError,
                 AttributeError,
                 RuntimeError,
+                AssertionError,
             ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,
@@ -354,29 +343,40 @@ def _recognize(
                     ),
                 )
         keep_equal = False
-        if CandidatesMatcher is not None:
-            _ms = getattr(grammar, "matchers", None)
-            if _ms:
-                for _m in _ms:
-                    if isinstance(_m, CandidatesMatcher) and _m.strategy == "all":
-                        keep_equal = True
-                        break
+        _ms = getattr(grammar, "matchers", None)
+        if _ms:
+            for _m in _ms:
+                if isinstance(_m, CandidatesMatcher) and _m.strategy == "all":
+                    keep_equal = True
+                    break
         deduped = _dedup_spans(matches, keep_equal=keep_equal)
         cand_matcher = None
-        if CandidatesMatcher is not None:
-            for _m in getattr(grammar, "matchers", None) or ():
-                if isinstance(_m, CandidatesMatcher) and _m.candidate_names:
-                    cand_matcher = _m
-                    break
+        for _m in getattr(grammar, "matchers", None) or ():
+            if isinstance(_m, CandidatesMatcher) and _m.candidate_names:
+                cand_matcher = _m
+                break
         if cand_matcher is not None:
             flat = get_flat_for_matcher(cand_matcher)
-            for i, match in enumerate(deduped):
-                cand_idx: int = 0
-                cand_name: str = grammar.name
-                if i < len(flat):
-                    _, _, cand_idx = flat[i]
+            # Key flat by span — flat is sorted by (start, end, idx) while deduped is
+            # sorted by (start, -length); index pairing would misattribute when
+            # candidates produce same-start/different-end spans (future IBAN/ISBN).
+            from collections import defaultdict, deque
+
+            span_to_indices: dict[tuple[int, int], deque[int]] = defaultdict(deque)
+            for s, e, idx in flat:
+                span_to_indices[(s, e)].append(idx)
+            for match in deduped:
+                key = (match.start, match.end)
+                cand_idx = 0
+                cand_name = grammar.name
+                dq = span_to_indices.get(key)
+                if dq is not None and dq:
+                    cand_idx = dq.popleft()
                     if cand_idx < len(cand_matcher.candidate_names):
                         cand_name = cand_matcher.candidate_names[cand_idx]
+                    else:
+                        cand_idx = 0
+                        cand_name = grammar.name
                 ordered.append((match.start, match.end, cand_idx, cand_name, match))
         else:
             for match in deduped:
@@ -566,7 +566,7 @@ def _collect_candidates(
                             recognition,
                         )
                     )
-            except Exception as exc:  # noqa: BLE001 — intentional top-level boundary: any Rule failure must surface as ValidationError per error contract; unexpected types are not silently swallowed (they are wrapped with context and provenance)
+            except Exception as exc:
                 raise ValidationError(
                     rule=rule.name,
                     message=f"Validation failed: {exc}",

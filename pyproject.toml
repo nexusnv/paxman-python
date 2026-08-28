@@ -92,6 +92,13 @@ select = [
 # Inline `# noqa` is prohibited in this project's source, so a scoped
 # config exception is used instead. N814-only; does not suppress other rules.
 "paxman/capabilities/__init__.py" = ["N814"]
+# Top-level error boundaries must catch blind Exception to surface
+# structured errors; inline `# noqa: BLE001` is prohibited per AGENTS.md,
+# so a scoped exception is used instead. BLE001-only.
+"paxman/engine/orchestrator.py" = ["BLE001"]
+"paxman/cli.py" = ["BLE001"]
+# Long docstring line trips E501 by design; inline `# noqa` prohibited.
+"paxman/capabilities/Language/rules/iana_language_subtag_registry_ed2026.py" = ["E501"]
 
 [tool.pyright]
 pythonVersion = "3.11"

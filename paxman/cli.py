@@ -529,7 +529,7 @@ def main(argv: list[str] | None = None) -> None:
         # Print the message which contains docs/recipes/segmentation.md
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)
-    except Exception as exc:  # noqa: BLE001 — intentional top-level CLI boundary: any canonicalize failure surfaces as user error; not silently swallowed (printed and exit 1)
+    except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)
 
