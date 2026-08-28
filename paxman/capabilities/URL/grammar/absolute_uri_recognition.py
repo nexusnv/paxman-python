@@ -67,6 +67,14 @@ def _url_scan(view: View, pos: int) -> tuple[int, URLNotation] | None:
     if i >= n or subj[i] != ":":
         return None
     colon = i
+    # IDNAFold strips \t\n\r but legacy scheme requires contiguity in the
+    # original text: 'A\n:0' must not match as 'A:0'. Reject if any gap
+    # (stripped char) inside scheme+colon. Body gaps are allowed (see
+    # _is_forbidden docstring) — they map back via original_span.
+    if view.source_starts is not None and view.source_ends is not None:
+        for k in range(pos + 1, colon + 1):
+            if view.source_starts[k] != view.source_ends[k - 1]:
+                return None
     body_start = colon + 1
     if body_start >= n:
         return None
@@ -90,6 +98,16 @@ def _url_scan(view: View, pos: int) -> tuple[int, URLNotation] | None:
 
 def _url_emit(span: tuple[int, int], ctx: ScanContext) -> URLNotation:
     s, e = span
+    # Extend to include trailing \t\n\r that were stripped from the IDNA
+    # view but are allowed body chars per legacy regex (e.g. 'A:0\n'
+    # should be 'A:0\n', not 'A:0'). The view's original_span maps internal
+    # stripped chars correctly, but trailing stripped chars after the view's
+    # end are not mapped — include them here while they are \t\n\r.
+    while e < len(ctx.text) and ctx.text[e] in "\t\n\r":
+        # These are never forbidden (see _is_forbidden), so always included
+        # as part of the URL body per legacy. If a future forbidden char were
+        # in this set, it would be excluded, but \t\n\r are always allowed.
+        e += 1
     raw = ctx.text[s:e]
     return URLNotation(text=raw)
 

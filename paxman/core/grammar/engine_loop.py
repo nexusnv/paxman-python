@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from paxman.core.domain import RecognitionMatch
+from paxman.core.grammar.boundary_spec import check_boundary
 from paxman.core.grammar.data.common_words import COMMON_WORDS
 from paxman.core.grammar.normalizers import (
     CaseFold,
@@ -110,6 +111,14 @@ def _run_matchers_with_context(
                         f"for view {view_name!r} len {len(view.subject)}"
                     )
                 o_s, o_e = view.original_span(s, e)
+                # IDNAFold trailing \t\n\r: legacy body `[^ <>"...]*` allows
+                # tab/LF/CR as body chars and includes trailing ones
+                # (e.g. 'A:0\n' → 'A:0\n'). The view strips them, so
+                # original_span for view 'A:0' is (0,3) not (0,4). Extend
+                # to include trailing stripped chars that are allowed.
+                if view_name == "idna":
+                    while o_e < len(text) and text[o_e] in "\t\n\r":
+                        o_e += 1
                 # ADR §16 common-word suppression (B1): short-code matchers marked
                 # suppressible are skipped when contract requests it and the
                 # word-bounded hit is a high-frequency English function word.
@@ -121,13 +130,23 @@ def _run_matchers_with_context(
                     and text[o_s:o_e].lower() in COMMON_WORDS
                 ):
                     continue
+                # Boundary check on the original text for IDNAFold views.
+                # ScannerMatcher skips its view check when the view strips
+                # \t\n\r (source_starts is not None), so the view's left char
+                # 'A' in 'AB:0' for 'A\nB:0' would incorrectly mask the original
+                # '\n'. For SeparatorFold (BCP47 '_'->'-') the view check is
+                # correct — '_' is normalized to '-' and '-' is not \w, so
+                # 'AA' before '_' should pass. Only IDNA needs original.
+                boundary = getattr(matcher, "boundary", None)
+                if view_name == "idna" and boundary is not None:
+                    if not check_boundary(text, o_s, o_e, boundary):
+                        continue
                 # ADR §10 consuming-mode: anchors consumed for advance
                 # but never part of emitted span. Lexicon/Scanner already
                 # emit inner span; boundary.is_consuming check below
                 # ensures no delimiter leak. Legacy IPv6 via
                 # BoundaryGuard.ipv6_token remains zero-width.
                 # No trimming needed.
-                boundary = getattr(matcher, "boundary", None)
                 if boundary is not None and getattr(boundary, "is_consuming", False):
                     # No-op for current trie/scanner (they emit inner span). If a future
                     # scanner emits a span including delimiters, trim here:

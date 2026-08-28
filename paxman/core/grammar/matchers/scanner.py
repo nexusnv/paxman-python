@@ -77,12 +77,15 @@ class ScannerMatcher:
                 if end - pos > self.max_window:
                     pos += 1
                     continue
-                # Boundary check at hit positions (O(hits), not O(positions))
-                if self.boundary is not None and not check_boundary(
-                    s, pos, end, self.boundary
-                ):
-                    pos += 1
-                    continue
+                # Boundary check at hit positions (O(hits), not O(positions)).
+                # For non-identity views (e.g. IDNAFold which strips \t\n\r)
+                # the view's left char is not the original left char, so defer
+                # the check to engine_loop which has the original text and
+                # offset maps. Identity views are checked here.
+                if self.boundary is not None and view.source_starts is None:
+                    if not check_boundary(s, pos, end, self.boundary):
+                        pos += 1
+                        continue
                 # ADR §10 consuming-mode: emitted span is inner only. Scanners that
                 # consume delimiters for advance must return inner end; if they
                 # return the consuming span, engine_loop will not re-trim. For now
