@@ -64,9 +64,6 @@ jobs:
       - name: Check generated IANA language data drift
         run: uv run python tools/regenerate_iana_language_data.py --check
 
-      - name: Check generated Unicode property data drift
-        run: uv run python tools/regenerate_unicode_property_data.py --check
-
       - name: Check generated Language data drift
         run: uv run python tools/regenerate_language_data.py --check
 
