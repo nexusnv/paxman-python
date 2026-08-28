@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-08-27
-**Commit:** 4677ff9
-**Branch:** fix/adr0009-kernel-remediation
+**Generated:** 2026-08-28
+**Commit:** 1a5e
+**Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
 Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 15 capabilities (BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, Money, ORCID, Phone, SI Unit, URL) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
