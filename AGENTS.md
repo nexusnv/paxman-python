@@ -40,7 +40,7 @@ docs/               # adr/, development/, recipes/, user/
 | Presentation seam | `paxman/capabilities/<Name>/capability.py` → `format_value()` |
 | Regenerate generated data | `tools/regenerate_isbn_range_data.py` (ISBN range), `tools/regenerate_si_prefix_data.py` (SIUnit prefixed units), `tools/regenerate_idna_uts46_data.py` (URL IDNA mapping), `tools/regenerate_currency_data.py` (Currency + Money from `paxman/shared_data/currency_snapshot.json`) |
 | CLI behavior | `paxman/cli.py` (`--list`, `--json`, stdin; contract flags are API-only) |
-| Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
+| Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/data/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
 | Merge-blocking commands | `.github/workflows/ci.yml` (authoritative) |
 
 ## CODE MAP

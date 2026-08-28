@@ -144,6 +144,6 @@ def test_small_token_trie_vs_alternation_parity(text: str) -> None:
 @_HYP_SETTINGS
 @given(text=st.text(alphabet=string.ascii_letters + " \t\n", min_size=0, max_size=60))
 def test_boundary_agnostic_trie_vs_alternation(text: str) -> None:
-    # without boundary, trie vs alt should still match (word-anchored trie entry)
+    # with WORD boundary, trie vs alt should match (word-anchored)
     tokens = frozenset({"hello", "world", "hell", "word"})
-    _assert_trie_alt_parity(tokens, None, None, text)
+    _assert_trie_alt_parity(tokens, BoundarySpec.WORD, None, text)

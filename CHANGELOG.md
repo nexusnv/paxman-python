@@ -107,7 +107,7 @@ migration guide.
 - **Boundary/lexicon correctness** — `BoundarySpec` O(1) frozensets, shared
   `ScanContext` word spans, and trie word-anchoring fix the F1 prose defect
   while preserving the parity gate for all non-F1 inputs.
-- **CIDR drift gates** — 8 drift checks (currency, si_prefix, idna_uts46,
+- **CI drift gates** — 8 drift checks (currency, si_prefix, idna_uts46,
   isbn_range, bic, iban_registry, iana_language, language) + `git diff --exit-code`
   and informational benchmark remain merge-blocking per `.github/workflows/ci.yml`.
 

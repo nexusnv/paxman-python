@@ -33,7 +33,8 @@ class MatcherSpec:
             candidate lexeme list, etc.).
         view: Normalized view name to scan (``None`` = original text).
         boundary: Optional declarative boundary guard checked at hit positions.
-        anchors: Pre/post-hit anchor requirements that must be satisfied.
+        anchors: AnchorSet pre-scan input filter — literal, class, and key-set
+            requirements applied via ``AnchorSet.passes()`` before scanning.
         emit: Callable ``((start, end), payload) -> notation`` that produces
             the notation for a hit span.
         requires_features: Feature flags that must be enabled on the contract

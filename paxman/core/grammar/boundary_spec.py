@@ -100,11 +100,12 @@ def _estimate_width(pat: str) -> int:
 class BoundarySpec:
     """Declarative boundary constraint evaluated at hit positions.
 
-    Each ``left`` / ``right`` entry is a single-char regex fragment that must
-    NOT match the adjacent character for the hit to be accepted (mirroring
-    ``(?<!...)`` / ``(?!...)``). Single-char fragments lower to ``frozenset``
-    O(1) membership (``left_chars`` / ``right_chars``); multi-char fragments
-    compile to bounded regexes (``left_multi`` / ``right_multi``). ``mode``
+    Each ``left`` / ``right`` entry may be a single-character or
+    multi-character regex fragment that must NOT match the adjacent character
+    for the hit to be accepted (mirroring ``(?<!...)`` / ``(?!...)``).
+    Single-char fragments lower to ``frozenset`` O(1) membership
+    (``left_chars`` / ``right_chars``); multi-char fragments compile to
+    bounded regexes (``left_multi`` / ``right_multi``). ``mode``
     ``"consuming"`` is reserved for token-level boundaries (e.g. ``IPV6_TOKEN``)
     where the boundary characters are not part of the token.
 

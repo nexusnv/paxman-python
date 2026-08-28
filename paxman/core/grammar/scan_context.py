@@ -180,6 +180,20 @@ class ScanContext:
                     ends = tuple(s + 1 for s in starts)
                     assert len(starts) == len(subject)
                     assert len(ends) == len(subject)
+                    for i in range(len(subject)):
+                        assert 0 <= starts[i] < ends[i] <= len(self.text), (
+                            f"offset interval empty or OOB at {i}: "
+                            f"{starts[i]}->{ends[i]} len(text)={len(self.text)}"
+                        )
+                        if i > 0:
+                            assert starts[i] >= starts[i - 1], (
+                                f"starts non-decreasing violated at {i}: "
+                                f"{starts[i - 1]}->{starts[i]}"
+                            )
+                            assert ends[i] >= ends[i - 1], (
+                                f"ends non-decreasing violated at {i}: "
+                                f"{ends[i - 1]}->{ends[i]}"
+                            )
         else:
             assert len(raw) == 3
             raw3 = cast(tuple[str, tuple[int, ...] | None, tuple[int, ...] | None], raw)
@@ -205,6 +219,10 @@ class ScanContext:
                         assert starts_nn[i] >= starts_nn[i - 1], (
                             f"starts non-decreasing violated at {i}: "
                             f"{starts_nn[i - 1]}->{starts_nn[i]}"
+                        )
+                        assert ends_nn[i] >= ends_nn[i - 1], (
+                            f"ends non-decreasing violated at {i}: "
+                            f"{ends_nn[i - 1]}->{ends_nn[i]}"
                         )
                 starts = starts_nn
                 ends = ends_nn
