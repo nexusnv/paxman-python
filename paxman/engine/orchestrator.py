@@ -37,10 +37,15 @@ from paxman.core.errors import (
 from paxman.core.extensions import get_extended_grammars, get_extended_rules
 from paxman.core.grammar.engine_loop import run_matchers_with_context
 from paxman.core.grammar.matchers.candidates import (
-    CandidatesMatcher,
-    get_flat_for_matcher,
+    CandidatesMatcher as _CandidatesMatcher,
+)
+from paxman.core.grammar.matchers.candidates import (
+    get_flat_for_matcher as _get_flat,
 )
 from paxman.core.grammar.scan_context import ScanContext
+
+CandidatesMatcher: Any = _CandidatesMatcher
+get_flat_for_matcher: Any = _get_flat
 
 
 def _resolve_version() -> str:
@@ -78,19 +83,20 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     ]
     _assert_unique_names("grammar", all_grammars)
     semantics_by_name = {g.name: g.semantics for g in all_grammars}
-    for g in all_grammars:
-        for m in getattr(g, "matchers", None) or ():
-            if (
-                isinstance(m, CandidatesMatcher)
-                and m.candidate_names
-                and m.candidate_semantics
-            ):
-                for cname, csem in zip(
-                    m.candidate_names,
-                    m.candidate_semantics,
-                    strict=True,
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if (
+                    isinstance(m, CandidatesMatcher)
+                    and m.candidate_names
+                    and m.candidate_semantics
                 ):
-                    semantics_by_name[cname] = csem
+                    for cname, csem in zip(
+                        m.candidate_names,
+                        m.candidate_semantics,
+                        strict=True,
+                    ):
+                        semantics_by_name[cname] = csem
     all_rules = [
         *capability.get_rules(),
         *_activated_rules(capability, contract, semantics_by_name),
@@ -107,20 +113,22 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
 
     rules = _filter_rules(all_rules, contract)
     single_value_by_grammar_name = {g.name: g.single_value for g in all_grammars}
-    for g in all_grammars:
-        for m in getattr(g, "matchers", None) or ():
-            if isinstance(m, CandidatesMatcher) and m.candidate_names:
-                for cname in m.candidate_names:
-                    single_value_by_grammar_name[cname] = g.single_value
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if isinstance(m, CandidatesMatcher) and m.candidate_names:
+                    for cname in m.candidate_names:
+                        single_value_by_grammar_name[cname] = g.single_value
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
     _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
     keep_dup = False
-    for g in all_grammars:
-        for m in getattr(g, "matchers", None) or ():
-            if isinstance(m, CandidatesMatcher) and m.strategy == "all":
-                keep_dup = True
-                break
+    if CandidatesMatcher is not None:
+        for g in all_grammars:
+            for m in getattr(g, "matchers", None) or ():
+                if isinstance(m, CandidatesMatcher) and m.strategy == "all":
+                    keep_dup = True
+                    break
     candidates = _dedup_candidates(collected, keep_duplicate_spans=keep_dup)
 
     status = _determine_status(candidates, had_recognitions)
@@ -343,18 +351,20 @@ def _recognize(
                     ),
                 )
         keep_equal = False
-        _ms = getattr(grammar, "matchers", None)
-        if _ms:
-            for _m in _ms:
-                if isinstance(_m, CandidatesMatcher) and _m.strategy == "all":
-                    keep_equal = True
-                    break
+        if CandidatesMatcher is not None:
+            _ms = getattr(grammar, "matchers", None)
+            if _ms:
+                for _m in _ms:
+                    if isinstance(_m, CandidatesMatcher) and _m.strategy == "all":
+                        keep_equal = True
+                        break
         deduped = _dedup_spans(matches, keep_equal=keep_equal)
         cand_matcher = None
-        for _m in getattr(grammar, "matchers", None) or ():
-            if isinstance(_m, CandidatesMatcher) and _m.candidate_names:
-                cand_matcher = _m
-                break
+        if CandidatesMatcher is not None:
+            for _m in getattr(grammar, "matchers", None) or ():
+                if isinstance(_m, CandidatesMatcher) and _m.candidate_names:
+                    cand_matcher = _m
+                    break
         if cand_matcher is not None:
             flat = get_flat_for_matcher(cand_matcher)
             # Key flat by span — flat is sorted by (start, end, idx) while deduped is
