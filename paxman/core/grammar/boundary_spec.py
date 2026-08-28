@@ -98,7 +98,25 @@ def _estimate_width(pat: str) -> int:
 
 @dataclass(frozen=True, slots=True)
 class BoundarySpec:
-    """Declarative boundary constraint evaluated at hit positions."""
+    """Declarative boundary constraint evaluated at hit positions.
+
+    Each ``left`` / ``right`` entry is a single-char regex fragment that must
+    NOT match the adjacent character for the hit to be accepted (mirroring
+    ``(?<!...)`` / ``(?!...)``). Single-char fragments lower to ``frozenset``
+    O(1) membership (``left_chars`` / ``right_chars``); multi-char fragments
+    compile to bounded regexes (``left_multi`` / ``right_multi``). ``mode``
+    ``"consuming"`` is reserved for token-level boundaries (e.g. ``IPV6_TOKEN``)
+    where the boundary characters are not part of the token.
+
+    Attributes:
+        left: Regex fragments forbidden immediately to the left of the hit.
+        right: Regex fragments forbidden immediately to the right of the hit.
+        mode: ``"zero_width"`` (default) or ``"consuming"``.
+        left_chars: Cached frozenset of forbidden left chars (``None`` if none).
+        right_chars: Cached frozenset of forbidden right chars (``None`` if none).
+        left_multi: Tuple of ``(width, pattern)`` for multi-char left guards.
+        right_multi: Tuple of ``(width, pattern)`` for multi-char right guards.
+    """
 
     left: tuple[str, ...] | None
     right: tuple[str, ...] | None
@@ -157,6 +175,24 @@ class BoundarySpec:
 
 
 def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bool:
+    """Check whether the hit at ``[start:end)`` respects ``spec``.
+
+    Each ``left`` entry must NOT match the suffix ending at ``start``;
+    each ``right`` entry must NOT match the prefix starting at ``end``.
+    Single-char guards use ``frozenset`` O(1) lookup; multi-char guards use
+    bounded regex search (``\\Z`` / ``\\A`` anchored). This is the single-source
+    boundary check used by both ``ScanContext.check_hit`` and the kernel
+    ``engine_loop``.
+
+    Args:
+        subject: Text (or normalized view subject) containing the hit.
+        start: Start offset of the hit (half-open).
+        end: End offset of the hit (half-open).
+        spec: Boundary specification to check.
+
+    Returns:
+        ``True`` if no guard fires (hit is valid), ``False`` otherwise.
+    """
     if spec.left is not None and start > 0:
         if spec.left_chars is not None and subject[start - 1] in spec.left_chars:
             return False
@@ -181,6 +217,20 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
 def check_boundary_compiled(
     subject: str, start: int, end: int, spec: BoundarySpec
 ) -> bool:
+    """Compiled alias for :func:`check_boundary` (kernel hot-path hook).
+
+    Exists as a named indirection for the kernel engine loop's compiled
+    boundary path; semantically identical to :func:`check_boundary`.
+
+    Args:
+        subject: Text (or normalized view subject) containing the hit.
+        start: Start offset of the hit.
+        end: End offset of the hit.
+        spec: Boundary specification to check.
+
+    Returns:
+        ``True`` if the hit respects the boundary, ``False`` otherwise.
+    """
     return check_boundary(subject, start, end, spec)
 
 

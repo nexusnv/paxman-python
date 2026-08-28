@@ -220,7 +220,14 @@ class ScanResult:
 
 @dataclass(frozen=True, slots=True)
 class VersionStamp:
-    """Version metadata."""
+    """Version metadata stamped on every pipeline result.
+
+    Attributes:
+        paxman_version: Library version (``pyproject.toml`` ``version``).
+        recognition_revision: Hash of the compiled matcher set plus snapshot
+            SHAs (pure function of ``(spec, snapshot)`` per ADR-0009 §13).
+            ``"0"`` when the registry has not been frozen.
+    """
 
     paxman_version: str
     recognition_revision: str = "0"

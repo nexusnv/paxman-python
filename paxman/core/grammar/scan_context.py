@@ -18,6 +18,23 @@ _WordSpans = tuple[tuple[int, int], ...]
 
 @dataclass(frozen=True, slots=True)
 class View:
+    """A normalized view over the original text with source offset mapping.
+
+    Each view carries a normalized ``subject`` (the text after a normalizer
+    such as case-fold or accent-strip) plus parallel ``source_starts`` /
+    ``source_ends`` arrays that map every character in ``subject`` back to
+    its half-open ``[start, end)`` interval in the original ``ScanContext.text``.
+    ``None`` for both arrays means the normalizer is the identity (no offset
+    translation needed).
+
+    Attributes:
+        subject: Normalized text for this view.
+        source_starts: Start offsets in the original text, one per character
+            in ``subject``, or ``None`` for the identity view.
+        source_ends: End offsets in the original text, one per character
+            in ``subject``, or ``None`` for the identity view.
+    """
+
     subject: str
     source_starts: tuple[int, ...] | None
     source_ends: tuple[int, ...] | None
@@ -25,6 +42,12 @@ class View:
 
     @property
     def offsets(self) -> tuple[int, ...] | None:
+        """Return the combined offset array for this view, or None for identity.
+
+        For non-identity views this returns ``(*source_starts, source_ends[-1])``
+        — the boundary offsets that reconstruct original spans. ``None`` signals
+        that view spans map 1:1 to original spans. Empty views return ``(0,)``.
+        """
         if self.source_starts is None or self.source_ends is None:
             return None
         if len(self.source_starts) == 0:
@@ -32,6 +55,17 @@ class View:
         return (*self.source_starts, self.source_ends[-1])
 
     def original_span(self, s: int, e: int) -> tuple[int, int]:
+        """Translate a view span back to the original text span.
+
+        Args:
+            s: Start offset in the normalized view subject.
+            e: End offset in the normalized view subject (half-open).
+
+        Returns:
+            Half-open ``(start, end)`` in the original ``ScanContext.text``.
+            Identity views return the input span unchanged; empty view spans
+            map to ``(0, 0)``.
+        """
         if self.source_starts is None or self.source_ends is None:
             return (s, e)
         if s == e:
@@ -49,6 +83,27 @@ def _views_factory() -> dict[str, View]:
 
 @dataclass(frozen=True, slots=True)
 class ScanContext:
+    """Scan substrate — one word-span pass, shared across a batch scan.
+
+    Canonicalization's recognition substrate: the original ``text``, its
+    precomputed ``word_spans`` (half-open ``[start, end)`` for each ``\\w+``
+    match), and a lazy cache of normalized ``views``. The substrate is built
+    once per ``scan()`` / ``canonicalize()`` call and reused for every
+    contract/grammar in the batch, guaranteeing F1×F6 (single-value + invisible
+    embedded values) as an API property rather than a caller obligation.
+
+    Views use a two-array tuple ``(subject, starts, ends)`` discipline where
+    ``starts[i]`` / ``ends[i]`` is the original interval for ``subject[i]``.
+    They are materialized once per name and then cached; subsequent ``view()``
+    calls for the same name return the cached instance.
+
+    Attributes:
+        text: Original input text being scanned.
+        word_spans: Tuple of ``(start, end)`` for each ``\\w+`` word span
+            in ``text``, used for common-word suppression.
+        _views: Internal cache of materialized views keyed by normalizer name.
+    """
+
     text: str
     word_spans: _WordSpans
     _views: dict[str, View] = field(
@@ -57,6 +112,18 @@ class ScanContext:
 
     @classmethod
     def of(cls, text: str) -> ScanContext:
+        """Create a ScanContext for the given text.
+
+        Performs the single ``\\w+`` word-span pass that underlies
+        common-word suppression and view-discipline checks.
+
+        Args:
+            text: Raw input text to scan.
+
+        Returns:
+            A new ``ScanContext`` with ``word_spans`` precomputed and an
+            empty view cache.
+        """
         spans: _WordSpans = tuple(
             (m.start(), m.end()) for m in re.finditer(r"\w+", text)
         )
@@ -71,6 +138,25 @@ class ScanContext:
             | tuple[str, tuple[int, ...] | None, tuple[int, ...] | None],
         ],
     ) -> View:
+        """Return (or lazily materialize) a named normalized view.
+
+        The normalizer is called at most once per ``name``; the resulting
+        ``View`` is cached in ``_views`` and returned on subsequent calls.
+        Normalizers may return either a 2-tuple ``(subject, offsets)`` (single
+        array, expanded to starts/ends with unit width) or a 3-tuple
+        ``(subject, starts, ends)`` (explicit two-array discipline). Both
+        ``starts`` and ``ends`` must be ``None`` together or ``tuple`` together,
+        and when present must be the same length as ``subject`` with valid,
+        non-decreasing intervals.
+
+        Args:
+            name: Cache key for this view (e.g. the normalizer's registered name).
+            normalizer: Callable that maps the original text to ``(subject, offsets)``
+                or ``(subject, starts, ends)``.
+
+        Returns:
+            The cached or newly materialized ``View`` for ``name``.
+        """
         if name in self._views:
             return self._views[name]
         raw: object = normalizer(self.text)

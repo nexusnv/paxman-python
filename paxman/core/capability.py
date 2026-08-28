@@ -72,7 +72,12 @@ class ContractFactory(Protocol):
     """Factory protocol for capability contract creation.
 
     Every shipped capability class (fifteen as of 0.2.0) satisfies it by declaring
-    ``create_contract`` with the unanimous common parameter block.
+    ``create_contract`` as a ``@staticmethod`` with keyword-only arguments. The
+    unanimous common block (``excluded_rules``, ``pinned_rules``, ``year``,
+    ``output_format``) appears first; capability-specific flags (e.g.
+    ``include_localized`` for Language) follow. ``extra_grammars`` and
+    ``suppress_common_words`` are part of the common tail after the four core
+    parameters.
     """
 
     @staticmethod
@@ -83,5 +88,18 @@ class ContractFactory(Protocol):
         year: int | None = None,
         output_format: str | None = None,
     ) -> CapabilityContract:
-        """Create a configured contract with the unanimous common block."""
+        """Create a configured contract with the unanimous common block.
+
+        Args:
+            excluded_rules: Rule names to exclude from validation.
+            pinned_rules: Pin to specific rules (``None`` = all rules;
+                empty tuple = no rules); pins take precedence over
+                ``excluded_rules``.
+            year: Year for temporal filtering of rule provenance.
+            output_format: Canonical output format (``None`` / ``"default"``
+                resolves to the capability's default).
+
+        Returns:
+            A ``CapabilityContract`` configured for this capability.
+        """
         ...
