@@ -60,6 +60,8 @@ export default defineConfig({
         { label: 'API Reference', slug: 'api-reference' },
         { label: 'Extending', slug: 'extending' },
         { label: 'Migration', slug: 'migration' },
+        { label: 'Citations', slug: 'citations' },
+        { label: 'Glossary', slug: 'glossary' },
       ],
       head: [
         {
