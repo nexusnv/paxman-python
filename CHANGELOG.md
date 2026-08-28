@@ -111,6 +111,14 @@ migration guide.
   isbn_range, bic, iban_registry, iana_language, language) + `git diff --exit-code`
   and informational benchmark remain merge-blocking per `.github/workflows/ci.yml`.
 
+### Migrations
+
+Migrate prose with embedded values via `paxman.scan()` or the caller-owned
+split-then-canonicalize recipe (`docs/recipes/segmentation.md`). For whole-input
+values, no change. Golden samples asserting `(0, 14)` for `"United States."`
+should assert `(0, 13)` per two-array offset map. See `docs/user/migration.md`
+and `docs/adr/0009-recognition-kernel.md` for the full guide.
+
 ## [0.1.0] - 2026-08-22
 
 - Initial release — first-time user experience + publish workflow (Trusted
