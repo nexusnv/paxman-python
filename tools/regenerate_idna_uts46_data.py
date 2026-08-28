@@ -9,6 +9,8 @@ module. Run manually when the snapshot is refreshed. Standard library only.
 
 from __future__ import annotations
 
+import argparse
+import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -133,6 +135,23 @@ def render() -> str:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Regenerate UTS #46 mapping.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="regenerate in memory and exit non-zero if drift",
+    )
+    args = parser.parse_args()
+    rendered = render()
+    if args.check:
+        if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != rendered:
+            print(
+                f"DRIFT: {OUTPUT.relative_to(_REPO_ROOT)} differs from generated output",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        print("all UTS #46 generated data modules are up to date")
+        return
     statuses, mappings = _parse_snapshot()
     OUTPUT.write_text(_build_module(statuses, mappings), encoding="utf-8")
     print(f"wrote {OUTPUT}: {len(statuses)} statuses, {len(mappings)} mappings")
