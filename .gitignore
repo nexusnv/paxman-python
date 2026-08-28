@@ -1,5 +1,6 @@
 .omo
 .worktrees/
+site/
 # Python
 __pycache__/
 *.py[cod]

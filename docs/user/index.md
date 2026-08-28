@@ -1,5 +1,8 @@
 # Paxman — User Documentation
 
+!!! note "Docs since v0.2.0"
+    User documentation is versioned from **v0.2.0** onwards (first stable docs, ADR-0009 Recognition Kernel). Earlier tags (`v0.1.x`) have no published user docs. When you select a version on Read the Docs, choose `stable` (v0.2.0) or `latest` (main). See [Migration](migration.md) for the v0.1.x → v0.2.0 breaking change (F1 fix) and the full changelog.
+
 Paxman is a **canonicalization library**: you give it messy, human-written text and it tells you what that text *means* according to the specification that defines it — not a guess, a cited answer.
 
 > **Example:** `"user@Example.COM"` → `"user@example.com"` (lowercased per RFC 5322), `"01/02/2026"` → either `AMBIGUOUS` (US vs European date) or a single ISO date if you pin the rules. Every answer comes with the specification that produced it.

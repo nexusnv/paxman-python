@@ -10,14 +10,14 @@ build:
   tools:
     python: "3.13"
 
-# Build documentation with Mkdocs
+# Build documentation with MkDocs
 mkdocs:
-   configuration: mkdocs.yml
+  configuration: mkdocs.yml
 
-# Optionally, but recommended,
-# declare the Python requirements required to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-# python:
-#    install:
-#    - requirements: docs/requirements.txt
-        
+# Declare Python requirements for building documentation
+# Reproducible builds: https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

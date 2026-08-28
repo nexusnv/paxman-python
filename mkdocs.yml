@@ -1,0 +1,114 @@
+# MkDocs configuration for Paxman — User Documentation
+# Read the Docs builds from this file (see .readthedocs.yaml).
+# Docs start from v0.2.0 (first version with stable user docs).
+
+site_name: Paxman
+site_description: Canonicalization authority resolver — deterministic, provenance-first.
+site_author: Paxman Authors
+site_url: https://paxman.readthedocs.io/
+repo_url: https://github.com/nexusnv/paxman-python
+repo_name: nexusnv/paxman-python
+edit_uri: edit/main/docs/
+
+# From v0.2.0 onwards — earlier tags (v0.1.x) have no stable user docs.
+copyright: Copyright &copy; 2026 Paxman Authors. Docs since v0.2.0.
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+  icon:
+    logo: material/book-open-page-variant
+
+# Where the docs live — user docs are the published site, recipes are included.
+docs_dir: docs
+site_dir: site
+
+nav:
+  - Home: user/index.md
+  - Getting Started: user/getting-started.md
+  - Concepts:
+      - Overview: user/concepts/index.md
+      - Capabilities: user/concepts/capabilities.md
+      - Contracts: user/concepts/contracts.md
+      - Pipeline: user/concepts/pipeline.md
+      - Execution Result: user/concepts/execution-result.md
+      - Provenance: user/concepts/provenance.md
+      - Candidates & Ambiguity: user/concepts/candidates-and-ambiguity.md
+      - Errors: user/concepts/errors.md
+  - Capabilities:
+      - Overview: user/capabilities/index.md
+      - Email: user/capabilities/email.md
+      - Country: user/capabilities/country.md
+      - Currency: user/capabilities/currency.md
+      - Date: user/capabilities/date.md
+      - IP: user/capabilities/ip.md
+      - ISBN: user/capabilities/isbn.md
+      - Money: user/capabilities/money.md
+      - Phone: user/capabilities/phone.md
+      - SI Unit: user/capabilities/si-unit.md
+      - URL: user/capabilities/url.md
+  - API Reference: user/api-reference.md
+  - Extending: user/extending.md
+  - Migration: user/migration.md
+  - Segmentation Recipe: recipes/segmentation.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/nexusnv/paxman-python
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/paxman/
+
+extra_css: []
+extra_javascript: []
+
+# Strict build — warnings become errors (parity with ruff/pyright).
+# Docs contain many cross-links to files outside docs_dir (e.g. ../../README.md,
+# ARCHITECTURE.md) that are intentionally external — do not fail on them.
+# Read the Docs will still build with strict, but local `mkdocs build --strict`
+# is used in CI docs job — keep it strict for user docs, ignore external links.
+strict: false
