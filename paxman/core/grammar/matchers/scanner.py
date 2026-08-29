@@ -97,6 +97,7 @@ class ScannerMatcher:
                     if (
                         self.view_name == "idna"
                         and view.source_starts is not None
+                        and view.source_ends is not None
                         and pos > 0
                         and view.source_starts[pos] != view.source_ends[pos - 1]
                     ):
