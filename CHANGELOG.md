@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-29
+
+### Fixed
+
+- **URL `absolute_uri_recognition` parity on Python 3.12 (IDNAFold view):** `A\n:0` was incorrectly recognized as `A:0` (newline between scheme and `:` stripped by `IDNAFold`), `A:0\n` was truncated to `A:0` (trailing `\t\n\r` stripped), and `A\nB:0` missed `B:0` due to view-based `SCHEME_CHAR_LEFT` (`[A-Za-z0-9+.\-]`) seeing `A` instead of `\n`. Fixed by (1) rejecting any gap (`\t\n\r`) inside `scheme+colon` via `view.source_starts/ends` in `paxman/capabilities/URL/grammar/absolute_uri_recognition.py:74`, (2) deferring `SCHEME_CHAR_LEFT` to `paxman/core/grammar/engine_loop.py:125` on original text for `view_name=="idna"` (BCP47 `SeparatorFold` `_→-` keeps view check), (3) extending trailing `\t\n\r` in `engine_loop` and `absolute_uri_recognition._url_emit` to match legacy body `[^ <>"…]*` (e.g. `A:0\n` → `A:0\n`). Restores `620 passed` `property` on `3.12` (was `len mismatch 'A\n:0'`) and `25` Starlight pages.
+
 ## [0.2.0] - 2026-08-28
 
 Recognition Kernel (ADR-0009 Rev.4). Pre-1.0 minor bump `0.1.0 → 0.2.0` with one
@@ -125,6 +131,7 @@ and `docs/adr/0009-recognition-kernel.md` for the full guide.
   Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
   `0.1.0`, tag `v0.1.0`).
 
-[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/nexusnv/paxman-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/nexusnv/paxman-python/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nexusnv/paxman-python/releases/tag/v0.1.0
