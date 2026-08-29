@@ -53,7 +53,7 @@ def _resolve_version() -> str:
     try:
         return _get_version("paxman")
     except (ImportError, ValueError, TypeError, AttributeError, RuntimeError):
-        return "0.2.0"
+        return "0.2.1"
 
 
 PAXMAN_VERSION = _resolve_version()

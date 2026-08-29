@@ -104,9 +104,6 @@ def _url_emit(span: tuple[int, int], ctx: ScanContext) -> URLNotation:
     # stripped chars correctly, but trailing stripped chars after the view's
     # end are not mapped — include them here while they are \t\n\r.
     while e < len(ctx.text) and ctx.text[e] in "\t\n\r":
-        # These are never forbidden (see _is_forbidden), so always included
-        # as part of the URL body per legacy. If a future forbidden char were
-        # in this set, it would be excluded, but \t\n\r are always allowed.
         e += 1
     raw = ctx.text[s:e]
     return URLNotation(text=raw)

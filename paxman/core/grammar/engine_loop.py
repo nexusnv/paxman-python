@@ -130,17 +130,16 @@ def _run_matchers_with_context(
                     and text[o_s:o_e].lower() in COMMON_WORDS
                 ):
                     continue
-                # Boundary check on the original text for IDNAFold views.
-                # ScannerMatcher skips its view check when the view strips
-                # \t\n\r (source_starts is not None), so the view's left char
-                # 'A' in 'AB:0' for 'A\nB:0' would incorrectly mask the original
-                # '\n'. For SeparatorFold (BCP47 '_'->'-') the view check is
-                # correct — '_' is normalized to '-' and '-' is not \w, so
-                # 'AA' before '_' should pass. Only IDNA needs original.
+                # Boundary check on original for IDNAFold (stripped \t\n\r).
+                # Scanner defers for view_name=="idna"; SeparatorFold
+                # (BCP47 '_'->'-') keeps view check ('-' not \w, so AA_→AA passes).
                 boundary = getattr(matcher, "boundary", None)
-                if view_name == "idna" and boundary is not None:
-                    if not check_boundary(text, o_s, o_e, boundary):
-                        continue
+                if (
+                    view_name == "idna"
+                    and boundary is not None
+                    and not check_boundary(text, o_s, o_e, boundary)
+                ):
+                    continue
                 # ADR §10 consuming-mode: anchors consumed for advance
                 # but never part of emitted span. Lexicon/Scanner already
                 # emit inner span; boundary.is_consuming check below
