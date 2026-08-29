@@ -44,6 +44,15 @@ class ScannerMatcher:
 
     def __post_init__(self) -> None:
         _validate_emit(self.emit, type(self).__name__)
+        if (
+            self.view is not None
+            and self.view_name is not None
+            and self.view != self.view_name
+        ):
+            raise ValueError(
+                f"ScannerMatcher view/view_name mismatch: "
+                f"{self.view!r} != {self.view_name!r}"
+            )
         if self.view is not None and self.view_name is None:
             object.__setattr__(self, "view_name", self.view)
         elif self.view_name is not None and self.view is None:
@@ -78,16 +87,25 @@ class ScannerMatcher:
                     pos += 1
                     continue
                 # Boundary check at hit positions (O(hits), not O(positions)).
-                # Defer only for IDNAFold (strips \t\n\r) — the view's left
-                # char is not the original. Other views (including
-                # SeparatorFold for BCP47) keep the view check.
-                if (
-                    self.boundary is not None
-                    and self.view_name != "idna"
-                    and not check_boundary(s, pos, end, self.boundary)
-                ):
-                    pos += 1
-                    continue
+                # For IDNAFold the view strips \t\n\r, so the view's left
+                # char may not be the original left char. If there's a gap
+                # between pos and pos-1 in the original (stripped char), the
+                # original left char is \t\n\r which is never in
+                # SCHEME_CHAR_LEFT ([A-Za-z0-9+.\-]), so the check passes.
+                # Otherwise the view check is accurate.
+                if self.boundary is not None:
+                    if (
+                        self.view_name == "idna"
+                        and view.source_starts is not None
+                        and pos > 0
+                        and view.source_starts[pos] != view.source_ends[pos - 1]
+                    ):
+                        # Gap → original left char is stripped \t\n\r, not
+                        # forbidden, so boundary passes; no view check.
+                        pass
+                    elif not check_boundary(s, pos, end, self.boundary):
+                        pos += 1
+                        continue
                 # ADR §10 consuming-mode: emitted span is inner only. Scanners that
                 # consume delimiters for advance must return inner end; if they
                 # return the consuming span, engine_loop will not re-trim. For now

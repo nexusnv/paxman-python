@@ -1024,7 +1024,7 @@ def test_resolve_version_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda _: (_ for _ in ()).throw(RuntimeError("boom")),
     )
     # direct call via helper
-    assert orch._resolve_version() == "0.2.0"
+    assert orch._resolve_version() == "0.2.1"
 
 
 def test_run_capability_with_candidates_none_branch(
