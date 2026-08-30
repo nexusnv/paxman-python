@@ -102,6 +102,8 @@ _FALLBACK_RES: dict[str, re.Pattern[str]] = {
     r"\s": _S_RE,
 }
 
+_BRACKET_FALLBACK_CACHE: dict[str, re.Pattern[str]] = {}
+
 
 def _pattern_lowering(
     pat: str,
@@ -111,15 +113,35 @@ def _pattern_lowering(
     Returns ``(chars, fallback)``. ``chars`` is the BMP-exact frozenset from
     :func:`_pattern_to_chars`; ``fallback`` is the compiled class escape
     (``\\w``, ``\\d``, ``\\s``) when the BMP scan is merely an approximation
-    of it. The fallback is consulted by :func:`check_boundary` for non-BMP
-    neighbors (``ord(ch) > 0xFFFF``), keeping neighbor decisions exact against
-    ``re`` for the whole codepoint space without an import-time scan of all
-    0x110000 codepoints.
+    of it, or for positive bracket classes containing such escapes (``[\\w]``,
+    ``[\\w:.]``, ``[\\d]``) the compiled bracket itself cached in
+    ``_BRACKET_FALLBACK_CACHE``. The fallback is consulted by
+    :func:`check_boundary` for non-BMP neighbors (``ord(ch) > 0xFFFF``),
+    keeping neighbor decisions exact against ``re`` for the whole codepoint
+    space without an import-time scan of all 0x110000 codepoints.
     """
     chars = _pattern_to_chars(pat)
     if chars is None:
         return None, None
-    return chars, _FALLBACK_RES.get(pat)
+    fallback = _FALLBACK_RES.get(pat)
+    if fallback is not None:
+        return chars, fallback
+    # Positive bracket classes containing class escapes (\\w, \\d, \\s)
+    # need a non-BMP fallback too: the BMP frozenset from
+    # _chars_from_bracket is blind to supplementary-plane chars, so for
+    # non-BMP neighbors consult the compiled bracket itself (exact vs re).
+    if len(pat) >= 2 and pat[0] == "[" and pat[-1] == "]":
+        interior = pat[1:-1]
+        if ("\\w" in interior) or ("\\d" in interior) or ("\\s" in interior):
+            cached = _BRACKET_FALLBACK_CACHE.get(pat)
+            if cached is None:
+                try:
+                    cached = re.compile(pat)
+                except re.error:
+                    return chars, None
+                _BRACKET_FALLBACK_CACHE[pat] = cached
+            return chars, cached
+    return chars, None
 
 
 def _estimate_width(pat: str) -> int:

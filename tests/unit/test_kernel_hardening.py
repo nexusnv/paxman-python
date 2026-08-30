@@ -190,11 +190,37 @@ def test_sequence_composition_rejects_expanding_normalizer() -> None:
     on entry), so the compose branch needs two offset-returning steps:
     ``StripSeparators`` on "a b" returns offsets (setting ``cur_starts``),
     forcing the expanding step's offsets through composition, where the
-    invariant assert fires.
+    invariant check fires.
     """
     seq = NormalizerSequence(steps=(StripSeparators(), _ExpandingNormalizer()))
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="expansion is not supported"):
         seq.normalize("a b")
+
+
+def test_bracket_word_non_bmp_fallback() -> None:
+    """(#62) Positive bracket classes containing \\w need non-BMP fallback."""
+    spec = BoundarySpec(left=("[\\w]",), right=None, mode="zero_width")
+    # U+10400 DESERET LETTER is word-like but BMP scan is blind to it.
+    assert check_boundary("\U00010400a", 1, 2, spec) is False
+    # Non-word emoji must not fire the \\w bracket.
+    assert check_boundary("\U0001f600a", 1, 2, spec) is True
+
+
+def test_bracket_digit_non_bmp_fallback() -> None:
+    """(#62) Positive bracket classes containing \\d need non-BMP fallback."""
+    spec = BoundarySpec(left=("[\\d]",), right=None, mode="zero_width")
+    # U+1D7CE MATHEMATICAL BOLD DIGIT is Nd, non-BMP, bracket contains \\d.
+    assert check_boundary("\U0001d7cea", 1, 2, spec) is False
+    # Deseret is word but not digit — bracket [\\d] must not fire.
+    assert check_boundary("\U00010400a", 1, 2, spec) is True
+
+
+def test_bracket_word_mixed_non_bmp_fallback() -> None:
+    """(#62) Brackets like [\\w:.] keep fallback for non-BMP word chars."""
+    left_spec = BoundarySpec(left=("[\\w:.]",), right=None, mode="zero_width")
+    assert check_boundary("\U00010400a", 1, 2, left_spec) is False
+    right_spec = BoundarySpec(left=None, right=("[\\w:.]",), mode="zero_width")
+    assert check_boundary("a\U00010400", 0, 1, right_spec) is False  # right neighbor
 
 
 def test_nfd_char_cache_is_bounded() -> None:
