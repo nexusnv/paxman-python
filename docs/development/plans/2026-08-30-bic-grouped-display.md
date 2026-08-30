@@ -217,11 +217,9 @@ Expected: all PASS, including:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add paxman/capabilities/BIC/grammar/bic_recognition.py tests/capabilities/bic/test_grammar.py tests/capabilities/bic/test_capability.py
+git add paxman/capabilities/BIC/grammar/bic_recognition.py tests/capabilities/bic/test_grammar.py tests/integration/test_bic_grouped.py
 git commit -m "fix(bic): recognize grouped display DEUT DE FF (#41)"
 ```
-
-Include whichever test file you added the `canonicalize` guard to.
 
 ---
 
