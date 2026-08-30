@@ -197,7 +197,8 @@ class WholeInputLookup(Generic[NotationT]):
 
 @dataclass(frozen=True, slots=True)
 class UnicodePropertyStage(Generic[NotationT]):
-    """Build-time range stage for \\p{...} (thin alias over RegexStage)."""
+    """Build-time range stage for \\p{...} (range-built companion to RegexStage
+    (shares compiled-once PipelineState pattern))."""
 
     property_name: str
     ranges: tuple[tuple[int, int], ...]
@@ -216,7 +217,7 @@ class UnicodePropertyStage(Generic[NotationT]):
 
     def matches(self, ch: str) -> bool:
         """Return True if single char `ch` is in the property (test convenience)."""
-        return bool(self._compiled.match(ch))
+        return len(ch) == 1 and bool(self._compiled.fullmatch(ch))
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         if self.notation_fn is None:
