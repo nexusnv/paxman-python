@@ -130,8 +130,10 @@ def test_span_invariants():
     assert 0 <= labelled.start < labelled.end <= len(txt)
     assert labelled.raw_text == "BIC DEUTDEFF"
     assert labelled.notation.compact == "DEUTDEFF"
-    # bare without label
-    m2 = GRAMMAR.recognize("Pay to DEUTDEFF now")[0]
+    # bare without label — punctuation delimiter avoids 3-char grouped branch
+    # ambiguity (#41): "DEUTDEFF now" is now a valid grouped 11 ("DEUTDEFF now")
+    # via single space + 3 alnum, so use "." delimiter for isolated 8 check.
+    m2 = GRAMMAR.recognize("Pay to DEUTDEFF.")[0]
     assert m2.raw_text == "DEUTDEFF"
 
 
@@ -141,3 +143,70 @@ def test_empty_and_quoted():
     assert len(m) == 1 and m[0].notation.compact == "DEUTDEFF"
     m2 = GRAMMAR.recognize("[BNPAFRPPXXX]")
     assert len(m2) == 1 and m2[0].notation.compact == "BNPAFRPPXXX"
+
+
+def test_recognizes_grouped_8_char():
+    """(#41) Grouped 8-char BIC with single spaces must be recognized."""
+    for raw, expected_compact in [
+        ("DEUT DE FF", "DEUTDEFF"),
+        ("BNPA FR PP", "BNPAFRPP"),
+        ("CHAS US 33", "CHASUS33"),
+    ]:
+        matches = GRAMMAR.recognize(raw)
+        assert len(matches) == 1, f"{raw!r} should match"
+        assert matches[0].notation.compact == expected_compact
+        assert matches[0].raw_text == raw
+        assert matches[0].start == 0
+        assert matches[0].end == len(raw)
+
+
+def test_recognizes_grouped_11_char():
+    """(#41) Grouped 11-char BIC with single spaces must be recognized."""
+    for raw, expected_compact in [
+        ("DEUT DE FF 500", "DEUTDEFF500"),
+        ("BNPA FR PP XXX", "BNPAFRPPXXX"),
+    ]:
+        matches = GRAMMAR.recognize(raw)
+        assert len(matches) == 1, f"{raw!r} should match"
+        assert matches[0].notation.compact == expected_compact
+        assert matches[0].raw_text == raw
+        assert matches[0].start == 0
+        assert matches[0].end == len(raw)
+
+
+def test_grouped_double_space_is_missing():
+    """(#41) Double space must stay MISSING (only single spaces allowed)."""
+    assert GRAMMAR.recognize("DEUT  DE FF") == []
+    assert GRAMMAR.recognize("DEUT DE  FF") == []
+    assert GRAMMAR.recognize("DEUT DE FF  500") == []
+
+
+def test_grouped_invalid_lengths_are_missing():
+    """(#41) 9/10-length spaced variants must not be recognized."""
+    assert GRAMMAR.recognize("DEUT DE FF 5") == []
+    assert GRAMMAR.recognize("DEUT DE FF 50") == []
+    assert GRAMMAR.recognize("BNPA FR PP XX") == []
+    assert GRAMMAR.recognize("BNPA FR PP X") == []
+
+
+def test_grouped_case_insensitive_and_with_label() -> None:
+    """(#41) Grouped case-insensitive and with BIC/SWIFT label."""
+    m = GRAMMAR.recognize("deut de ff")
+    assert (
+        len(m) == 1
+        and m[0].notation.compact == "DEUTDEFF"
+        and m[0].raw_text == "deut de ff"
+    )
+    m = GRAMMAR.recognize("BIC DEUT DE FF")
+    assert (
+        len(m) == 1
+        and m[0].notation.compact == "DEUTDEFF"
+        and m[0].raw_text == "BIC DEUT DE FF"
+        and m[0].start == 0
+    )
+    m = GRAMMAR.recognize("SWIFT: BNPA FR PP XXX")
+    assert (
+        len(m) == 1
+        and m[0].notation.compact == "BNPAFRPPXXX"
+        and m[0].raw_text == "SWIFT: BNPA FR PP XXX"
+    )
