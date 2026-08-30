@@ -175,6 +175,6 @@
       126128
     ]
   ],
-  "source_url": "https://unicode.org/Public/15.1.0/ucd/PropList.txt and https://unicode.org/Public/15.1.0/ucd/Scripts.txt",
+  "source_url": "https://unicode.org/Public/15.1.0/ucd/UnicodeData.txt and https://unicode.org/Public/15.1.0/ucd/Scripts.txt",
   "unicode_version": "15.1.0"
 }
