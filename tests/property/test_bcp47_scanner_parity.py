@@ -78,6 +78,16 @@ _CORPUS: tuple[str, ...] = (
     # underscore variants
     "en_US_x_private",
     "sr_Latn_RS",
+    # grandfathered followed by a valid tag continuation — longest
+    # valid prefix wins (issue #90; the legacy snapshot prefix-matched
+    # the grandfathered tag inside the longer tag)
+    "zh-min-nan00",
+    "art-lojban zh-min-nan00",
+    "zh-min-nan-x-foo",
+    "zh-min-x-foo",
+    # grandfathered followed by an INVALID continuation — exact
+    # grandfathered match still wins
+    "zh-min-0x",
     # mixed multiple mentions (single call extracts longest)
     "en-US and fr-FR",
     "Visit https://example.com and en-GB please",
@@ -92,3 +102,45 @@ def test_bcp47_scanner_parity_byte_identical(text: str) -> None:
 def test_bcp47_scanner_parity_corpus_len() -> None:
     # ensure corpus not trivially small — byte-identical over full legacy corpus
     assert len(_CORPUS) >= 30
+
+
+def test_bcp47_grandfathered_prefix_longest_valid_prefix_wins() -> None:
+    """Honest-behavior pin (issue #90): grandfathered tags are exact-match
+    only — a longer syntactically-valid tag parses as a langtag, and a
+    grandfathered tag followed by an INVALID continuation still matches."""
+    g = BCP47TagGrammar()
+
+    # langtag continuation extends the grandfathered prefix
+    matches = g.recognize("zh-min-nan00")
+    assert len(matches) == 1
+    assert (matches[0].start, matches[0].end) == (0, 12)
+    assert matches[0].notation.grandfathered == ""
+    assert matches[0].notation.language == "zh"
+    assert matches[0].notation.extlang == "min"
+    assert matches[0].notation.variant == "nan00"
+    assert matches[0].notation.compact == "zh-min-nan00"
+
+    # privateuse continuation likewise
+    matches = g.recognize("zh-min-x-foo")
+    assert len(matches) == 1
+    assert (matches[0].start, matches[0].end) == (0, 12)
+    assert matches[0].notation.language == "zh"
+    assert matches[0].notation.extlang == "min"
+    assert matches[0].notation.privateuse == "x-foo"
+
+    # exact grandfathered tags still match as whole tokens
+    for text, tag in [
+        ("zh-min", "zh-min"),
+        ("zh-min-nan", "zh-min-nan"),
+        ("art-lojban", "art-lojban"),
+    ]:
+        matches = g.recognize(text)
+        assert len(matches) == 1, text
+        assert matches[0].notation.grandfathered == tag, text
+
+    # grandfathered followed by an INVALID continuation: only the
+    # grandfathered prefix is a valid tag, so it matches
+    matches = g.recognize("zh-min-0x")
+    assert len(matches) == 1
+    assert (matches[0].start, matches[0].end) == (0, 6)
+    assert matches[0].notation.grandfathered == "zh-min"
