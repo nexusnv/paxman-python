@@ -51,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `AAAA BB CC [XXX]` with single spaces (e.g. `DEUT DE FF` →
   `DEUTDEFF`, `BNPA FR PP XXX` → `BNPAFRPPXXX`); double spaces remain
   `MISSING`.
+- **Kernel — scanner right-gap deferral (#99):** `ScannerMatcher` now defers
+  view-level boundary checks on both left and right gaps for stripped views
+  (previously only left), so a stripped char immediately right of a hit does
+  not cause view-level over-rejection; the engine's original-text re-check
+  governs. Unreachable with shipped grammars (URL `idna` is left-only).
 
 ### Changed
 
