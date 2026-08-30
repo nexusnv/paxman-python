@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import unicodedata
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Protocol, runtime_checkable
 
 from paxman.core.domain import Provenance
@@ -158,7 +159,16 @@ class AccentStrip:
         return stripped.lower(), None, None
 
 
-_NFD_CACHE: dict[str, str] = {}
+@lru_cache(maxsize=8192)
+def _nfd_char(ch: str) -> str:
+    """NFD-decompose a single character (bounded memo, deterministic).
+
+    Unicode decomposition mappings are per-codepoint, so per-char NFD
+    concatenation equals whole-text NFD; the cache is a pure memo of a
+    deterministic function — no input-dependent global state (#64, the
+    former ``_NFD_CACHE`` dict grew without bound).
+    """
+    return unicodedata.normalize("NFD", ch)
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,11 +203,7 @@ class CountryNameFold:
         nfd_orig: list[int] = []
         nfd_pos = 0
         for orig_idx, ch in enumerate(text):
-            cached = _NFD_CACHE.get(ch)
-            if cached is None:
-                cached = unicodedata.normalize("NFD", ch)
-                _NFD_CACHE[ch] = cached
-            seg_len = len(cached)
+            seg_len = len(_nfd_char(ch))
             for _ in range(seg_len):
                 nfd_orig.append(orig_idx)
             nfd_pos += seg_len

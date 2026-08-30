@@ -195,3 +195,13 @@ def test_sequence_composition_rejects_expanding_normalizer() -> None:
     seq = NormalizerSequence(steps=(StripSeparators(), _ExpandingNormalizer()))
     with pytest.raises(AssertionError):
         seq.normalize("a b")
+
+
+def test_nfd_char_cache_is_bounded() -> None:
+    """(#64) The per-char NFD memo is an lru_cache, not an unbounded dict."""
+    from paxman.core.grammar import normalizers
+
+    assert normalizers._nfd_char.cache_info().maxsize == 8192
+    # deterministic pure function: same char -> same decomposition
+    assert normalizers._nfd_char("é") == normalizers._nfd_char("é")
+    assert normalizers._nfd_char("é") == "e\u0301"

@@ -40,7 +40,8 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
   decisions stay exact vs `re` across the full codepoint space (`\d` = Nd).
 - Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` — `starts`/`ends` parallel arrays.
 - View `source_starts`/`source_ends` + `offsets` property — views carry source offset maps.
-- `CountryNameFold` single-pass NFD with `_NFD_CACHE` — one-pass fold, cached.
+- `CountryNameFold` single-pass NFD with `_nfd_char` — one-pass fold, per-char
+  memo is a bounded `lru_cache(maxsize=8192)` (no unbounded input-keyed state).
 - Views carry `stripped_chars` as data — engine loop + scanner branch on
   `view.stripped_chars` (truthy = stripped chars matchers may re-absorb), never
   on view names (`view_name == "idna"` is banned; source-scanned in
