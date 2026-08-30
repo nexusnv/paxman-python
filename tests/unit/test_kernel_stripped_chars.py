@@ -186,7 +186,7 @@ def _gap_view(stripped: str | None) -> View:
         subject="AB",
         source_starts=(0, 3),
         source_ends=(1, 4),
-        _text_len=5,
+        _text_len=4,
         stripped_chars=stripped,
     )
 
@@ -207,14 +207,17 @@ def test_scanner_defers_left_guard_when_stripped_chars_set() -> None:
     assert matcher.match(_gap_view("\t")) == [(1, 2)]
 
 
-def test_scanner_checks_left_guard_without_stripped_chars() -> None:
-    """Same gap, no stripped_chars → deferral must NOT apply."""
+@pytest.mark.parametrize("stripped", [None, ""])
+def test_scanner_checks_left_guard_without_stripped_chars(
+    stripped: str | None,
+) -> None:
+    """Same gap, falsy stripped_chars (None or "") → deferral must NOT apply."""
     matcher = ScannerMatcher(
         scan=_scan_at_one,
         boundary=BoundarySpec(left=("A",), right=None, mode="zero_width"),
         emit=lambda span, ctx: span,
     )
-    assert matcher.match(_gap_view(None)) == []
+    assert matcher.match(_gap_view(stripped)) == []
 
 
 def test_engine_boundary_recheck_is_data_driven(

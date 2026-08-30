@@ -92,8 +92,11 @@ class ScannerMatcher:
                 # in the original (a stripped char), the original left char
                 # is that stripped char — the engine re-checks the boundary
                 # on the original text for stripped views, so the view-level
-                # check is deferred here. Otherwise the view check is
-                # accurate.
+                # check is deferred here. Otherwise the char adjacent to the
+                # hit is identical in view and original, so single-char
+                # guards are accurate here (multi-char guard windows
+                # spanning an older stripped char are governed by the
+                # engine's original-text re-check).
                 if self.boundary is not None:
                     if (
                         view.stripped_chars
