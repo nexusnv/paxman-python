@@ -54,6 +54,23 @@ def test_scan_context_view_passes_stripped_chars_through() -> None:
     assert ctx.view(nf.name, nf.normalize, stripped_chars=nf.stripped_chars) is view
 
 
+def _strip_tabs(
+    text: str,
+) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+    """Shared body for the tab-stripping test doubles."""
+    chars: list[str] = []
+    starts: list[int] = []
+    for i, ch in enumerate(text):
+        if ch == "\t":
+            continue
+        chars.append(ch)
+        starts.append(i)
+    subject = "".join(chars)
+    if len(subject) == len(text):
+        return subject, None, None
+    return subject, tuple(starts), tuple(s + 1 for s in starts)
+
+
 class _TabStrip:
     """Test normalizer stripping \\t with offset maps; declares stripped_chars."""
 
@@ -64,24 +81,20 @@ class _TabStrip:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
-        chars: list[str] = []
-        starts: list[int] = []
-        for i, ch in enumerate(text):
-            if ch == "\t":
-                continue
-            chars.append(ch)
-            starts.append(i)
-        subject = "".join(chars)
-        if len(subject) == len(text):
-            return subject, None, None
-        return subject, tuple(starts), tuple(s + 1 for s in starts)
+        return _strip_tabs(text)
 
 
-class _TabStripNoFlag(_TabStrip):
+class _TabStripNoFlag:
     """Same stripping as _TabStrip but WITHOUT the stripped_chars flag."""
 
     name = "tstrip_noflag"
-    stripped_chars = None  # type: ignore[misc]  # test double
+    provenance = None
+    stripped_chars: str | None = None
+
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        return _strip_tabs(text)
 
 
 def _scan_fixed(view: View, pos: int) -> tuple[int, None] | None:
@@ -112,6 +125,11 @@ def test_stripped_view_extends_over_trailing_stripped_chars(
 def test_normalizer_without_flag_does_not_extend(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """A normalizer with no stripped_chars flag gets no trailing extension.
+
+    The view strips the tab (subject "A:0", len 3) so the span maps to
+    (0, 3); without the flag the engine must NOT re-absorb the tab.
+    """
     monkeypatch.setitem(_VIEW_REGISTRY, "tstrip_noflag", _TabStripNoFlag())
     matcher = ScannerMatcher(
         scan=_scan_fixed,
@@ -119,6 +137,4 @@ def test_normalizer_without_flag_does_not_extend(
         emit=lambda span, ctx: span,
     )
     out = _run_engine("A:0\t", matcher)
-    # The view strips the tab (subject "A:0", len 3) so the span maps to
-    # (0, 3); without the flag the engine must NOT re-absorb the tab.
     assert [(m.start, m.end, m.raw_text) for m in out] == [(0, 3, "A:0")]

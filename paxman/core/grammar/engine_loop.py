@@ -14,6 +14,7 @@ from paxman.core.grammar.normalizers import (
     CaseFold,
     CountryNameFold,
     IDNAFold,
+    Normalizer,
     SeparatorFold,
     StripSeparators,
     SymbolFold,
@@ -38,7 +39,7 @@ def run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[An
     return _run_matchers(text, compiled)
 
 
-_VIEW_REGISTRY: dict[str, Any] = {
+_VIEW_REGISTRY: dict[str, Normalizer] = {
     "casefolded": CaseFold(),
     "country_normalized": CountryNameFold(),
     "bcp47_normalized": SeparatorFold(),
@@ -56,7 +57,7 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
         return context.view(
             view_name,
             normalizer.normalize,
-            stripped_chars=getattr(normalizer, "stripped_chars", None),
+            stripped_chars=normalizer.stripped_chars,
         )
     return context.view(view_name, lambda t: (t, None, None))
 
@@ -118,8 +119,9 @@ def _run_matchers_with_context(
                 # Trailing stripped chars: legacy matchers on a stripped view
                 # (e.g. the URL body `[^ <>"…]*` allowing tab/LF/CR, 'A:0\n'
                 # → 'A:0\n') re-absorb the chars the view stripped. Data-
-                # driven via view.stripped_chars (#87) — no view-name checks.
-                if view.stripped_chars is not None:
+                # driven via view.stripped_chars (#87) — no view-name checks
+                # in this extension.
+                if view.stripped_chars:
                     while o_e < len(text) and text[o_e] in view.stripped_chars:
                         o_e += 1
                 # ADR §16 common-word suppression (B1): short-code matchers marked

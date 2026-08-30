@@ -35,7 +35,8 @@ class View:
             in ``subject``, or ``None`` for the identity view.
         stripped_chars: Characters the normalizer strips that legacy matchers
             may re-absorb into their emitted spans (e.g. ``"\\t\\n\\r"`` for
-            the IDNA view), or ``None`` when the view has no such set.
+            the IDNA view), or ``None`` when the view has no such set. An
+            empty string is treated as "no stripping".
     """
 
     subject: str
