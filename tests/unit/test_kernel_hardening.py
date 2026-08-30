@@ -24,6 +24,7 @@ from paxman.core.grammar.boundary_spec import (
 )
 from paxman.core.grammar.matchers.candidates import CandidatesMatcher
 from paxman.core.grammar.matchers.combinator import CombinatorMatcher
+from paxman.core.grammar.normalizers import NormalizerSequence, StripSeparators
 from paxman.core.grammar.scan_context import ScanContext, View
 
 pytestmark = pytest.mark.unit
@@ -150,3 +151,47 @@ def test_pattern_lowering_pairs_sets_with_fallbacks() -> None:
     b_chars, b_fb = _pattern_lowering("[abc]")
     assert b_fb is None and b_chars == frozenset({"a", "b", "c"})
     assert _pattern_lowering("abc") == (None, None)
+
+
+class _ExpandingNormalizer:
+    """Test normalizer violating the no-expansion invariant (1 cur -> 2 nxt).
+
+    Emits unit-width but non-injective offsets: cur[0] is claimed by two nxt
+    chars (``starts`` [0, 0]) — exactly the expansion shape composition must
+    reject, since each nxt char still spans one cur char.
+    """
+
+    name = "expanding"
+    provenance = None
+    stripped_chars = None
+
+    def normalize(
+        self, text: str
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        if not text:
+            return "", (), ()
+        subject = text[0] + "-" + text[1:]  # 1 cur char -> 2 nxt chars
+        starts: list[int] = []
+        ends: list[int] = []
+        for i, _ch in enumerate(text):
+            if i == 0:
+                starts.extend([0, 0])  # expansion: two nxt chars from cur[0]
+                ends.extend([1, 1])
+            else:
+                starts.append(i)
+                ends.append(i + 1)
+        return subject, tuple(starts), tuple(ends)
+
+
+def test_sequence_composition_rejects_expanding_normalizer() -> None:
+    """(#63) Composition asserts the no-expansion invariant — fails fast.
+
+    A single-step sequence would only ASSIGN offsets (``cur_starts is None``
+    on entry), so the compose branch needs two offset-returning steps:
+    ``StripSeparators`` on "a b" returns offsets (setting ``cur_starts``),
+    forcing the expanding step's offsets through composition, where the
+    invariant assert fires.
+    """
+    seq = NormalizerSequence(steps=(StripSeparators(), _ExpandingNormalizer()))
+    with pytest.raises(AssertionError):
+        seq.normalize("a b")

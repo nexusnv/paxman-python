@@ -14,6 +14,13 @@ from paxman.core.domain import Provenance
 
 @runtime_checkable
 class Normalizer(Protocol):
+    """A single recognition-view rewrite step over scanner text.
+
+    Normalizers must not expand: each input character maps to at most one
+    subject character (stripping or 1:1 rewriting only) — see
+    ``NormalizerSequence`` (#63).
+    """
+
     @property
     def name(self) -> str: ...
 
@@ -31,6 +38,15 @@ class Normalizer(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
+    """Compose normalizer steps, threading offset maps through composition.
+
+    Normalizers must not expand: each input character maps to at most one
+    subject character (stripping or 1:1 rewriting only). Sequence composition
+    asserts unit-width offsets (``ends[i] == starts[i] + 1``) that are
+    strictly increasing (no cur char reused by two nxt chars) and fails fast
+    otherwise — expansion would silently mis-map end offsets (#63).
+    """
+
     steps: tuple[Normalizer, ...]
     # Sequence composition does not aggregate stripped chars (no shipped
     # sequence needs it).
@@ -65,6 +81,19 @@ class NormalizerSequence:
                 else:
                     assert cur_starts is not None and cur_ends is not None
                     assert len(cur_starts) > 0 and len(cur_ends) > 0
+                    # No-expansion invariant (#63): stripping normalizers map
+                    # each cur char to at most one nxt char — offset starts
+                    # are strictly increasing (no cur char reused) and
+                    # unit-width (ends[i] == starts[i] + 1). Composition
+                    # indexes the cur arrays per nxt char; an expanding
+                    # normalizer (several nxt chars reusing one cur char)
+                    # would silently mis-map end offsets.
+                    assert all(
+                        a < b for a, b in zip(off_starts, off_starts[1:], strict=False)
+                    ), "normalizer expansion is not supported in sequences"
+                    assert all(
+                        s + 1 == e for s, e in zip(off_starts, off_ends, strict=True)
+                    ), "normalizer offsets must be unit-width in sequences"
                     composed_starts = tuple(cur_starts[o] for o in off_starts)
                     composed_ends = tuple(
                         cur_ends[o - 1] if o > 0 else cur_ends[0] for o in off_ends
