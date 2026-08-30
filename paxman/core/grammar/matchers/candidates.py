@@ -159,6 +159,9 @@ class CandidatesMatcher:
                     spans = cast(list[tuple[int, int]], spans_any)
                 else:
                     spans = cast(list[tuple[int, int]], [])
+            # Matcher-internal boundary (#66): a buggy candidate/leaf/predicate
+            # degrades to no-match; grammar-level failures are wrapped as
+            # RecognitionError by the orchestrator.
             except (
                 re.error,
                 ValueError,

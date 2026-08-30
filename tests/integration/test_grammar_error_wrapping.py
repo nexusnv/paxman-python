@@ -88,8 +88,9 @@ def test_matcher_index_error_wraps_as_recognition_error() -> None:
     """(#66) A community matcher raising IndexError surfaces as RecognitionError."""
     register_grammar("date", ExplodingMatcherGrammar)
     contract = DateContract(extra_grammars=("exploding_matcher_recognition",))
-    with pytest.raises(RecognitionError):
+    with pytest.raises(RecognitionError) as excinfo:
         canonicalize("2024.01.01", contract)
+    assert isinstance(excinfo.value.original_error, IndexError)
 
 
 @pytest.mark.integration
