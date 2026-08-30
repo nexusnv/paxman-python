@@ -19,11 +19,21 @@ def calc_check(country: str, bban: str) -> str:
     return f"{98 - r:02d}"
 
 
-@given(
-    st.sampled_from(sorted(REGISTERED_IBAN_COUNTRY_CODES)),
-    st.text(min_size=11, max_size=30, alphabet="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-)
-def test_tampered_check_digit_is_rejected(cc: str, bban: str) -> None:
+@given(st.data())
+def test_tampered_check_digit_is_rejected(data: st.DataObject) -> None:
+    cc = data.draw(st.sampled_from(sorted(REGISTERED_IBAN_COUNTRY_CODES)))
+    # Per-country fixed length — generate BBAN of exact required length
+    from paxman.capabilities.IBAN.rules.data.iban_registry import IBAN_LENGTHS
+
+    expected_len = IBAN_LENGTHS[cc]
+    bban_len = expected_len - 4
+    bban = data.draw(
+        st.text(
+            min_size=bban_len,
+            max_size=bban_len,
+            alphabet="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        )
+    )
     rule = Section4IBANStructureMOD97()
     dd = calc_check(cc, bban)
     compact_valid = cc + dd + bban
