@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   between every digit (e.g. "+1 - 2 - 3 …" = 44-58 chars, was truncated
   at 32). Raised to 64 (worst case 58 + margin) so spaced E.164 is
   fully recognized with correct span.
+- **BIC — grouped display (#41):** recognizes SWIFT paper form
+  `AAAA BB CC [XXX]` with single spaces (e.g. `DEUT DE FF` →
+  `DEUTDEFF`, `BNPA FR PP XXX` → `BNPAFRPPXXX`); double spaces remain
+  `MISSING`.
 
 ### Changed
 
