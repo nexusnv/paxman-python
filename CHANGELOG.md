@@ -18,6 +18,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   right-side guard sees the immediate neighbor instead of the character after a
   re-absorbed stripped run (#88). No shipped capability changes behavior (parity suites
   green).
+- **Kernel — grammar-path error contract (#66):** internal lookup failures
+  (`KeyError`/`IndexError`) from grammars, candidate matchers, combinator leaves,
+  and predicates now surface as `RecognitionError` (or are swallowed at the
+  per-candidate/leaf boundary, as before) instead of escaping as raw exceptions.
+  The rules path keeps its `except Exception → ValidationError` contract.
+- **Kernel — `BoundarySpec` negated bracket classes (#67):** `[^...]` fragments no
+  longer lower to an inverted positive char set; they fall back to the compiled
+  regex path, preserving negated semantics.
+- **Kernel — boundary char sets exact vs `re` (#62):** `\d` lowers to Unicode `Nd`
+  (was ASCII-only), and class escapes (`\w`, `\d`, `\s`) carry a compiled non-BMP
+  fallback so neighbor decisions are exact across the whole codepoint space without
+  an import-time scan. Hot path unchanged (empty fallbacks short-circuit; BMP
+  neighbors never compute `ord`).
+- **Kernel — `NormalizerSequence` no-expansion invariant (#63):** composition asserts
+  unit-width offsets and strictly increasing starts; expanding normalizers fail fast
+  instead of silently mis-mapping end offsets.
+- **Kernel — bounded NFD cache (#64):** the per-char NFD memo is an
+  `lru_cache(maxsize=8192)`; the unbounded input-keyed `_NFD_CACHE` dict is gone.
 
 ### Changed
 
