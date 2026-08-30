@@ -14,6 +14,7 @@ from paxman.core.grammar.normalizers import (
     CaseFold,
     CountryNameFold,
     IDNAFold,
+    Normalizer,
     SeparatorFold,
     StripSeparators,
     SymbolFold,
@@ -38,7 +39,7 @@ def run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[An
     return _run_matchers(text, compiled)
 
 
-_VIEW_REGISTRY: dict[str, Any] = {
+_VIEW_REGISTRY: dict[str, Normalizer] = {
     "casefolded": CaseFold(),
     "country_normalized": CountryNameFold(),
     "bcp47_normalized": SeparatorFold(),
@@ -53,7 +54,11 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
         return context.view("__orig__", lambda t: (t, None, None))
     normalizer = _VIEW_REGISTRY.get(view_name)
     if normalizer is not None:
-        return context.view(view_name, normalizer.normalize)
+        return context.view(
+            view_name,
+            normalizer.normalize,
+            stripped_chars=normalizer.stripped_chars,
+        )
     return context.view(view_name, lambda t: (t, None, None))
 
 
@@ -111,13 +116,26 @@ def _run_matchers_with_context(
                         f"for view {view_name!r} len {len(view.subject)}"
                     )
                 o_s, o_e = view.original_span(s, e)
-                # IDNAFold trailing \t\n\r: legacy body `[^ <>"...]*` allows
-                # tab/LF/CR as body chars and includes trailing ones
-                # (e.g. 'A:0\n' → 'A:0\n'). The view strips them, so
-                # original_span for view 'A:0' is (0,3) not (0,4). Extend
-                # to include trailing stripped chars that are allowed.
-                if view_name == "idna":
-                    while o_e < len(text) and text[o_e] in "\t\n\r":
+                boundary = getattr(matcher, "boundary", None)
+                # Boundary re-check on the original text at the PRE-extension
+                # end (#88): the right guard must see the immediate neighbor,
+                # not the char after any re-absorbed stripped run. Scanner defers
+                # its view-level check on a left gap; the re-check below governs
+                # stripped views. SeparatorFold (BCP47 '_'->'-') keeps its view
+                # check ('-' not \w, so AA_→AA passes).
+                if (
+                    view.stripped_chars
+                    and boundary is not None
+                    and not check_boundary(text, o_s, o_e, boundary)
+                ):
+                    continue
+                # Trailing stripped chars: legacy matchers on a stripped view
+                # (e.g. the URL body `[^ <>"…]*` allowing tab/LF/CR, 'A:0\n'
+                # → 'A:0\n') re-absorb the chars the view stripped. Data-
+                # driven via view.stripped_chars (#87) — no view-name checks
+                # in this extension.
+                if view.stripped_chars:
+                    while o_e < len(text) and text[o_e] in view.stripped_chars:
                         o_e += 1
                 # ADR §16 common-word suppression (B1): short-code matchers marked
                 # suppressible are skipped when contract requests it and the
@@ -128,16 +146,6 @@ def _run_matchers_with_context(
                     and bool(getattr(contract, "suppress_common_words", False))
                     and bool(getattr(matcher, "suppressible", False))
                     and text[o_s:o_e].lower() in COMMON_WORDS
-                ):
-                    continue
-                # Boundary check on original for IDNAFold (stripped \t\n\r).
-                # Scanner defers for view_name=="idna"; SeparatorFold
-                # (BCP47 '_'->'-') keeps view check ('-' not \w, so AA_→AA passes).
-                boundary = getattr(matcher, "boundary", None)
-                if (
-                    view_name == "idna"
-                    and boundary is not None
-                    and not check_boundary(text, o_s, o_e, boundary)
                 ):
                     continue
                 # ADR §10 consuming-mode: anchors consumed for advance

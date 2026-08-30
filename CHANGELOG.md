@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Kernel — data-driven stripped-view handling (#87, #88):** the recognition kernel no
+  longer special-cases the idna view by name. Views carry `stripped_chars` as data
+  (`IDNAFold` declares `"\t\n\r"`), and the engine loop / scanner branch on
+  `view.stripped_chars`. Community grammars using other stripped views now get the same
+  re-absorption and boundary-deferral semantics, and views without the flag get neither.
+  The boundary re-check on the original text now runs at the pre-extension end, so a
+  right-side guard sees the immediate neighbor instead of the character after a
+  re-absorbed stripped run (#88). No shipped capability changes behavior (parity suites
+  green).
+
+### Changed
+
+- **Kernel — `Normalizer` protocol declares `stripped_chars` (#87):** community
+  normalizer implementations should declare it (default `None`; `""` is treated as "no
+  stripping").
+- **Kernel — `CandidatesMatcher` single-pass boundary filter (#68):** `result` and
+  `stored_flat` are now derived in one pass; `check_boundary` runs once per span instead
+  of twice. No behavior change.
+
 ## [0.2.2] - 2026-08-30
 
 ### Fixed

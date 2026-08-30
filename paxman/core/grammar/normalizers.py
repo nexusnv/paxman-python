@@ -14,8 +14,15 @@ from paxman.core.domain import Provenance
 
 @runtime_checkable
 class Normalizer(Protocol):
-    name: str
-    provenance: Provenance | None
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def provenance(self) -> Provenance | None: ...
+
+    # Chars the normalizer strips that matchers may re-absorb into spans.
+    @property
+    def stripped_chars(self) -> str | None: ...
 
     def normalize(
         self, text: str
@@ -25,6 +32,9 @@ class Normalizer(Protocol):
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
     steps: tuple[Normalizer, ...]
+    # Sequence composition does not aggregate stripped chars (no shipped
+    # sequence needs it).
+    stripped_chars: str | None = None
 
     @property
     def name(self) -> str:
@@ -69,6 +79,7 @@ class NormalizerSequence:
 class CaseFold:
     name: str = "casefolded"
     provenance: Provenance | None = None
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -88,6 +99,7 @@ class SeparatorFold:
         lifecycle="active",
         publication_year=2009,
     )
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -107,6 +119,7 @@ class AccentStrip:
         lifecycle="active",
         publication_year=2024,
     )
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -138,6 +151,7 @@ class CountryNameFold:
         lifecycle="active",
         publication_year=2024,
     )
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -217,6 +231,7 @@ class SymbolFold:
         ("Å", "Å"),
         ("°", "°"),
     )
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -238,6 +253,7 @@ class StripSeparators:
         lifecycle="active",
         publication_year=2010,
     )
+    stripped_chars: str | None = None
 
     def normalize(
         self, text: str
@@ -260,6 +276,13 @@ class StripSeparators:
 
 @dataclass(frozen=True, slots=True)
 class IDNAFold:
+    """IDNA view: strip ``\\t\\n\\r``.
+
+    The stripped characters are declared as data (``stripped_chars``) so the
+    kernel engine loop and scanner can re-absorb trailing stripped chars into
+    emitted spans without special-casing the view name.
+    """
+
     name: str = "idna"
     provenance: Provenance | None = Provenance(
         authority="Unicode",
@@ -270,6 +293,7 @@ class IDNAFold:
         lifecycle="active",
         publication_year=2024,
     )
+    stripped_chars: str | None = "\t\n\r"
 
     def normalize(
         self, text: str
