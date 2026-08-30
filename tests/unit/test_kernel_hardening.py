@@ -13,6 +13,11 @@ from __future__ import annotations
 
 import pytest
 
+from paxman.core.grammar.boundary_spec import (
+    BoundarySpec,
+    _pattern_to_chars,
+    check_boundary,
+)
 from paxman.core.grammar.matchers.candidates import CandidatesMatcher
 from paxman.core.grammar.matchers.combinator import CombinatorMatcher
 from paxman.core.grammar.scan_context import ScanContext, View
@@ -77,3 +82,20 @@ def test_combinator_swallows_key_error_from_predicate() -> None:
 def _exploding_predicate(span_text: str, subject: str) -> bool:
     """Predicate double that raises KeyError (data-bug shape)."""
     raise KeyError("predicate lookup table missing")
+
+
+def test_negated_bracket_class_not_lowered_to_positive_set() -> None:
+    """(#67) '[^...]' must fall back to the regex path, not become a set."""
+    assert _pattern_to_chars("[^a-z]") is None
+    # escaped caret is a literal member, NOT negation
+    lowered = _pattern_to_chars(r"[\^a]")
+    assert lowered is not None and "^" in lowered and "a" in lowered
+
+
+def test_negated_bracket_class_regex_semantics() -> None:
+    """(#67) A negated left guard fires when the neighbor is NOT in the set."""
+    spec = BoundarySpec(left=("[^0-9]",), right=None, mode="zero_width")
+    # Left neighbor 'x' is NOT a digit -> the negated guard fires -> fails.
+    assert check_boundary("xa", 1, 2, spec) is False
+    # Left neighbor '1' IS a digit -> guard does not fire -> passes.
+    assert check_boundary("15", 1, 2, spec) is True

@@ -70,6 +70,11 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
         # '*+?{}|' as not single-char
         if any(m in interior for m in "*+?{}|"):
             return None
+        # Negated class: a positive char set would invert the guard
+        # semantics (#67). Fall back to the compiled regex path, where
+        # '[^...]' keeps its negated meaning against the 1-char window.
+        if interior.startswith("^"):
+            return None
         return _chars_from_bracket(interior)
     return None
 
