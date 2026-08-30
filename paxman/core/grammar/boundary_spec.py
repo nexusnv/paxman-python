@@ -95,6 +95,7 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
     return None
 
 
+# Keep in sync with the class-escape branches in _pattern_to_chars (#62).
 _FALLBACK_RES: dict[str, re.Pattern[str]] = {
     r"\w": _W_RE,
     r"\d": _D_RE,
