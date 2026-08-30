@@ -131,7 +131,8 @@ def test_span_invariants():
     assert labelled.raw_text == "BIC DEUTDEFF"
     assert labelled.notation.compact == "DEUTDEFF"
     # bare without label — punctuation delimiter avoids 3-char grouped branch
-    # ambiguity (#41): "DEUTDEFF now" is now a valid grouped 11 ("DEUTDEFF now")
+    # ambiguity (#41): "DEUTDEFF now" remains compact 8
+    # (hybrid compact+spaced branch not grouped per grammar comment)
     # via single space + 3 alnum, so use "." delimiter for isolated 8 check.
     m2 = GRAMMAR.recognize("Pay to DEUTDEFF.")[0]
     assert m2.raw_text == "DEUTDEFF"

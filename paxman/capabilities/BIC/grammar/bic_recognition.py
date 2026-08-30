@@ -85,20 +85,26 @@ class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
 
         Regex allows compact 8 + word (``DEUTDEFF now`` → ``DEUTDEFF``)
         but grouped 8 + word (``call me at noon`` → ``CALLMEAT``) would
-        be a false positive (phrase mimics ``AAAA BB CC``). Drop grouped
-        8-char matches that are immediately followed by space+alnum,
-        keeping compact 8 and grouped 11 (``DEUT DE FF 500``) intact.
+        be a false positive (phrase mimics ``AAAA BB CC``). Drop only
+        non-uppercase grouped 8 (English phrase) when followed by
+        space+alnum; keep legitimate ``DEUT DE FF`` even with trailing
+        word, and keep grouped 11 (``DEUT DE FF 500``) intact.
         """
         matches = super().recognize(text)
         filtered: list[RecognitionMatch[BICNotation]] = []
         for m in matches:
-            if " " in m.raw_text and len(m.notation.compact) == 8:
-                after = text[m.end :]
-                if after.startswith(" "):
-                    stripped = after.lstrip(" ")
-                    # grouped 8 followed by word → drop
-                    # e.g. "call me at noon" vs isolated "DEUT DE FF"
-                    if stripped and stripped[0].isalnum():
-                        continue
+            raw_text = m.raw_text
+            compact = m.notation.compact
+            if (
+                raw_text.count(" ") == 2
+                and len(compact) == 8
+                and not raw_text.isupper()
+            ):
+                # Only drop non-uppercase grouped 8 (English phrase)
+                # like "call me at"; keep "DEUT DE FF" with trailing
+                # word.
+                after = text[m.end : m.end + 4]
+                if after.startswith(" ") and after.lstrip()[:1].isalnum():
+                    continue
             filtered.append(m)
         return filtered
