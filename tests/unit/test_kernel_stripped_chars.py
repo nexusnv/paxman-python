@@ -173,3 +173,62 @@ def test_boundary_pass_still_extends_and_emits(
     # Span (0, 4) covers "A:0\t" (4 chars) — RecognitionMatch enforces
     # len(raw_text) == end - start.
     assert [(m.start, m.end, m.raw_text) for m in out] == [(0, 4, "A:0\t")]
+
+
+def _gap_view(stripped: str | None) -> View:
+    """View over a 5-char original whose subject 'AB' has a gap before 'B'.
+
+    source maps: 'A' -> [0,1), 'B' -> [3,4); original index 1..2 hold the
+    stripped char(s). pos=1 (the 'B' hit) therefore has a stripped gap to
+    its left: source_starts[1]=3 != source_ends[0]=1.
+    """
+    return View(
+        subject="AB",
+        source_starts=(0, 3),
+        source_ends=(1, 4),
+        _text_len=5,
+        stripped_chars=stripped,
+    )
+
+
+def _scan_at_one(view: View, pos: int) -> tuple[int, None] | None:
+    return (2, None) if pos == 1 else None
+
+
+def test_scanner_defers_left_guard_when_stripped_chars_set() -> None:
+    """Gap to the left + stripped_chars set → view-level left check deferred."""
+    matcher = ScannerMatcher(
+        scan=_scan_at_one,
+        boundary=BoundarySpec(left=("A",), right=None, mode="zero_width"),
+        emit=lambda span, ctx: span,
+    )
+    # View-level check would see subject[0] == 'A' (forbidden) and reject;
+    # the deferral keys on view.stripped_chars, not the view name.
+    assert matcher.match(_gap_view("\t")) == [(1, 2)]
+
+
+def test_scanner_checks_left_guard_without_stripped_chars() -> None:
+    """Same gap, no stripped_chars → deferral must NOT apply."""
+    matcher = ScannerMatcher(
+        scan=_scan_at_one,
+        boundary=BoundarySpec(left=("A",), right=None, mode="zero_width"),
+        emit=lambda span, ctx: span,
+    )
+    assert matcher.match(_gap_view(None)) == []
+
+
+def test_engine_boundary_recheck_is_data_driven(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Engine re-checks the original text for ANY stripped view (not just idna)."""
+    monkeypatch.setitem(_VIEW_REGISTRY, "tstrip", _TabStrip())
+    # text "a\tb:0": view strips the tab → subject "ab:0"; hit (1,4) maps to
+    # original (2,5) whose LEFT neighbor text[1] is the stripped tab. The
+    # left guard forbids the tab, so the engine-level re-check must reject.
+    matcher = ScannerMatcher(
+        scan=lambda view, pos: (4, None) if pos == 1 else None,
+        view_name="tstrip",
+        boundary=BoundarySpec(left=(r"\t",), right=None, mode="zero_width"),
+        emit=lambda span, ctx: span,
+    )
+    assert _run_engine("a\tb:0", matcher) == []
