@@ -260,6 +260,13 @@ class StripSeparators:
 
 @dataclass(frozen=True, slots=True)
 class IDNAFold:
+    """IDNA view: strip ``\\t\\n\\r``.
+
+    The stripped characters are declared as data (``stripped_chars``) so the
+    kernel engine loop and scanner can re-absorb trailing stripped chars into
+    emitted spans without special-casing the view name.
+    """
+
     name: str = "idna"
     provenance: Provenance | None = Provenance(
         authority="Unicode",
@@ -270,6 +277,7 @@ class IDNAFold:
         lifecycle="active",
         publication_year=2024,
     )
+    stripped_chars: str | None = "\t\n\r"
 
     def normalize(
         self, text: str
