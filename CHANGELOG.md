@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of silently mis-mapping end offsets.
 - **Kernel — bounded NFD cache (#64):** the per-char NFD memo is an
   `lru_cache(maxsize=8192)`; the unbounded input-keyed `_NFD_CACHE` dict is gone.
+- **Phone — E.164 window 32 → 64 for spaced numbers (#65):** the
+  `max_window` was too tight for 15-digit numbers with separators
+  between every digit (e.g. "+1 - 2 - 3 …" = 44-58 chars, was truncated
+  at 32). Raised to 64 (worst case 58 + margin) so spaced E.164 is
+  fully recognized with correct span.
 
 ### Changed
 
