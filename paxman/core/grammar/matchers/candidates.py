@@ -178,19 +178,20 @@ class CandidatesMatcher:
         result: list[tuple[int, int]] = []
         stored_flat: list[tuple[int, int, int]] = []
         if self.strategy == "first":
-            # Dedup by (s, e) and boundary-filter compose: the boundary
-            # verdict depends only on (s, e), so filtering the deduped
-            # stream equals deduping the filtered stream (#68).
+            # Dedup first, then boundary-filter: the boundary verdict
+            # depends only on (s, e), so the two compose in either order
+            # (#68). Recording the key before the check keeps duplicate
+            # rejected spans from re-running check_boundary.
             seen: set[tuple[int, int]] = set()
             for s, e, idx in flat:
                 key = (s, e)
                 if key in seen:
                     continue
+                seen.add(key)
                 if self.boundary is not None and not check_boundary(
                     view.subject, s, e, self.boundary
                 ):
                     continue
-                seen.add(key)
                 result.append(key)
                 stored_flat.append((s, e, idx))
         else:
