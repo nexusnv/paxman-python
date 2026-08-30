@@ -286,3 +286,21 @@ def test_candidates_boundary_filter_first_strategy() -> None:
     spans, flat = _result_flat_pair(m)
     assert spans == [(0, 1)]
     assert [(s, e) for s, e, _ in flat] == spans
+
+
+def test_no_magic_idna_view_name_comparison_in_core() -> None:
+    """(#87 acceptance) No `== "idna"` comparison remains in paxman/core."""
+    import re
+    from pathlib import Path
+
+    core = Path(__file__).resolve().parents[2] / "paxman" / "core"
+    offenders: list[str] = []
+    for path in sorted(core.rglob("*.py")):
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            if re.search(r'==\s*"idna"', line):
+                offenders.append(f"{path.relative_to(core)}:{lineno}: {line.strip()}")
+    assert offenders == [], "magic view-name comparison(s) found:\n" + "\n".join(
+        offenders
+    )

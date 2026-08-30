@@ -39,6 +39,10 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 - Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` — `starts`/`ends` parallel arrays.
 - View `source_starts`/`source_ends` + `offsets` property — views carry source offset maps.
 - `CountryNameFold` single-pass NFD with `_NFD_CACHE` — one-pass fold, cached.
+- Views carry `stripped_chars` as data — engine loop + scanner branch on
+  `view.stripped_chars` (truthy = stripped chars matchers may re-absorb), never
+  on view names (`view_name == "idna"` is banned; source-scanned in
+  `tests/unit/test_kernel_stripped_chars.py`).
 - `validate_emit` at construction — span/raw_text invariants fail fast at emit.
 - Matcher digests memoised — per-matcher digest cached.
 - `PipelineGrammar` `matchers` delegation — `recognize()` delegates to `run_matchers()`.
