@@ -141,18 +141,35 @@ def test_normalizer_without_flag_does_not_extend(
     assert [(m.start, m.end, m.raw_text) for m in out] == [(0, 3, "A:0")]
 
 
-def test_boundary_checked_before_trailing_extension() -> None:
+def test_boundary_checked_before_trailing_extension(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """(#88) The right guard must see the immediate neighbor (the tab),
     not the char after the stripped run."""
-    text = "A:0\tB"
-    # idna view: subject "A:0B", the hit (0,3) maps to original (0,3) and
-    # the trailing tab is re-absorbable. Right guard forbids the tab, so
-    # the pre-extension check must reject the hit.
+    monkeypatch.setitem(_VIEW_REGISTRY, "tstrip", _TabStrip())
     matcher = ScannerMatcher(
         scan=lambda view, pos: (3, None) if pos == 0 else None,
-        view_name="idna",
+        view_name="tstrip",
         boundary=BoundarySpec(left=None, right=(r"\t",), mode="zero_width"),
         emit=lambda span, ctx: span,
     )
-    out = _run_engine(text, matcher)
+    out = _run_engine("A:0\tB", matcher)
     assert out == []
+
+
+def test_boundary_pass_still_extends_and_emits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """(#88) A right guard that passes pre-extension must not block the
+    trailing extension — the re-check is a gate, not a span change."""
+    monkeypatch.setitem(_VIEW_REGISTRY, "tstrip", _TabStrip())
+    matcher = ScannerMatcher(
+        scan=lambda view, pos: (3, None) if pos == 0 else None,
+        view_name="tstrip",
+        boundary=BoundarySpec(left=None, right=("X",), mode="zero_width"),
+        emit=lambda span, ctx: span,
+    )
+    out = _run_engine("A:0\tB", matcher)
+    # Span (0, 4) covers "A:0\t" (4 chars) — RecognitionMatch enforces
+    # len(raw_text) == end - start.
+    assert [(m.start, m.end, m.raw_text) for m in out] == [(0, 4, "A:0\t")]
