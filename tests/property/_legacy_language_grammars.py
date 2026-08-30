@@ -1,4 +1,4 @@
-"""Verbatim legacy Language BCP47 grammar (pre-scanner migration).
+r"""Verbatim legacy Language BCP47 grammar (pre-scanner migration).
 
 Snapshot of the bespoke ``_BCP47RegexStage`` + ``_bcp47_notation`` logic at
 the start of B3a (841c0a7), used by the Migration Proof Harness
@@ -8,43 +8,34 @@ the scanner migration. Classes are renamed ``Legacy*`` to avoid colliding.
 Do NOT edit by hand — this is a frozen reference. The live grammar files are
 the source of truth post-migration; this module exists only so the parity
 test can compare old vs new behavior.
+
+**Amendment (2026-08-30, issue #90):** the frozen snapshot above had a
+latent bug — grandfathered tags were matched by a first alternation with a
+``(?!\w)`` right boundary, and since ``-`` is not a word character a
+grandfathered tag that is a *proper prefix* of a longer syntactically-valid
+tag matched inside it (``zh-min`` inside ``zh-min-nan00``). The kernel
+(``BCP47TagGrammar``, maximal-run + longest-valid-prefix) has always been
+correct per BCP-47 / IANA registry semantics: grandfathered tags are
+exact-match only. This module is amended to the same documented semantics
+so the parity gate encodes the agreed behavior. The deviation from the
+historical snapshot is intentional and limited to grandfathered tags
+followed by a valid tag continuation (ADR-0009 §5: no silent divergence —
+this note is the record).
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from dataclasses import dataclass, field
 
 from paxman.capabilities.Language.grammar.data.grandfathered_tags import (
     GRANDFATHERED_TAGS as _GRANDFATHERED_TAGS_SET,
 )
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.domain import RecognitionMatch
-from paxman.core.grammar.boundary import BoundaryGuard
 from paxman.core.grammar.pipeline import PipelineGrammar
 from paxman.core.grammar.stages import PipelineState, StandardPre
 
 _GRANDFATHERED_SET: frozenset[str] = _GRANDFATHERED_TAGS_SET
-_GRANDFATHERED_ALT = "|".join(
-    re.escape(t) for t in sorted(_GRANDFATHERED_TAGS_SET, key=lambda t: (-len(t), t))
-)
-
-_BCP47_BODY = (
-    r"(?P<tag>" + _GRANDFATHERED_ALT + r"|x(?:-[A-Za-z0-9]{1,8})+"
-    r"|(?:(?=[A-Za-z]{2,8}-)"
-    r"(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})"
-    r"(?:-[A-Za-z]{4})?"
-    r"(?:-(?:[A-Za-z]{2}|\d{3}))?"
-    r"(?:-(?:[A-Za-z0-9]{5,8}|\d[A-Za-z0-9]{3}))*"
-    r"(?:-[A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*"
-    r"(?:-x(?:-[A-Za-z0-9]{1,8})+)?"
-    r")"
-    r")"
-)
-
-_GUARD = BoundaryGuard.word_only()
-_BCP47_PATTERN = _GUARD.lookbehind + _BCP47_BODY + _GUARD.lookahead
 
 
 def _is_variant(subtag: str) -> bool:
@@ -53,9 +44,112 @@ def _is_variant(subtag: str) -> bool:
     )
 
 
-def _bcp47_notation(match: re.Match[str]) -> LanguageNotation:
-    raw_tag: str = match.group("tag")
-    lower_tag = raw_tag.lower()
+# --- Validity functions copied verbatim from the kernel source of truth
+# (paxman/capabilities/Language/grammar/bcp47_tag_recognition.py) so the
+# amended reference implements the documented longest-valid-prefix
+# semantics with independent scan machinery (issue #90). ---
+
+
+def _is_valid_langtag(tag: str) -> bool:
+    parts = tag.split("-")
+    if not parts or any(p == "" for p in parts):
+        return False
+    idx = 0
+    first = parts[0]
+    if 2 <= len(first) <= 3 and first.isalpha():
+        idx = 1
+        ext = 0
+        while (
+            idx < len(parts)
+            and len(parts[idx]) == 3
+            and parts[idx].isalpha()
+            and ext < 3
+        ):
+            ext += 1
+            idx += 1
+    elif (len(first) == 4 and first.isalpha()) or (
+        5 <= len(first) <= 8 and first.isalpha()
+    ):
+        idx = 1
+    else:
+        return False
+    if idx < len(parts) and len(parts[idx]) == 4 and parts[idx].isalpha():
+        idx += 1
+    if idx < len(parts):
+        p = parts[idx]
+        if (len(p) == 2 and p.isalpha()) or (len(p) == 3 and p.isdigit()):
+            idx += 1
+    while idx < len(parts):
+        p = parts[idx]
+        if _is_variant(p):
+            idx += 1
+            continue
+        if len(p) == 1 and p.isalnum() and p.lower() != "x":
+            break
+        if p.lower() == "x":
+            break
+        return False
+    while idx < len(parts):
+        p = parts[idx]
+        if p.lower() == "x":
+            break
+        if len(p) == 1 and p.isalnum() and p.lower() != "x":
+            idx += 1
+            if idx >= len(parts):
+                return False
+            if not (2 <= len(parts[idx]) <= 8 and parts[idx].isalnum()):
+                return False
+            cnt = 0
+            while (
+                idx < len(parts) and 2 <= len(parts[idx]) <= 8 and parts[idx].isalnum()
+            ):
+                cnt += 1
+                idx += 1
+            if cnt == 0:
+                return False
+            continue
+        return False
+    if idx < len(parts) and parts[idx].lower() == "x":
+        idx += 1
+        if idx >= len(parts):
+            return False
+        has = False
+        while idx < len(parts):
+            p = parts[idx]
+            if 1 <= len(p) <= 8 and p.isalnum():
+                has = True
+                idx += 1
+            else:
+                return False
+        if not has:
+            return False
+    return idx == len(parts)
+
+
+def _is_bare_language(tag: str) -> bool:
+    return (
+        (2 <= len(tag) <= 3 and tag.isalpha())
+        or (len(tag) == 4 and tag.isalpha())
+        or (5 <= len(tag) <= 8 and tag.isalpha())
+    )
+
+
+def _is_valid_tag(tag: str) -> bool:
+    lower = tag.lower()
+    if lower in _GRANDFATHERED_SET:
+        return True
+    parts = tag.split("-")
+    if parts and parts[0].lower() == "x":
+        return bool(
+            len(parts) >= 2 and all(1 <= len(p) <= 8 and p.isalnum() for p in parts[1:])
+        )
+    if "-" not in tag:
+        return False
+    return _is_valid_langtag(tag)
+
+
+def _notation_for_tag(tag: str) -> LanguageNotation:
+    lower_tag = tag.lower()
     if lower_tag in _GRANDFATHERED_SET:
         return LanguageNotation(
             language="",
@@ -83,7 +177,7 @@ def _bcp47_notation(match: re.Match[str]) -> LanguageNotation:
             compact=compact,
             raw_value=lower_tag,
         )
-    parts = raw_tag.split("-")
+    parts = tag.split("-")
     language = parts[0].lower()
     idx = 1
     extlangs: list[str] = []
@@ -180,52 +274,94 @@ def _bcp47_notation(match: re.Match[str]) -> LanguageNotation:
     )
 
 
-@dataclass(frozen=True, slots=True)
-class _BCP47RegexStage:
-    pattern: str
-    notation_fn: Callable[[re.Match[str]], LanguageNotation] | None = None
-    flags: int = 0
-    _compiled: re.Pattern[str] = field(init=False, repr=False)
+_WORD_RE = re.compile(r"\w")
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "_compiled", re.compile(self.pattern, self.flags))
+
+def _is_word_char(ch: str) -> bool:
+    """Mirror ``(?<!\\w)`` / ``(?!\\w)`` — the pre-migration word boundary."""
+    return _WORD_RE.match(ch) is not None
+
+
+def _longest_valid_end(normalized: str, pos: int) -> int | None:
+    """End offset of the longest valid tag starting at ``pos``, else ``None``.
+
+    Mirrors the kernel ``_bcp47_scan`` run rules: maximal hyphen-alnum run,
+    trailing-hyphen strip, ``--`` truncation, then longest-valid-prefix
+    selection over ``_is_valid_tag`` (grandfathered exact-match included).
+    """
+    n = len(normalized)
+    run_end = pos
+    while run_end < n and (normalized[run_end].isalnum() or normalized[run_end] == "-"):
+        run_end += 1
+    while run_end > pos and normalized[run_end - 1] == "-":
+        run_end -= 1
+    if run_end <= pos:
+        return None
+    run = normalized[pos:run_end]
+    if "--" in run:
+        run = run[: run.find("--")]
+        if not run:
+            return None
+    parts = run.split("-")
+    if any(p == "" for p in parts):
+        return None
+    for k in range(len(parts), 0, -1):
+        candidate = "-".join(parts[:k])
+        if _is_valid_tag(candidate):
+            return pos + len(candidate)
+        if "-" not in candidate and _is_bare_language(candidate):
+            cand_end = pos + len(candidate)
+            if cand_end < n and normalized[cand_end] == "-":
+                return cand_end
+    return None
+
+
+class _BCP47ScanStage:
+    """Amended legacy scan (issue #90) — longest-valid-prefix semantics.
+
+    Replaces the frozen regex stage: same ``_``→``-`` normalization and
+    word boundaries, but the scan walks maximal runs and emits the longest
+    valid tag prefix at each position, advancing past each emitted span —
+    mirroring the kernel ``ScannerMatcher`` position loop.
+    """
 
     def run(
         self, state: PipelineState[LanguageNotation]
     ) -> PipelineState[LanguageNotation]:
-        if self.notation_fn is None:
-            return state
         original = state.text
         normalized = original.replace("_", "-")
+        n = len(normalized)
         new_matches: list[RecognitionMatch[LanguageNotation]] = list(state.matches)
-        for m in self._compiled.finditer(normalized):
-            start = m.start()
-            end = m.end()
-            raw_text = original[start:end]
-            notation = self.notation_fn(m)
-            new_matches.append(
-                RecognitionMatch(
-                    notation=notation,
-                    start=start,
-                    end=end,
-                    raw_text=raw_text,
+        pos = 0
+        while pos < n:
+            end = _longest_valid_end(normalized, pos)
+            if (
+                end is not None
+                and (pos == 0 or not _is_word_char(normalized[pos - 1]))
+                and (end == n or not _is_word_char(normalized[end]))
+            ):
+                new_matches.append(
+                    RecognitionMatch(
+                        notation=_notation_for_tag(normalized[pos:end]),
+                        start=pos,
+                        end=end,
+                        raw_text=original[pos:end],
+                    )
                 )
-            )
+                pos = end
+                continue
+            pos += 1
         return PipelineState(
             text=state.text, matches=new_matches, scratch=dict(state.scratch)
         )
 
 
 class LegacyBCP47TagGrammar(PipelineGrammar[LanguageNotation]):
-    """Legacy BCP47 tag recognition — verbatim."""
+    """Legacy BCP47 tag recognition — amended reference (see module note)."""
 
     name = "bcp47_tag_recognition"
     semantics = "bcp47_tag"
     single_value = True
 
     pre = StandardPre[LanguageNotation](empty_guard=True)
-    regex = _BCP47RegexStage(
-        pattern=_BCP47_PATTERN,
-        notation_fn=_bcp47_notation,
-        flags=re.IGNORECASE,
-    )
+    regex = _BCP47ScanStage()
