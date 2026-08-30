@@ -196,6 +196,10 @@ class UnicodePropertyStage(Generic[NotationT]):
         pattern = f"[{''.join(parts)}]"
         object.__setattr__(self, "_compiled", re.compile(pattern))
 
+    def matches(self, ch: str) -> bool:
+        """Return True if single char `ch` is in the property (test convenience)."""
+        return bool(self._compiled.match(ch))
+
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
         if self.notation_fn is None:
             return state
@@ -222,7 +226,7 @@ Ensure `slots=True` and `field(init=False)` for `_regex`, and `object.__setattr_
 Add export in `paxman/core/grammar/__init__.py`:
 
 ```python
-from paxman.core.grammar.stages.unicode_property import UnicodePropertyStage  # noqa: F401
+from paxman.core.grammar.stages import UnicodePropertyStage  # noqa: F401
 ```
 
 and add to `__all__`.
