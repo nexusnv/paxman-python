@@ -30,12 +30,15 @@ from paxman.core.grammar.scan_context import ScanContext, View
 _MAX_E164_DIGITS = 15
 
 # Char window carrying the 15-digit bound as data; separators inflate raw
-# length beyond the digit count, so the char window is larger than 15 to
-# hold a full 15-digit number with separators and the leading "+". 32
-# safely covers "+x (xxx) xxx-xxxx" plus the runaway-trim case
+# length beyond the digit count, so the char window must hold a full
+# 15-digit number with separators and the leading "+". Worst case:
+# 15 digits + 14 gaps ×3 (" - " space-dash-space) + "+" = 58 chars,
+# e.g. "+1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 0 - 1 - 2 - 3 - 4 - 5".
+# 64 safely covers that plus the runaway-trim case
 # "+15551234567 5551234567" (23 chars) and the oversized first-run case
 # "+12345678901234567890" (21 chars) while still bounding the scanner.
-_E164_MAX_WINDOW = 32
+# See #65.
+_E164_MAX_WINDOW = 64
 
 
 def _trim_to_e164_boundary(raw: str) -> str:

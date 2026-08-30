@@ -92,6 +92,30 @@ class TestE164Grammar:
         """Verify grammar name."""
         assert self.grammar.name == "e164_recognition"
 
+    def test_spaced_15_digit_with_two_char_separators(self) -> None:
+        """(#65) 15-digit spaced with 2-char gaps must not be truncated."""
+        # 2-char gaps: " -" (space+dash) => 15 digits +14*2 +1 =44
+        spaced2 = "+" + " -".join("123456789012345")
+        assert len(spaced2) == 44
+        results = self.grammar.recognize(spaced2)
+        assert len(results) == 1
+        assert results[0].start == 0
+        assert results[0].end == 44
+        assert results[0].raw_text == spaced2
+        assert results[0].notation.value == "123456789012345"
+
+    def test_spaced_15_digit_with_three_char_separators(self) -> None:
+        """(#65) 15-digit with 3-char gaps must not be truncated."""
+        # 3-char gaps: " - " (space+dash+space) => 15+14*3+1 =58
+        spaced3 = "+" + " - ".join("123456789012345")
+        assert len(spaced3) == 58
+        results = self.grammar.recognize(spaced3)
+        assert len(results) == 1
+        assert results[0].start == 0
+        assert results[0].end == 58
+        assert results[0].raw_text == spaced3
+        assert results[0].notation.value == "123456789012345"
+
 
 class TestTelUriGrammar:
     """Tests for TelUriGrammar."""
