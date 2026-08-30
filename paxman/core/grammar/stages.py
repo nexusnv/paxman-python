@@ -193,3 +193,46 @@ class WholeInputLookup(Generic[NotationT]):
                 text=state.text, matches=new_matches, scratch=dict(state.scratch)
             )
         return state
+
+
+@dataclass(frozen=True, slots=True)
+class UnicodePropertyStage(Generic[NotationT]):
+    """Build-time range stage for \\p{...} (range-built companion to RegexStage
+    (shares compiled-once PipelineState pattern))."""
+
+    property_name: str
+    ranges: tuple[tuple[int, int], ...]
+    notation_fn: Callable[[str], NotationT] | None = None
+    _compiled: re.Pattern[str] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        parts: list[str] = []
+        for start, end in self.ranges:
+            if start == end:
+                parts.append(re.escape(chr(start)))
+            else:
+                parts.append(f"{re.escape(chr(start))}-{re.escape(chr(end))}")
+        pattern = f"[{''.join(parts)}]"
+        object.__setattr__(self, "_compiled", re.compile(pattern))
+
+    def matches(self, ch: str) -> bool:
+        """Return True if single char `ch` is in the property (test convenience)."""
+        return len(ch) == 1 and bool(self._compiled.fullmatch(ch))
+
+    def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        if self.notation_fn is None:
+            return state
+        new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)
+        for m in self._compiled.finditer(state.text):
+            token = m.group(0)
+            new_matches.append(
+                RecognitionMatch(
+                    notation=self.notation_fn(token),
+                    start=m.start(),
+                    end=m.end(),
+                    raw_text=token,
+                )
+            )
+        return PipelineState(
+            text=state.text, matches=new_matches, scratch=dict(state.scratch)
+        )
