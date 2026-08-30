@@ -165,6 +165,7 @@ class CandidatesMatcher:
                 TypeError,
                 AttributeError,
                 RuntimeError,
+                LookupError,
             ):
                 spans = cast(list[tuple[int, int]], [])
             per_candidate_spans.append(spans)

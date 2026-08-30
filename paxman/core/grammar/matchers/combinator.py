@@ -225,7 +225,14 @@ class CombinatorMatcher:
                 res = cast(Any, lf).match(view)
                 if isinstance(res, list):
                     spans = cast(list[tuple[int, int]], res)
-            except (re.error, ValueError, TypeError, AttributeError, RuntimeError):
+            except (
+                re.error,
+                ValueError,
+                TypeError,
+                AttributeError,
+                RuntimeError,
+                LookupError,
+            ):
                 spans = []
             mp: dict[int, int] = {}
             for s, e in spans:
@@ -258,6 +265,7 @@ class CombinatorMatcher:
                         TypeError,
                         AttributeError,
                         RuntimeError,
+                        LookupError,
                     ):
                         ok = False
                     if not ok:
