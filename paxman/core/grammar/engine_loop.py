@@ -116,6 +116,19 @@ def _run_matchers_with_context(
                         f"for view {view_name!r} len {len(view.subject)}"
                     )
                 o_s, o_e = view.original_span(s, e)
+                boundary = getattr(matcher, "boundary", None)
+                # Boundary re-check on the original text at the PRE-extension
+                # end (#88): the right guard must see the immediate neighbor,
+                # not the char after any re-absorbed stripped run. Scanner
+                # defers its view-level check for stripped views; SeparatorFold
+                # (BCP47 '_'->'-') keeps its view check ('-' not \w, so
+                # AA_→AA passes).
+                if (
+                    view.stripped_chars
+                    and boundary is not None
+                    and not check_boundary(text, o_s, o_e, boundary)
+                ):
+                    continue
                 # Trailing stripped chars: legacy matchers on a stripped view
                 # (e.g. the URL body `[^ <>"…]*` allowing tab/LF/CR, 'A:0\n'
                 # → 'A:0\n') re-absorb the chars the view stripped. Data-
@@ -133,16 +146,6 @@ def _run_matchers_with_context(
                     and bool(getattr(contract, "suppress_common_words", False))
                     and bool(getattr(matcher, "suppressible", False))
                     and text[o_s:o_e].lower() in COMMON_WORDS
-                ):
-                    continue
-                # Boundary check on original for IDNAFold (stripped \t\n\r).
-                # Scanner defers for view_name=="idna"; SeparatorFold
-                # (BCP47 '_'->'-') keeps view check ('-' not \w, so AA_→AA passes).
-                boundary = getattr(matcher, "boundary", None)
-                if (
-                    view_name == "idna"
-                    and boundary is not None
-                    and not check_boundary(text, o_s, o_e, boundary)
                 ):
                     continue
                 # ADR §10 consuming-mode: anchors consumed for advance

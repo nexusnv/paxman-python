@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from paxman.core.grammar.boundary_spec import BoundarySpec
 from paxman.core.grammar.engine_loop import (
     _VIEW_REGISTRY,
     run_matchers_with_context,
@@ -138,3 +139,20 @@ def test_normalizer_without_flag_does_not_extend(
     )
     out = _run_engine("A:0\t", matcher)
     assert [(m.start, m.end, m.raw_text) for m in out] == [(0, 3, "A:0")]
+
+
+def test_boundary_checked_before_trailing_extension() -> None:
+    """(#88) The right guard must see the immediate neighbor (the tab),
+    not the char after the stripped run."""
+    text = "A:0\tB"
+    # idna view: subject "A:0B", the hit (0,3) maps to original (0,3) and
+    # the trailing tab is re-absorbable. Right guard forbids the tab, so
+    # the pre-extension check must reject the hit.
+    matcher = ScannerMatcher(
+        scan=lambda view, pos: (3, None) if pos == 0 else None,
+        view_name="idna",
+        boundary=BoundarySpec(left=None, right=(r"\t",), mode="zero_width"),
+        emit=lambda span, ctx: span,
+    )
+    out = _run_engine(text, matcher)
+    assert out == []
