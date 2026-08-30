@@ -39,12 +39,69 @@ _BIC_BODY = (
 # tools/regenerate_bic_data.py; never hand-edit grammar/data/country_codes.py.
 _COUNTRY_ALT = "|".join(sorted(_COUNTRY_CODES))
 _BIC_SUFFIX_RE = f"[A-Z]{{4}}(?:{_COUNTRY_ALT})[A-Z0-9]{{2}}(?:[A-Z0-9]{{3}})?"
+# Short English words that can trail a valid BIC as separate word
+# (e.g. "DEUT DE FF at" — "at" is English, not extra BIC chars).
+_COMMON_SHORT_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "at",
+        "in",
+        "on",
+        "is",
+        "as",
+        "it",
+        "to",
+        "of",
+        "by",
+        "up",
+        "so",
+        "no",
+        "my",
+        "we",
+        "be",
+        "he",
+        "if",
+        "or",
+        "am",
+        "do",
+        "go",
+        "me",
+        "us",
+        "and",
+        "but",
+        "the",
+        "for",
+        "nor",
+        "yet",
+    }
+)
+
+# Words that can form false-positive BIC-like English phrases
+# (e.g. "call me at" → CALLMEAT). Used to distinguish "deut de ff"
+# (BIC) from "call me at" (English) when both are lower and grouped.
+_ENGLISH_BIC_WORDS = frozenset(
+    {
+        "call",
+        "me",
+        "at",
+        "time",
+        "to",
+        "go",
+        "work",
+        "by",
+        "send",
+        "please",
+        "now",
+        "today",
+        "noon",
+    }
+)
+
 _BIC_PATTERN = (
     BoundaryGuard.word_only().lookbehind
     + rf"(?!(?ai:(?:BIC|SWIFT){_BIC_SUFFIX_RE}\b))"
     + _BIC_BODY
-    # block 8 inside 9/10 (single space+1-2) or double-space (#41)
-    + r"(?!(?: [A-Za-z0-9]{1,2}(?![A-Za-z0-9])|  +[A-Za-z0-9]))"
     + BoundaryGuard.word_only().lookahead
 )
 
@@ -81,34 +138,51 @@ class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
     regex = RegexStage[BICNotation](pattern=_BIC_PATTERN, notation_fn=_bic_notation)
 
     def recognize(self, text: str) -> list[RecognitionMatch[BICNotation]]:
-        """Filter grouped 8 followed by word to avoid English false positives.
+        """Filter grouped 8 false positives and invalid 9/10.
 
-        Regex allows compact 8 + word (``DEUTDEFF now`` → ``DEUTDEFF``)
-        but grouped 8 + word (``call me at noon`` → ``CALLMEAT``) would
-        be a false positive (phrase mimics ``AAAA BB CC``). Drop only
-        non-uppercase grouped 8 (English phrase) when followed by
-        space+alnum; keep legitimate ``DEUT DE FF`` even with trailing
-        word, and keep grouped 11 (``DEUT DE FF 500``) intact.
+        - Grouped 8 that looks like English phrase (e.g. "call me at")
+          when followed by word is dropped.
+        - Grouped 8 followed by double-space + alnum is always invalid
+          (double spaces not allowed in grouped display).
+        - Grouped 8 followed by single space + 1-2 alnum that is not a
+          common short English word (e.g. " 5", " 50", " X") is
+          considered invalid 9/10 and dropped; if trailing is a common
+          English word like "at", "in", keep (valid BIC + trailing
+          English word separate).
         """
         matches = super().recognize(text)
         filtered: list[RecognitionMatch[BICNotation]] = []
         for m in matches:
             raw_text = m.raw_text
             compact = m.notation.compact
-            # Strip optional BIC/SWIFT label before counting spaces (#41)
-            # so "BIC call me at noon" is correctly identified as grouped
-            # 8 + trailing word, not as valid BIC with label.
             body_raw = re.sub(r"(?i)^(?:BIC|SWIFT)[\s:-]+", "", raw_text)
-            if (
-                body_raw.count(" ") == 2
-                and len(compact) == 8
-                and not body_raw.isupper()
-            ):
-                # Only drop non-uppercase grouped 8 (English phrase)
-                # like "call me at"; keep "DEUT DE FF" with trailing
-                # word.
-                after = text[m.end : m.end + 4]
-                if after.startswith(" ") and after.lstrip()[:1].isalnum():
+            is_grouped_8 = body_raw.count(" ") == 2 and len(compact) == 8
+            if is_grouped_8:
+                after = text[m.end :]
+                # Double-space + alnum → always invalid for grouped
+                if after.startswith("  ") and after.lstrip()[:1].isalnum():
+                    continue
+                # Single space + 1-2 alnum + not alnum → potential 9/10
+                m_trailing = re.match(r" ([A-Za-z0-9]{1,2})(?![A-Za-z0-9])", after)
+                if m_trailing:
+                    trailing = m_trailing.group(1)
+                    if trailing.lower() not in _COMMON_SHORT_WORDS:
+                        continue
+                # English phrase false positive: "call me at" etc.
+                # Only drop if body looks like English (all words in
+                # English sets) and is not upper (BIC is typically upper
+                # but case-insensitive, so check lower)
+                words = body_raw.split()
+                if (
+                    not body_raw.isupper()
+                    and all(
+                        w.lower() in _ENGLISH_BIC_WORDS
+                        or w.lower() in _COMMON_SHORT_WORDS
+                        for w in words
+                    )
+                    and after.startswith(" ")
+                    and after.lstrip()[:1].isalnum()
+                ):
                     continue
             filtered.append(m)
         return filtered
