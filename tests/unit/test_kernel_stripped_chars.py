@@ -22,6 +22,10 @@ from paxman.core.grammar.engine_loop import (
     _VIEW_REGISTRY,
     run_matchers_with_context,
 )
+from paxman.core.grammar.matchers.candidates import (
+    CandidatesMatcher,
+    get_flat_for_matcher,
+)
 from paxman.core.grammar.matchers.scanner import ScannerMatcher
 from paxman.core.grammar.normalizers import CaseFold, IDNAFold, StripSeparators
 from paxman.core.grammar.scan_context import ScanContext, View
@@ -235,3 +239,50 @@ def test_engine_boundary_recheck_is_data_driven(
         emit=lambda span, ctx: span,
     )
     assert _run_engine("a\tb:0", matcher) == []
+
+
+class _FakeCandidate:
+    """Minimal candidate double: frozen spans, pass-through emit."""
+
+    digest = "fake-candidate"
+
+    def __init__(self, spans: tuple[tuple[int, int], ...]) -> None:
+        self._spans = spans
+
+    def match(self, view: View) -> list[tuple[int, int]]:
+        return list(self._spans)
+
+    def emit(self, span: tuple[int, int], ctx: object) -> tuple[int, int]:
+        return span
+
+
+def _result_flat_pair(
+    m: CandidatesMatcher,
+) -> tuple[list[tuple[int, int]], list[tuple[int, int, int]]]:
+    spans = m.match(ScanContext.of("a1b").view("orig", lambda t: (t, None, None)))
+    return spans, get_flat_for_matcher(m)
+
+
+def test_candidates_boundary_filter_all_strategy() -> None:
+    """strategy=all: boundary-filtered spans, flat mirrors result exactly."""
+    m = CandidatesMatcher(
+        candidates=(_FakeCandidate(((2, 3),)), _FakeCandidate(((0, 1),))),
+        strategy="all",
+        boundary=BoundarySpec(left=(r"\d",), right=None, mode="zero_width"),
+    )
+    spans, flat = _result_flat_pair(m)
+    # span (2,3) 'b' has left neighbor '1' (digit) → filtered out.
+    assert spans == [(0, 1)]
+    assert [(s, e) for s, e, _ in flat] == spans
+
+
+def test_candidates_boundary_filter_first_strategy() -> None:
+    """strategy=first: dedup + boundary filter compose; flat mirrors result."""
+    m = CandidatesMatcher(
+        candidates=(_FakeCandidate(((2, 3), (0, 1), (0, 1))),),
+        strategy="first",
+        boundary=BoundarySpec(left=(r"\d",), right=None, mode="zero_width"),
+    )
+    spans, flat = _result_flat_pair(m)
+    assert spans == [(0, 1)]
+    assert [(s, e) for s, e, _ in flat] == spans
