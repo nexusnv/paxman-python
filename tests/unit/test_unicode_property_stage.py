@@ -95,3 +95,22 @@ def test_han_vs_latin_parity():
     assert han_stage.matches(chr(0x20000))
     assert not han_stage.matches("A")
     assert not han_stage.matches("°")
+
+
+def test_sc_snapshot_correctness():
+    """Sc snapshot must include U+058F and exclude U+0594 (CodeRabbit)."""
+    stage = UnicodePropertyStage(property_name="Sc", ranges=SC_RANGES)
+    assert stage.matches(chr(0x058F)), "U+058F Armenian Dram Sign should be Sc"
+    assert not stage.matches(chr(0x0594)), "U+0594 Hebrew Accent should not be Sc"
+
+
+def test_han_completeness():
+    """Han snapshot must include every Unicode 15.1 Han range (CodeRabbit)."""
+    stage = UnicodePropertyStage(property_name="Han", ranges=HAN_RANGES)
+    # Previously missing ranges from U+2B820 through U+323AF — check Han
+    # codepoints that are actually Han per Scripts.txt (not gaps)
+    for cp in [0x2B820, 0x2CEB0, 0x30000, 0x323AF, 0x2F800, 0x3400, 0x4E00]:
+        assert stage.matches(chr(cp)), f"U+{cp:04X} should be Han"
+    # Gaps between Han blocks must not be Han
+    for cp in [0x2CEAF, 0x2EBEF]:
+        assert not stage.matches(chr(cp)), f"U+{cp:04X} should not be Han"
