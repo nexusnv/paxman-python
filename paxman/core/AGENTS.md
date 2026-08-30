@@ -35,7 +35,9 @@ Core owns the domain vocabulary (pipeline value objects + `Rule`/`Grammar` ABCs)
 - **Imports:** prefer `from paxman.core import ...` — `__init__.py` re-exports the domain vocabulary and registry functions.
 
 ### Kernel invariants (ADR-0009)
-- `BoundarySpec` frozensets O(1) — word/anchor guards use `frozenset` membership.
+- `BoundarySpec` frozensets O(1) — word/anchor guards use `frozenset` membership;
+  class escapes (`\w`, `\d`, `\s`) carry a compiled non-BMP fallback so neighbor
+  decisions stay exact vs `re` across the full codepoint space (`\d` = Nd).
 - Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` — `starts`/`ends` parallel arrays.
 - View `source_starts`/`source_ends` + `offsets` property — views carry source offset maps.
 - `CountryNameFold` single-pass NFD with `_NFD_CACHE` — one-pass fold, cached.

@@ -11,10 +11,14 @@ Coverage:
 
 from __future__ import annotations
 
+import unicodedata
+
 import pytest
 
 from paxman.core.grammar.boundary_spec import (
+    _D_CHARS,
     BoundarySpec,
+    _pattern_lowering,
     _pattern_to_chars,
     check_boundary,
 )
@@ -99,3 +103,50 @@ def test_negated_bracket_class_regex_semantics() -> None:
     assert check_boundary("xa", 1, 2, spec) is False
     # Left neighbor '1' IS a digit -> guard does not fire -> passes.
     assert check_boundary("15", 1, 2, spec) is True
+
+
+def test_digit_chars_cover_bmp_nd_category() -> None:
+    """(#62) '\\d' lowers to Unicode Nd, not ASCII — Arabic-Indic digits fire."""
+    assert _D_CHARS is not None and "\u0663" in _D_CHARS  # ٣ Arabic-Indic three
+    assert "\u00b2" not in _D_CHARS  # superscript two is No, re \d rejects it
+    assert (
+        frozenset(
+            chr(c) for c in range(0x10000) if unicodedata.category(chr(c)) == "Nd"
+        )
+        == _D_CHARS
+    )
+
+
+def test_non_bmp_word_neighbor_fires_word_guard() -> None:
+    """(#62) Non-BMP word chars (Deseret) fire \\w guards via the fallback."""
+    spec = BoundarySpec(left=(r"\w",), right=None, mode="zero_width")
+    # U+10400 DESERET LETTER — isalnum() True, re \w matches, BMP scan misses it.
+    # It is the LEFT neighbor of the hit [1:2] ('a'), so the fallback decides.
+    assert check_boundary("\U00010400a", 1, 2, spec) is False
+
+
+def test_non_bmp_digit_neighbor_fires_digit_guard() -> None:
+    """(#62) Non-BMP Nd digits (math digits) fire \\d guards via the fallback."""
+    spec = BoundarySpec(left=(r"\d",), right=None, mode="zero_width")
+    # U+1D7CE MATHEMATICAL BOLD DIGIT ZERO (Nd, non-BMP) is the LEFT neighbor
+    # of the hit [1:2]; the BMP Nd scan misses it, the compiled \\d does not.
+    assert check_boundary("\U0001d7cea", 1, 2, spec) is False
+
+
+def test_non_bmp_non_word_neighbor_passes_word_guard() -> None:
+    """(#62) Non-BMP non-word chars do NOT fire \\w guards."""
+    spec = BoundarySpec(left=(r"\w",), right=None, mode="zero_width")
+    # U+1F600 emoji — not alnum, re \w does not match → guard stays silent.
+    assert check_boundary("\U0001f600a", 1, 2, spec) is True
+
+
+def test_pattern_lowering_pairs_sets_with_fallbacks() -> None:
+    """(#62) Class escapes carry compiled fallbacks; enumerations do not."""
+    w_chars, w_fb = _pattern_lowering(r"\w")
+    d_chars, d_fb = _pattern_lowering(r"\d")
+    s_chars, s_fb = _pattern_lowering(r"\s")
+    assert w_fb is not None and d_fb is not None and s_fb is not None
+    assert w_chars is not None and d_chars is not None and s_chars is not None
+    b_chars, b_fb = _pattern_lowering("[abc]")
+    assert b_fb is None and b_chars == frozenset({"a", "b", "c"})
+    assert _pattern_lowering("abc") == (None, None)
