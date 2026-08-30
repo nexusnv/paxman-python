@@ -87,26 +87,35 @@ class ScannerMatcher:
                     pos += 1
                     continue
                 # Boundary check at hit positions (O(hits), not O(positions)).
-                # On a stripped view the subject's left char may not be the
-                # original left char: if there's a gap between pos and pos-1
-                # in the original (a stripped char), the original left char
-                # is that stripped char — the engine re-checks the boundary
-                # on the original text for stripped views, so the view-level
-                # check is deferred here. Otherwise the char adjacent to the
-                # hit is identical in view and original, so single-char
-                # guards are accurate here (multi-char guard windows
-                # spanning an older stripped char are governed by the
-                # engine's original-text re-check).
+                # On a stripped view the subject's left/right char may not be
+                # the original neighbor: if there's a gap between pos and
+                # pos-1 or between end and end-1 in the original (a stripped
+                # char), the original neighbor is that stripped char — the
+                # engine re-checks the boundary on the original text for
+                # stripped views, so the view-level check is deferred here.
+                # Otherwise the view check is accurate (single-char guards;
+                # multi-char guard windows spanning an older stripped char are
+                # governed by the engine's original-text re-check).
                 if self.boundary is not None:
-                    if (
+                    left_gap = (
                         view.stripped_chars
                         and view.source_starts is not None
                         and view.source_ends is not None
                         and pos > 0
                         and view.source_starts[pos] != view.source_ends[pos - 1]
-                    ):
-                        # Gap → original left char is a stripped char, not
+                    )
+                    right_gap = (
+                        view.stripped_chars
+                        and view.source_starts is not None
+                        and view.source_ends is not None
+                        and end < n
+                        and end > 0
+                        and view.source_starts[end] != view.source_ends[end - 1]
+                    )
+                    if left_gap or right_gap:
+                        # Gap → original neighbor is a stripped char, not
                         # forbidden, so boundary passes; no view check.
+                        # Engine's original-text re-check governs.
                         pass
                     elif not check_boundary(s, pos, end, self.boundary):
                         pos += 1
