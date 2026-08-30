@@ -119,10 +119,10 @@ def _run_matchers_with_context(
                 boundary = getattr(matcher, "boundary", None)
                 # Boundary re-check on the original text at the PRE-extension
                 # end (#88): the right guard must see the immediate neighbor,
-                # not the char after any re-absorbed stripped run. Scanner only defers
-                # its view-level check on a left gap (Task 4 generalizes to the flag);
-                # SeparatorFold (BCP47 '_'->'-') keeps its view check ('-' not \w, so
-                # AA_→AA passes).
+                # not the char after any re-absorbed stripped run. Scanner defers
+                # its view-level check on a left gap; the re-check below governs
+                # stripped views. SeparatorFold (BCP47 '_'->'-') keeps its view
+                # check ('-' not \w, so AA_→AA passes).
                 if (
                     view.stripped_chars
                     and boundary is not None

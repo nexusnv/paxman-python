@@ -1,14 +1,13 @@
 """Kernel stripped_chars flag — data-driven view stripping (#87, #88).
 
-Task 1 items are covered here (View/ScanContext carry ``stripped_chars``
-as data); later tasks extend this module:
+Coverage:
 
-- View/ScanContext carry stripped_chars as data (Task 1) — covered
-- engine_loop consumes the flag instead of view_name == "idna" (Task 2)
-- boundary re-check ordering before trailing extension (Task 3)
-- scanner left-boundary deferral keyed on the flag (Task 4)
-- CandidatesMatcher single-pass boundary filter (Task 5)
-- acceptance: no `== "idna"` magic-name comparison in paxman/core (Task 6)
+- View/ScanContext carry ``stripped_chars`` as data
+- engine_loop consumes the flag (no ``view_name == "idna"`` comparisons)
+- boundary re-check ordering before trailing stripped-char extension (#88)
+- scanner left-boundary deferral keyed on the flag
+- CandidatesMatcher single-pass boundary filter (#68)
+- acceptance: no ``== "idna"`` magic-name comparison in paxman/core
 """
 
 from __future__ import annotations

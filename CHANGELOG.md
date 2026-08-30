@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Kernel — `Normalizer` protocol declares `stripped_chars` (#87):** community
+  normalizer implementations should declare it (default `None`; `""` is treated as "no
+  stripping").
 - **Kernel — `CandidatesMatcher` single-pass boundary filter (#68):** `result` and
   `stored_flat` are now derived in one pass; `check_boundary` runs once per span instead
   of twice. No behavior change.
