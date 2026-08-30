@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Core — UnicodePropertyStage (#51):** build-time range generator for
   `\p{Sc}`, `Script=Han` etc., vendored in `unicode_ranges.py`; pilot
-  parity for SI `°µΩÅ` vs hand table.
+  parity for SI `°µΩÅ` vs Sc and Han vs Latin (incl. supplementary).
 
 ### Fixed
 

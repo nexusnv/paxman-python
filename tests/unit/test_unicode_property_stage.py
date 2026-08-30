@@ -3,6 +3,7 @@ import sys
 
 import pytest
 
+from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
 from paxman.core.grammar.data.unicode_ranges import HAN_RANGES, SC_RANGES
 from paxman.core.grammar.stages import UnicodePropertyStage
 
@@ -76,9 +77,6 @@ def test_unicode_property_stage_run_pipeline():
 
 def test_si_hand_table_vs_sc_parity():
     """SI hand table for °µΩÅ must not be confused with Sc."""
-    from paxman.capabilities.SIUnit.grammar.data.unit_symbol_tokens import SYMBOL_TOKENS
-    from paxman.core.grammar.data.unicode_ranges import SC_RANGES
-
     sc_set = {chr(cp) for start, end in SC_RANGES for cp in range(start, end + 1)}
     for sym in ["°", "µ", "Ω", "Å"]:
         assert sym in SYMBOL_TOKENS, f"{sym!r} missing from SI hand table"
@@ -87,15 +85,11 @@ def test_si_hand_table_vs_sc_parity():
 
 def test_han_vs_latin_parity():
     """Han property must be distinct from Latin hand table."""
-    from paxman.core.grammar.data.unicode_ranges import HAN_RANGES
-
     han_set = {chr(cp) for start, end in HAN_RANGES for cp in range(start, end + 1)}
     assert "中" in han_set
     assert chr(0x20000) in han_set  # supplementary Han U+20000
     assert "A" not in han_set
     assert "°" not in han_set
-    from paxman.core.grammar.stages import UnicodePropertyStage
-
     han_stage = UnicodePropertyStage(property_name="Han", ranges=HAN_RANGES)
     assert han_stage.matches("中")
     assert han_stage.matches(chr(0x20000))
