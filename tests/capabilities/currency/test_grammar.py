@@ -132,6 +132,22 @@ class TestSymbolRecognition:
         """Longest-first/qualified-first: "CA$" matches before bare "$" (D4)."""
         _assert_spans(text, expected_spans, self.grammar.recognize(text))
 
+    @pytest.mark.parametrize(
+        ("text", "expected_spans"),
+        [
+            ("us$", []),
+            ("ca$", []),
+            ("a$", []),
+            ("Lei", []),
+            ("Kr", []),
+            ("RM", [("RM", 0, 2, "RM", "qualified_symbol")]),
+            ("rm", []),
+        ],
+    )
+    def test_case_exact(self, text: str, expected_spans: list[Span]) -> None:
+        """Qualified and letter-symbols are case-exact (D4): lowercase is MISSING."""
+        _assert_spans(text, expected_spans, self.grammar.recognize(text))
+
 
 class TestWordRecognition:
     """Tests for WordRecognition."""

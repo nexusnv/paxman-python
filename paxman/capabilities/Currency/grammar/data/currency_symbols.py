@@ -5,9 +5,13 @@ Currency symbol recognition keys (grammar data).
 Source: keys of SYMBOL_TO_CODES in paxman/capabilities/Currency/rules/data/
 cldr_currencies.py (Unicode CLDR v47, en + es).
 
-Qualified symbols (containing an ASCII letter, e.g. US$, CA$, RM) are
-ordered before bare symbols ($, \u00a5, \u20ac), longest first within
-each class, so the grammar alternates "US$" before "$".
+Qualified symbols (containing an ASCII letter, e.g. US$, CA$, RM)
+are ordered longest-first, qualified-first within equal length
+via LexiconAlternation (so the grammar alternates "US$" before
+"$" and "Kz" before "K"). The file's pre-sort is
+qualified-first longest-first; runtime LexiconStage re-sorts by
+(-len, -is_qualified), so the effective alternation is
+longest-first. Both guarantee prefix safety.
 """
 
 from __future__ import annotations

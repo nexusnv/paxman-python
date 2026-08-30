@@ -29,6 +29,13 @@ class CurrencyCapability(Capability[CurrencyNotation]):
     alpha-3 code, with full provenance. Identifier-only: amounts are the
     Money capability's domain ("USD 500" resolves via its "USD" span;
     amount-glued tokens like "US$5" are not matched at all).
+
+    Contract opt-in: ``default_currency`` (``str | None``, default ``None``)
+    resolves shared bare symbols (``$``, ``¥``, ``£``, ``₩``, ``kr``,
+    ``Rs``, ``L``) only when the code is one of that symbol's own
+    candidates (gated against the symbol's candidate tuple, not the
+    global 178-set). Definitive symbols (``€``→``EUR``) and qualified
+    symbols (``US$``→``USD``) ignore ``default_currency``.
     """
 
     name = "currency"
