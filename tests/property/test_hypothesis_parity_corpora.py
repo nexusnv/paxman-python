@@ -27,6 +27,7 @@ from paxman.capabilities.Country.grammar.data.historical_names import (
 )
 from paxman.capabilities.Country.grammar.data.localized_names import LOCALIZED_NAME_KEYS
 from paxman.capabilities.Country.grammar.name_recognition import NameGrammar
+from paxman.capabilities.Country.notation import normalize_name
 from paxman.capabilities.Date.grammar.european_recognition import EuropeanDateGrammar
 from paxman.capabilities.Date.grammar.iso8601_recognition import ISO8601DateGrammar
 from paxman.capabilities.Date.grammar.slash_iso_recognition import SlashISODateGrammar
@@ -148,10 +149,66 @@ def _country_hyp_text(draw: st.DrawFn) -> str:
     return draw(_country_adversarial).strip()
 
 
+# The legacy NameGrammar is whole-input (ADR-0009 §2 F1): it matches only
+# when the entire trimmed input normalizes to a known name key. Byte parity
+# with the kernel in-text lexicon scan therefore holds only on that domain;
+# outside it the F1 fix intentionally diverges (ADR-0009 Rev.3 exempts
+# Country name_recognition from the byte-identical gate — issue #92).
+_LOWERED_NAME_KEYS: frozenset[str] = frozenset(k.lower() for k in _COUNTRY_TOKENS)
+
+
 @_HYP_SETTINGS
 @given(text=_country_hyp_text())
-def test_country_name_hypothesis_parity(text: str) -> None:
+def test_country_name_hypothesis_honest_behavior(text: str) -> None:
+    """F1 honest-behavior gate for the kernel NameGrammar (ADR-0009 Rev.3).
+
+    Invariants over arbitrary text: spans are valid and self-consistent,
+    the notation value is the raw span, and every match normalizes to a
+    known name key. No byte-parity claim against the whole-input legacy.
+    """
+    matches = NameGrammar().recognize(text)
+    prev_end = -1
+    for m in matches:
+        assert 0 <= m.start <= m.end <= len(text)
+        assert prev_end < m.start, "matches must be ordered and non-overlapping"
+        prev_end = m.end
+        assert m.raw_text == text[m.start : m.end]
+        assert m.notation.value == m.raw_text
+        assert normalize_name(m.notation.value) in _COUNTRY_TOKENS
+
+
+@_HYP_SETTINGS
+@given(text=_country_hyp_text())
+def test_country_name_hypothesis_parity_on_legacy_domain(text: str) -> None:
+    """Byte parity holds on the legacy grammar's whole-input domain.
+
+    When the trimmed input is itself a known name key, the legacy
+    whole-input grammar and the kernel in-text scan agree byte-for-byte.
+    Outside that domain the F1 fix intentionally diverges (issue #92).
+    """
+    trimmed = text.strip()
+    assume(trimmed.lower() in _LOWERED_NAME_KEYS)
     _assert_parity_and_span(LegacyNameGrammar(), NameGrammar(), text)
+
+
+def test_country_name_f1_embedded_and_attached_punctuation() -> None:
+    """Deterministic F1 pins (issue #92): the kernel matches the name span
+    only — attached punctuation is excluded and embedded names are found;
+    the legacy whole-input grammar cannot see embedded values."""
+    kernel = NameGrammar()
+    assert [(m.start, m.end, m.raw_text) for m in kernel.recognize(":马里")] == [
+        (1, 3, "马里")
+    ]
+    assert [(m.start, m.end, m.raw_text) for m in kernel.recognize("Name: 中国")] == [
+        (6, 8, "中国")
+    ]
+    assert [
+        (m.start, m.end, m.raw_text) for m in kernel.recognize("hello 中国 world")
+    ] == [(6, 8, "中国")]
+    # Pre-F1 whole-input behavior on the same inputs (documented divergence).
+    assert LegacyNameGrammar().recognize("Name: 中国") == []
+    legacy_attached = LegacyNameGrammar().recognize(":马里")
+    assert [(m.start, m.end, m.raw_text) for m in legacy_attached] == [(0, 3, ":马里")]
 
 
 # ---------------------------------------------------------------------------
