@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import unicodedata
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Protocol, runtime_checkable
 
 from paxman.core.domain import Provenance
@@ -14,6 +15,13 @@ from paxman.core.domain import Provenance
 
 @runtime_checkable
 class Normalizer(Protocol):
+    """A single recognition-view rewrite step over scanner text.
+
+    Normalizers must not expand: each input character maps to at most one
+    subject character (stripping or 1:1 rewriting only) — see
+    ``NormalizerSequence`` (#63).
+    """
+
     @property
     def name(self) -> str: ...
 
@@ -31,6 +39,15 @@ class Normalizer(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class NormalizerSequence:
+    """Compose normalizer steps, threading offset maps through composition.
+
+    Normalizers must not expand: each input character maps to at most one
+    subject character (stripping or 1:1 rewriting only). Sequence composition
+    asserts unit-width offsets (``ends[i] == starts[i] + 1``) that are
+    strictly increasing (no cur char reused by two nxt chars) and fails fast
+    otherwise — expansion would silently mis-map end offsets (#63).
+    """
+
     steps: tuple[Normalizer, ...]
     # Sequence composition does not aggregate stripped chars (no shipped
     # sequence needs it).
@@ -56,22 +73,131 @@ class NormalizerSequence:
         for step in self.steps:
             nxt, off_starts, off_ends = step.normalize(cur)
             if off_starts is None and off_ends is None:
-                cur = nxt
-            else:
-                assert off_starts is not None and off_ends is not None
-                if cur_starts is None and cur_ends is None:
-                    cur_starts = off_starts
-                    cur_ends = off_ends
-                else:
-                    assert cur_starts is not None and cur_ends is not None
-                    assert len(cur_starts) > 0 and len(cur_ends) > 0
-                    composed_starts = tuple(cur_starts[o] for o in off_starts)
-                    composed_ends = tuple(
-                        cur_ends[o - 1] if o > 0 else cur_ends[0] for o in off_ends
+                if len(nxt) != len(cur):
+                    raise ValueError(
+                        f"Normalizer {step.name} returned no offset map but "
+                        f"changed length {len(cur)} -> {len(nxt)}"
                     )
-                    cur_starts = composed_starts
-                    cur_ends = composed_ends
+                if (
+                    cur_starts is not None
+                    and cur_ends is not None
+                    and (len(cur_starts) != len(cur) or len(cur_ends) != len(cur))
+                ):
+                    raise ValueError(
+                        "NormalizerSequence invariant broken: prior offset "
+                        f"length {len(cur_starts)} != subject length {len(cur)}"
+                    )
+                if (
+                    cur_starts is not None
+                    and cur_ends is not None
+                    and len(nxt) != len(cur_starts)
+                ):
+                    raise ValueError(
+                        f"Normalizer {step.name} changed length without "
+                        f"offset map in sequence "
+                        f"({len(cur_starts)} -> {len(nxt)})"
+                    )
                 cur = nxt
+                if (
+                    cur_starts is not None
+                    and cur_ends is not None
+                    and (len(cur_starts) != len(cur) or len(cur_ends) != len(cur))
+                ):
+                    raise ValueError(
+                        "NormalizerSequence invariant broken: offset length "
+                        f"{len(cur_starts)} != subject length "
+                        f"{len(cur)} after step {step.name}"
+                    )
+                continue
+            if off_starts is None or off_ends is None:
+                raise ValueError(
+                    f"Normalizer {step.name} returned mismatched offset maps "
+                    "(one None, one not)"
+                )
+            if len(off_starts) != len(nxt) or len(off_ends) != len(nxt):
+                raise ValueError(
+                    f"Normalizer {step.name} offset length "
+                    f"({len(off_starts)}, {len(off_ends)}) "
+                    f"!= subject length {len(nxt)}"
+                )
+            # Validate one-pair-per-character and no-expansion invariants
+            # for this step's map
+            for s, e in zip(off_starts, off_ends, strict=True):
+                if not (0 <= s < e <= len(cur)):
+                    raise ValueError(
+                        f"Normalizer {step.name} offset [{s},{e}) out of "
+                        f"bounds for cur length {len(cur)}"
+                    )
+                if e != s + 1:
+                    raise ValueError(
+                        f"Normalizer {step.name} offsets must be unit-width "
+                        f"in sequences (got [{s},{e}))"
+                    )
+            for a, b in zip(off_starts, off_starts[1:], strict=False):
+                if not (a < b):
+                    raise ValueError(
+                        f"Normalizer {step.name} expansion is not supported "
+                        f"in sequences (starts not strictly increasing: "
+                        f"{a} >= {b})"
+                    )
+            if cur_starts is None and cur_ends is None:
+                cur_starts = off_starts
+                cur_ends = off_ends
+            else:
+                if cur_starts is None or cur_ends is None:
+                    raise ValueError(
+                        "NormalizerSequence inconsistent state: partial offset map"
+                    )
+                # Empty subjects (e.g. "" -> "", (), ()) compose trivially to empty;
+                # allow them instead of failing the non-empty invariant.
+                if len(cur) == 0 and len(nxt) == 0:
+                    cur_starts = ()
+                    cur_ends = ()
+                    cur = nxt
+                    continue
+                if len(cur_starts) != len(cur) or len(cur_ends) != len(cur):
+                    raise ValueError(
+                        "NormalizerSequence invariant broken: prior offset length "
+                        f"{len(cur_starts)} != subject length {len(cur)}"
+                    )
+                for o in off_starts:
+                    if not (0 <= o < len(cur_starts)):
+                        raise ValueError(
+                            f"Normalizer {step.name} offset index {o} out of "
+                            f"range for cur offsets length {len(cur_starts)}"
+                        )
+                for o in off_ends:
+                    if not (0 <= o < len(cur_ends)):
+                        raise ValueError(
+                            f"Normalizer {step.name} offset index {o} out of "
+                            f"range for cur offsets length {len(cur_ends)}"
+                        )
+                if len(cur_ends) == 0:
+                    raise ValueError(
+                        "NormalizerSequence cannot compose onto empty offset map"
+                    )
+                composed_starts = tuple(cur_starts[o] for o in off_starts)
+                composed_ends = tuple(
+                    cur_ends[o - 1] if o > 0 else cur_ends[0] for o in off_ends
+                )
+                cur_starts = composed_starts
+                cur_ends = composed_ends
+            cur = nxt
+            if len(cur_starts) != len(cur) or len(cur_ends) != len(cur):
+                raise ValueError(
+                    "NormalizerSequence invariant broken: offset length "
+                    f"{len(cur_starts)} != subject length {len(cur)} "
+                    f"after step {step.name}"
+                )
+        if (
+            cur_starts is not None
+            and cur_ends is not None
+            and (len(cur_starts) != len(cur) or len(cur_ends) != len(cur))
+        ):
+            raise ValueError(
+                "NormalizerSequence invariant broken: final offset length "
+                f"{len(cur_starts)} != subject length {len(cur)}"
+            )
         return cur, cur_starts, cur_ends
 
 
@@ -129,7 +255,16 @@ class AccentStrip:
         return stripped.lower(), None, None
 
 
-_NFD_CACHE: dict[str, str] = {}
+@lru_cache(maxsize=8192)
+def _nfd_char(ch: str) -> str:
+    """NFD-decompose a single character (bounded memo, deterministic).
+
+    Unicode decomposition mappings are per-codepoint, so per-char NFD
+    concatenation equals whole-text NFD; the cache is a pure memo of a
+    deterministic function — no input-dependent global state (#64, the
+    former ``_NFD_CACHE`` dict grew without bound).
+    """
+    return unicodedata.normalize("NFD", ch)
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,11 +299,7 @@ class CountryNameFold:
         nfd_orig: list[int] = []
         nfd_pos = 0
         for orig_idx, ch in enumerate(text):
-            cached = _NFD_CACHE.get(ch)
-            if cached is None:
-                cached = unicodedata.normalize("NFD", ch)
-                _NFD_CACHE[ch] = cached
-            seg_len = len(cached)
+            seg_len = len(_nfd_char(ch))
             for _ in range(seg_len):
                 nfd_orig.append(orig_idx)
             nfd_pos += seg_len
