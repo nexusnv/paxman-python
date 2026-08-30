@@ -3,6 +3,13 @@
 Recognizes user@localhost. The word boundary and trailing lookahead are kept
 verbatim (``\\b`` is a word boundary, not a hard-coded lookaround class —
 ADR-0009 §10). Syntax only: the grammar never validates the address.
+
+Port ``:(digits)`` is syntax but stripped for validation: the notation
+is always ``domain_part="localhost"`` (lowercase) regardless of input
+case or port. ``raw_text`` preserves the matched ``user@localhost:8080``
+span; ``normalize`` emits ``local@localhost`` only. Non-digit ports like
+``:abc`` break the match → ``MISSING``; digit ports are swallowed in the
+span but ignored for validation.
 """
 
 from __future__ import annotations
