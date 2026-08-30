@@ -53,7 +53,11 @@ def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
         return context.view("__orig__", lambda t: (t, None, None))
     normalizer = _VIEW_REGISTRY.get(view_name)
     if normalizer is not None:
-        return context.view(view_name, normalizer.normalize)
+        return context.view(
+            view_name,
+            normalizer.normalize,
+            stripped_chars=getattr(normalizer, "stripped_chars", None),
+        )
     return context.view(view_name, lambda t: (t, None, None))
 
 
@@ -111,13 +115,12 @@ def _run_matchers_with_context(
                         f"for view {view_name!r} len {len(view.subject)}"
                     )
                 o_s, o_e = view.original_span(s, e)
-                # IDNAFold trailing \t\n\r: legacy body `[^ <>"...]*` allows
-                # tab/LF/CR as body chars and includes trailing ones
-                # (e.g. 'A:0\n' → 'A:0\n'). The view strips them, so
-                # original_span for view 'A:0' is (0,3) not (0,4). Extend
-                # to include trailing stripped chars that are allowed.
-                if view_name == "idna":
-                    while o_e < len(text) and text[o_e] in "\t\n\r":
+                # Trailing stripped chars: legacy matchers on a stripped view
+                # (e.g. the URL body `[^ <>"…]*` allowing tab/LF/CR, 'A:0\n'
+                # → 'A:0\n') re-absorb the chars the view stripped. Data-
+                # driven via view.stripped_chars (#87) — no view-name checks.
+                if view.stripped_chars is not None:
+                    while o_e < len(text) and text[o_e] in view.stripped_chars:
                         o_e += 1
                 # ADR §16 common-word suppression (B1): short-code matchers marked
                 # suppressible are skipped when contract requests it and the

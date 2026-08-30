@@ -42,7 +42,7 @@ class View:
     source_starts: tuple[int, ...] | None
     source_ends: tuple[int, ...] | None
     _text_len: int = field(repr=False)
-    stripped_chars: str | None = field(default=None, repr=False)
+    stripped_chars: str | None = field(default=None)
 
     @property
     def offsets(self) -> tuple[int, ...] | None:
@@ -159,7 +159,9 @@ class ScanContext:
             normalizer: Callable that maps the original text to ``(subject, offsets)``
                 or ``(subject, starts, ends)``.
             stripped_chars: Characters stripped by the normalizer that matchers
-                may re-absorb into spans; recorded on the View.
+                may re-absorb into spans; recorded on the View at
+                materialization. Cache hits return the originally materialized
+                view regardless of later flag arguments.
 
         Returns:
             The cached or newly materialized ``View`` for ``name``.
