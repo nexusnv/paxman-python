@@ -51,11 +51,11 @@ export default defineConfig({
         { label: 'Getting Started', slug: 'getting-started' },
         {
           label: 'Concepts',
-          autogenerate: { directory: 'concepts' },
+          items: [{ autogenerate: { directory: 'concepts' } }],
         },
         {
           label: 'Capabilities',
-          autogenerate: { directory: 'capabilities' },
+          items: [{ autogenerate: { directory: 'capabilities' } }],
         },
         { label: 'API Reference', slug: 'api-reference' },
         { label: 'Extending', slug: 'extending' },
