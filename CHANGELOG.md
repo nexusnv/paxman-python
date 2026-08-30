@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-30
+
+### Fixed
+
+- **IBAN — complete SWIFT registry + per-country lengths (#69):** the empty 90-code registry stub is replaced by the full SWIFT IBAN Registry (111 country rows, R99 Dec 2024 / R100 Oct 2025 via the iban.com mirror, 8 May 2026), generated into `paxman/capabilities/IBAN/rules/data/iban_registry.py` from `paxman/shared_data/iban_registry_snapshot.json` with `tools/regenerate_iban_registry_data.py --check` drift gating. Per-country fixed lengths are now enforced before MOD 97-10, so wrong-length IBANs with a valid checksum (`DE20`, `NO16`, `NI92`) are `INVALID` instead of `SUCCESS`; `FP` (French Polynesia, not an IBAN jurisdiction) is removed; the Nicaragua vector is corrected (`NI79…`, 28); 2024 West/Central African jurisdictions (`AO`, `BF`, `DZ`, …) are now recognized.
+- **Email — RFC 5322 §3.4.1 validation tightened (#60):** the local/domain patterns now enforce `dot-atom-text = 1*atext *("." 1*atext)` and per-label hyphen discipline, so `user..test@example.com`, `user.@example.com`, `user@.example.com`, `user@-example.com`, `user@example-.com`, and `user@example..com` are `INVALID` (were wrongly `SUCCESS`). Obfuscated recognition matches the `at`/`dot` keywords case-insensitively (`USER AT EXAMPLE DOT COM` → `SUCCESS` under `include_obfuscated=True`); `EmailNotation` is now frozen + slots; provenance URLs moved to datatracker.
+- **Currency — audit clarifications (#55):** symbol ordering and the case-exact symbol contract are documented with non-examples (`us$` → `MISSING`, `Lei` → `INVALID` via the code path); ISO 4217 temporal-filtering note (edition-year vs 2026-01-01 snapshot); `default_currency` cross-reference on `CurrencyCapability`; `tools/regenerate_currency_data.py` template synced and case-exact grammar tests added.
+- **Language BCP-47 parity corpus (#90):** the frozen legacy reference matched grandfathered tags inside longer syntactically-valid tags (`zh-min` inside `zh-min-nan00`), failing hypothesis CI randomly on any branch. The legacy reference is amended to the kernel's longest-valid-prefix semantics (grandfathered tags are exact-match) with divergent inputs pinned in the golden corpus. Kernel behavior unchanged.
+- **Country name parity corpus (#92):** the hypothesis corpus asserted byte parity between the whole-input legacy `NameGrammar` and the kernel in-text scan outside the legacy's domain (e.g. `:马里`, `Name: 中国`), failing CI randomly. The corpus now gates the kernel by F1 honest behavior per the ADR-0009 Rev.3 exemption, retaining byte parity on the legacy's whole-input domain (verified for all 503 keys). Kernel behavior unchanged.
+
 ## [0.2.1] - 2026-08-29
 
 ### Fixed
@@ -131,7 +141,8 @@ and `docs/adr/0009-recognition-kernel.md` for the full guide.
   Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
   `0.1.0`, tag `v0.1.0`).
 
-[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/nexusnv/paxman-python/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/nexusnv/paxman-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/nexusnv/paxman-python/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nexusnv/paxman-python/releases/tag/v0.1.0
