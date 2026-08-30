@@ -190,6 +190,14 @@ def test_grouped_invalid_lengths_are_missing():
     assert GRAMMAR.recognize("BNPA FR PP X") == []
 
 
+def test_grouped_label_with_english_phrase_is_missing() -> None:
+    """(#41) BIC label + English phrase must not be false positive."""
+    # "BIC call me at noon" — label + grouped 8 "call me at" + trailing " noon"
+    # should be MISSING, not BIC "CALLMEAT" with label.
+    assert GRAMMAR.recognize("BIC call me at noon") == []
+    assert GRAMMAR.recognize("SWIFT call me at noon") == []
+
+
 def test_grouped_case_insensitive_and_with_label() -> None:
     """(#41) Grouped case-insensitive and with BIC/SWIFT label."""
     m = GRAMMAR.recognize("deut de ff")

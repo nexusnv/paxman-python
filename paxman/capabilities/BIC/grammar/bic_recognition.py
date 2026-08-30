@@ -95,10 +95,14 @@ class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
         for m in matches:
             raw_text = m.raw_text
             compact = m.notation.compact
+            # Strip optional BIC/SWIFT label before counting spaces (#41)
+            # so "BIC call me at noon" is correctly identified as grouped
+            # 8 + trailing word, not as valid BIC with label.
+            body_raw = re.sub(r"(?i)^(?:BIC|SWIFT)[\s:-]+", "", raw_text)
             if (
-                raw_text.count(" ") == 2
+                body_raw.count(" ") == 2
                 and len(compact) == 8
-                and not raw_text.isupper()
+                and not body_raw.isupper()
             ):
                 # Only drop non-uppercase grouped 8 (English phrase)
                 # like "call me at"; keep "DEUT DE FF" with trailing
