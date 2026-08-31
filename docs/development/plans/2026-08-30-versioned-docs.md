@@ -19,17 +19,15 @@
 - **D3 — `versions.json` schema (single canonical shape):**
   ```json
   {
-    "versions": [
-      {"slug": "v0.2.0", "label": "v0.2.0", "tag": "v0.2.0"},
-      {"slug": "v0.2.1", "label": "v0.2.1", "tag": "v0.2.1"},
-      {"slug": "v0.2.2", "label": "v0.2.2", "tag": "v0.2.2"}
-    ],
+    "versions": [],
     "latest": {"slug": "latest", "label": "latest", "source_ref": "dev"}
   }
   ```
   `slug` = URL subfolder; `tag` = git ref checked out for that build. `latest` has no tag — it builds the current ref (`dev`/`main`). `stable` alias is a generated redirect, not a build (D4).
+- **D3a — Pinned set starts empty (forward-only):** tags `v0.1.0`–`v0.2.2` predate the rename (they contain `website/`, not `docs_site/`, and no `starlight-versions` integration), so they are **not** retro-buildable with this pipeline. `versions.json` starts with an empty `versions` array; versions are appended going forward (first entry will be `v0.3.0`). Pre-rename tags were never published at `/vX/` URLs, so excluding them breaks no back-compat. (Optional follow-up: retro-build old tags with a `website/` path special-case — out of scope.)
+- **D3b — Tag-push sequencing:** on a tag push, the tag's own `versions.json` cannot contain the tag (the appending PR merges to `dev` afterward). Therefore `read-versions` checks out **`main`** for tag events (the maintained list) and the workflow **appends `github.ref_name`** to the build list if absent — the tag deploy is complete on the tag run itself.
 - **D4 — Root + stable redirects:** generated **in CI after the artifact merge** (`printf` meta-refresh), not `docs_site/public/index.html` (which would collide with Starlight's root route). `dist/index.html` → `./latest/`; `dist/stable/index.html` → `./<last-pinned-slug>/`.
-- **D5 — Deploy triggers:** `push` to `dev` or `main` → rebuild `latest/` (plus all pinned versions, unchanged) and redeploy full artifact; `push` of tag `v*.*.*` → append that version to `versions.json` (PR), build it, redeploy full artifact. Tag builds are immutable because the tag ref is pinned in `versions.json`.
+- **D5 — Deploy triggers:** `push` to `dev` or `main` → rebuild `latest/` (plus all pinned versions, unchanged) and redeploy full artifact; `push` of tag `v*.*.*` → append that version to `versions.json` (PR), build it, redeploy full artifact. Tag builds are immutable because the tag ref is pinned in `versions.json`. The `deploy` job guard must include `refs/heads/dev` (currently `main || tags` only) — see Task 3 Step 2.
 - **D6 — Symlink:** `git mv website docs_site` preserves the relative symlink; verify `readlink docs_site/src/content/docs` == `../../../docs/user` (same depth — both `website/` and `docs_site/` are one level below repo root). Recreate only if broken.
 - **D7 — `.gitignore`:** replace both `website/dist/` and `website/node_modules/` (verified at `.gitignore:4-5`).
 - **D8 — Versions:** Astro ^7.2.9 / Starlight ^0.41.9 (from `website/package.json`, not the stale spec text). Spike must confirm `starlight-versions` compat with Starlight 0.41.x.
@@ -158,7 +156,7 @@ Decision: starlight-versions@<exact-version> (compat: Starlight 0.41.9, Astro 7.
 `site`/`base` remain constant; version subpaths come from versions.json + artifact layout.
 ```
 
-Then: `git checkout fix/... && git branch -D spike/starlight-versions` (spike changes to `package.json`/`astro.config.mjs` are re-applied properly in Task 3).
+Then: `git checkout docs/versioned-docs-plan && git branch -D spike/starlight-versions` (spike changes to `package.json`/`astro.config.mjs` are re-applied properly in Task 3).
 
 - [ ] **Step 4: Commit the decision note**
 
@@ -182,14 +180,12 @@ git commit -m "docs(plan): record versioning plugin decision (#96)"
 
 ```json
 {
-  "versions": [
-    {"slug": "v0.2.0", "label": "v0.2.0", "tag": "v0.2.0"},
-    {"slug": "v0.2.1", "label": "v0.2.1", "tag": "v0.2.1"},
-    {"slug": "v0.2.2", "label": "v0.2.2", "tag": "v0.2.2"}
-  ],
+  "versions": [],
   "latest": {"slug": "latest", "label": "latest", "source_ref": "dev"}
 }
 ```
+
+Starts empty per D3a — the first pinned version (`v0.3.0`) is appended when that tag is cut (D3b).
 
 `docs_site/astro.config.mjs`:
 
@@ -203,25 +199,38 @@ Run `npm install` (adds dep) and `npm run build` — expect success with switche
 
 - [ ] **Step 2: Rewrite `docs.yml` build/deploy per D2/D4/D5**
 
-Replace the single `build-docs` job with **three jobs** (a matrix needs job-level `strategy`, so versioned builds get their own job):
+Replace the single `build-docs` job with **four jobs** (a matrix needs job-level `strategy`, so versioned builds get their own job):
 
 ```yaml
   read-versions:
     name: Read versions.json
     runs-on: ubuntu-latest
     outputs:
-      slugs: ${{ steps.versions.outputs.slugs }}
-      tags: ${{ steps.versions.outputs.tags }}
+      pairs: ${{ steps.versions.outputs.pairs }}
+      count: ${{ steps.versions.outputs.count }}
       last_slug: ${{ steps.versions.outputs.last_slug }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Checkout maintained versions list
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          # D3b: on tag pushes the tag's own versions.json cannot contain the
+          # tag yet — read the maintained list from main instead.
+          ref: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && 'main' || github.ref }}
           persist-credentials: false
       - id: versions
         run: |
-          echo "slugs=$(jq -c '[.versions[].slug]' docs_site/versions.json)" >> "$GITHUB_OUTPUT"
-          echo "tags=$(jq -c '[.versions[].tag]' docs_site/versions.json)" >> "$GITHUB_OUTPUT"
-          echo "last_slug=$(jq -r '.versions[-1].slug' docs_site/versions.json)" >> "$GITHUB_OUTPUT"
+          PAIRS='[]'
+          if [ -s docs_site/versions.json ]; then
+            PAIRS=$(jq -c '[.versions[] | {slug, tag}]' docs_site/versions.json)
+          fi
+          # D3b: on tag pushes, ensure the pushed tag itself is in the list
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            PAIRS=$(jq -c --arg slug "$TAG" --arg tag "$TAG"               '. + (if any(.[]; .slug == $slug) then [] else [{slug: $slug, tag: $tag}] end)' <<< "$PAIRS")
+          fi
+          echo "pairs=$PAIRS" >> "$GITHUB_OUTPUT"
+          echo "count=$(jq 'length' <<< "$PAIRS")" >> "$GITHUB_OUTPUT"
+          echo "last_slug=$(jq -r '.versions[-1].slug // empty' docs_site/versions.json)" >> "$GITHUB_OUTPUT"
 
   build-latest:
     name: Build latest (current ref)
@@ -241,16 +250,18 @@ Replace the single `build-docs` job with **three jobs** (a matrix needs job-leve
     name: Build ${{ matrix.version.slug }}
     runs-on: ubuntu-latest
     needs: read-versions
+    if: github.event_name != 'pull_request' && needs.read-versions.outputs.count != '0'
     strategy:
       matrix:
-        version: ${{ fromJSON(needs.read-versions.outputs.slugs_and_tags) }}
+        version: ${{ fromJSON(needs.read-versions.outputs.pairs) }}
     steps:
+      # D3a: pinned tags pre-rename are not in versions.json (empty start), so
+      # every checked-out tag DOES contain docs_site/ — no website/ special-case.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ matrix.version.tag }}
           persist-credentials: false
-      # NOTE: each tag has its own docs_site/package-lock.json (from that tag);
-      # npm ci inside docs_site/ uses the tag's own lockfile — no cache needed.
+      # Each tag builds with its own docs_site/package-lock.json — no npm cache.
       - run: cd docs_site && npm ci && npx playwright install --with-deps chromium && npm run build
       - uses: actions/upload-artifact@v4
         with: { name: pages-${{ matrix.version.slug }}, path: docs_site/dist/ }
@@ -259,6 +270,8 @@ Replace the single `build-docs` job with **three jobs** (a matrix needs job-leve
     name: Assemble merged site
     runs-on: ubuntu-latest
     needs: [read-versions, build-latest, build-versions]
+    # build-versions is skipped when the pinned set is empty (D3a) — proceed.
+    if: ${{ !cancelled() && needs.read-versions.result == 'success' && needs.build-latest.result == 'success' && (needs.build-versions.result == 'success' || needs.build-versions.result == 'skipped') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -267,30 +280,30 @@ Replace the single `build-docs` job with **three jobs** (a matrix needs job-leve
         with: { path: partials }
       - name: Assemble merged site
         run: |
-          mkdir -p site
+          mkdir -p site/latest
           cp -r partials/pages-latest/* site/latest/
-          for slug_dir in partials/pages-v*/; do
-            slug=$(basename "$slug_dir" | sed 's/^pages-//')
+          for dir in partials/pages-v*/; do
+            slug=$(basename "$dir" | sed 's/^pages-//')
             mkdir -p "site/$slug"
-            cp -r "$slug_dir"/* "site/$slug/"
+            cp -r "$dir"/* "site/$slug/"
           done
           printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=./latest/">' > site/index.html
           mkdir -p site/stable
           printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=../%s/">' \
-            "$(jq -r '.versions[-1].slug' docs_site/versions.json)" > site/stable/index.html
+            "${{ needs.read-versions.outputs.last_slug }}" > site/stable/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
 ```
 
-The existing `deploy` job (`actions/deploy-pages@v4`, `needs: merge-and-redirect` instead of `build-docs`) is unchanged. PR events keep the existing single-build artifact preview (no deploy, no matrix — guard matrix jobs with `if: github.event_name != 'pull_request'`).
+The existing `deploy` job keeps `actions/deploy-pages@v4` but changes to `needs: merge-and-redirect` and its guard becomes `if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v'))` (D5: dev deploys `latest/` too — the current guard excludes `dev`). PR events keep the existing single-build artifact preview (no deploy, no matrix — the `read-versions`/`build-versions` jobs are guarded for non-PR events; `build-latest` runs on PRs so the preview artifact still works).
 
 - [ ] **Step 3: Verify locally**
 
 ```bash
 cd docs_site && npm ci && npm run build
 ```
-Expected: single `dist/` for the current ref (per-version `dist/vX/` trees are produced in CI by checking out each tag — not locally; local verification covers build health + switcher).
+Expected: single `dist/` for the current ref (per-version `dist/vX/` trees are produced in CI by checking out each tag — not locally; local verification covers build health + switcher). Note: with D3a the pinned set is initially empty — `build-versions` is skipped (`count == '0'`) and `merge-and-redirect` proceeds via its `!cancelled()` guard, deploying only `latest/` + redirects. Also note `site/` is already in `.gitignore:3`, so the CI assemble directory name is safe to reuse locally.
 
 - [ ] **Step 4: Commit**
 
@@ -308,7 +321,7 @@ git commit -m "docs: versioned docs pipeline via versions.json + deploy-pages (#
 
 - [ ] **Step 1: UX checks**
 
-In `npm run dev`: version dropdown renders (starlight-versions), and in CI-built output confirm each pinned `dist/vX/` carries the plugin's "outdated" affordance and `editLink` resolves per version (Starlight `editLink.baseUrl` stays `main` for `latest`; pinned versions are immutable, so `editLink` pointing at `main` is acceptable — note in README).
+In `npm run dev`: version dropdown renders (starlight-versions). With D3a the pinned set is initially empty, so the switcher shows only `latest` until the first `vX.Y.Z` tag is appended to `versions.json` — at that point each pinned `dist/vX/` carries the plugin's "outdated" affordance and `editLink` resolves per version (Starlight `editLink.baseUrl` stays `main` for `latest`; pinned versions are immutable, so `editLink` pointing at `main` is acceptable — note in README).
 
 - [ ] **Step 2: Docs updates**
 
@@ -363,7 +376,7 @@ git commit -m "docs: changelog and release checklist for versioned docs (#96)"
 
 **2. Placeholder scan:** none — every step has exact commands, paths, expected outputs; the two `/* ... */` placeholders in JS snippets refer to the existing Starlight config block, quoted verbatim from `website/astro.config.mjs` in References. ✔
 
-**3. Type consistency:** `versions.json` single schema (D3) used by plugin config, CI `jq` matrix, and redirect generation; `docs.yml` YAML; `astro.config.mjs` JS. ✔
+**3. Type consistency:** `versions.json` single schema (D3, initially empty per D3a; CI appends tag refs per D3b) used by plugin config, CI `jq` matrix (`pairs`), and redirect generation (`last_slug` output); `docs.yml` YAML; `astro.config.mjs` JS. ✔
 
 ---
 
