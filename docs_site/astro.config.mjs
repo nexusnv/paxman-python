@@ -73,7 +73,7 @@ export default defineConfig({
       ],
       expressiveCode: true,
       plugins: versionsConfig.versions.length
-        ? [starlightVersions({ versions: versionsConfig.versions, current: versionsConfig.latest })]
+        ? [starlightVersions({ versions: versionsConfig.versions, current: { label: versionsConfig.latest.label } })]
         : [],
     }),
   ],
