@@ -118,7 +118,7 @@ git commit -m "docs: rename website/ to docs_site/ (#96)"
 - Modify (on spike branch only): `docs_site/package.json`, `docs_site/astro.config.mjs`
 - Modify: this plan file (record `Decision:`)
 
-- [ ] **Step 1: Spike `starlight-versions`**
+- [x] **Step 1: Spike `starlight-versions`**
 
 ```bash
 git checkout -b spike/starlight-versions
@@ -140,14 +140,14 @@ npm run build && npm run dev
 ```
 Record: switcher renders, build succeeds with `base: '/paxman-python/'` constant, no per-version `--base` needed.
 
-- [ ] **Step 2: Spike `astro-mike` only if `starlight-versions` fails D8 compat**
+- [x] **Step 2: Spike `astro-mike` only if `starlight-versions` fails D8 compat**
 
 ```bash
 npm uninstall starlight-versions && npm install astro-mike@latest --save-dev
 ```
 Same verification. Note: `astro-mike`'s `mike`-style deploy conflicts with D2 (it manages its own `gh-pages` output) — only viable if it can emit into a merged `dist/`; otherwise it is rejected automatically.
 
-- [ ] **Step 3: Record decision, clean up**
+- [x] **Step 3: Record decision, clean up**
 
 On the plan file, add:
 
@@ -158,12 +158,18 @@ Decision: starlight-versions@<exact-version> (compat: Starlight 0.41.9, Astro 7.
 
 Then: `git checkout docs/versioned-docs-plan && git branch -D spike/starlight-versions` (spike changes to `package.json`/`astro.config.mjs` are re-applied properly in Task 3).
 
-- [ ] **Step 4: Commit the decision note**
+- [x] **Step 4: Commit the decision note**
 
 ```bash
 git add docs/development/plans/2026-08-30-versioned-docs.md
 git commit -m "docs(plan): record versioning plugin decision (#96)"
 ```
+
+> **Decision (2026-08-31, spike verified):** `starlight-versions@0.10.1` (compat: Starlight 0.41.9, Astro 7.2.9, Node 24.20.0 ≥ 22.12.0, `build_type: workflow` confirmed). `site`/`base` remain constant (`site: 'https://nexusnv.github.io'`, `base: '/paxman-python/'`); version subpaths come from `versions.json` + artifact layout — no per-version `--base` needed.
+>
+> Spike: installed `starlight-versions@0.10.1` on `spike/starlight-versions` (peer `@astrojs/starlight >=0.39.0` satisfied), wired as **Starlight plugin** (not Astro integration: `starlight({ plugins: [starlightVersions({ versions, current })] })` plus `versions` collection `docsVersionsLoader` in `src/content.config.ts`), tested with `versions.json` containing `v0.2.2`. `npm run build` succeeded (Astro 7.2.9, Starlight 0.41.9): `dist/` contains both `/index.html` (current, 27 pages) and `/v0.2.2/` (53 pages total), sitemap respects `site`/`base`, switcher renders `<starlight-version-select>` with `latest` → `/paxman-python/` and `v0.2.2` → `/paxman-python/v0.2.2/`; Astro `base` unchanged.
+>
+> Empty-start note (D3a): plugin validates `versions.length > 0` ("At least one version must be defined") — `npm run build` with `versions: []` fails with that error. Spike verified workaround: conditional wiring `plugins: versionsConfig.versions.length ? [starlightVersions(...)] : []` lets empty `versions.json` (`{ versions:[], latest:{slug:"latest",...}}`) build cleanly (27 pages, no switcher until first version). `astro-mike` not spiked — rejected per D2 (manages `gh-pages` output, incompatible with `actions/deploy-pages` + artifact merge). Spike branches deleted (`git branch -D spike/starlight-versions`); `package.json`/`astro.config.mjs` changes to be re-applied in Task 3.
 
 ---
 
