@@ -23,6 +23,7 @@ __all__ = [
     "ISBN",
     "ISSN",
     "Language",
+    "MacAddress",
     "Money",
     "ORCID",
     "Phone",
@@ -41,6 +42,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "ISBN": ("paxman.capabilities.ISBN.capability", "ISBNCapability"),
     "ISSN": ("paxman.capabilities.ISSN.capability", "ISSNCapability"),
     "Language": ("paxman.capabilities.Language.capability", "LanguageCapability"),
+    "MacAddress": ("paxman.capabilities.MacAddress.capability", "MacAddressCapability"),
     "Money": ("paxman.capabilities.Money.capability", "MoneyCapability"),
     "ORCID": ("paxman.capabilities.ORCID.capability", "ORCIDCapability"),
     "Phone": ("paxman.capabilities.Phone.capability", "PhoneCapability"),
@@ -59,6 +61,7 @@ if TYPE_CHECKING:
     from paxman.capabilities.ISBN.capability import ISBNCapability as ISBN
     from paxman.capabilities.ISSN.capability import ISSNCapability as ISSN
     from paxman.capabilities.Language.capability import LanguageCapability as Language
+    from paxman.capabilities.MacAddress.capability import MacAddressCapability as MacAddress
     from paxman.capabilities.Money.capability import MoneyCapability as Money
     from paxman.capabilities.ORCID.capability import ORCIDCapability as ORCID
     from paxman.capabilities.Phone.capability import PhoneCapability as Phone

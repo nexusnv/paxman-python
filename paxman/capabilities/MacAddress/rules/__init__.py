@@ -1,0 +1,1 @@
+"""MacAddress validation rules."""
