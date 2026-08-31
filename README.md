@@ -54,7 +54,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with sixteen built-in capabilities:
+Paxman ships with sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -75,7 +75,7 @@ Paxman ships with sixteen built-in capabilities:
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
 
-> **Note:** Table generated from `paxman/api/bootstrap.py:_SHIPPED` (alphabetical by registry name). To regenerate, run `uv run python tools/generate_readme_table.py`.
+> **Note:** Table reflects `paxman/capabilities/__init__.py` exports (16); `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent. To regenerate the table from bootstrap, run `uv run python tools/generate_readme_table.py`.
 
 ### Email Capability
 

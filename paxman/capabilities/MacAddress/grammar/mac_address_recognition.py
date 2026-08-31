@@ -96,8 +96,3 @@ class MacAddressRecognitionGrammar(PipelineGrammar[MacAddressNotation]):
     regex = RegexStage[MacAddressNotation](
         pattern=_MAC_PATTERN, notation_fn=_mac_notation
     )
-
-
-# Backward compat alias for scaffolder capability import (Task 0); will be
-# removed when capability.py is wired in Task 5.
-MacAddressRecognition = MacAddressRecognitionGrammar

@@ -65,7 +65,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships sixteen built-in capabilities, each wired to an authoritative specification:
+Paxman ships sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -742,7 +742,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (16 capabilities), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (15 capabilities — MacAddress deferred, ISSN/IBAN/BIC precedent; paxman/capabilities/__init__.py exports 16), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
