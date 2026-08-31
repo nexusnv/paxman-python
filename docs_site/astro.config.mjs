@@ -1,12 +1,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightVersions from 'starlight-versions';
+import versionsConfig from './versions.json' with { type: 'json' };
 import rehypeMermaid from 'rehype-mermaid';
 
 // https://starlight.astro.build/reference/configuration/
 export default defineConfig({
   site: 'https://nexusnv.github.io',
   base: '/paxman-python/',
-  // Keep content in docs/user as single source of truth — website/src/content/docs
+  // Keep content in docs/user as single source of truth — docs_site/src/content/docs
   // is a symlink to ../../docs/user. Preserve symlinks so Vite resolves the real files.
   vite: {
     resolve: {
@@ -70,6 +72,9 @@ export default defineConfig({
         },
       ],
       expressiveCode: true,
+      plugins: versionsConfig.versions.length
+        ? [starlightVersions({ versions: versionsConfig.versions, current: { label: versionsConfig.latest.label } })]
+        : [],
     }),
   ],
 });

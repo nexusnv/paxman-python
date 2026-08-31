@@ -65,6 +65,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kernel — `CandidatesMatcher` single-pass boundary filter (#68):** `result` and
   `stored_flat` are now derived in one pass; `check_boundary` runs once per span instead
   of twice. No behavior change.
+- **Docs — versioned docs (#96):** `website/` renamed to `docs_site/`; Pages
+  deploys now ship every version listed in `docs_site/versions.json`
+  (`/vX.Y.Z/` immutable per tag, `/latest/` from `dev`, root redirects
+  to `/latest/` and `/stable/` to the last pinned version) with an in-site
+  version switcher.
 
 ## [0.2.2] - 2026-08-30
 

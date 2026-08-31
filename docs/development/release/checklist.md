@@ -148,7 +148,7 @@ Current `pyproject.toml` is *minimally publishable* but needs hardening:
 
 ### 4.2 Release hygiene in GitHub
 
-- [ ] **About section** filled: description *“Canonicalization authority resolver”*, website = `https://github.com/nexusnv/paxman-python`, topics: `canonicalization`, `provenance`, `python`, `iso3166`, `rfc5322`, etc.
+- [ ] **About section** filled: description *“Canonicalization authority resolver”*, homepage = `https://github.com/nexusnv/paxman-python`, topics: `canonicalization`, `provenance`, `python`, `iso3166`, `rfc5322`, etc.
 - [ ] **Releases vs tags policy** — use annotated tags `v0.1.0` (`git tag -a v0.1.0 -m "paxman 0.1.0"`), push tags, let `publish.yml` create the GitHub Release. Don’t create releases manually.
 - [ ] **Issue/PR templates** (optional, nice before public): `.github/ISSUE_TEMPLATE/bug_report.md`, `feature_request.md`, `PULL_REQUEST_TEMPLATE.md`.
 
@@ -193,10 +193,11 @@ Register these **before** you configure Trusted Publishing — you need admin on
 1. [ ] Final `main` is green (`ci` passing on `main`).
 2. [ ] Bump `pyproject.toml:version` to target (`0.1.0`), update `CHANGELOG.md` date.
 3. [ ] Commit: `chore(release): paxman 0.1.0` → push to `main` (through PR if `main` is protected).
-4. [ ] Tag: `git tag -a v0.1.0 -m "paxman 0.1.0 — first public release"` + `git push origin v0.1.0`.
-5. [ ] Watch `Publish` workflow — build → `twine check` → `pypa/gh-action-pypi-publish` → GitHub Release appears with `dist/*` attached.
-6. [ ] Verify on PyPI: `https://pypi.org/project/paxman/0.1.0/` shows correct README, classifiers, `pip install paxman==0.1.0` works in a clean venv.
-7. [ ] Announce (Issues/Discussions, internal channels). Close milestone.
+4. [ ] Docs: open PR appending the new version to `versions.json` **targeting `main`** and merge it before cutting the tag (D3b) — entry `{"slug": "v0.1.0", "tag": "v0.1.0"}` in `docs_site/versions.json` (see `docs_site/README.md` § Publishing).
+5. [ ] Tag: `git tag -a v0.1.0 -m "paxman 0.1.0 — first public release"` + `git push origin v0.1.0`.
+6. [ ] Watch `Publish` workflow — build → `twine check` → `pypa/gh-action-pypi-publish` → GitHub Release appears with `dist/*` attached. For docs, the tag push rebuilds the full versioned site (`latest/` from `main` plus every `vX.Y.Z/` in `versions.json`, including the new tag — D3b) and deploys via `actions/deploy-pages`.
+7. [ ] Verify on PyPI: `https://pypi.org/project/paxman/0.1.0/` shows correct README, classifiers, `pip install paxman==0.1.0` works in a clean venv. Verify docs at `https://nexusnv.github.io/paxman-python/v0.1.0/` and that `latest/`/`stable/` redirects are intact.
+8. [ ] Announce (Issues/Discussions, internal channels). Close milestone.
 
 ---
 
