@@ -73,3 +73,24 @@ def test_ipv6_token_guard() -> None:
     assert g.wrap("2001:db8").search("x2001:db8") is None
     # Preceded by a delimiter (space) and followed by a delimiter (comma) matches.
     assert g.wrap("2001:db8").search(" 2001:db8,") is not None
+
+
+def test_mac_midrun_guard_blocks_tail_of_longer_run() -> None:
+    import re
+
+    from paxman.core.grammar.boundary import BoundaryGuard
+
+    guard = BoundaryGuard.mac_midrun()
+    assert guard.lookbehind == r"(?<!\w)(?<![0-9A-Fa-f][-.:])"
+    assert guard.lookahead == r"(?!\w)"
+    pattern = re.compile(
+        guard.lookbehind + r"(?P<c>(?:[0-9A-F]{2}:){5}[0-9A-F]{2})" + guard.lookahead
+    )
+    # head claim of a truncated 7-octet run blocked by the truncation guard
+    # is a grammar concern; here: the tail of a longer run must not start
+    # after hex+separator. At guard level the head remains, but the tail
+    # "1A:2B:3C:4D:5E:66" must never appear as a separate claim.
+    matches = pattern.findall("00:1A:2B:3C:4D:5E:66")
+    assert matches == ["00:1A:2B:3C:4D:5E"]
+    assert "1A:2B:3C:4D:5E:66" not in matches
+    assert pattern.findall("00:1A:2B:3C:4D:5E") == ["00:1A:2B:3C:4D:5E"]
