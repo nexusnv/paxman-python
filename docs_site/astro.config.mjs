@@ -1,5 +1,7 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightVersions from 'starlight-versions';
+import versionsConfig from './versions.json' with { type: 'json' };
 import rehypeMermaid from 'rehype-mermaid';
 
 // https://starlight.astro.build/reference/configuration/
@@ -70,6 +72,9 @@ export default defineConfig({
         },
       ],
       expressiveCode: true,
+      plugins: versionsConfig.versions.length
+        ? [starlightVersions({ versions: versionsConfig.versions, current: versionsConfig.latest })]
+        : [],
     }),
   ],
 });
