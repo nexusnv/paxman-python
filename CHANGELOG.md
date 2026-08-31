@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-31
+
+> **Housekeeping release — no new capability added.** This release consolidates kernel hardening, phone/BIC fixes, Unicode property stage, and versioned docs infrastructure.
+
+### Added
+
+- **Core — UnicodePropertyStage (#51):** build-time range generator for
+  `\p{Sc}`, `Script=Han` etc., vendored in `unicode_ranges.py`; pilot
+  parity for SI `°µΩÅ` vs Sc and Han vs Latin (incl. supplementary).
+
+### Fixed
+
+- **Kernel — data-driven stripped-view handling (#87, #88):** the recognition kernel no
+  longer special-cases the idna view by name. Views carry `stripped_chars` as data
+  (`IDNAFold` declares `"\t\n\r"`), and the engine loop / scanner branch on
+  `view.stripped_chars`. Community grammars using other stripped views now get the same
+  re-absorption and boundary-deferral semantics, and views without the flag get neither.
+  The boundary re-check on the original text now runs at the pre-extension end, so a
+  right-side guard sees the immediate neighbor instead of the character after a
+  re-absorbed stripped run (#88). No shipped capability changes behavior (parity suites
+  green).
+- **Kernel — grammar-path error contract (#66):** internal lookup failures
+  (`KeyError`/`IndexError`) from grammars, candidate matchers, combinator leaves,
+  and predicates now surface as `RecognitionError` (or are swallowed at the
+  per-candidate/leaf boundary, as before) instead of escaping as raw exceptions.
+  The rules path keeps its `except Exception → ValidationError` contract.
+- **Kernel — `BoundarySpec` negated bracket classes (#67):** `[^...]` fragments no
+  longer lower to an inverted positive char set; they fall back to the compiled
+  regex path, preserving negated semantics.
+- **Kernel — boundary char sets exact vs `re` (#62):** `\d` lowers to Unicode `Nd`
+  (was ASCII-only), and class escapes (`\w`, `\d`, `\s`) carry a compiled non-BMP
+  fallback so neighbor decisions are exact across the whole codepoint space without
+  an import-time scan. Hot path unchanged (empty fallbacks short-circuit; BMP
+  neighbors never compute `ord`).
+- **Kernel — `NormalizerSequence` no-expansion invariant (#63):** composition asserts
+  unit-width offsets and strictly increasing starts; expanding normalizers fail fast
+  instead of silently mis-mapping end offsets.
+- **Kernel — bounded NFD cache (#64):** the per-char NFD memo is an
+  `lru_cache(maxsize=8192)`; the unbounded input-keyed `_NFD_CACHE` dict is gone.
+- **Phone — E.164 window 32 → 64 for spaced numbers (#65):** the
+  `max_window` was too tight for 15-digit numbers with separators
+  between every digit (e.g. "+1 - 2 - 3 …" = 44-58 chars, was truncated
+  at 32). Raised to 64 (worst case 58 + margin) so spaced E.164 is
+  fully recognized with correct span.
+- **BIC — grouped display (#41):** recognizes SWIFT paper form
+  `AAAA BB CC [XXX]` with single spaces (e.g. `DEUT DE FF` →
+  `DEUTDEFF`, `BNPA FR PP XXX` → `BNPAFRPPXXX`); double spaces remain
+  `MISSING`.
+- **Kernel — scanner right-gap deferral (#99):** `ScannerMatcher` now defers
+  view-level boundary checks on both left and right gaps for stripped views
+  (previously only left), so a stripped char immediately right of a hit does
+  not cause view-level over-rejection; the engine's original-text re-check
+  governs. Unreachable with shipped grammars (URL `idna` is left-only).
+
+### Changed
+
+- **Kernel — `Normalizer` protocol declares `stripped_chars` (#87):** community
+  normalizer implementations should declare it (default `None`; `""` is treated as "no
+  stripping").
+- **Kernel — `CandidatesMatcher` single-pass boundary filter (#68):** `result` and
+  `stored_flat` are now derived in one pass; `check_boundary` runs once per span instead
+  of twice. No behavior change.
+- **Docs — versioned docs (#96):** `website/` renamed to `docs_site/`; Pages
+  deploys now ship every version listed in `docs_site/versions.json`
+  (`/vX.Y.Z/` immutable per tag, `/latest/` from `dev`, root redirects
+  to `/latest/` and `/stable/` to the last pinned version) with an in-site
+  version switcher.
+
 ## [0.2.2] - 2026-08-30
 
 ### Fixed

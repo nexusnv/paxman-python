@@ -159,12 +159,16 @@ class CandidatesMatcher:
                     spans = cast(list[tuple[int, int]], spans_any)
                 else:
                     spans = cast(list[tuple[int, int]], [])
+            # Matcher-internal boundary (#66): a buggy candidate/leaf/predicate
+            # degrades to no-match; grammar-level failures are wrapped as
+            # RecognitionError by the orchestrator.
             except (
                 re.error,
                 ValueError,
                 TypeError,
                 AttributeError,
                 RuntimeError,
+                LookupError,
             ):
                 spans = cast(list[tuple[int, int]], [])
             per_candidate_spans.append(spans)
@@ -176,40 +180,31 @@ class CandidatesMatcher:
                 flat.append((s, e, idx))
         flat.sort(key=lambda x: (x[0], x[1], x[2]))
         result: list[tuple[int, int]] = []
+        stored_flat: list[tuple[int, int, int]] = []
         if self.strategy == "first":
+            # Dedup first, then boundary-filter: the boundary verdict
+            # depends only on (s, e), so the two compose in either order
+            # (#68). Recording the key before the check keeps duplicate
+            # rejected spans from re-running check_boundary.
             seen: set[tuple[int, int]] = set()
-            for s, e, _ in flat:
-                key = (s, e)
-                if key not in seen:
-                    seen.add(key)
-                    result.append((s, e))
-        else:
-            for s, e, _ in flat:
-                result.append((s, e))
-        if self.boundary is not None:
-            filtered: list[tuple[int, int]] = []
-            for s, e in result:
-                if check_boundary(view.subject, s, e, self.boundary):
-                    filtered.append((s, e))
-            result = filtered
-        if self.strategy == "first":
-            seen2: set[tuple[int, int]] = set()
-            stored_flat: list[tuple[int, int, int]] = []
             for s, e, idx in flat:
-                if (s, e) not in seen2:
-                    if self.boundary is not None and not check_boundary(
-                        view.subject, s, e, self.boundary
-                    ):
-                        continue
-                    seen2.add((s, e))
-                    stored_flat.append((s, e, idx))
+                key = (s, e)
+                if key in seen:
+                    continue
+                seen.add(key)
+                if self.boundary is not None and not check_boundary(
+                    view.subject, s, e, self.boundary
+                ):
+                    continue
+                result.append(key)
+                stored_flat.append((s, e, idx))
         else:
-            stored_flat = []
             for s, e, idx in flat:
                 if self.boundary is not None and not check_boundary(
                     view.subject, s, e, self.boundary
                 ):
                     continue
+                result.append((s, e))
                 stored_flat.append((s, e, idx))
         # Update instance fields atomically for single-threaded introspection;
         # avoid clear()/extend() race on frozen singleton (4677ff9).

@@ -6,14 +6,23 @@ multi-char to bounded regex."""
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from typing import ClassVar
 
 _W_CHARS: frozenset[str] = frozenset(
     chr(c) for c in range(0x10000) if chr(c) == "_" or chr(c).isalnum()
 )
-_D_CHARS: frozenset[str] = frozenset("0123456789")
+_D_CHARS: frozenset[str] = frozenset(
+    chr(c) for c in range(0x10000) if unicodedata.category(chr(c)) == "Nd"
+)
 _S_CHARS: frozenset[str] = frozenset(chr(c) for c in range(0x10000) if chr(c).isspace())
+
+# Compiled class escapes: consulted by check_boundary for non-BMP neighbors
+# (ord(ch) > 0xFFFF) where the BMP-only frozenset scans above are blind (#62).
+_W_RE: re.Pattern[str] = re.compile(r"\w")
+_D_RE: re.Pattern[str] = re.compile(r"\d")
+_S_RE: re.Pattern[str] = re.compile(r"\s")
 
 
 def _chars_from_bracket(content: str) -> frozenset[str]:
@@ -56,6 +65,13 @@ def _chars_from_bracket(content: str) -> frozenset[str]:
 
 
 def _pattern_to_chars(pat: str) -> frozenset[str] | None:
+    """Return the BMP char set for a fragment, or None (multi/regex path).
+
+    Class escapes (``\\w``, ``\\d``, ``\\s``) lower to their BMP scans,
+    positive bracket classes to their enumerated chars; negated bracket
+    classes (``[^...]``) return ``None`` so the compiled regex path
+    preserves their negated semantics (#67).
+    """
     if pat == r"\w":
         return _W_CHARS
     if pat == r"\d":
@@ -70,8 +86,62 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
         # '*+?{}|' as not single-char
         if any(m in interior for m in "*+?{}|"):
             return None
+        # Negated class: a positive char set would invert the guard
+        # semantics (#67). Fall back to the compiled regex path, where
+        # '[^...]' keeps its negated meaning against the 1-char window.
+        if interior.startswith("^"):
+            return None
         return _chars_from_bracket(interior)
     return None
+
+
+# Keep in sync with the class-escape branches in _pattern_to_chars (#62).
+_FALLBACK_RES: dict[str, re.Pattern[str]] = {
+    r"\w": _W_RE,
+    r"\d": _D_RE,
+    r"\s": _S_RE,
+}
+
+_BRACKET_FALLBACK_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _pattern_lowering(
+    pat: str,
+) -> tuple[frozenset[str] | None, re.Pattern[str] | None]:
+    """Lower a single-char boundary fragment to a BMP set + non-BMP fallback.
+
+    Returns ``(chars, fallback)``. ``chars`` is the BMP-exact frozenset from
+    :func:`_pattern_to_chars`; ``fallback`` is the compiled class escape
+    (``\\w``, ``\\d``, ``\\s``) when the BMP scan is merely an approximation
+    of it, or for positive bracket classes containing such escapes (``[\\w]``,
+    ``[\\w:.]``, ``[\\d]``) the compiled bracket itself cached in
+    ``_BRACKET_FALLBACK_CACHE``. The fallback is consulted by
+    :func:`check_boundary` for non-BMP neighbors (``ord(ch) > 0xFFFF``),
+    keeping neighbor decisions exact against ``re`` for the whole codepoint
+    space without an import-time scan of all 0x110000 codepoints.
+    """
+    chars = _pattern_to_chars(pat)
+    if chars is None:
+        return None, None
+    fallback = _FALLBACK_RES.get(pat)
+    if fallback is not None:
+        return chars, fallback
+    # Positive bracket classes containing class escapes (\\w, \\d, \\s)
+    # need a non-BMP fallback too: the BMP frozenset from
+    # _chars_from_bracket is blind to supplementary-plane chars, so for
+    # non-BMP neighbors consult the compiled bracket itself (exact vs re).
+    if len(pat) >= 2 and pat[0] == "[" and pat[-1] == "]":
+        interior = pat[1:-1]
+        if ("\\w" in interior) or ("\\d" in interior) or ("\\s" in interior):
+            cached = _BRACKET_FALLBACK_CACHE.get(pat)
+            if cached is None:
+                try:
+                    cached = re.compile(pat)
+                except re.error:
+                    return chars, None
+                _BRACKET_FALLBACK_CACHE[pat] = cached
+            return chars, cached
+    return chars, None
 
 
 def _estimate_width(pat: str) -> int:
@@ -105,7 +175,12 @@ class BoundarySpec:
     for the hit to be accepted (mirroring ``(?<!...)`` / ``(?!...)``).
     Single-char fragments lower to ``frozenset`` O(1) membership
     (``left_chars`` / ``right_chars``); multi-char fragments compile to
-    bounded regexes (``left_multi`` / ``right_multi``). ``mode``
+    bounded regexes (``left_multi`` / ``right_multi``). Class escapes
+    (``\\w``, ``\\d``, ``\\s``) additionally carry a compiled non-BMP
+    fallback (``left_char_fallback`` / ``right_char_fallback``) consulted
+    by :func:`check_boundary` for supplementary-plane neighbors, keeping
+    decisions exact vs ``re`` across the full codepoint space (#62).
+    ``mode``
     ``"consuming"`` is reserved for token-level boundaries (e.g. ``IPV6_TOKEN``)
     where the boundary characters are not part of the token.
 
@@ -117,6 +192,8 @@ class BoundarySpec:
         right_chars: Cached frozenset of forbidden right chars (``None`` if none).
         left_multi: Tuple of ``(width, pattern)`` for multi-char left guards.
         right_multi: Tuple of ``(width, pattern)`` for multi-char right guards.
+        left_char_fallback: Compiled class escapes for non-BMP left neighbors.
+        right_char_fallback: Compiled class escapes for non-BMP right neighbors.
     """
 
     left: tuple[str, ...] | None
@@ -130,25 +207,37 @@ class BoundarySpec:
     right_multi: tuple[tuple[int, re.Pattern[str]], ...] = field(
         default=(), init=False, repr=False
     )
+    left_char_fallback: tuple[re.Pattern[str], ...] = field(
+        default=(), init=False, repr=False
+    )
+    right_char_fallback: tuple[re.Pattern[str], ...] = field(
+        default=(), init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         lc: set[str] = set()
         lm: list[tuple[int, re.Pattern[str]]] = []
         rc: set[str] = set()
         rm: list[tuple[int, re.Pattern[str]]] = []
+        lfb: list[re.Pattern[str]] = []
+        rfb: list[re.Pattern[str]] = []
         if self.left is not None:
             for pat in self.left:
-                chars = _pattern_to_chars(pat)
+                chars, fallback = _pattern_lowering(pat)
                 if chars is not None:
                     lc.update(chars)
+                    if fallback is not None:
+                        lfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
                     lm.append((w, re.compile(pat + r"\Z")))
         if self.right is not None:
             for pat in self.right:
-                chars = _pattern_to_chars(pat)
+                chars, fallback = _pattern_lowering(pat)
                 if chars is not None:
                     rc.update(chars)
+                    if fallback is not None:
+                        rfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
                     rm.append((w, re.compile(r"\A" + pat)))
@@ -156,6 +245,8 @@ class BoundarySpec:
         object.__setattr__(self, "right_chars", frozenset(rc) if rc else None)
         object.__setattr__(self, "left_multi", tuple(lm))
         object.__setattr__(self, "right_multi", tuple(rm))
+        object.__setattr__(self, "left_char_fallback", tuple(lfb))
+        object.__setattr__(self, "right_char_fallback", tuple(rfb))
 
     @property
     def is_consuming(self) -> bool:
@@ -181,9 +272,11 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
     Each ``left`` entry must NOT match the suffix ending at ``start``;
     each ``right`` entry must NOT match the prefix starting at ``end``.
     Single-char guards use ``frozenset`` O(1) lookup; multi-char guards use
-    bounded regex search (``\\Z`` / ``\\A`` anchored). This is the single-source
-    boundary check used by both ``ScanContext.check_hit`` and the kernel
-    ``engine_loop``.
+    bounded regex search (``\\Z`` / ``\\A`` anchored). Class escapes carry
+    compiled fallbacks consulted for non-BMP neighbors, where the BMP-only
+    char sets are blind, keeping decisions exact vs ``re`` (#62). This is
+    the single-source boundary check used by both ``ScanContext.check_hit``
+    and the kernel ``engine_loop``.
 
     Args:
         subject: Text (or normalized view subject) containing the hit.
@@ -195,7 +288,16 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
         ``True`` if no guard fires (hit is valid), ``False`` otherwise.
     """
     if spec.left is not None and start > 0:
-        if spec.left_chars is not None and subject[start - 1] in spec.left_chars:
+        ch = subject[start - 1]
+        if spec.left_chars is not None and ch in spec.left_chars:
+            return False
+        # Non-BMP fallback: the char sets are BMP scans; for supplementary-
+        # plane neighbors decide via the compiled escape (exact vs re) (#62).
+        if (
+            spec.left_char_fallback
+            and ord(ch) > 0xFFFF
+            and any(pat.match(ch) for pat in spec.left_char_fallback)
+        ):
             return False
         for w, pat in spec.left_multi:
             lo = start - w
@@ -204,7 +306,14 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
             if pat.search(subject[lo:start]) is not None:
                 return False
     if spec.right is not None and end < len(subject):
-        if spec.right_chars is not None and subject[end] in spec.right_chars:
+        ch = subject[end]
+        if spec.right_chars is not None and ch in spec.right_chars:
+            return False
+        if (
+            spec.right_char_fallback
+            and ord(ch) > 0xFFFF
+            and any(pat.match(ch) for pat in spec.right_char_fallback)
+        ):
             return False
         for w, pat in spec.right_multi:
             hi = end + w

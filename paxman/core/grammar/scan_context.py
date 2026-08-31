@@ -33,12 +33,17 @@ class View:
             in ``subject``, or ``None`` for the identity view.
         source_ends: End offsets in the original text, one per character
             in ``subject``, or ``None`` for the identity view.
+        stripped_chars: Characters the normalizer strips that legacy matchers
+            may re-absorb into their emitted spans (e.g. ``"\\t\\n\\r"`` for
+            the IDNA view), or ``None`` when the view has no such set. An
+            empty string is treated as "no stripping".
     """
 
     subject: str
     source_starts: tuple[int, ...] | None
     source_ends: tuple[int, ...] | None
     _text_len: int = field(repr=False)
+    stripped_chars: str | None = field(default=None)
 
     @property
     def offsets(self) -> tuple[int, ...] | None:
@@ -137,6 +142,7 @@ class ScanContext:
             tuple[str, tuple[int, ...] | None]
             | tuple[str, tuple[int, ...] | None, tuple[int, ...] | None],
         ],
+        stripped_chars: str | None = None,
     ) -> View:
         """Return (or lazily materialize) a named normalized view.
 
@@ -153,6 +159,10 @@ class ScanContext:
             name: Cache key for this view (e.g. the normalizer's registered name).
             normalizer: Callable that maps the original text to ``(subject, offsets)``
                 or ``(subject, starts, ends)``.
+            stripped_chars: Characters stripped by the normalizer that matchers
+                may re-absorb into spans; recorded on the View at
+                materialization. Cache hits return the originally materialized
+                view regardless of later flag arguments.
 
         Returns:
             The cached or newly materialized ``View`` for ``name``.
@@ -237,6 +247,7 @@ class ScanContext:
             source_starts=starts,
             source_ends=ends,
             _text_len=len(self.text),
+            stripped_chars=stripped_chars,
         )
         self._views[name] = view
         return view

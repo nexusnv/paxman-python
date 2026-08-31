@@ -98,13 +98,8 @@ def _url_scan(view: View, pos: int) -> tuple[int, URLNotation] | None:
 
 def _url_emit(span: tuple[int, int], ctx: ScanContext) -> URLNotation:
     s, e = span
-    # Extend to include trailing \t\n\r that were stripped from the IDNA
-    # view but are allowed body chars per legacy regex (e.g. 'A:0\n'
-    # should be 'A:0\n', not 'A:0'). The view's original_span maps internal
-    # stripped chars correctly, but trailing stripped chars after the view's
-    # end are not mapped — include them here while they are \t\n\r.
-    while e < len(ctx.text) and ctx.text[e] in "\t\n\r":
-        e += 1
+    # Trailing \t\n\r extension now handled by kernel engine_loop
+    # (view.stripped_chars data-driven), so no per-emit loop needed.
     raw = ctx.text[s:e]
     return URLNotation(text=raw)
 

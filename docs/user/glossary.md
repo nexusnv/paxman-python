@@ -12,7 +12,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Authority** — Who published the specification. Appears on `Provenance.authority` (e.g. `"IETF"`, `"ISO"`, `"BIPM"`, `"WHATWG"`, `"Unicode CLDR"`). See [Provenance](concepts/provenance/) and [Citations](citations/).
 
-**Autogenerate (sidebar)** — Starlight sidebar entries that auto-list pages from a directory (e.g. `Concepts`, `Capabilities`). See `website/astro.config.mjs`.
+**Autogenerate (sidebar)** — Starlight sidebar entries that auto-list pages from a directory (e.g. `Concepts`, `Capabilities`). See `docs_site/astro.config.mjs`.
 
 ---
 

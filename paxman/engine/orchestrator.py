@@ -308,6 +308,7 @@ def _recognize(
                 AttributeError,
                 RuntimeError,
                 AssertionError,
+                LookupError,
             ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,
@@ -324,6 +325,7 @@ def _recognize(
                 AttributeError,
                 RuntimeError,
                 AssertionError,
+                LookupError,
             ) as exc:
                 raise RecognitionError(
                     rule=grammar.name,

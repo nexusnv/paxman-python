@@ -35,6 +35,7 @@ from paxman.core.grammar.stages import (
     RegexStage,
     Stage,
     StandardPre,
+    UnicodePropertyStage,
     WholeInputLookup,
 )
 
@@ -73,6 +74,7 @@ __all__ = [
     "StandardPre",
     "StripSeparators",
     "SymbolFold",
+    "UnicodePropertyStage",
     "View",
     "WholeInputLookup",
     "_run_matchers",

@@ -102,10 +102,12 @@ def test_recognize_subset_of_parseable(text: str) -> None:
         parse_and_serialize(match.raw_text)
     if parse_and_serialize(text) is not None and not matches:
         body = text.partition(":")[2]
+        stripped_body = body.replace("\t", "").replace("\n", "").replace("\r", "")
+        stripped_leading = stripped_body.lstrip(")")
         assert (
-            not body
-            or body[0] in _GRAMMAR_BODY_EXCLUDED
-            or body.lstrip(")") == ""
-            or body.lstrip(")")[0] in _GRAMMAR_BODY_EXCLUDED
+            not stripped_body
+            or stripped_body[0] in _GRAMMAR_BODY_EXCLUDED
+            or stripped_leading == ""
+            or stripped_leading[0] in _GRAMMAR_BODY_EXCLUDED
             or any(char in _WHITESPACE_STRIPPED for char in text.partition(":")[0])
         )
