@@ -5,5 +5,5 @@ import { docsSchema } from '@astrojs/starlight/schema';
 
 export const collections = {
   docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
-  versions: defineCollection({ loader: docsVersionsLoader(), schema: docsSchema() }),
+  versions: defineCollection({ loader: docsVersionsLoader() }),
 };
