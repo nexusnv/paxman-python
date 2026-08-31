@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-31
+
+> **Housekeeping release — no new capability added.** This release consolidates kernel hardening, phone/BIC fixes, Unicode property stage, and versioned docs infrastructure.
+
 ### Added
 
 - **Core — UnicodePropertyStage (#51):** build-time range generator for

@@ -1,4 +1,14 @@
 {
-  "versions": [],
-  "latest": {"slug": "latest", "label": "latest", "source_ref": "dev"}
+  "versions": [
+    {
+      "slug": "v0.3.0",
+      "label": "v0.3.0",
+      "tag": "v0.3.0"
+    }
+  ],
+  "latest": {
+    "slug": "latest",
+    "label": "latest",
+    "source_ref": "dev"
+  }
 }
