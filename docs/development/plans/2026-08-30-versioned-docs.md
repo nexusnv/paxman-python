@@ -241,6 +241,9 @@ Replace the single `build-docs` job with **four jobs** (a matrix needs job-level
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          # `latest` mirrors dev/main content — on tag pushes, check out main
+          # so latest/ is semantically exact per D5 (tag content goes to /vX.Y.Z/).
+          ref: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && 'main' || github.ref }}
           persist-credentials: false
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: docs_site/package-lock.json }
@@ -336,7 +339,7 @@ In `npm run dev`: version dropdown renders (starlight-versions). With D3a the pi
 
 - [ ] **Step 2: Docs updates**
 
-`docs_site/README.md` publishing section: how to cut a new version (tag `vX.Y.Z` → append to `versions.json` → push tag → workflow rebuilds full set). `docs/development/release/checklist.md`: add "docs: open PR appending the new version to `versions.json` **targeting `main`** and merge it before cutting the tag" (D3b).
+`docs_site/README.md` publishing section: how to cut a new version (open the append PR against `main`, merge it, then push the tag `vX.Y.Z` → workflow rebuilds the full set; per D3b). `docs/development/release/checklist.md`: add "docs: open PR appending the new version to `versions.json` **targeting `main`** and merge it before cutting the tag" (D3b).
 
 - [ ] **Step 3: Back-compat**
 
