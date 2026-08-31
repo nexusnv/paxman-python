@@ -9,9 +9,15 @@ from paxman.capabilities.MacAddress.grammar.mac_address_recognition import (
     MacAddressRecognition,
 )
 from paxman.capabilities.MacAddress.notation import MacAddressNotation
-from paxman.capabilities.MacAddress.rules.ieee_ed2024 import MacAddressRule
+from paxman.capabilities.MacAddress.rules.ieee_802_ed2024 import (
+    Section82EUIStructure,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
+
+# Backward compat alias for scaffold capability test (Task 0); will be
+# updated when capability.py is wired in Task 5.
+MacAddressRule = Section82EUIStructure
 
 
 class MacAddressCapability(Capability[MacAddressNotation]):
