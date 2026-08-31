@@ -26,5 +26,4 @@ class MacAddressContract(CapabilityContract):
     )
 
     capability_name: str = field(default="mac_address", init=False)
-    # Deferred with the OUI registry layer (Research section 5.4 / 13
-    # decision 6): include_oui_validation: bool = False
+    # OUI registry layer deferred: include_oui_validation: bool = False

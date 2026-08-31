@@ -4,8 +4,8 @@ Structure is clause "8.2 Universal addresses" per IEEE Std 802-2014
 numbering, the clause the Bluetooth Core Specification cites normatively for
 BD_ADDR; verify the clause number against the 802-2024 text (free via the
 IEEE GET Program) at implementation. MAC addresses have no checksum and no
-check character (Research section 5.1 - proved by absence across IEEE 802,
-RFC 7042, and all ecosystem validators): structure is all there is.
+check character — proved by absence across IEEE Std 802, RFC 7042, and
+ecosystem validators: structure is all there is.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ class Section82EUIStructure(Rule[MacAddressNotation]):
     informative predicates - broadcast, nil, multicast, locally administered,
     FF-FE/FF-FF mid-address markers, and all sentinels are valid. Bit-order
     provenance (Token-Ring/FDDI MSB display) is not detectable and is never
-    reinterpreted (Research section 13 decision 10).
+    reinterpreted.
     """
 
     name = "Section 8.2-eui-structure"

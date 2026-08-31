@@ -37,8 +37,7 @@ class MacAddressCapability(Capability[MacAddressNotation]):
         return [MacAddressRecognitionGrammar()]  # single grammar; both lengths
 
     def get_rules(self) -> list[Rule[MacAddressNotation]]:
-        # v1 ships the structure rule only; the OUI registry layer is
-        # deferred (Research section 5.4 / 13 decision 6).
+        # v1 ships the structure rule only; the OUI registry layer is deferred.
         return [Section82EUIStructure()]
 
     @staticmethod
