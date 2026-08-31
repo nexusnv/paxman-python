@@ -1,13 +1,11 @@
-"""MacAddress capability — wires grammars and rules together."""
+"""MacAddress capability - wiring, contract factory, presentation seam."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
 from paxman.capabilities.MacAddress.contract import MacAddressContract
-from paxman.capabilities.MacAddress.grammar.mac_address_recognition import (
-    MacAddressRecognition,
-)
+from paxman.capabilities.MacAddress.grammar import MacAddressRecognitionGrammar
 from paxman.capabilities.MacAddress.notation import MacAddressNotation
 from paxman.capabilities.MacAddress.rules.ieee_802_ed2024 import (
     Section82EUIStructure,
@@ -15,27 +13,33 @@ from paxman.capabilities.MacAddress.rules.ieee_802_ed2024 import (
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
-# Backward compat alias for scaffold capability test (Task 0); will be
-# updated when capability.py is wired in Task 5.
-MacAddressRule = Section82EUIStructure
+
+def _bit_reverse_octet(octet: str) -> str:
+    """RFC 2469 per-octet bit swap: 0x12 -> 0x48, 0xBC -> 0x3D."""
+    value = int(octet, 16)
+    reversed_bits = (
+        ((value & 0x01) << 7)
+        | ((value & 0x02) << 5)
+        | ((value & 0x04) << 3)
+        | ((value & 0x08) << 1)
+        | ((value & 0x10) >> 1)
+        | ((value & 0x20) >> 3)
+        | ((value & 0x40) >> 5)
+        | ((value & 0x80) >> 7)
+    )
+    return f"{reversed_bits:02X}"
 
 
 class MacAddressCapability(Capability[MacAddressNotation]):
-    """MacAddress canonicalization capability (scaffold).
-
-    TODO(scaffold): describe what this capability recognizes and the
-    authoritative specification(s) it validates against.
-    """
-
-    name = "mac_address"
+    name = "mac_address"  # lowercase identifier - what users pass to the registry
 
     def get_grammars(self) -> list[Grammar[MacAddressNotation]]:
-        """Return the default grammar instances."""
-        return [MacAddressRecognition()]
+        return [MacAddressRecognitionGrammar()]  # single grammar; both lengths
 
     def get_rules(self) -> list[Rule[MacAddressNotation]]:
-        """Return the default validation rule instances."""
-        return [MacAddressRule()]
+        # v1 ships the structure rule only; the OUI registry layer is
+        # deferred (Research section 5.4 / 13 decision 6).
+        return [Section82EUIStructure()]
 
     @staticmethod
     def create_contract(
@@ -46,22 +50,6 @@ class MacAddressCapability(Capability[MacAddressNotation]):
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
     ) -> MacAddressContract:
-        """Factory method for creating contracts with proper defaults.
-
-        Args:
-            excluded_rules: Rule names to exclude.
-            pinned_rules: Pin to specific rules (takes precedence over
-                excluded_rules).
-            year: Year for temporal filtering.
-            output_format: Output format for canonical values. Optional;
-                None/"default"/"colon" resolve to "colon".
-            extra_grammars: Community grammar names (opt-in) to run
-                alongside the shipped grammars, in order (SEAM — the
-                surface guard's common block ends with this parameter).
-
-        Returns:
-            Configured MacAddressContract instance.
-        """
         return MacAddressContract(
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),
             pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,
@@ -70,7 +58,22 @@ class MacAddressCapability(Capability[MacAddressNotation]):
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
         )
 
-    # format_value: NOT overridden — the canonical value IS the default
-    # format, and there are no offered alternatives. The Capability base
-    # provides the identity formatter. TODO(scaffold): override if you offer
-    # alternative output formats.
+    def format_value(
+        self, value: str, output_format: str | None, notation: MacAddressNotation
+    ) -> str:
+        compact = value.replace(":", "")
+        octets = [compact[i : i + 2] for i in range(0, len(compact), 2)]
+        if output_format == "hyphen":
+            return "-".join(octets)
+        if output_format == "bare":
+            return compact
+        if output_format == "cisco":
+            hextets = [compact[i : i + 4] for i in range(0, len(compact), 4)]
+            return ".".join(hextets)
+        if output_format == "eui64":
+            if len(compact) == 12:
+                return ":".join([*octets[:3], "FF", "FE", *octets[3:]])
+            return value  # already EUI-64 - deterministic identity
+        if output_format == "bit_reversed":
+            return ":".join(_bit_reverse_octet(o) for o in octets)
+        return value  # colon default is identity - normalize() returns colon form
