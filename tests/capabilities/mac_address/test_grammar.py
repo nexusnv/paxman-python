@@ -2,7 +2,6 @@
 import pytest
 
 from paxman.capabilities.MacAddress.grammar import MacAddressRecognitionGrammar
-from paxman.capabilities.MacAddress.notation import MacAddressNotation
 
 pytestmark = [pytest.mark.capability]
 
