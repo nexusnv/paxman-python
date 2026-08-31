@@ -25,9 +25,9 @@
   ```
   `slug` = URL subfolder; `tag` = git ref checked out for that build. `latest` has no tag — it builds the current ref (`dev`/`main`). `stable` alias is a generated redirect, not a build (D4).
 - **D3a — Pinned set starts empty (forward-only):** tags `v0.1.0`–`v0.2.2` predate the rename (they contain `website/`, not `docs_site/`, and no `starlight-versions` integration), so they are **not** retro-buildable with this pipeline. `versions.json` starts with an empty `versions` array; versions are appended going forward (first entry will be `v0.3.0`). Pre-rename tags were never published at `/vX/` URLs, so excluding them breaks no back-compat. (Optional follow-up: retro-build old tags with a `website/` path special-case — out of scope.)
-- **D3b — Tag-push sequencing:** on a tag push, the tag's own `versions.json` cannot contain the tag (the appending PR merges to `dev` afterward). Therefore `read-versions` checks out **`main`** for tag events (the maintained list) and the workflow **appends `github.ref_name`** to the build list if absent — the tag deploy is complete on the tag run itself.
+- **D3b — Tag-push sequencing:** the release flow is: append the new version to `versions.json` on **`main`** (PR targeting `main`) and merge it **before** cutting the tag (see Task 4 Step 2). Then, on a tag push, `read-versions` checks out **`main`** (the maintained list, which by then contains the tag) and the workflow **additionally appends `github.ref_name`** to the build list if absent (belt-and-braces) — the tag deploy is complete on the tag run itself.
 - **D4 — Root + stable redirects:** generated **in CI after the artifact merge** (`printf` meta-refresh), not `docs_site/public/index.html` (which would collide with Starlight's root route). `dist/index.html` → `./latest/`; `dist/stable/index.html` → `./<last-pinned-slug>/`.
-- **D5 — Deploy triggers:** `push` to `dev` or `main` → rebuild `latest/` (plus all pinned versions, unchanged) and redeploy full artifact; `push` of tag `v*.*.*` → append that version to `versions.json` (PR), build it, redeploy full artifact. Tag builds are immutable because the tag ref is pinned in `versions.json`. The `deploy` job guard must include `refs/heads/dev` (currently `main || tags` only) — see Task 3 Step 2.
+- **D5 — Deploy triggers:** `push` to `dev` or `main` → rebuild `latest/` (plus all pinned versions, unchanged) and redeploy full artifact; `push` of tag `v*.*.*` → append that version to `versions.json` (PR), build it, redeploy full artifact. Tag builds are immutable because the tag ref is pinned in `versions.json`. The `deploy` job guard must include `refs/heads/dev` (currently `main || tags` only) — see Task 3 Step 2. Ordering per D3b: the `versions.json` append PR targets `main` and is merged before the tag is cut.
 - **D6 — Symlink:** `git mv website docs_site` preserves the relative symlink; verify `readlink docs_site/src/content/docs` == `../../../docs/user` (same depth — both `website/` and `docs_site/` are one level below repo root). Recreate only if broken.
 - **D7 — `.gitignore`:** replace both `website/dist/` and `website/node_modules/` (verified at `.gitignore:4-5`).
 - **D8 — Versions:** Astro ^7.2.9 / Starlight ^0.41.9 (from `website/package.json`, not the stale spec text). Spike must confirm `starlight-versions` compat with Starlight 0.41.x.
@@ -230,7 +230,9 @@ Replace the single `build-docs` job with **four jobs** (a matrix needs job-level
           fi
           echo "pairs=$PAIRS" >> "$GITHUB_OUTPUT"
           echo "count=$(jq 'length' <<< "$PAIRS")" >> "$GITHUB_OUTPUT"
-          echo "last_slug=$(jq -r '.versions[-1].slug // empty' docs_site/versions.json)" >> "$GITHUB_OUTPUT"
+          # last_slug derived from PAIRS (post-append), not the file —
+          # on tag pushes the file may not yet contain the new tag (D3b).
+          echo "last_slug=$(jq -r 'last.slug // empty' <<< "$PAIRS")" >> "$GITHUB_OUTPUT"
 
   build-latest:
     name: Build latest (current ref)
@@ -243,7 +245,13 @@ Replace the single `build-docs` job with **four jobs** (a matrix needs job-level
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: docs_site/package-lock.json }
       - run: cd docs_site && npm ci && npx playwright install --with-deps chromium && npm run build
+      # PR preview (replaces the deleted build-docs job's "site" artifact)
+      - name: Upload site artifact (PR preview)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with: { name: site, path: docs_site/dist/, if-no-files-found: error }
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with: { name: pages-latest, path: docs_site/dist/ }
 
   build-versions:
@@ -271,7 +279,7 @@ Replace the single `build-docs` job with **four jobs** (a matrix needs job-level
     runs-on: ubuntu-latest
     needs: [read-versions, build-latest, build-versions]
     # build-versions is skipped when the pinned set is empty (D3a) — proceed.
-    if: ${{ !cancelled() && needs.read-versions.result == 'success' && needs.build-latest.result == 'success' && (needs.build-versions.result == 'success' || needs.build-versions.result == 'skipped') }}
+    if: ${{ github.event_name != 'pull_request' && !cancelled() && needs.read-versions.result == 'success' && needs.build-latest.result == 'success' && (needs.build-versions.result == 'success' || needs.build-versions.result == 'skipped') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -288,9 +296,12 @@ Replace the single `build-docs` job with **four jobs** (a matrix needs job-level
             cp -r "$dir"/* "site/$slug/"
           done
           printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=./latest/">' > site/index.html
-          mkdir -p site/stable
-          printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=../%s/">' \
-            "${{ needs.read-versions.outputs.last_slug }}" > site/stable/index.html
+          # /stable/ only becomes meaningful after the first tagged release (D3a)
+          if [ -n "${{ needs.read-versions.outputs.last_slug }}" ]; then
+            mkdir -p site/stable
+            printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=../%s/">' \
+              "${{ needs.read-versions.outputs.last_slug }}" > site/stable/index.html
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
@@ -325,7 +336,7 @@ In `npm run dev`: version dropdown renders (starlight-versions). With D3a the pi
 
 - [ ] **Step 2: Docs updates**
 
-`docs_site/README.md` publishing section: how to cut a new version (tag `vX.Y.Z` → append to `versions.json` → push tag → workflow rebuilds full set). `docs/development/release/checklist.md`: add "docs: append version to `versions.json` before tagging".
+`docs_site/README.md` publishing section: how to cut a new version (tag `vX.Y.Z` → append to `versions.json` → push tag → workflow rebuilds full set). `docs/development/release/checklist.md`: add "docs: open PR appending the new version to `versions.json` **targeting `main`** and merge it before cutting the tag" (D3b).
 
 - [ ] **Step 3: Back-compat**
 
