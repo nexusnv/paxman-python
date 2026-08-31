@@ -7,14 +7,14 @@ on:
       - "v*.*.*"
     paths:
       - "docs/user/**"
-      - "website/**"
+      - "docs_site/**"
       - "paxman/**"
       - "pyproject.toml"
   pull_request:
     branches: [main, dev]
     paths:
       - "docs/user/**"
-      - "website/**"
+      - "docs_site/**"
       - "paxman/**"
       - "pyproject.toml"
   workflow_dispatch:
@@ -41,18 +41,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: website/package-lock.json
+          cache-dependency-path: docs_site/package-lock.json
 
       - name: Install docs dependencies
-        working-directory: website
+        working-directory: docs_site
         run: npm ci
 
       - name: Install Playwright browser (for rehype-mermaid)
-        working-directory: website
+        working-directory: docs_site
         run: npx playwright install --with-deps chromium
 
       - name: Build docs with Astro
-        working-directory: website
+        working-directory: docs_site
         run: npm run build
 
       # PRs: keep artifact for preview / debugging (no Pages deploy).
@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: site
-          path: website/dist/
+          path: docs_site/dist/
           if-no-files-found: error
 
       # main / tags: publish via GitHub Pages (actions/deploy-pages).
@@ -69,7 +69,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: website/dist/
+          path: docs_site/dist/
 
   deploy:
     name: Deploy to GitHub Pages

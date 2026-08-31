@@ -1,29 +1,29 @@
 # Paxman Docs — Astro Starlight
 
 User documentation lives in `../docs/user` (single source of truth, Markdown with frontmatter).  
-This `website/` folder is the Astro Starlight site that builds those files and deploys to GitHub Pages at https://nexusnv.github.io/paxman-python/ .
+This `docs_site/` folder is the Astro Starlight site that builds those files and deploys to GitHub Pages at https://nexusnv.github.io/paxman-python/ .
 
 ## Local development
 
 ```bash
-cd website
+cd docs_site
 npm ci            # install deps (Node 22+)
 npm run dev       # http://localhost:4321/paxman-python/
-npm run build     # outputs to website/dist/
+npm run build     # outputs to docs_site/dist/
 npm run preview   # preview built site
 ```
 
-Content is consumed via a symlink `website/src/content/docs -> ../../../docs/user` (preserved with `vite.resolve.preserveSymlinks`). Edit Markdown in `docs/user/*.md` — changes appear live in `npm run dev`.
+Content is consumed via a symlink `docs_site/src/content/docs -> ../../../docs/user` (preserved with `vite.resolve.preserveSymlinks`). Edit Markdown in `docs/user/*.md` — changes appear live in `npm run dev`.
 
 ## Publishing
 
 Push to `main` triggers `.github/workflows/docs.yml`:
 
-1. `npm ci && npm run build` in `website/` → `website/dist/`
-2. `actions/upload-pages-artifact@v3` with `path: website/dist/`
+1. `npm ci && npm run build` in `docs_site/` → `docs_site/dist/`
+2. `actions/upload-pages-artifact@v3` with `path: docs_site/dist/`
 3. `actions/deploy-pages@v4` (environment `github-pages`)
 
-PRs upload `website/dist/` as a normal artifact (`site`) for preview — no Pages deploy.
+PRs upload `docs_site/dist/` as a normal artifact (`site`) for preview — no Pages deploy.
 
 GitHub Pages is configured (`build_type: workflow`, `https://nexusnv.github.io/paxman-python/`).  
 If you change `site`/`base` in `astro.config.mjs`, update the Pages URL accordingly.

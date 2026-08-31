@@ -6,7 +6,7 @@ import rehypeMermaid from 'rehype-mermaid';
 export default defineConfig({
   site: 'https://nexusnv.github.io',
   base: '/paxman-python/',
-  // Keep content in docs/user as single source of truth — website/src/content/docs
+  // Keep content in docs/user as single source of truth — docs_site/src/content/docs
   // is a symlink to ../../docs/user. Preserve symlinks so Vite resolves the real files.
   vite: {
     resolve: {
