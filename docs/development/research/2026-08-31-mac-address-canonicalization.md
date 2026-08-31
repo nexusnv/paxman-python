@@ -291,6 +291,18 @@ _MAC_GUARD = BoundaryGuard(
 
 _MAC_PATTERN = _MAC_GUARD.lookbehind + _MAC_BODY + _MAC_GUARD.lookahead
 
+# Construction note: boundary.py's convention is "factory constructors - one
+# per distinct semantic variant" (word_only(), phone_national(), e164(), ...),
+# and its docstring targets "no grammar file hard-codes a lookaround literal".
+# A direct BoundaryGuard(lookbehind=..., lookahead=...) construction is valid
+# (the frozen dataclass accepts arbitrary lookarounds and the literals live in
+# the guard, not the pattern string), but the cleaner fit for the convention -
+# and the review recommendation - is to add a `mac_midrun()` factory to
+# paxman/core/grammar/boundary.py at implementation time (same shape as
+# phone_national(): stacked lookbehinds, empty lookahead). Implementation
+# plan Task 3 does this; the direct construction above is the documented
+# fallback if core review prefers zero core changes.
+
 
 def _mac_notation(match: re.Match[str]) -> MacAddressNotation:
     raw_compact = match.group("compact")
@@ -415,7 +427,7 @@ PostgreSQL macaddr8_set7bit: 08:00:2b:01:02:03 -> 0a:00:2b:ff:fe:01:02:03).
 
 | Edition | Date | Status | Note |
 |---------|------|--------|------|
-| IEEE Std 802-1990 | 1990 | superseded by 802-2001 | First standalone Overview and Architecture (per catalogue lineage) |
+| IEEE Std 802-1990 | 1990 | superseded by 802-2001 | First standalone Overview and Architecture - **not directly fetched**; recorded via the fetched 802-2014 page lineage listing (secondary evidence; no claim in this report rests on its text) |
 | IEEE Std 802-2001 | 2002 (approved 2001) | superseded by 802-2014 | §9.2 "48-bit universal LAN MAC addresses" (cited by Bluetooth Core 1.2/4.0); PostgreSQL quotes its hyphen-canonical/colon-MSB display convention |
 | IEEE Std 802-2014 | 2014-06-30 | superseded by 802-2024 | §8.2 "Universal addresses" - the clause the Bluetooth Core Specification cites normatively for BD_ADDR; amendments 802a-2003 (Ethertypes), 802b-2004 (OID), 802c-2017 (SLAP), 802d-2017 (URN), 802e, 802f-2023 (YANG EtherTypes) attach to this base |
 | IEEE Std 802-2024 | 2024 | **current** | Consolidation revision (P802-REVc program rolls up 802c/802d/802e/802f); abstract: "specifies the structure of IEEE 802 MAC addresses" |
@@ -424,12 +436,12 @@ PostgreSQL macaddr8_set7bit: 08:00:2b:01:02:03 -> 0a:00:2b:ff:fe:01:02:03).
 
 | `authority` | `spec_name` | `version` | `reference_url` | `lifecycle` | `publication_year` | `kind` |
 |-------------|-------------|-----------|-----------------|-------------|---------------------|--------|
-| IEEE | `IEEE Std 802-2024` | `2024` (current) | 802-2024 catalogue page (resolve via standards.ieee.org search at implementation; the fetched 802-2014 page's "Revised By: IEEE 802-2024" record is the fetched evidence) | `active` | `2024` | `specification` |
+| IEEE | `IEEE Std 802-2024` | `2024` (current) | `https://standards.ieee.org/ieee/802/10894` (resolved via search 2026-09-01; direct fetch timed out - IEEE SA blocks automated retrieval; the fetched 802-2014 page's "Revised By: IEEE 802-2024" record plus the search-returned page title/abstract are the evidence) | `active` | `2024` | `specification` |
 | IEEE | `IEEE Std 802-2014` | `2014` | `https://standards.ieee.org/standard/802-2014.html` | `superseded` (by 802-2024) | `2014` | `specification` |
 | IEEE | `IEEE Std 802-2001` | `2001` | (catalogue record cited via 802-2014 page lineage + PostgreSQL quote) | `superseded` | `2001` | `specification` |
 | IEEE | `IEEE Std 802c-2017` (SLAP amendment) | `2017` | `https://standards.ieee.org/ieee/802c/6890` | `active` (amendment; folded into 802-2024 program) | `2017` | `specification` |
 | IEEE RA | `IEEE Registration Authority MA-L/MA-M/MA-S public listing` | `Rolling` | `https://regauth.standards.ieee.org/` (+ `https://standards.ieee.org/products-programs/regauth/mac/`) | `active` - rolling | `2026` | `registry` |
-| IEEE | `Guidelines for Use of EUI, OUI, and CID` (tutorial) | (undated tutorial) | `https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf` | `active` | - | `specification` |
+| IEEE | `Guidelines for Use of EUI, OUI, and CID` (tutorial) | (undated tutorial) | `https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf` (PDF fetch blocked by content type; content triangulated via RFC 7042 + IEEE RA FAQ + Wikipedia - **secondary until re-fetched** via the IEEE GET Program at implementation; do not quote the tutorial directly in rule docstrings until then) | `active` | - | `specification` |
 | IETF | `RFC 7042` (BCP 141) | `2013-10` | `https://www.rfc-editor.org/rfc/rfc7042.txt` | `active` | `2013` | `specification` |
 | IETF | `RFC 2469` | `1998-12` | `https://www.rfc-editor.org/rfc/rfc2469.txt` | `active` (informational) | `1998` | `specification` |
 
@@ -697,13 +709,13 @@ python-stdnum validates manufacturer by default (universal addresses) because it
 ```bash
 uv run python tools/new_capability.py MacAddress --name mac_address \
     --authority "IEEE" --spec-name "IEEE Std 802-2024" \
-    --spec-url "https://standards.ieee.org/standard/802-2014.html" \
+    --spec-url "https://standards.ieee.org/ieee/802/10894" \
     --publication-year 2024
 ```
 
 Creates 13 files plus one edit (Step 0 checklist): `paxman/capabilities/MacAddress/{notation,contract,capability}.py`, `grammar/mac_address_recognition.py`, `rules/ieee_802_ed2024.py`, package inits, four test stubs (`tests/capabilities/mac_address/`), and the alphabetical `paxman/capabilities/__init__.py` wiring. The `TODO(scaffold)` markers then guide: replacing the placeholder grammar pattern with the §4.2 pattern, renaming `Section 1-overview` to `Section 8.2-eui-structure`, shaping the notation from placeholder `value` into `compact` + `shape`, and adding `rules/data/` only if the OUI registry layer is adopted.
 
-> Note: the scaffolder's single `--spec-name`/`--spec-url` covers one provenance. After scaffolding, add `rules/ieee_oui_registry_ed2026.py` (with `rules/data/oui_registry.py`) manually. The `--spec-url` above uses the fetched 802-2014 catalogue page as the verifiable URL; resolve the 802-2024 catalogue page at implementation and update `PUBLICATION` (§5.1 Citation Details Table notes this explicitly - no URL was invented).
+> Note: the scaffolder's single `--spec-name`/`--spec-url` covers one provenance. After scaffolding, add `rules/ieee_oui_registry_ed2026.py` (with `rules/data/oui_registry.py`) manually. The `--spec-url` above is the resolved 802-2024 catalogue page (search-verified 2026-09-01, direct fetch timed out); confirm the page's exact publication date at implementation and adjust `PUBLICATION` if it differs from `publication_year=2024` (§5.1 Citation Details Table).
 
 ### 10.2 Contract and grammar wiring
 
@@ -817,7 +829,8 @@ OUI_REGISTRY: frozenset[str] = frozenset(
 | IEEE RA MAC Addresses product page - MA-L/MA-M/MA-S blocks, Bluetooth Device Address usage, IoT framing (fetched) | <https://standards.ieee.org/products-programs/regauth/mac/> | primary |
 | IEEE Std 802-2014 catalogue page - "specifies the structure of IEEE 802 MAC addresses", Superseded/Revised-By 802-2024 record, 802c-2017 amendment record with URL (fetched) | <https://standards.ieee.org/standard/802-2014.html> | primary |
 | IEEE Std 802c-2017 (SLAP amendment) record (linked from the fetched 802-2014 page) | <https://standards.ieee.org/ieee/802c/6890> | primary |
-| IEEE EUI/OUI/CID tutorial (cited by RFC 7042 §8.2, IEEE RA FAQ, Bluetooth Core; PDF fetch blocked by content type - content triangulated via RFC 7042 + RA FAQ + Wikipedia) | <https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf> | primary |
+| IEEE EUI/OUI/CID tutorial (cited by RFC 7042 §8.2, IEEE RA FAQ, Bluetooth Core; PDF fetch blocked by content type - content triangulated via RFC 7042 + RA FAQ + Wikipedia; **downgraded to secondary until re-fetched via the IEEE GET Program at implementation**) | <https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf> | secondary |
+| IEEE Std 802-2024 catalogue page (current edition; resolved via search 2026-09-01, direct fetch timed out - title/abstract confirm "specifies the structure of IEEE 802 MAC addresses") | <https://standards.ieee.org/ieee/802/10894> | primary (via search excerpt) |
 | IEEE RA public listing (registry of record for the OUI snapshot layer) | <https://regauth.standards.ieee.org/> | primary |
 | Bluetooth Core 6.0 Part B Baseband - BD_ADDR = EUI-48 per IEEE 802-2014 §8.2, LAP/UAP/NAP fields, reserved LAP range (content retrieved via search excerpt of the official HTML spec) | <https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/Core-60/out/en/br-edr-controller/baseband-specification.html> | primary |
 | PostgreSQL 18 Network Address Types - `macaddr`/`macaddr8` input tables, `macaddr8_set7bit`, bit-order convention note (fetched in full) | <https://www.postgresql.org/docs/current/datatype-net-types.html> | primary |
