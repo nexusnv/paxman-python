@@ -101,7 +101,7 @@ jobs:
         version: ${{ fromJSON(needs.read-versions.outputs.pairs) }}
     steps:
       # D3a: pinned tags pre-rename are not in versions.json (empty start), so
-      # every checked-out tag DOES contain docs_site/ — no website/ special-case.
+      # every checked-out tag DOES contain docs_site/ — no pre-rename special-case.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ matrix.version.tag }}
