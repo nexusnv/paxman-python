@@ -67,8 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of twice. No behavior change.
 - **Docs — versioned docs (#96):** `website/` renamed to `docs_site/`; Pages
   deploys now ship every version listed in `docs_site/versions.json`
-  (`/vX.Y.Z/` immutable per tag, `/latest/` from `dev`, `/stable/` and root
-  redirect to latest) with an in-site version switcher.
+  (`/vX.Y.Z/` immutable per tag, `/latest/` from `dev`, root redirects
+  to `/latest/` and `/stable/` to the last pinned version) with an in-site
+  version switcher.
 
 ## [0.2.2] - 2026-08-30
 
