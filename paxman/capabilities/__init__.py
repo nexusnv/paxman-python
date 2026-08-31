@@ -61,7 +61,9 @@ if TYPE_CHECKING:
     from paxman.capabilities.ISBN.capability import ISBNCapability as ISBN
     from paxman.capabilities.ISSN.capability import ISSNCapability as ISSN
     from paxman.capabilities.Language.capability import LanguageCapability as Language
-    from paxman.capabilities.MacAddress.capability import MacAddressCapability as MacAddress
+    from paxman.capabilities.MacAddress.capability import (
+        MacAddressCapability as MacAddress,
+    )
     from paxman.capabilities.Money.capability import MoneyCapability as Money
     from paxman.capabilities.ORCID.capability import ORCIDCapability as ORCID
     from paxman.capabilities.Phone.capability import PhoneCapability as Phone

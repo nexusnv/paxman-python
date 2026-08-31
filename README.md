@@ -54,7 +54,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with fifteen built-in capabilities:
+Paxman ships with sixteen built-in capabilities:
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -68,6 +68,7 @@ Paxman ships with fifteen built-in capabilities:
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
 | **Language** | Language identifiers | 3 (bcp47_tag, language_code, language_name) | 10 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
+| **MacAddress** | MAC addresses | 1 (mac_address) | 1 | IEEE Std 802-2024 |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
@@ -519,7 +520,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with fifteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with sixteen built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re
