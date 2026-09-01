@@ -95,7 +95,20 @@ def _render() -> str:
         + _emit_rule_table(prefixes)
         + "\n\nGROUP_RULES: dict[str, tuple[tuple[str, str, int], ...]] = "
         + _emit_rule_table(groups)
-        + "\n"
+        + "\n\n"
+        "def find_registrant_length(\n"
+        "    rules: tuple[tuple[str, str, int], ...], digits: str\n"
+        ") -> int | None:\n"
+        '    """Length of the first rule whose 7-digit window covers the digit prefix."""\n'
+        '    window = (digits + "0" * 7)[:7]\n'
+        "    for start, end, length in rules:\n"
+        "        if start <= window <= end:\n"
+        "            return length\n"
+        "    return None\n"
+        "\n"
+        "# Back-compat alias — older capability/rule modules imported _find_length.\n"
+        "_find_length = find_registrant_length\n"
+        "\n"
     )
     if "output_format" in doc:  # purity guard — see test_no_output_format_token
         raise RuntimeError("generated module must not contain 'output_format'")

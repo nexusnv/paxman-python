@@ -16,12 +16,21 @@ class ISBNContract(CapabilityContract):
         capability_name: Fixed to "isbn" (not user-settable).
         output_format: Canonical output format ("isbn13" default, "hyphenated"
             offered). Optional — None/"default"/"isbn13" all resolve to
-            "isbn13".
-        excluded_rules: Tuple of rule names to exclude.
-        pinned_rules: Pin to specific rules (takes precedence over excluded_rules).
-        year: Year for temporal filtering.
-        include_isbn10: Enable legacy ISBN-10 input recognition.
-        include_range_validation: Gate the Range Message validation rule.
+            "isbn13" via ``CapabilityContract.__post_init__``.
+        excluded_rules: Tuple of rule names to exclude from validation.
+        pinned_rules: Pin to specific rules (takes precedence over
+            excluded_rules).
+        year: Year for temporal filtering (unused for ISBN, present for
+            contract uniformity).
+        extra_grammars: Tuple of community grammar names to run alongside
+            shipped grammars.
+        suppress_common_words: Hide matches that are common English words
+            (default False; uses BoundarySpec WORD guard).
+        include_isbn10: Enable legacy ISBN-10 input recognition (default
+            True). When False, ISBN-10 input yields MISSING.
+        include_range_validation: Gate the Range Message validation rule
+            (default False). When True, adds registrant-range provenance via
+            Section 4-registrant-range.
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "isbn13"

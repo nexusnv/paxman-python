@@ -12,9 +12,9 @@ Canonicalizes **one ISBN identifier** per call with check-digit validation, conv
 
 | Recognizes | Does not recognize |
 |------------|--------------------|
-| ISBN-13 bare digits with `978` or `979` prefix (`9780306406157`) | ISBNs with wrong check digits — recognized but `INVALID` |
+| ISBN-13 any 13-digit run with optional `ISBN`/`ISBN-13` label and single hyphen/space per gap (syntax); only `978`/`979` with valid check digit validates (`9780306406157`) | ISBNs with wrong check digits — recognized but `INVALID` |
 | ISBN-10 (`0306406152`) — only when `include_isbn10=True` (the default) | ISBN-10 when `include_isbn10=False` → `MISSING` |
-| Hyphenated input is normalized regardless of input hyphens — output hyphens are via `output_format` | Informal variants or partial numbers — `MISSING` |
+| Hyphenated/space-separated input is normalized regardless of input separators — one hyphen or space per digit gap is tolerated (`978-0-306-40615-7` → `9780306406157`); output hyphens are via `output_format` | Truncated or digit-glued runs like `1 0306406152` or `1 0-306-40615-2` → `MISSING` (digit+separator prefix); double separators like `978  0306406157` → `MISSING` |
 
 ---
 

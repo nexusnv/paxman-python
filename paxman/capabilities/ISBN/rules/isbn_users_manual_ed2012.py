@@ -45,6 +45,11 @@ class Section6Isbn10CheckDigit(Rule[ISBNNotation]):
 
     def normalize(self, notation: ISBNNotation, contract: Contract) -> str:
         """ISBN-10 -> ISBN-13: '978' + first 9 + recomputed mod-10 check digit."""
-        base = "978" + notation.digits[:9]
-        weighted = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base))
-        return base + str((10 - weighted % 10) % 10)
+        try:
+            base = "978" + notation.digits[:9]
+            weighted = sum(
+                int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base)
+            )
+            return base + str((10 - weighted % 10) % 10)
+        except ValueError:
+            return notation.digits
