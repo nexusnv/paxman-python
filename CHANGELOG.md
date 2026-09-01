@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of being silently accepted or dropped; `--48.5, 2.3` sign glue is MISSING;
   `iso6709` output pads fractions to the 4-place Annex H presentation width.
 
+## [0.3.1] - 2026-09-02
+
+### Fixed
+
+- **IP — deep audit (#113, #114):** mixed IPv6 with embedded IPv4 (`::ffff:192.0.2.1`, `64:ff9b::192.0.2.1`, `::192.0.2.1`) now recognized as a single IPv6 candidate via Las32 branches (RFC 4291 §2.2 / RFC 5952 §5); previously truncated to `::ffff:192` and returned `AMBIGUOUS ['::ffff:192','192.0.2.1']`. The trailing `192.0.2.1` is still emitted by the IPv4 grammar (`\b` boundary) so `canonicalize("::ffff:192.0.2.1")` yields `AMBIGUOUS ['::ffff:192.0.2.1','192.0.2.1']` — prefer the IPv6 value until engine cross-grammar dedup exists (documented, no IPv4 `\b` → lookaround without ADR). Triple-colon / double-`::` over-match (`:::1`, `2001:db8::1::2`) remains intentionally broad and sanitizes to `INVALID` (deferred low).
+- **IP — notation & rules:** `IPNotation` now `@dataclass(frozen=True, slots=True)` + field docs (C1, D1); both IPv4/IPv6 `normalize()` now `try/except ValueError` (IPv4 also `IndexError`) → return input instead of raising (B3, C2); provenance URLs migrated `tools.ietf.org` → `datatracker.ietf.org` (D4); docstrings clarify RFC 1123 §2.1 dotted-decimal and RFC 4291 §2.2 architecture for `LS32`.
+- **Docs — IP:** `docs/user/capabilities/ip.md` now documents mixed addresses, leading-zero normalization (`010.020.030.040` → `10.20.30.40`), overlap/over-broad notes and RFC 4291 provenance; `README.md` IP section updated; `CONTEXT.md` IP authorities and `IPNotation` entry updated; `docs/user/citations.md` IP URLs migrated to `datatracker`.
+
 ## [0.3.0] - 2026-08-31
 
 > **Housekeeping release — no new capability added.** This release consolidates kernel hardening, phone/BIC fixes, Unicode property stage, and versioned docs infrastructure.
@@ -230,7 +238,9 @@ and `docs/adr/0009-recognition-kernel.md` for the full guide.
   Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
   `0.1.0`, tag `v0.1.0`).
 
-[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/nexusnv/paxman-python/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/nexusnv/paxman-python/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/nexusnv/paxman-python/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/nexusnv/paxman-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/nexusnv/paxman-python/compare/v0.1.0...v0.2.0

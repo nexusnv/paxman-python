@@ -12,7 +12,7 @@ PUBLICATION = Provenance(
     authority="IETF",
     specification_name="RFC 791",
     kind="specification",
-    reference_url="https://tools.ietf.org/html/rfc791",
+    reference_url="https://datatracker.ietf.org/doc/html/rfc791",
     version="1981",
     lifecycle="active",
     publication_year=1981,
@@ -23,7 +23,10 @@ class Section3Dot2IPv4Address(Rule[IPNotation]):
     """RFC 791 Section 3.2 — Internet Addressing.
 
     Validates IPv4 addresses and normalizes to canonical dotted-decimal
-    form without leading zeros.
+    form without leading zeros. The dotted-decimal text representation is
+    clarified in RFC 1123 §2.1; RFC 791 §3.2 remains the authoritative
+    definition of the 32-bit address itself. Normalization strips leading
+    zeros per octet and emits via :class:`ipaddress.IPv4Address`.
     """
 
     name = "Section 3.2-ipv4-address"
@@ -50,6 +53,9 @@ class Section3Dot2IPv4Address(Rule[IPNotation]):
 
     def normalize(self, notation: IPNotation, contract: Contract) -> str:
         """Normalize to canonical dotted-decimal without leading zeros."""
-        normalized = self._strip_leading_zeros(notation.address)
-        addr = ipaddress.IPv4Address(normalized)
-        return str(addr)
+        try:
+            normalized = self._strip_leading_zeros(notation.address)
+            addr = ipaddress.IPv4Address(normalized)
+            return str(addr)
+        except (ValueError, IndexError):
+            return notation.address

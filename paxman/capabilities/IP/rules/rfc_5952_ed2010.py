@@ -12,7 +12,7 @@ PUBLICATION = Provenance(
     authority="IETF",
     specification_name="RFC 5952",
     kind="specification",
-    reference_url="https://tools.ietf.org/html/rfc5952",
+    reference_url="https://datatracker.ietf.org/doc/html/rfc5952",
     version="2010",
     lifecycle="active",
     publication_year=2010,
@@ -24,7 +24,10 @@ class Section4IPv6TextRepresentation(Rule[IPNotation]):
 
     Validates IPv6 addresses and normalizes to the recommended compressed
     form: lowercase hex, :: for the longest zero run, no leading zeros
-    except for the :: itself.
+    except for the :: itself. The underlying 128-bit architecture and the
+    embedded-IPv4 ``LS32`` form (``::ffff:192.0.2.1``) are defined in
+    RFC 4291 §2.2; RFC 5952 §5 recommends the same compressed rendering for
+    mixed addresses and is honored by :class:`ipaddress.IPv6Address`.
     """
 
     name = "Section 4-ipv6-text-representation"
@@ -50,5 +53,8 @@ class Section4IPv6TextRepresentation(Rule[IPNotation]):
         - :: for the longest run of consecutive zeros
         - No leading zeros in groups
         """
-        addr = ipaddress.IPv6Address(notation.address)
-        return str(addr)
+        try:
+            addr = ipaddress.IPv6Address(notation.address)
+            return str(addr)
+        except ValueError:
+            return notation.address

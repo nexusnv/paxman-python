@@ -135,3 +135,35 @@ class TestIPv6Grammar:
         assert results[0].start == 9
         assert results[0].end == 20
         assert results[0].raw_text == "2001:db8::1"
+
+    @pytest.mark.capability
+    def test_recognizes_mixed_ipv4_embedded(self) -> None:
+        grammar = IPv6Grammar()
+        cases = [
+            "::ffff:192.0.2.1",
+            "64:ff9b::192.0.2.1",
+            "2001:db8::192.168.1.1",
+            "::192.0.2.1",
+            "0:0:0:0:0:ffff:192.0.2.1",
+        ]
+        for addr in cases:
+            results = grammar.recognize(f"prefix {addr} suffix")
+            assert any(r.notation.address == addr for r in results), addr
+
+    @pytest.mark.capability
+    def test_mixed_not_truncated(self) -> None:
+        grammar = IPv6Grammar()
+        results = grammar.recognize("::ffff:192.0.2.1")
+        assert len(results) == 1
+        assert results[0].notation.address == "::ffff:192.0.2.1"
+        assert results[0].raw_text == "::ffff:192.0.2.1"
+
+    @pytest.mark.capability
+    def test_mixed_span_accuracy(self) -> None:
+        grammar = IPv6Grammar()
+        text = "Start ::ffff:192.0.2.1 end"
+        results = grammar.recognize(text)
+        assert len(results) == 1
+        assert results[0].start == 6
+        assert results[0].end == 22
+        assert results[0].raw_text == "::ffff:192.0.2.1"
