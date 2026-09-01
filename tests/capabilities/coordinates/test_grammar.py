@@ -179,10 +179,11 @@ class TestCoordinatesGrammarPairBranch:
     def test_percent_suffix_missing(self) -> None:
         # single component with percent — should be MISSING (needs pair)
         assert self.grammar.recognize("48.86%") == []
-        # also ensure pure percent not swallowed as pair
-        assert (
-            self.grammar.recognize("%48.86, 2.295") == [] or True
-        )  # percent prefix not relevant
+        # percent prefix is not a boundary; inner pair still recognized
+        res = self.grammar.recognize("%48.86, 2.295")
+        assert len(res) == 1
+        assert res[0].notation.latitude == "48.86"
+        assert res[0].raw_text == "48.86, 2.295"
 
     def test_midrun_glue_missing(self) -> None:
         assert self.grammar.recognize("ID48.8577,2.295") == []

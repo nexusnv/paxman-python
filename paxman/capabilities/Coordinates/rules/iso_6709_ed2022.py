@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
 from typing import ClassVar
 
 from paxman.capabilities.Coordinates.notation import CoordinatesNotation
-from paxman.capabilities.Coordinates.rules import component_in_range, fold_compact
+from paxman.capabilities.Coordinates.rules import components_valid, normalize_compact
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -49,38 +48,10 @@ class Section6CoordinateStructure(Rule[CoordinatesNotation]):
                 return False
         except (AttributeError, TypeError):
             return False
-        try:
-            lat_str = notation.latitude
-            lon_str = notation.longitude
-            # defensive: must be strings
-            if not isinstance(lat_str, str) or not isinstance(lon_str, str):
-                return False
-            # altitude may be None or string; validate if present
-            if notation.altitude is not None and not isinstance(notation.altitude, str):
-                return False
-            # quick Decimal parse check (also catches empty / non-numeric)
-            Decimal(lat_str)
-            Decimal(lon_str)
-            if notation.altitude is not None:
-                Decimal(notation.altitude)
-        except (InvalidOperation, ValueError, AttributeError, TypeError):
-            return False
-        # Level 2: numeric range (RFC 5870 §3.3 / §9.1 share the envelope)
-        if not component_in_range(lat_str, "-90", "90"):
-            return False
-        return component_in_range(lon_str, "-180", "180")
+        return components_valid(notation)
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
-        try:
-            return fold_compact(notation.compact)
-        except (InvalidOperation, ValueError, TypeError, AttributeError):
-            pass
-        try:
-            # Last-resort best-effort return: rules never raise, even for
-            # hostile objects whose ``__str__`` itself raises.
-            return str(getattr(notation, "compact", ""))
-        except Exception:  # never-raise contract, last resort
-            return ""
+        return normalize_compact(notation)
 
 
 class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
@@ -108,31 +79,7 @@ class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
                 return False
         except (AttributeError, TypeError):
             return False
-        try:
-            lat_str = notation.latitude
-            lon_str = notation.longitude
-            if not isinstance(lat_str, str) or not isinstance(lon_str, str):
-                return False
-            Decimal(lat_str)
-            Decimal(lon_str)
-            if notation.altitude is not None:
-                if not isinstance(notation.altitude, str):
-                    return False
-                Decimal(notation.altitude)
-        except (InvalidOperation, ValueError, AttributeError, TypeError):
-            return False
-        if not component_in_range(lat_str, "-90", "90"):
-            return False
-        return component_in_range(lon_str, "-180", "180")
+        return components_valid(notation)
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
-        try:
-            return fold_compact(notation.compact)
-        except (InvalidOperation, ValueError, TypeError, AttributeError):
-            pass
-        try:
-            # Last-resort best-effort return: rules never raise, even for
-            # hostile objects whose ``__str__`` itself raises.
-            return str(getattr(notation, "compact", ""))
-        except Exception:  # never-raise contract, last resort
-            return ""
+        return normalize_compact(notation)

@@ -9,6 +9,7 @@ _VALID_DEFECTS = frozenset(
     {
         "sign_hemisphere_conflict",
         "hemisphere_axis_mismatch",
+        "hemisphere_letter_conflict",
         "dms_unit_overflow",
         "iso_digit_width",
         "iso_missing_solidus",
@@ -27,9 +28,10 @@ class CoordinatesNotation:
     ``coord_shape`` records the recognized input family so rules can apply
     the owning publication's structural law and ``format_value`` can invert
     lon-first GeoJSON input losslessly. ``defects`` records structural facts
-    observed during recognition (contradictory sign/hemisphere, DMS unit
-    overflow, ISO 6709 digit width, missing Annex H solidus, foreign CRS,
-    hemisphere axis mismatch); the values always faithfully represent the
+    observed during recognition (contradictory sign/hemisphere, conflicting
+    front/back hemisphere letters, DMS unit overflow, ISO 6709 digit width,
+    missing Annex H solidus, foreign CRS, hemisphere axis mismatch);
+    the values always faithfully represent the
     input and the rule layer rejects defective notations.
     """
 

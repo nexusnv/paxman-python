@@ -1,8 +1,9 @@
 """Coordinates recognition grammar — pair + carriers.
 
 Recognition records *facts*, never verdicts: structural observations
-(hemisphere/sign contradiction, DMS unit overflow, ISO 6709 digit width,
-missing Annex H solidus, foreign CRS label, hemisphere axis mismatch) are
+(hemisphere/sign contradiction, conflicting hemisphere letters, DMS unit
+overflow, ISO 6709 digit width, missing Annex H solidus, foreign CRS
+label, hemisphere axis mismatch) are
 recorded on ``CoordinatesNotation.defects`` and the rules own every
 accept/reject decision. Recognized values always faithfully represent the
 input — no sentinel values are fabricated.
@@ -411,6 +412,16 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         hemi_lon is not None and hemi_lon.upper() in ("N", "S")
     ):
         defects.append("hemisphere_axis_mismatch")
+    if (
+        hemi_front_lat is not None
+        and hemi_back_lat is not None
+        and hemi_front_lat.upper() != hemi_back_lat.upper()
+    ) or (
+        hemi_front_lon is not None
+        and hemi_back_lon is not None
+        and hemi_front_lon.upper() != hemi_back_lon.upper()
+    ):
+        defects.append("hemisphere_letter_conflict")
     if lat_overflow or lon_overflow:
         defects.append("dms_unit_overflow")
     # sec_frac overflow: if sec is present and sec_frac present, the effective

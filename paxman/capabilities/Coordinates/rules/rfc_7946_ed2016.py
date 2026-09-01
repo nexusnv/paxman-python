@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
 from typing import ClassVar
 
 from paxman.capabilities.Coordinates.notation import CoordinatesNotation
-from paxman.capabilities.Coordinates.rules import component_in_range, fold_compact
+from paxman.capabilities.Coordinates.rules import components_valid, normalize_compact
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -46,22 +45,9 @@ class Section311Position(Rule[CoordinatesNotation]):
                 return False
         except (AttributeError, TypeError):
             return False
+        if not components_valid(notation):
+            return False
         try:
-            lat_str = notation.latitude
-            lon_str = notation.longitude
-            if not isinstance(lat_str, str) or not isinstance(lon_str, str):
-                return False
-            Decimal(lat_str)
-            Decimal(lon_str)
-            if notation.altitude is not None:
-                if not isinstance(notation.altitude, str):
-                    return False
-                Decimal(notation.altitude)
-                # GeoJSON allows at most 3 elements: lon, lat, alt
-                # altitude present means 3 elements — valid; we already
-                # enforce via shape, no extra length check needed beyond
-                # ensuring altitude is a valid number.
-                pass
             # Check element count: compact split by ", " should be 2 or 3
             parts = [p.strip() for p in notation.compact.split(",")]
             if len(parts) not in (2, 3):
@@ -72,20 +58,9 @@ class Section311Position(Rule[CoordinatesNotation]):
                 return False
             if not has_alt and len(parts) == 3:
                 return False
-        except (InvalidOperation, ValueError, AttributeError, TypeError):
+        except (AttributeError, TypeError):
             return False
-        if not component_in_range(lat_str, "-90", "90"):
-            return False
-        return component_in_range(lon_str, "-180", "180")
+        return True
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
-        try:
-            return fold_compact(notation.compact)
-        except (InvalidOperation, ValueError, TypeError, AttributeError):
-            pass
-        try:
-            # Last-resort best-effort return: rules never raise, even for
-            # hostile objects whose ``__str__`` itself raises.
-            return str(getattr(notation, "compact", ""))
-        except Exception:  # never-raise contract, last resort
-            return ""
+        return normalize_compact(notation)

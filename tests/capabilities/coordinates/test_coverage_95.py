@@ -165,9 +165,8 @@ class TestCapabilityDmsDmCarry:
             coord_shape="dd",
             compact="48.8577, 2.295",
         )
-        assert "0.0" not in CAP.format_value(
-            n2.compact, "dm", n2
-        ) or "51." in CAP.format_value(n2.compact, "dm", n2)
+        assert "51." in CAP.format_value(n2.compact, "dm", n2)
+        assert "0.0" not in CAP.format_value(n2.compact, "dm", n2)
 
     def test_format_dms_dm_alt_variants(self) -> None:
         n_none = CoordinatesNotation(
@@ -481,11 +480,8 @@ class TestRulesMatchesBranches:
             coord_shape="iso6709",
             compact="48.8577, 2.295, NaN",
         )
-        # NaN parses but is out of range? component_in_range returns False for NaN
-        assert (
-            self.s6.matches(n2, self.contract) is True
-            or self.s6.matches(n2, self.contract) is False
-        )  # just ensure no raise
+        # NaN altitude is non-finite and must be rejected
+        assert self.s6.matches(n2, self.contract) is False
         # annex with bad alt
         n3 = CoordinatesNotation(
             latitude="48.8577",

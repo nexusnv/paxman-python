@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
+__all__ = [
+    "component_in_range",
+    "fold_compact",
+    "components_valid",
+    "normalize_compact",
+]
+
 
 def component_in_range(value: str, lo: str, hi: str) -> bool:
     """Check whether *value* lies within [*lo*, *hi*] inclusive.
@@ -45,3 +52,47 @@ def fold_compact(compact: str) -> str:
             else:
                 folded.append(format(nd, "f"))
     return ", ".join(folded)
+
+
+def components_valid(notation: object) -> bool:
+    """Shared string/Decimal/finite/range gate used by every coordinates rule.
+
+    Validates that latitude/longitude are finite decimal strings within
+    their WGS 84 envelopes and that altitude, when present, is a finite
+    decimal string. Never raises.
+    """
+
+    try:
+        lat_str = notation.latitude  # type: ignore[attr-defined]
+        lon_str = notation.longitude  # type: ignore[attr-defined]
+        if not isinstance(lat_str, str) or not isinstance(lon_str, str):
+            return False
+        d_lat = Decimal(lat_str)
+        d_lon = Decimal(lon_str)
+        if not d_lat.is_finite() or not d_lon.is_finite():
+            return False
+        alt = getattr(notation, "altitude", None)
+        if alt is not None:
+            if not isinstance(alt, str):
+                return False
+            d_alt = Decimal(alt)
+            if not d_alt.is_finite():
+                return False
+    except (InvalidOperation, ValueError, AttributeError, TypeError):
+        return False
+    if not component_in_range(lat_str, "-90", "90"):
+        return False
+    return component_in_range(lon_str, "-180", "180")
+
+
+def normalize_compact(notation: object) -> str:
+    """Shared never-raise ``normalize()`` used by every coordinates rule."""
+
+    try:
+        return fold_compact(notation.compact)  # type: ignore[attr-defined]
+    except (InvalidOperation, ValueError, TypeError, AttributeError):
+        pass
+    try:
+        return str(getattr(notation, "compact", ""))
+    except Exception:
+        return ""

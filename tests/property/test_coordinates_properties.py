@@ -199,7 +199,9 @@ def test_encodings_dedup_to_one_value(
         Section33GeoUriValidity(),
         Section311Position(),
     ]:
-        pass
+        assert _rule.normalize(n_dec, CoordinatesContract()) == _rule.normalize(
+            n_dms, CoordinatesContract()
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -41,10 +41,8 @@ class TestCoordinatesPipeline:
         # span-bearing
         start, end = result.span
         assert 0 <= start < end <= len(text)
-        assert (
-            end - start == len(result.candidates[0].value)
-            or text[start:end] == text[result.span[0] : result.span[1]]
-        )
+        assert end - start == len(text[start:end])
+        assert text[start:end] == result.candidates[0].value
         assert text[result.span[0] : result.span[1]] == "48.8577, 2.295"
         # provenance lists ISO (and IETF is valid for other shapes)
         authorities = {p.authority for c in result.candidates for p in c.provenance}
