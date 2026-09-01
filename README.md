@@ -233,15 +233,17 @@ result = paxman.canonicalize("ZZ82WEST12345698765432", contract)
 
 ### IP Capability
 
-Recognizes IPv4 and IPv6 addresses with canonical normalization.
+Recognizes IPv4 and IPv6 addresses (including IPv6 mixed with embedded IPv4 per RFC 4291 §2.2 / RFC 5952 §5) with canonical normalization.
 
 ```python
 from paxman.capabilities import IP
 
 register_capability(IP())
 
-# IPv4
+# IPv4 — leading zeros stripped
 contract = IP.create_contract()
+result = paxman.canonicalize("010.020.030.040", contract)
+# → "10.20.30.40"
 result = paxman.canonicalize("192.168.1.1", contract)
 # → "192.168.1.1"
 
@@ -249,6 +251,11 @@ result = paxman.canonicalize("192.168.1.1", contract)
 contract = IP.create_contract()
 result = paxman.canonicalize("2001:0db8:0000:0000:0000:0000:0000:0001", contract)
 # → "2001:db8::1"
+
+# Mixed IPv6 with embedded IPv4 (RFC 4291 §2.2)
+contract = IP.create_contract()
+result = paxman.canonicalize("::ffff:192.0.2.1", contract)
+# → AMBIGUOUS ['::ffff:192.0.2.1', '192.0.2.1'] — trailing IPv4 also emitted via \b (prefer the IPv6 value)
 
 # Disable IPv6 recognition
 contract = IP.create_contract(include_ipv6=False)

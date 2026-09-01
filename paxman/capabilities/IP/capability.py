@@ -19,7 +19,16 @@ __all__ = ["IPCapability", "IPContract", "IPNotation"]
 
 
 class IPCapability(Capability[IPNotation]):
-    """IP canonicalization capability."""
+    """IP canonicalization capability — dotted-decimal IPv4 and RFC 5952 IPv6.
+
+    Grammars:
+        - ``ipv4_recognition`` (always active)
+        - ``ipv6_recognition`` (gated by ``IPContract.include_ipv6``)
+
+    Rules:
+        - ``Section 3.2-ipv4-address`` (RFC 791 / RFC 1123)
+        - ``Section 4-ipv6-text-representation`` (RFC 5952, arch RFC 4291)
+    """
 
     name = "ip"
 
@@ -46,7 +55,18 @@ class IPCapability(Capability[IPNotation]):
         suppress_common_words: bool = False,
         include_ipv6: bool = True,
     ) -> IPContract:
-        """Create an IPContract with the given configuration."""
+        """Create an IPContract with the given configuration.
+
+        Args:
+            excluded_rules: Rule names to exclude.
+            pinned_rules: If set, only these rules run (overrides excluded).
+            year: Unused (kept for uniform Contract shape).
+            output_format: Must be ``None``, ``"default"`` or ``"ip"``.
+            extra_grammars: Community grammars to run alongside shipped ones.
+            suppress_common_words: Reserved (no effect for IP).
+            include_ipv6: When ``False`` the IPv6 grammar is omitted →
+                IPv6 inputs yield ``MISSING``.
+        """
         return IPContract(
             include_ipv6=include_ipv6,
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),

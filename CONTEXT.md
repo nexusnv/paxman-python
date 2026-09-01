@@ -47,7 +47,8 @@ Capability-defined intermediate representation that Grammars must produce:
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
 - **MacAddress:** `MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` discriminates `"eui48"` / `"eui64"`; grammar strips separators (colon/hyphen/tri-dot/bare) and uppercases, fused `MAC` label included in `raw_text`; rules own structure (no checksum, I/G + U/L informative), derived OUI = `compact[:6]`
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
-- **IP / Phone / URL:** capability-defined shapes for address / number / URI components
+- **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
+- **Phone / URL:** capability-defined shapes for address / number / URI components
 
 ### Notation Type Example
 ```python
@@ -73,7 +74,7 @@ Paxman ships sixteen built-in capabilities (16 in `paxman/capabilities/__init__.
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
-| **IP** | IP addresses | RFC 791, RFC 5952 |
+| **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
@@ -814,11 +815,11 @@ paxman/
     │   ├── notation.py            # IBANNotation (country_code, check_digits, bban, compact)
     │   ├── grammar/               # iban_recognition
     │   └── rules/                 # iso_13616 (registry + MOD 97-10 check)
-    ├── IP/                        # grammar/ (2) + rules/ (2) — RFC 791, RFC 5952
+    ├── IP/                        # grammar/ (2) + rules/ (2) — RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952
     │   ├── capability.py          # IPCapability
     │   ├── contract.py            # IPContract
-    │   ├── notation.py            # IPNotation
-    │   ├── grammar/               # ipv4, ipv6_recognition
+    │   ├── notation.py            # IPNotation (address)
+    │   ├── grammar/               # ipv4_recognition (\\b), ipv6_recognition (full/compressed/mixed Las32)
     │   └── rules/                 # rfc_791_ed1981, rfc_5952_ed2010
     ├── ISBN/                      # grammar/ (2) + rules/ (3) + rules/data/ — ISO 2108, Users' Manual, Range Message
     │   ├── capability.py          # ISBNCapability
