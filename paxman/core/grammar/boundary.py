@@ -86,6 +86,15 @@ class BoundaryGuard:
         )
 
     @classmethod
+    def mac_midrun(cls) -> BoundaryGuard:
+        # MAC address guard: word_only plus rejection of a claim start
+        # preceded by hex + separator — the tail of a longer colon/hyphen
+        # run ("00:1A:2B:3C:4D:5E:66" must not yield "1A:2B:3C:4D:5E:66").
+        # Plain word_only treats ':'/'-'/'.' as boundaries; the second
+        # stacked lookbehind closes that gap (phone_national() precedent).
+        return cls(lookbehind=r"(?<!\w)(?<![0-9A-Fa-f][-.:])", lookahead=r"(?!\w)")
+
+    @classmethod
     def ipv6_token(cls) -> BoundaryGuard:
         # Token boundary for IPv6: start/end of string or a delimiter class.
         # NOTE: Unlike the other guards, this is a *consuming* anchor pair

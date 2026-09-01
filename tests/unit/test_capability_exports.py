@@ -15,6 +15,7 @@ from paxman.capabilities import (  # isort: skip
     ISBN,
     ISSN,
     Language,
+    MacAddress,
     Money,
     ORCID,
     Phone,
@@ -179,6 +180,18 @@ class TestLanguageCapabilityExports:
         assert Language.name == "language"
 
 
+class TestMacAddressCapabilityExports:
+    @pytest.mark.unit
+    def test_mac_address_capability_importable(self) -> None:
+        """MacAddress capability is importable from paxman.capabilities."""
+        assert MacAddress is not None
+
+    @pytest.mark.unit
+    def test_mac_address_capability_name(self) -> None:
+        """MacAddress capability has correct name."""
+        assert MacAddress.name == "mac_address"
+
+
 class TestSIUnitCapabilityExports:
     @pytest.mark.unit
     def test_si_unit_capability_importable(self) -> None:
@@ -218,6 +231,7 @@ class TestURLCapabilityExports:
             "ISBN",
             "ISSN",
             "Language",
+            "MacAddress",
             "Money",
             "ORCID",
             "Phone",
