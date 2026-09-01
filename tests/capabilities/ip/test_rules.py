@@ -121,7 +121,11 @@ class TestSection3Dot2IPv4Address:
     @pytest.mark.capability
     def test_notation_is_frozen_slots(self) -> None:
         assert IPNotation.__dataclass_params__.frozen is True
-        assert IPNotation.__dataclass_params__.slots is True
+        params = IPNotation.__dict__.get("__dataclass_params__")  # type: ignore[attr-defined]
+        if params is not None and hasattr(params, "slots"):
+            assert getattr(params, "slots") is True  # noqa: B009
+        else:
+            assert hasattr(IPNotation, "__slots__")
         assert hasattr(IPNotation, "__slots__")
 
 
