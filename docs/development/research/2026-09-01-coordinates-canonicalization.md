@@ -113,8 +113,9 @@ A v1 that does NOT recognize a commonly attested form must state that explicitly
 
 **Normalization contract (new for Coordinates, modeled on Money's `classify_amount_shape` at `paxman/capabilities/Money/grammar/__init__.py`):**
 ```python
-def _decimal_degrees(degrees: str, minutes: str | None, seconds: str | None,
-                     hemisphere: str | None) -> "Decimal":
+def _decimal_degrees(
+    degrees: str, minutes: str | None, seconds: str | None, hemisphere: str | None
+) -> "Decimal":
     """DDM/DMS → decimal degrees with exact Decimal arithmetic.
 
     Wikipedia GeoCoordConv: decimal degrees = degrees + minutes/60 +
@@ -129,14 +130,17 @@ def _decimal_degrees(degrees: str, minutes: str | None, seconds: str | None,
         value = -value
     return value
 
+
 def _normalize_pair(lat: Decimal, lon: Decimal) -> tuple[str, str]:
     """Quantize to 6 decimal places (RFC 7946 §11.2 guidance), strip
     trailing zeros, fold -0 to 0 (RFC 5870 §3.3)."""
+
     def _one(v: Decimal) -> str:
         q = v.quantize(Decimal("0.000001")).normalize()
         if q == 0:
             q = Decimal(0)
         return str(q)
+
     return _one(lat), _one(lon)
 ```
 
@@ -160,6 +164,7 @@ Paxman resolves **one mention per `canonicalize()` call** (ARCHITECTURE.md, segm
 ```python
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, slots=True)
 class CoordinatesNotation:
     """WGS 84 coordinate notation - decimal pair plus shape discriminator.
@@ -175,11 +180,11 @@ class CoordinatesNotation:
     presentation form: "lat, lon" with ASCII comma+space.
     """
 
-    latitude: str          # e.g. "48.8577"  (−90 ≤ value ≤ 90)
-    longitude: str         # e.g. "2.295"    (−180 ≤ value ≤ 180)
-    altitude: str | None   # e.g. "8850" metres, or None
-    coord_shape: str       # "dd" | "ddm" | "dms" | "iso6709" | "geo_uri" | "geojson"
-    compact: str           # e.g. "48.8577, 2.295"
+    latitude: str  # e.g. "48.8577"  (−90 ≤ value ≤ 90)
+    longitude: str  # e.g. "2.295"    (−180 ≤ value ≤ 180)
+    altitude: str | None  # e.g. "8850" metres, or None
+    coord_shape: str  # "dd" | "ddm" | "dms" | "iso6709" | "geo_uri" | "geojson"
+    compact: str  # e.g. "48.8577, 2.295"
 ```
 
 **Considered alternative — single field `compact` only:** a lone `compact` pair would lose (1) the rule-routing key — the ISO 6709 truncation rules and the GeoJSON ordering rule must know which input family they are validating, exactly as MacAddressNotation's `shape` routes EUI-48 vs EUI-64 and MoneyNotation's `amount_shape` routes decimal conventions; (2) the ordering provenance — whether the input was lon-first (GeoJSON) is presentation-relevant for round-trip fidelity and must survive to `format_value`; (3) altitude — dropping it silently would be lossy for the `+27.5916+086.5640+8850CRSWGS_84/` surface. The decomposition is preferred.
@@ -222,26 +227,34 @@ from paxman.core.grammar.stages import RegexStage, StandardPre
 _DEC = r"\d{1,3}(?:\.\d{1,7})?"
 _SIGNS = r"(?P<sign>[-+])?"
 _HEMI = r"(?P<hemi_front>[NSEWnsew])?[\s:]?"
-_UNITS = (r"(?:\s*[°D\*]?\s*(?P<minutes>\d{1,2}(?:\.\d+)?)\s*[′'m]?"
-          r"(?:\s*(?P<seconds>\d{1,2}(?:\.\d+)?)\s*[″\"s])?)?")
+_UNITS = (
+    r"(?:\s*[°D\*]?\s*(?P<minutes>\d{1,2}(?:\.\d+)?)\s*[′'m]?"
+    r"(?:\s*(?P<seconds>\d{1,2}(?:\.\d+)?)\s*[″\"s])?)?"
+)
 
 # SEP class is geopy's, verbatim evidence: comma, semicolon, slash, whitespace.
 _SEP = r"[\s,;/]+"
 
 # ISO 6709 branch: signed fixed-width components, optional CRS, trailing /.
-_ISO_BODY = (r"(?P<iso>[+-]\d{2,7}(?:\.\d+)?[+-]\d{2,8}(?:\.\d+)?"
-             r"(?:[+-]\d+)?(?:CRS[A-Za-z0-9_]+)?/)")
+_ISO_BODY = (
+    r"(?P<iso>[+-]\d{2,7}(?:\.\d+)?[+-]\d{2,8}(?:\.\d+)?"
+    r"(?:[+-]\d+)?(?:CRS[A-Za-z0-9_]+)?/)"
+)
 
 # Geo URI branch: RFC 5870 geo-scheme ":" geo-path.
-_GEO_BODY = (r"(?P<geo>geo:[+-]?\d{1,3}(?:\.\d+)?,[+-]?\d{1,3}(?:\.\d+)?"
-             r"(?:,[+-]?\d+(?:\.\d+)?)?(?:;crs=[A-Za-z0-9\-]+)?(?:;u=\d+(?:\.\d+)?)?)")
+_GEO_BODY = (
+    r"(?P<geo>geo:[+-]?\d{1,3}(?:\.\d+)?,[+-]?\d{1,3}(?:\.\d+)?"
+    r"(?:,[+-]?\d+(?:\.\d+)?)?(?:;crs=[A-Za-z0-9\-]+)?(?:;u=\d+(?:\.\d+)?)?)"
+)
 
 # GeoJSON bracketed lon-first pair (RFC 7946 §3.1.1).
 _JSON_BODY = r"(?P<geojson>\[\s*[+-]?\d{1,3}(?:\.\d+)?\s*,\s*[+-]?\d{1,3}(?:\.\d+)?(?:\s*,\s*[+-]?\d+(?:\.\d+)?)?\s*\])"
 
 # Bare pair branch: two components, hemisphere letters front/back, any SEP.
-_PAIR_BODY = (rf"(?P<pair>{_HEMI}{_SIGNS}{_DEC}{_UNITS}\s*[NSEWnsew]?\s*"
-              rf"{_SEP}{_HEMI}{_SIGNS}{_DEC}{_UNITS}\s*[NSEWnsew]?)")
+_PAIR_BODY = (
+    rf"(?P<pair>{_HEMI}{_SIGNS}{_DEC}{_UNITS}\s*[NSEWnsew]?\s*"
+    rf"{_SEP}{_HEMI}{_SIGNS}{_DEC}{_UNITS}\s*[NSEWnsew]?)"
+)
 
 _BODY_ALTS = f"{_GEO_BODY}|{_ISO_BODY}|{_JSON_BODY}|(?:{_PAIR_BODY})"
 _COORDS_BODY = rf"(?ai:(?:(?:COORDS?|LAT(\/LON)?)[\s:-]+)?(?P<core>{_BODY_ALTS}))"

@@ -82,9 +82,7 @@ Depends on: Task 0.
   ```python
   from dataclasses import dataclass
 
-  _VALID_SHAPES = frozenset(
-      {"dd", "ddm", "dms", "iso6709", "geo_uri", "geojson"}
-  )
+  _VALID_SHAPES = frozenset({"dd", "ddm", "dms", "iso6709", "geo_uri", "geojson"})
 
 
   @dataclass(frozen=True, slots=True)

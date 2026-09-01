@@ -29,6 +29,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "Business identifier codes",
         "ISO 9362:2022, ISO 3166-1 (country codes plus XK)",
     ),
+    "coordinates": ("WGS 84 coordinates", "ISO 6709:2022, RFC 5870, RFC 7946"),
     "country": ("Country codes/names", "ISO 3166, CLDR"),
     "currency": ("Currency identifiers", "ISO 4217, CLDR"),
     "date": (
@@ -44,6 +45,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "Language identifiers",
         "ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR",
     ),
+    "mac_address": ("MAC addresses", "IEEE Std 802-2024"),
     "money": ("Money amounts", "ISO 4217, CLDR"),
     "orcid": ("Researcher identifiers", "ISO 27729:2024, MOD 11-2"),
     "phone": ("Phone numbers", "ITU-T E.164, RFC 3966, NANP"),
@@ -53,6 +55,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
 
 _DISPLAY_NAMES: dict[str, str] = {
     "bic": "BIC",
+    "coordinates": "Coordinates",
     "country": "Country",
     "currency": "Currency",
     "date": "Date",
@@ -62,6 +65,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "isbn": "ISBN",
     "issn": "ISSN",
     "language": "Language",
+    "mac_address": "MacAddress",
     "money": "Money",
     "orcid": "ORCID",
     "phone": "Phone",

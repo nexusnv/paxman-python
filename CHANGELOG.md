@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Coordinates — WGS 84 coordinates:** new capability with one grammar (`coordinates_recognition`) covering decimal pairs, hemisphere letters, DMS/DDM, Geo URI `geo:`, ISO 6709 string-expression, and GeoJSON lon-first pairs, and four parser rules backed by ISO 6709:2022 (`Section 6-coordinate-structure`, `Section Annex-h-string-expression`), RFC 5870 (`Section 3.3-geo-uri-validity`), and RFC 7946 (`Section 3.1.1-position`). Canonical form is lat-first signed decimal degrees quantized to 6dp round-half-even with `-0` folded to `0`; six output formats `decimal` (default), `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm`.
+
 ## [0.3.0] - 2026-08-31
 
 > **Housekeeping release — no new capability added.** This release consolidates kernel hardening, phone/BIC fixes, Unicode property stage, and versioned docs infrastructure.

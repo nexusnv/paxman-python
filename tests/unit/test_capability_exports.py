@@ -6,6 +6,7 @@ import pytest
 
 from paxman.capabilities import (  # isort: skip
     BIC,
+    Coordinates,
     Country,
     Currency,
     Date,
@@ -192,6 +193,18 @@ class TestMacAddressCapabilityExports:
         assert MacAddress.name == "mac_address"
 
 
+class TestCoordinatesCapabilityExports:
+    @pytest.mark.unit
+    def test_coordinates_capability_importable(self) -> None:
+        """Coordinates capability is importable from paxman.capabilities."""
+        assert Coordinates is not None
+
+    @pytest.mark.unit
+    def test_coordinates_capability_name(self) -> None:
+        """Coordinates capability has correct name."""
+        assert Coordinates.name == "coordinates"
+
+
 class TestSIUnitCapabilityExports:
     @pytest.mark.unit
     def test_si_unit_capability_importable(self) -> None:
@@ -222,6 +235,7 @@ class TestURLCapabilityExports:
 
         assert set(capabilities.__all__) == {
             "BIC",
+            "Coordinates",
             "Country",
             "Currency",
             "Date",
