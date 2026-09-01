@@ -51,6 +51,8 @@ class Section82EUIStructure(Rule[MacAddressNotation]):
 
     def matches(self, notation: MacAddressNotation, contract: Contract) -> bool:
         compact = notation.compact
+        if not isinstance(compact, str):
+            return False
         if len(compact) not in _VALID_LENGTHS:
             return False
         if any(ch not in _HEX for ch in compact):
@@ -59,6 +61,10 @@ class Section82EUIStructure(Rule[MacAddressNotation]):
 
     def normalize(self, notation: MacAddressNotation, contract: Contract) -> str:
         compact = notation.compact
+        if not isinstance(compact, str):
+            # defensive: never raise (HOW_TO §5b, paxman/capabilities/AGENTS.md)
+            # unreachable after matches() — best-effort return input unchanged
+            return "" if compact is None else str(compact)
         return ":".join(compact[i : i + 2] for i in range(0, len(compact), 2))
 
 
