@@ -133,15 +133,16 @@ def test_format_value_decimal_identity() -> None:
 def test_format_value_iso6709() -> None:
     n = _notation(lat="48.8577", lon="2.295", alt=None)
     result = CAP.format_value(n.compact, "iso6709", n)
-    assert result == "+48.8577+002.295/"
+    # fraction padded to the 4-place Annex H presentation width
+    assert result == "+48.8577+002.2950/"
     assert result.endswith("/")
     assert "48.8577" in result
-    assert "002.295" in result
+    assert "002.2950" in result
     # lon padded to 3 integer digits
     # with altitude
     n_alt = _notation(lat="48.8577", lon="2.295", alt="8850")
     result_alt = CAP.format_value(n_alt.compact, "iso6709", n_alt)
-    assert result_alt == "+48.8577+002.295+8850/"
+    assert result_alt == "+48.8577+002.2950+8850/"
     assert result_alt.endswith("/")
     assert "8850" in result_alt
     assert "48.8577" in result_alt

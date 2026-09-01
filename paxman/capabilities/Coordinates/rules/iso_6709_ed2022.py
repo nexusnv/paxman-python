@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from typing import ClassVar
 
 from paxman.capabilities.Coordinates.notation import CoordinatesNotation
-from paxman.capabilities.Coordinates.rules import component_in_range
+from paxman.capabilities.Coordinates.rules import component_in_range, fold_compact
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -21,35 +21,15 @@ PUBLICATION = Provenance(
 )
 
 
-def _fold_compact(compact: str) -> str:
-    """Fold -0 components in compact to 0."""
-    parts = [p.strip() for p in compact.split(",")]
-    folded: list[str] = []
-    for p in parts:
-        try:
-            d = Decimal(p)
-        except (InvalidOperation, ValueError, AttributeError):
-            folded.append(p)
-            continue
-        if d == 0:
-            folded.append("0")
-        else:
-            # normalize without scientific notation
-            nd = d.normalize()
-            if nd == 0:
-                folded.append("0")
-            else:
-                folded.append(format(nd, "f"))
-    return ", ".join(folded)
-
-
 class Section6CoordinateStructure(Rule[CoordinatesNotation]):
     """ISO 6709:2022 Section 6 — coordinate structure.
 
     Validates per-coord_shape structure: decimal/DMS/DDM/ISO 6709.
-    Checks minutes <60, seconds <60, hemisphere/sign consistency (via
-    grammar sentinel), lat in [-90,90], lon in [-180,180], and ISO
-    integer digit widths (encoded as out-of-range sentinel by grammar).
+    Enforces sign/hemisphere consistency, hemisphere axis agreement,
+    DMS unit ranges (minutes < 60, seconds < 60), ISO integer digit
+    widths (2/4/6 lat, 3/5/7 lon — the grammar records width and
+    consistency facts in ``defects``), and the numeric ranges
+    lat in [-90,90], lon in [-180,180].
     """
 
     name = "Section 6-coordinate-structure"
@@ -61,6 +41,10 @@ class Section6CoordinateStructure(Rule[CoordinatesNotation]):
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
         try:
+            # Structural facts recorded at recognition: a defective input has
+            # no valid reading under this publication's coordinate law.
+            if notation.defects:
+                return False
             if notation.coord_shape not in {"dd", "ddm", "dms", "iso6709"}:
                 return False
         except (AttributeError, TypeError):
@@ -81,48 +65,32 @@ class Section6CoordinateStructure(Rule[CoordinatesNotation]):
                 Decimal(notation.altitude)
         except (InvalidOperation, ValueError, AttributeError, TypeError):
             return False
-        # Level 2: numeric range (also covers grammar-encoded structural sentinels)
+        # Level 2: numeric range (RFC 5870 §3.3 / §9.1 share the envelope)
         if not component_in_range(lat_str, "-90", "90"):
             return False
-        if not component_in_range(lon_str, "-180", "180"):
-            return False
-        # Level 1: structural checks that are still detectable from notation.
-        # DMS overflow and hemisphere contradiction are encoded as out-of-range
-        # sentinels by the grammar (91 / -91 / 181), so range already rejects
-        # pipeline cases. For direct notation, overflow cannot be inferred from
-        # quantized decimal alone, so we treat any dms/ddm with minutes/seconds
-        # overflow that would have been sentineled as already handled.
-        # ISO digit-width is also grammar-sentineled; for direct notation we
-        # apply a best-effort width check on the quantized value's integer part
-        # only for obviously wrong widths that are also in-range (e.g., 3-digit
-        # lat 100 is already out-of-range, so redundant).
-        if notation.coord_shape == "iso6709":
-            # Best-effort width check: quantized lat 1-2 digits and lon 1-3
-            # digits are all possible after decimal conversion, so no
-            # additional rejection for in-range values. Out-of-range 3-digit
-            # lat is already covered by range. The grammar sentinel is the
-            # authoritative width enforcement.
-            pass
-        # For ddm/dms, overflow would be sentinel 91/181, already rejected.
-        return True
+        return component_in_range(lon_str, "-180", "180")
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
         try:
-            return _fold_compact(notation.compact)
-        except Exception:
-            try:
-                return str(getattr(notation, "compact", ""))
-            except Exception:
-                return ""
+            return fold_compact(notation.compact)
+        except (InvalidOperation, ValueError, TypeError, AttributeError):
+            pass
+        try:
+            # Last-resort best-effort return: rules never raise, even for
+            # hostile objects whose ``__str__`` itself raises.
+            return str(getattr(notation, "compact", ""))
+        except Exception:  # never-raise contract, last resort
+            return ""
 
 
 class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
     """ISO 6709:2022 Annex H — string expression of a point.
 
-    Validates the carrier: trailing solidus and CRS label family.
-    The grammar encodes missing solidus and foreign CRS as out-of-range
-    sentinels; this rule re-checks the carrier law for direct notation
-    where possible and always enforces range.
+    Validates the ISO 6709 carrier: coord_shape == iso6709, trailing
+    solidus present, CRS label (when present) in the WGS 84 family, and
+    the numeric ranges. Carrier facts are recorded by the grammar in
+    ``defects``; any defect means this publication does not validate
+    the input as a coordinate.
     """
 
     name = "Section Annex-h-string-expression"
@@ -134,6 +102,8 @@ class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
         try:
+            if notation.defects:
+                return False
             if notation.coord_shape != "iso6709":
                 return False
         except (AttributeError, TypeError):
@@ -153,18 +123,16 @@ class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
             return False
         if not component_in_range(lat_str, "-90", "90"):
             return False
-        # Carrier checks (solidus, CRS) are grammar-sentineled; for direct
-        # notation the compact never contains '/' or CRS, so we cannot
-        # re-derive them. The grammar sentinel ensures pipeline cases with
-        # missing solidus or foreign CRS are out-of-range and thus rejected
-        # via the range checks above.
         return component_in_range(lon_str, "-180", "180")
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
         try:
-            return _fold_compact(notation.compact)
-        except Exception:
-            try:
-                return str(getattr(notation, "compact", ""))
-            except Exception:
-                return ""
+            return fold_compact(notation.compact)
+        except (InvalidOperation, ValueError, TypeError, AttributeError):
+            pass
+        try:
+            # Last-resort best-effort return: rules never raise, even for
+            # hostile objects whose ``__str__`` itself raises.
+            return str(getattr(notation, "compact", ""))
+        except Exception:  # never-raise contract, last resort
+            return ""

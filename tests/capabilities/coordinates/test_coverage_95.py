@@ -132,15 +132,15 @@ class TestCapabilityDmsDmCarry:
         assert _format_iso("48", "2", None) == "+48+002/"
         assert _format_iso("-48", "-2", None) == "-48-002/"
         assert _format_iso("48.8577", "2", None) == "+48.8577+002/"
-        assert _format_iso("48", "2.295", None) == "+48+002.295/"
+        assert _format_iso("48", "2.295", None) == "+48+002.2950/"
         # altitude variants: None, with dot (quantized), without dot, negative, positive
-        assert _format_iso("48.8577", "2.295", "8850") == "+48.8577+002.295+8850/"
-        assert _format_iso("48.8577", "2.295", "+8850") == "+48.8577+002.295+8850/"
-        assert _format_iso("48.8577", "2.295", "-8850") == "+48.8577+002.295-8850/"
-        assert _format_iso("48.8577", "2.295", "8850.5") == "+48.8577+002.295+8850.5/"
-        assert _format_iso("48.8577", "2.295", "-8850.5") == "+48.8577+002.295-8850.5/"
-        assert _format_iso("48.8577", "2.295", "0.0") == "+48.8577+002.295+0/"
-        assert _format_iso("48.8577", "2.295", "-0.0") == "+48.8577+002.295+0/"
+        assert _format_iso("48.8577", "2.295", "8850") == "+48.8577+002.2950+8850/"
+        assert _format_iso("48.8577", "2.295", "+8850") == "+48.8577+002.2950+8850/"
+        assert _format_iso("48.8577", "2.295", "-8850") == "+48.8577+002.2950-8850/"
+        assert _format_iso("48.8577", "2.295", "8850.5") == "+48.8577+002.2950+8850.5/"
+        assert _format_iso("48.8577", "2.295", "-8850.5") == "+48.8577+002.2950-8850.5/"
+        assert _format_iso("48.8577", "2.295", "0.0") == "+48.8577+002.2950+0/"
+        assert _format_iso("48.8577", "2.295", "-0.0") == "+48.8577+002.2950+0/"
         assert _format_iso("48.8577", "2.295", None).endswith("/")
 
     def test_format_dm_zero_minutes(self) -> None:
@@ -206,6 +206,21 @@ class TestCapabilityDmsDmCarry:
         )
         assert CAP.format_value(n.compact, "bogus_format", n) == n.compact
         assert CAP.format_value("custom", "unknown", n) == "custom"
+
+    def test_format_value_invalid_operation_returns_value(self) -> None:
+        # Hand-built notation with non-numeric components: the decimal-based
+        # renderers must not crash the pipeline (InvalidOperation fallback).
+        n = CoordinatesNotation(
+            latitude="not-a-number",
+            longitude="2.295",
+            altitude=None,
+            coord_shape="dd",
+            compact="not-a-number, 2.295",
+        )
+        # iso6709/dms/dm route through Decimal and hit the fallback;
+        # geojson_pair/geo_uri are pure string assembly and render normally.
+        for fmt in ("iso6709", "dms", "dm"):
+            assert CAP.format_value(n.compact, fmt, n) == n.compact
 
 
 class TestGrammarHelpers:
@@ -279,9 +294,11 @@ class TestGrammarHelpers:
             "sec_frac_lon": None,
         }
         n = _notation(mock)  # type: ignore[arg-type]
-        # single comp iso should be encoded as out-of-range sentinel
-        assert n.latitude == "91"
-        assert n.longitude == "181"
+        # single-comp ISO falls back to the 0/0 point; the width and
+        # missing-solidus facts are recorded as defects (no sentinel values).
+        assert n.latitude == "0"
+        assert n.longitude == "0"
+        assert n.defects == ("iso_digit_width", "iso_missing_solidus")
 
     def test_sec_frac_with_and_without_dot(self) -> None:
         g = CoordinatesRecognitionGrammar()
@@ -369,6 +386,7 @@ class TestRulesMatchesBranches:
 
     def test_iso_lat_not_str(self) -> None:
         n = object.__new__(CoordinatesNotation)
+        object.__setattr__(n, "defects", ())
         object.__setattr__(n, "latitude", 48.8577)  # type: ignore[arg-type]
         object.__setattr__(n, "longitude", "2.295")
         object.__setattr__(n, "altitude", None)
@@ -377,6 +395,7 @@ class TestRulesMatchesBranches:
         assert self.s6.matches(n, self.contract) is False
         # annex needs iso6709 to reach isinstance check
         n_annex = object.__new__(CoordinatesNotation)
+        object.__setattr__(n_annex, "defects", ())
         object.__setattr__(n_annex, "latitude", 48.8577)  # type: ignore[arg-type]
         object.__setattr__(n_annex, "longitude", "2.295")
         object.__setattr__(n_annex, "altitude", None)
@@ -384,6 +403,7 @@ class TestRulesMatchesBranches:
         object.__setattr__(n_annex, "compact", "48.8577, 2.295")
         assert self.annex.matches(n_annex, self.contract) is False
         n_5870 = object.__new__(CoordinatesNotation)
+        object.__setattr__(n_5870, "defects", ())
         object.__setattr__(n_5870, "latitude", 48.8577)  # type: ignore[arg-type]
         object.__setattr__(n_5870, "longitude", "2.295")
         object.__setattr__(n_5870, "altitude", None)
@@ -391,6 +411,7 @@ class TestRulesMatchesBranches:
         object.__setattr__(n_5870, "compact", "48.8577, 2.295")
         assert self.r5870.matches(n_5870, self.contract) is False
         n_7946 = object.__new__(CoordinatesNotation)
+        object.__setattr__(n_7946, "defects", ())
         object.__setattr__(n_7946, "latitude", 48.8577)  # type: ignore[arg-type]
         object.__setattr__(n_7946, "longitude", "2.295")
         object.__setattr__(n_7946, "altitude", None)
@@ -399,6 +420,7 @@ class TestRulesMatchesBranches:
         assert self.r7946.matches(n_7946, self.contract) is False
         # also lon not str
         n_lon = object.__new__(CoordinatesNotation)
+        object.__setattr__(n_lon, "defects", ())
         object.__setattr__(n_lon, "latitude", "48.8577")
         object.__setattr__(n_lon, "longitude", 2.295)  # type: ignore[arg-type]
         object.__setattr__(n_lon, "altitude", None)
@@ -408,6 +430,7 @@ class TestRulesMatchesBranches:
 
     def test_iso_alt_not_str(self) -> None:
         n = object.__new__(CoordinatesNotation)
+        object.__setattr__(n, "defects", ())
         object.__setattr__(n, "latitude", "48.8577")
         object.__setattr__(n, "longitude", "2.295")
         object.__setattr__(n, "altitude", 123)  # type: ignore[arg-type]
@@ -416,6 +439,7 @@ class TestRulesMatchesBranches:
         assert self.s6.matches(n, self.contract) is False
         # annex also
         n2 = object.__new__(CoordinatesNotation)
+        object.__setattr__(n2, "defects", ())
         object.__setattr__(n2, "latitude", "48.8577")
         object.__setattr__(n2, "longitude", "2.295")
         object.__setattr__(n2, "altitude", 123)  # type: ignore[arg-type]
@@ -424,6 +448,7 @@ class TestRulesMatchesBranches:
         assert self.annex.matches(n2, self.contract) is False
         # rfc5870
         n3 = object.__new__(CoordinatesNotation)
+        object.__setattr__(n3, "defects", ())
         object.__setattr__(n3, "latitude", "48.8577")
         object.__setattr__(n3, "longitude", "2.295")
         object.__setattr__(n3, "altitude", 123)  # type: ignore[arg-type]
@@ -432,6 +457,7 @@ class TestRulesMatchesBranches:
         assert self.r5870.matches(n3, self.contract) is False
         # rfc7946
         n4 = object.__new__(CoordinatesNotation)
+        object.__setattr__(n4, "defects", ())
         object.__setattr__(n4, "latitude", "48.8577")
         object.__setattr__(n4, "longitude", "2.295")
         object.__setattr__(n4, "altitude", 123)  # type: ignore[arg-type]
@@ -677,45 +703,33 @@ class TestRulesMatchesBranches:
     def test_fold_compact_second_branch_nd_zero(self) -> None:
         # Hit the nd == 0 after normalize but d !=0 branch via patching Decimal
         import importlib
+        from decimal import Decimal as RealDec
 
-        for mod_name in [
-            "paxman.capabilities.Coordinates.rules.iso_6709_ed2022",
-            "paxman.capabilities.Coordinates.rules.rfc_5870_ed2010",
-            "paxman.capabilities.Coordinates.rules.rfc_7946_ed2016",
-        ]:
-            mod = importlib.import_module(mod_name)
-            orig = mod.Decimal  # type: ignore[attr-defined]
-            from decimal import Decimal as RealDec
+        rules_pkg = importlib.import_module("paxman.capabilities.Coordinates.rules")
 
-            class FakeDec:
-                def __init__(self, val: str) -> None:
-                    self.val = val
+        orig = rules_pkg.Decimal
 
-                def __eq__(self, other: object) -> bool:
-                    if other == 0:
-                        return False
-                    return False
+        class FakeDec:
+            def __eq__(self, other: object) -> bool:
+                return False
 
-                def normalize(self) -> Decimal:
-                    return RealDec(0)
+            def normalize(self) -> Decimal:
+                return RealDec(0)
 
-                def __format__(self, fmt: str) -> str:
-                    return "fake"
+            def __format__(self, fmt: str) -> str:
+                return "fake"
 
-            def fake_decimal(  # type: ignore[no-untyped-def]
-                s: str,
-                _orig=orig,  # noqa: B023
-            ) -> object:
-                if s == "trigger":
-                    return FakeDec(s)
-                return _orig(s)  # type: ignore[no-untyped-call]
+        def fake_decimal(s: str, _orig: type = orig) -> object:
+            if s == "trigger":
+                return FakeDec()
+            return _orig(s)
 
-            mod.Decimal = fake_decimal  # type: ignore[assignment]
-            try:
-                result = mod._fold_compact("trigger, 2.295")  # type: ignore[attr-defined]
-                assert result == "0, 2.295"
-            finally:
-                mod.Decimal = orig  # type: ignore[assignment]
+        rules_pkg.Decimal = fake_decimal  # type: ignore[assignment]
+        try:
+            result = rules_pkg.fold_compact("trigger, 2.295")
+            assert result == "0, 2.295"
+        finally:
+            rules_pkg.Decimal = orig  # type: ignore[assignment]
 
     def test_component_in_range_branches(self) -> None:
         assert component_in_range("NaN", "-90", "90") is False
@@ -771,18 +785,15 @@ class TestGrammarEdgeCases:
 
     def test_dms_overflow_via_grammar(self) -> None:
         g = CoordinatesRecognitionGrammar()
-        # minute overflow should be sentinel 91
+        # overflow recorded as a defect; the value stays faithful to the input
         n = g.recognize("40° 75′ N 79° 58′ 56″ W")
         assert n is not None
         assert len(n) == 1
-        # at least one is sentinel
-        assert n[0].notation.latitude == "91" or n[0].notation.longitude in (
-            "181",
-            "-181",
-        )
+        assert n[0].notation.latitude == "41.25"
+        assert n[0].notation.defects == ("dms_unit_overflow",)
 
-    def test_component_in_range_via_grammar_sentinel(self) -> None:
-        # Ensure rule rejects sentinel via component_in_range
+    def test_component_in_range_via_grammar_defect(self) -> None:
+        # Ensure rule rejects defective notation via the defect gate
         contract = CoordinatesContract()
         s6 = Section6CoordinateStructure()
         g = CoordinatesRecognitionGrammar()

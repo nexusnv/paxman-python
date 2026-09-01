@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from typing import ClassVar
 
 from paxman.capabilities.Coordinates.notation import CoordinatesNotation
-from paxman.capabilities.Coordinates.rules import component_in_range
+from paxman.capabilities.Coordinates.rules import component_in_range, fold_compact
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -21,33 +21,15 @@ PUBLICATION = Provenance(
 )
 
 
-def _fold_compact(compact: str) -> str:
-    parts = [p.strip() for p in compact.split(",")]
-    folded: list[str] = []
-    for p in parts:
-        try:
-            d = Decimal(p)
-        except (InvalidOperation, ValueError, AttributeError):
-            folded.append(p)
-            continue
-        if d == 0:
-            folded.append("0")
-        else:
-            nd = d.normalize()
-            if nd == 0:
-                folded.append("0")
-            else:
-                folded.append(format(nd, "f"))
-    return ", ".join(folded)
-
-
 class Section33GeoUriValidity(Rule[CoordinatesNotation]):
     """RFC 5870 Section 3.3 — geo URI validity.
 
     Validates the geo-URI branch: coord_shape == geo_uri, lat in
-    [-90,90], lon in [-180,180], altitude as supplied. CRS handling
-    (wgs84 or absent) is enforced at recognition — foreign CRS yields
-    no match, so this rule only sees wgs84-equivalent URIs.
+    [-90,90], lon in [-180,180], altitude as supplied, and the CRS
+    parameter absent or the WGS 84 family (a foreign CRS is recorded
+    as a ``foreign_crs`` defect by the grammar — no silent datum
+    transform, §5.4 of the research report). Any recorded defect means
+    the URI is not a valid WGS 84 geo URI.
     """
 
     name = "Section 3.3-geo-uri-validity"
@@ -59,6 +41,8 @@ class Section33GeoUriValidity(Rule[CoordinatesNotation]):
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
         try:
+            if notation.defects:
+                return False
             if notation.coord_shape != "geo_uri":
                 return False
         except (AttributeError, TypeError):
@@ -82,9 +66,12 @@ class Section33GeoUriValidity(Rule[CoordinatesNotation]):
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
         try:
-            return _fold_compact(notation.compact)
-        except Exception:
-            try:
-                return str(getattr(notation, "compact", ""))
-            except Exception:
-                return ""
+            return fold_compact(notation.compact)
+        except (InvalidOperation, ValueError, TypeError, AttributeError):
+            pass
+        try:
+            # Last-resort best-effort return: rules never raise, even for
+            # hostile objects whose ``__str__`` itself raises.
+            return str(getattr(notation, "compact", ""))
+        except Exception:  # never-raise contract, last resort
+            return ""

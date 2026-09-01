@@ -234,8 +234,22 @@ class TestCoordinatesGrammarCarriers:
         assert with_u.compact == base.compact
         assert with_u.altitude is None
 
-    def test_geo_uri_foreign_crs_missing(self) -> None:
-        assert self.grammar.recognize("geo:48.8566,2.3522;crs=ed50") == []
+    def test_geo_uri_foreign_crs_invalid(self) -> None:
+        # Locked decision 6: foreign CRS is recognized (so the rule layer can
+        # attribute the rejection) but defects the notation → INVALID.
+        res = self.grammar.recognize("geo:48.8566,2.3522;crs=ed50")
+        assert len(res) == 1
+        assert "foreign_crs" in res[0].notation.defects
+
+    def test_geo_uri_foreign_crs_with_params(self) -> None:
+        res = self.grammar.recognize("geo:48.8,2.3;crs=ed50;u=40")
+        assert len(res) == 1
+        assert "foreign_crs" in res[0].notation.defects
+
+    def test_geo_uri_wgs_84_underscore_accepted(self) -> None:
+        res = self.grammar.recognize("geo:48.8566,2.3522;crs=WGS_84")
+        assert len(res) == 1
+        assert res[0].notation.defects == ()
 
     def test_iso_decimal_pair_solidus(self) -> None:
         res = self.grammar.recognize("+48.52+002.20/")
@@ -312,3 +326,65 @@ class TestCoordinatesGrammarCarriers:
     def test_pre_stage_empty_guard(self) -> None:
         assert self.grammar.recognize("   \n\t  ") == []
         assert self.grammar.recognize("") == []
+
+
+class TestCoordinatesGrammarReviewGuards:
+    """Review-hardened recognition guards (oracle + thermo-nuclear review).
+
+    - a match may never start after ``.`` or sign glue,
+    - whitespace-only separators require affinity markers on both components,
+    - geo: tails are never salvaged by the pair branch,
+    - structural facts are recorded as defects, never fabricated values.
+    """
+
+    def setup_method(self) -> None:
+        self.grammar: Grammar = CoordinatesRecognitionGrammar()
+
+    def test_leading_dot_guard(self) -> None:
+        # a match must not start at the fractional tail of a dotted number
+        assert self.grammar.recognize("192.168.1.1, 10.0") == []
+        assert self.grammar.recognize("1.2.3, 4.5") == []
+        assert self.grammar.recognize("foo.5, 2.3") == []
+        assert self.grammar.recognize("48.8577.5, 2.295") == []
+
+    def test_leading_sign_glue_guard(self) -> None:
+        assert self.grammar.recognize("--48.5, 2.3") == []
+        assert self.grammar.recognize("+-48.5, 2.3") == []
+
+    def test_whitespace_separator_requires_affinity(self) -> None:
+        # unmarked prose number runs are not coordinates
+        assert self.grammar.recognize("pages 12 40") == []
+        assert self.grammar.recognize("meeting room 9 5") == []
+        assert self.grammar.recognize("temp ranged 80 90 today") == []
+        assert self.grammar.recognize("1 2 3 4") == []
+        assert self.grammar.recognize("48.8 2.3") == []
+        # phone-number shapes are not coordinates
+        assert self.grammar.recognize("+48 22 694 60 00") == []
+        assert self.grammar.recognize("+1 415 555 2671") == []
+        # attested whitespace forms carry signs/hemispheres on both components
+        res = self.grammar.recognize("+40.446 -79.982")
+        assert len(res) == 1
+        res2 = self.grammar.recognize("41.5 N -81.0 W")
+        assert len(res2) == 1
+
+    def test_geo_uri_tail_not_salvaged(self) -> None:
+        # invalid geo tails must not degrade to a bare-pair success
+        assert self.grammar.recognize("geo:48.8,2.3,abc") == []
+        assert self.grammar.recognize("geo:48.8,2.3,") == []
+        assert self.grammar.recognize("geo:48.8,2.3;u=-10") == []
+
+    def test_dotted_ip_not_coordinates(self) -> None:
+        res = self.grammar.recognize("server at 10.0.0.1, 192.168.0.1 up")
+        assert res == []
+
+    def test_axis_mismatch_recorded_not_fabricated(self) -> None:
+        # 81.0 W as latitude has no authoritative reading
+        res = self.grammar.recognize("81.0 W, 41.5 N")
+        assert len(res) == 1
+        n = res[0].notation
+        assert n.latitude == "-81"
+        assert "hemisphere_axis_mismatch" in n.defects
+
+    def test_clean_notation_has_no_defects(self) -> None:
+        res = self.grammar.recognize("48.8577, 2.295")
+        assert res[0].notation.defects == ()

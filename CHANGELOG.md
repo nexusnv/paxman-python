@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Coordinates — WGS 84 coordinates:** new capability with one grammar (`coordinates_recognition`) covering decimal pairs, hemisphere letters, DMS/DDM, Geo URI `geo:`, ISO 6709 string-expression, and GeoJSON lon-first pairs, and four parser rules backed by ISO 6709:2022 (`Section 6-coordinate-structure`, `Section Annex-h-string-expression`), RFC 5870 (`Section 3.3-geo-uri-validity`), and RFC 7946 (`Section 3.1.1-position`). Canonical form is lat-first signed decimal degrees quantized to 6dp round-half-even with `-0` folded to `0`; six output formats `decimal` (default), `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm`.
+- **Bootstrap — MacAddress registration activated:** `register_all_shipped()` / `paxman --list` now include the `mac_address` capability (17 shipped capabilities). The registration had been deliberately deferred on `dev`; it ships together with Coordinates in this release.
+
+### Fixed
+
+- **Coordinates — review hardening (oracle + adversarial audit):** recognition
+  never fabricates values: structural observations (sign/hemisphere contradiction,
+  hemisphere axis mismatch, DMS unit overflow, ISO 6709 digit width, missing
+  Annex H solidus, foreign CRS) are recorded on `CoordinatesNotation.defects`
+  and rejected by the rule layer. Whitespace-separated bare number runs
+  ("pages 12 40", phone numbers) are no longer recognized as coordinates
+  (whitespace pairs require hemisphere/sign affinity on both components); a
+  match can no longer start at the fractional tail of a dotted number
+  (`192.168.1.1, 10.0` → MISSING, was a wrong-value SUCCESS); `geo:`-prefixed
+  tails are never salvaged by the pair branch; a foreign CRS label in a Geo
+  URI or ISO 6709 string resolves INVALID (no silent datum transform) instead
+  of being silently accepted or dropped; `--48.5, 2.3` sign glue is MISSING;
+  `iso6709` output pads fractions to the 4-place Annex H presentation width.
 
 ## [0.3.0] - 2026-08-31
 

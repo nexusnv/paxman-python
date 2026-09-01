@@ -78,6 +78,16 @@ def _decimal_to_dm_parts(decimal_str: str, is_lat: bool) -> tuple[int, Decimal, 
     return deg, minutes_q, hemi
 
 
+def _pad_fraction(frac: str) -> str:
+    """Pad fraction digits to the 4-place Annex H presentation width.
+
+    Fractions longer than 4 digits (up to the 6-place canonical quantum)
+    are kept whole, so the render is lossless and matches the frozen
+    vectors (``+48.8577+002.2950/``).
+    """
+    return frac.ljust(4, "0")
+
+
 def _format_iso(lat_str: str, lon_str: str, alt_str: str | None) -> str:
     """ISO 6709 string expression: +DD.DDDD+DDD.DDDD/ with altitude."""
     lat_dec = Decimal(lat_str)
@@ -88,12 +98,12 @@ def _format_iso(lat_str: str, lon_str: str, alt_str: str | None) -> str:
     lon_abs_str = lon_str.lstrip("-")
     if "." in lat_abs_str:
         lat_int, lat_frac = lat_abs_str.split(".", 1)
-        lat_frac = "." + lat_frac
+        lat_frac = "." + _pad_fraction(lat_frac)
     else:
         lat_int, lat_frac = lat_abs_str, ""
     if "." in lon_abs_str:
         lon_int, lon_frac = lon_abs_str.split(".", 1)
-        lon_frac = "." + lon_frac
+        lon_frac = "." + _pad_fraction(lon_frac)
     else:
         lon_int, lon_frac = lon_abs_str, ""
     lat_int_padded = lat_int.zfill(2)
@@ -180,6 +190,14 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
         fmt = output_format or "decimal"
         if fmt == "decimal":
             return value
+        try:
+            return self._render(fmt, value, lat, lon, alt)
+        except InvalidOperation:
+            # Hand-built notations with non-numeric components must not
+            # crash the pipeline; fall back to the canonical value.
+            return value
+
+    def _render(self, fmt: str, value: str, lat: str, lon: str, alt: str | None) -> str:
         if fmt == "iso6709":
             return _format_iso(lat, lon, alt)
         if fmt == "geo_uri":

@@ -305,7 +305,11 @@ class TestMatchesValidAllShapes:
 
 
 class TestRejectsHemisphereContradiction:
-    """Hemisphere/sign contradiction is encoded as sentinel and rejected."""
+    """Hemisphere/sign contradiction is recorded as a defect and rejected.
+
+    The grammar treats the hemisphere as authoritative, so the recognized
+    value stays faithful to the input; the rule layer rejects the defect.
+    """
 
     def setup_method(self) -> None:
         self.contract = CoordinatesContract()
@@ -315,32 +319,59 @@ class TestRejectsHemisphereContradiction:
         # -41.5 N : sign '-' contradicts N (north implies positive)
         n = _grammar_notation("-41.5 N, 81.0 E")
         assert n is not None
-        # grammar encodes contradiction as lat 91 sentinel
-        assert n.latitude == "91"
+        assert n.latitude == "41.5"
+        assert "sign_hemisphere_conflict" in n.defects
         assert self.s6.matches(n, self.contract) is False
 
     def test_rejects_hemisphere_contradiction_via_grammar_lon(self) -> None:
-        # 41.5 S, -81.0 E : S implies negative but no sign, lon E with '-' contradicts
-        # Actually test lon contradiction: E with '-'
+        # -81.0 E : E implies positive, '-' contradicts
         n = _grammar_notation("41.5 N, -81.0 E")
         assert n is not None
-        assert n.longitude == "181" or n.latitude == "91"
-        # The specific pair "41.5 S, -81.0 E" has lon contradiction? Let's do explicit
+        assert n.longitude == "81"
+        assert "sign_hemisphere_conflict" in n.defects
+        assert self.s6.matches(n, self.contract) is False
         n2 = _grammar_notation("48.8577 N, -2.3522 E")
         assert n2 is not None
-        # E implies позитив, '-' contradicts => sentinel 181
-        assert n2.longitude == "181"
+        assert n2.longitude == "2.3522"
+        assert "sign_hemisphere_conflict" in n2.defects
         assert self.s6.matches(n2, self.contract) is False
 
     def test_rejects_both_hemisphere_contradictions(self) -> None:
         n = _grammar_notation("-41.5 N, -81.0 E")
         assert n is not None
-        # lon E with '-' also contradictory, but lat already sentinel
+        assert "sign_hemisphere_conflict" in n.defects
         assert self.s6.matches(n, self.contract) is False
 
 
+class TestRejectsHemisphereAxisMismatch:
+    """E/W on the latitude component or N/S on longitude has no
+    authoritative reading and is rejected."""
+
+    def setup_method(self) -> None:
+        self.contract = CoordinatesContract()
+        self.s6 = Section6CoordinateStructure()
+
+    def test_rejects_lon_hemisphere_on_latitude(self) -> None:
+        n = _grammar_notation("81.0 W, 41.5 N")
+        assert n is not None
+        assert "hemisphere_axis_mismatch" in n.defects
+        assert self.s6.matches(n, self.contract) is False
+
+    def test_rejects_lat_hemisphere_on_longitude(self) -> None:
+        n = _grammar_notation("48.8577, 2.295 N")
+        assert n is not None
+        assert "hemisphere_axis_mismatch" in n.defects
+        assert self.s6.matches(n, self.contract) is False
+
+    def test_accepts_axis_consistent_hemispheres(self) -> None:
+        n = _grammar_notation("UT: N 39°20' 0'' / W 74°35' 0''")
+        assert n is not None
+        assert n.defects == ()
+        assert self.s6.matches(n, self.contract) is True
+
+
 class TestRejectsDmsUnitOverflow:
-    """Minutes >=60 or seconds >=60 encoded as sentinel and rejected."""
+    """Minutes >=60 or seconds >=60 are recorded as a defect and rejected."""
 
     def setup_method(self) -> None:
         self.contract = CoordinatesContract()
@@ -349,21 +380,24 @@ class TestRejectsDmsUnitOverflow:
     def test_rejects_dms_minute_overflow_via_grammar(self) -> None:
         n = _grammar_notation("40° 75′ N 79° 58′ 56″ W")
         assert n is not None
-        assert n.latitude == "91"
+        # value stays faithful: 40° + 75′ = 41.25°
+        assert n.latitude == "41.25"
+        assert "dms_unit_overflow" in n.defects
         assert self.s6.matches(n, self.contract) is False
 
     def test_rejects_dms_second_overflow_via_grammar(self) -> None:
         # 40° 26′ 75″ N -> seconds 75 >=60
         n = _grammar_notation("40° 26′ 75″ N 79° 58′ 56″ W")
         assert n is not None
-        assert n.latitude == "91"
+        assert n.latitude == "40.454167"
+        assert "dms_unit_overflow" in n.defects
         assert self.s6.matches(n, self.contract) is False
 
     def test_rejects_dms_lon_overflow_via_grammar(self) -> None:
         n = _grammar_notation("40° 26′ 46″ N 79° 75′ 56″ W")
         assert n is not None
-        # lon overflow => 181 sentinel (-181 when W hemisphere)
-        assert n.longitude in ("181", "-181")
+        assert n.longitude == "-80.265556"
+        assert "dms_unit_overflow" in n.defects
         assert self.s6.matches(n, self.contract) is False
 
 
@@ -455,8 +489,8 @@ class TestRejectsOutOfRange:
         )
         assert self.r7946.matches(n, self.contract) is False
 
-    def test_iso6709_out_of_range_via_grammar_sentinel(self) -> None:
-        # grammar out-of-range also via sentinel; direct iso check
+    def test_iso6709_out_of_range_direct_notation(self) -> None:
+        # direct notation out-of-range; the range check rejects
         n = CoordinatesNotation(
             latitude="91",
             longitude="2.2",
@@ -469,7 +503,7 @@ class TestRejectsOutOfRange:
 
 
 class TestIsoRejectsWrongDigitWidth:
-    """ISO digit-width: lat 2/4/6, lon 3/5/7 integer digits; others are sentinel."""
+    """ISO digit-width: lat 2/4/6, lon 3/5/7 integer digits; others are defective."""
 
     def setup_method(self) -> None:
         self.contract = CoordinatesContract()
@@ -483,7 +517,7 @@ class TestIsoRejectsWrongDigitWidth:
             "+12345+002.20/",  # lat 5 digits invalid
             "+1234567+002.20/",  # lat 7 digits invalid
             "+12+02.20/",  # lon 2 digits invalid (needs 3/5/7)
-            "+48.52+02.20/",  # lon 2 digits invalid -> sentinel 181
+            "+48.52+02.20/",  # lon 2 digits invalid -> iso_digit_width defect
         ],
     )
     def test_iso_wrong_width_via_grammar_is_invalid(self, text: str) -> None:
@@ -511,7 +545,7 @@ class TestIsoRejectsWrongDigitWidth:
 
 
 class TestAnnexHRejectsMissingSolidus:
-    """Annex H requires trailing solidus; missing is INVALID via sentinel."""
+    """Annex H requires trailing solidus; missing is recorded as a defect."""
 
     def setup_method(self) -> None:
         self.contract = CoordinatesContract()
@@ -521,8 +555,9 @@ class TestAnnexHRejectsMissingSolidus:
     def test_rejects_missing_solidus_via_grammar(self) -> None:
         n = _grammar_notation("+48.52+002.20")
         assert n is not None
-        # missing solidus -> sentinel 91
-        assert n.latitude == "91"
+        # missing solidus recorded as a defect; the value stays faithful
+        assert n.latitude == "48.52"
+        assert "iso_missing_solidus" in n.defects
         assert self.annex.matches(n, self.contract) is False
         assert self.s6.matches(n, self.contract) is False
 
@@ -532,15 +567,12 @@ class TestAnnexHRejectsMissingSolidus:
         assert self.annex.matches(n, self.contract) is True
         assert self.s6.matches(n, self.contract) is True
 
-    def test_direct_iso_notation_missing_solidus_not_detectable_but_pipeline_is(
+    def test_direct_iso_notation_missing_solidus_carries_no_defect(
         self,
     ) -> None:
-        # For direct notation, the rule cannot re-derive solidus presence;
-        # the range check is best-effort and will pass in-range values.
-        # This documents the grammar-sentinel contract: direct notation with
-        # valid range passes, but pipeline via grammar with sentinel fails.
-        # We assert the pipeline case is False (above) and that direct
-        # notation with same in-range values is True (best-effort).
+        # Direct notation (not built by the grammar) carries no defects, so
+        # the rule accepts in-range values; the pipeline path always carries
+        # the grammar-recorded defect and is rejected (asserted above).
         n_direct = CoordinatesNotation(
             latitude="48.52",
             longitude="2.2",
@@ -548,8 +580,6 @@ class TestAnnexHRejectsMissingSolidus:
             coord_shape="iso6709",
             compact="48.52, 2.2",
         )
-        # direct notation cannot know solidus was missing, so rule returns True
-        # (this is intentional per plan's "best-effort" comment)
         assert self.s6.matches(n_direct, self.contract) is True
 
 
@@ -582,7 +612,7 @@ class TestAnnexHRejectsForeignCrs:
             text = f"+27.5916+086.5640+8850{crs}/"
             n = _grammar_notation(text)
             assert n is not None, f"grammar should recognize {text}"
-            assert n.latitude == "91"
+            assert "foreign_crs" in n.defects
             assert self.annex.matches(n, self.contract) is False
             assert self.s6.matches(n, self.contract) is False
 

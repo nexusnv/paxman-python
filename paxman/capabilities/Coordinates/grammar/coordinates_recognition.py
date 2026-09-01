@@ -1,4 +1,32 @@
-"""Coordinates recognition grammar — pair + carriers."""
+"""Coordinates recognition grammar — pair + carriers.
+
+Recognition records *facts*, never verdicts: structural observations
+(hemisphere/sign contradiction, DMS unit overflow, ISO 6709 digit width,
+missing Annex H solidus, foreign CRS label, hemisphere axis mismatch) are
+recorded on ``CoordinatesNotation.defects`` and the rules own every
+accept/reject decision. Recognized values always faithfully represent the
+input — no sentinel values are fabricated.
+
+Boundary decisions (review-hardened):
+- A match may never start after ``.`` or ``+``/``-`` glue — a dotted
+  non-coordinate such as ``192.168.1.1`` cannot yield a mid-number match.
+- A whitespace-only pair separator requires an affinity marker (hemisphere
+  letter or sign) on BOTH components; bare prose number runs (``pages 12
+  40``, phone numbers) stay unrecognized. Explicit ``,`` ``;`` ``/``
+  separators keep the permissive attested surface (research §2.1 row 1).
+- A ``geo:``-prefixed tail is never salvaged by the pair branch; invalid
+  geo-URI tails (``;u=-10``, non-numeric altitude) are not recognized.
+- A CRS label other than the WGS 84 family is recognized (so the rule can
+  attribute the rejection) but rejected → INVALID — no silent datum
+  transform (locked decision 6).
+
+Documented v1 deviations from the research inventory: fraction digit runs
+are capped at 7 (canonical quantum is 6 dp — an 8+-digit fraction is
+MISSING, not quantized); a single component with contradictory hemisphere
+(``-41.5 N``) is MISSING because the pair is the unit of identity; four
+numeric components resolve as two distinct mentions; per-component
+``Lat:``/``Lon:`` labels are deferred.
+"""
 
 from __future__ import annotations
 
@@ -10,17 +38,15 @@ from paxman.core.grammar.boundary import BoundaryGuard
 from paxman.core.grammar.pipeline import PipelineGrammar
 from paxman.core.grammar.stages import RegexStage, StandardPre
 
-_DEC = r"\d{1,3}(?:\.\d{1,7})?"
-_SEP = r"[\s,;/]+"
 _GEO_COORD = r"[+-]?\d{1,3}(?:\.\d+)?"
 
 # Carrier bodies (module-scope strings, uncompiled)
 _GEO_BODY_CORE = (
     rf"geo:{_GEO_COORD},{_GEO_COORD}"
     rf"(?:,{_GEO_COORD})?"
-    rf"(?:;(?:crs=wgs84|u=\d+(?:\.\d+)?))*"
+    rf"(?:;u=\d+(?:\.\d+)?|;crs=[A-Za-z0-9_\-]+)*"
 )
-_GEO_BODY = rf"(?P<geo>{_GEO_BODY_CORE})(?![\d.])(?!;crs=)"
+_GEO_BODY = rf"(?P<geo>{_GEO_BODY_CORE})(?![\d.,])(?!;u=)"
 
 _ISO_BODY = (
     r"(?P<iso>[+-]\d{2,7}(?:\.\d+)?"
@@ -35,45 +61,77 @@ _JSON_BODY = (
     r"(?:\s*,\s*[+-]?\d+(?:\.\d+)?)?\s*\])"
 )
 
-# Pair branch — hemisphere front/back, DMS units, optional parens
-_HEMI_FRONT_LAT = r"(?P<hemi_front_lat>[NSEWnsew])?[\s:]*"
-_HEMI_FRONT_LON = r"(?P<hemi_front_lon>[NSEWnsew])?[\s:]*"
-_SIGN_LAT = r"(?P<sign_lat>[-+])?"
-_SIGN_LON = r"(?P<sign_lon>[-+])?"
-_DEG_LAT = r"(?P<deg_lat>\d{1,3}(?:\.\d{1,7})?)"
-_DEG_LON = r"(?P<deg_lon>\d{1,3}(?:\.\d{1,7})?)"
 
-# DMS suffixes — degree symbol or whitespace required before minutes, plus '' handling
-_DMS_LAT = (
+def _component(side: str, sfx: str = "") -> str:
+    """Capturing pair-component pattern for *side* ("lat" or "lon").
+
+    ``sfx`` suffixes the group names: the whitespace-separator alternative
+    uses ``_w``-suffixed groups so the two pair alternatives never
+    redefine a group name.
+    """
+    hemi_front = rf"(?P<hemi_front_{side}{sfx}>[NSEWnsew])?[\s:]*"
+    sign = rf"(?P<sign_{side}{sfx}>[-+])?"
+    deg = rf"(?P<deg_{side}{sfx}>\d{{1,3}}(?:\.\d{{1,7}})?)"
+    dms = (
+        r"(?:(?:\s*[°\u00B0D\*]\s*|\s+)"
+        rf"(?P<min_{side}{sfx}>\d{{1,2}}(?:\.\d+)?)\s*(?:[′\u2032'm])?"
+        rf"(?:\s*(?P<sec_{side}{sfx}>\d{{1,2}}(?:\.\d+)?)\s*"
+        rf"(?:''|[″\u2033\"s])\s*(?P<sec_frac_{side}{sfx}>\d+)?)?"
+        r")?"
+    )
+    hemi_back = rf"(?:\s*(?P<hemi_back_{side}{sfx}>[NSEWnsew]))?"
+    return f"{hemi_front}{sign}{deg}{dms}{hemi_back}"
+
+
+_COMP_LAT = _component("lat")
+_COMP_LON = _component("lon")
+_COMP_LAT_W = _component("lat", "_w")
+_COMP_LON_W = _component("lon", "_w")
+
+# Non-capturing sketch of one component — used only inside the
+# whitespace-affinity lookahead, so it carries no group names.
+_NC_COMP = (
+    r"[-+]?\d{1,3}(?:\.\d{1,7})?"
     r"(?:(?:\s*[°\u00B0D\*]\s*|\s+)"
-    r"(?P<min_lat>\d{1,2}(?:\.\d+)?)\s*(?:[′\u2032'm])?"
-    r"(?:\s*(?P<sec_lat>\d{1,2}(?:\.\d+)?)\s*(?:''|[″\u2033\"s])\s*(?P<sec_frac_lat>\d+)?)?"
+    r"\d{1,2}(?:\.\d+)?\s*[′\u2032'm]?"
+    r"(?:\s*\d{1,2}(?:\.\d+)?\s*(?:''|[″\u2033\"s])\s*\d*)?"
     r")?"
 )
-_DMS_LON = (
-    r"(?:(?:\s*[°\u00B0D\*]\s*|\s+)"
-    r"(?P<min_lon>\d{1,2}(?:\.\d+)?)\s*(?:[′\u2032'm])?"
-    r"(?:\s*(?P<sec_lon>\d{1,2}(?:\.\d+)?)\s*(?:''|[″\u2033\"s])\s*(?P<sec_frac_lon>\d+)?)?"
-    r")?"
+# A "marked" component carries an affinity marker: a front hemisphere
+# letter, a sign, or a back hemisphere letter.
+_NC_MARKED = (
+    rf"(?:[NSEWnsew][\s:]*{_NC_COMP}(?:\s*[NSEWnsew])?"
+    rf"|[-+]{_NC_COMP}(?:\s*[NSEWnsew])?"
+    rf"|{_NC_COMP}\s*[NSEWnsew])"
 )
 
-_HEMI_BACK_LAT = r"(?:\s*(?P<hemi_back_lat>[NSEWnsew]))?"
-_HEMI_BACK_LON = r"(?:\s*(?P<hemi_back_lon>[NSEWnsew]))?"
+# Explicit separator (contains , ; or /): no affinity required — the bare
+# decimal pair (research §2.1 row 1) is the canonical surface. The
+# zero-width alternative keeps degenerate no-space DMS (row 14) matchable.
+_SEP_EXPLICIT = r"(?:\s*[,;/][\s,;/]*|(?<=[NSEWnsew])(?=\d))"
+# Whitespace-only separator: BOTH components must be marked, otherwise any
+# two adjacent prose numbers would claim coordinate status.
+_SEP_WS = r"(?:\s+|(?<=[NSEWnsew])(?=\d))"
 
-_COMP_LAT = f"{_HEMI_FRONT_LAT}{_SIGN_LAT}{_DEG_LAT}{_DMS_LAT}{_HEMI_BACK_LAT}"
-_COMP_LON = f"{_HEMI_FRONT_LON}{_SIGN_LON}{_DEG_LON}{_DMS_LON}{_HEMI_BACK_LON}"
-
-_PAIR_SEP = rf"(?:{_SEP}|(?<=[NSEWnsew])(?=\d))"
-_PAIR_INNER = rf"{_COMP_LAT}\s*{_PAIR_SEP}\s*{_COMP_LON}"
-# Prevent pair inside geo: URI (foreign CRS → no pair)
-_PAIR_BODY = rf"(?P<pair>(?:\(\s*)?(?<![Gg][Ee][Oo]:){_PAIR_INNER}(?:\s*\))?)"
+_PAIR_EXPLICIT = rf"{_COMP_LAT}\s*{_SEP_EXPLICIT}\s*{_COMP_LON}"
+_PAIR_WS = (
+    rf"(?={_NC_MARKED}{_SEP_WS}{_NC_MARKED})"
+    rf"{_COMP_LAT_W}\s*{_SEP_WS}\s*{_COMP_LON_W}"
+)
+# The pair branch never salvages the tail of a geo: URI.
+_PAIR_BODY = rf"(?P<pair>(?:\(\s*)?(?<!geo:)(?:{_PAIR_EXPLICIT}|{_PAIR_WS})(?:\s*\))?)"
 
 _BODY_ALTS = f"{_GEO_BODY}|{_ISO_BODY}|{_JSON_BODY}|(?:{_PAIR_BODY})"
 _COORDS_BODY = rf"(?ai:(?:(?:COORDS?|LAT(?:\/LON)?)[\s:-]+)?(?P<core>{_BODY_ALTS}))"
 _GUARD = BoundaryGuard.word_only()
-# Extra exclusions: % (research §2.3) and \.\d truncation (geo foreign, pair+percent)
+# Extra exclusions: % suffix (research §2.3), trailing fraction truncation,
+# and leading glue — a match may not start after a dot or a sign character.
 _COORDS_PATTERN = (
-    _GUARD.lookbehind + _COORDS_BODY + r"(?!\.\d)(?![%])" + _GUARD.lookahead
+    _GUARD.lookbehind
+    + r"(?<!\.)(?<![-+])"
+    + _COORDS_BODY
+    + r"(?!\.\d)(?![%])"
+    + _GUARD.lookahead
 )
 
 
@@ -115,7 +173,7 @@ def _iso_component_to_decimal(val_str: str, is_lat: bool) -> Decimal:
         else:
             try:
                 return Decimal(val_str)
-            except Exception:
+            except (InvalidOperation, ValueError):
                 return Decimal(0)
     else:
         if len(int_part) == 3:
@@ -132,7 +190,7 @@ def _iso_component_to_decimal(val_str: str, is_lat: bool) -> Decimal:
         else:
             try:
                 return Decimal(val_str)
-            except Exception:
+            except (InvalidOperation, ValueError):
                 return Decimal(0)
 
 
@@ -201,12 +259,23 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         compact = f"{lat_q}, {lon_q}"
         if alt_norm is not None:
             compact += f", {alt_norm}"
+        # RFC 5870 §3.4.1: crs must be absent or wgs84 (case-insensitive);
+        # any other datum is recorded so the rule can reject (no silent
+        # datum transform — locked decision 6).
+        crs_label: str | None = None
+        for param in parts[1:]:
+            if param.lower().startswith("crs="):
+                crs_label = param[4:]
+        defects: list[str] = []
+        if crs_label is not None and crs_label.lower() not in ("wgs84", "wgs_84"):
+            defects.append("foreign_crs")
         return CoordinatesNotation(
             latitude=lat_q,
             longitude=lon_q,
             altitude=alt_norm,
             coord_shape="geo_uri",
             compact=compact,
+            defects=tuple(defects),
         )
     if gd.get("iso") is not None:
         iso_raw = gd["iso"]
@@ -214,7 +283,7 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         has_solidus = iso_raw.endswith("/")
         core = iso_raw[:-1] if has_solidus else iso_raw
         # detect CRS suffix if present (case-insensitive)
-        crs_label: str | None = None
+        crs_label = None
         crs_match = re.search(r"(?i)CRS[A-Za-z0-9_]*", core)
         if crs_match:
             crs_label = core[crs_match.start() :]
@@ -228,39 +297,31 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         if len(comps) >= 2:
             lat_sign, lat_val = comps[0]
             lon_sign, lon_val = comps[1]
-            alt_sign = None
-            alt_val = None
-            alt_raw = None
             if len(comps) >= 3:
                 alt_sign, alt_val = comps[2]
                 alt_raw = f"{alt_sign}{alt_val}"
+            else:
+                alt_sign, alt_val, alt_raw = None, None, None
         else:
             # Fallback
             lat_sign, lat_val = "+", "0"
             lon_sign, lon_val = "+", "0"
             alt_raw = None
-        # structural width check — encode invalid as out-of-range sentinel
+        # Record structural facts; the values stay faithful to the input.
         lat_width_invalid, lon_width_invalid = _iso_width_invalid(lat_val, lon_val)
+        defects = []
+        if lat_width_invalid or lon_width_invalid:
+            defects.append("iso_digit_width")
+        if not has_solidus:
+            defects.append("iso_missing_solidus")
+        elif crs_label is not None:
+            upper = crs_label.upper()
+            if upper not in ("CRSWGS_84", "CRSWGS84"):
+                defects.append("foreign_crs")
         lat_dec_unsigned = _iso_component_to_decimal(lat_val, is_lat=True)
         lon_dec_unsigned = _iso_component_to_decimal(lon_val, is_lat=False)
         lat_dec = -lat_dec_unsigned if lat_sign == "-" else lat_dec_unsigned
         lon_dec = -lon_dec_unsigned if lon_sign == "-" else lon_dec_unsigned
-        # if width invalid, force out-of-range so rule's range check rejects
-        if lat_width_invalid:
-            lat_dec = Decimal("91") if lat_dec >= 0 else Decimal("-91")
-        if lon_width_invalid:
-            lon_dec = Decimal("181") if lon_dec >= 0 else Decimal("-181")
-        # Annex H: missing trailing solidus → INVALID; foreign CRS → INVALID
-        crs_invalid = False
-        if not has_solidus:
-            crs_invalid = True
-        elif crs_label is not None:
-            upper = crs_label.upper()
-            if upper not in ("CRSWGS_84", "CRSWGS84"):
-                crs_invalid = True
-        if crs_invalid:
-            # encode as out-of-range lat for rule rejection (covers both cases)
-            lat_dec = Decimal("91") if lat_dec >= 0 else Decimal("-91")
         lat_q = _quantize(lat_dec)
         lon_q = _quantize(lon_dec)
         alt_norm = _normalize_alt(alt_raw) if alt_raw is not None else None
@@ -273,6 +334,7 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
             altitude=alt_norm,
             coord_shape="iso6709",
             compact=compact,
+            defects=tuple(defects),
         )
     if gd.get("geojson") is not None:
         gj_raw = gd["geojson"]
@@ -295,26 +357,35 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
             altitude=alt_norm,
             coord_shape="geojson",
             compact=compact,
+            defects=(),
         )
-    # Pair branch
-    # Extract lat/lon groups
-    hemi_front_lat = gd.get("hemi_front_lat")
-    hemi_back_lat = gd.get("hemi_back_lat")
-    hemi_lat = hemi_front_lat or hemi_back_lat
-    sign_lat = gd.get("sign_lat")
-    deg_lat = gd.get("deg_lat") or "0"
-    min_lat = gd.get("min_lat")
-    sec_lat = gd.get("sec_lat")
-    sec_frac_lat = gd.get("sec_frac_lat")
 
-    hemi_front_lon = gd.get("hemi_front_lon")
-    hemi_back_lon = gd.get("hemi_back_lon")
+    # Pair branch
+    # The two pair alternatives use distinct group-name sets (the
+    # whitespace-separator alternative suffixes its groups with "_w");
+    # read whichever set matched.
+    def _pg(name: str) -> str | None:
+        value = gd.get(name)
+        return value if value is not None else gd.get(f"{name}_w")
+
+    # Extract lat/lon groups
+    hemi_front_lat = _pg("hemi_front_lat")
+    hemi_back_lat = _pg("hemi_back_lat")
+    hemi_lat = hemi_front_lat or hemi_back_lat
+    sign_lat = _pg("sign_lat")
+    deg_lat = _pg("deg_lat") or "0"
+    min_lat = _pg("min_lat")
+    sec_lat = _pg("sec_lat")
+    sec_frac_lat = _pg("sec_frac_lat")
+
+    hemi_front_lon = _pg("hemi_front_lon")
+    hemi_back_lon = _pg("hemi_back_lon")
     hemi_lon = hemi_front_lon or hemi_back_lon
-    sign_lon = gd.get("sign_lon")
-    deg_lon = gd.get("deg_lon") or "0"
-    min_lon = gd.get("min_lon")
-    sec_lon = gd.get("sec_lon")
-    sec_frac_lon = gd.get("sec_frac_lon")
+    sign_lon = _pg("sign_lon")
+    deg_lon = _pg("deg_lon") or "0"
+    min_lon = _pg("min_lon")
+    sec_lon = _pg("sec_lon")
+    sec_frac_lon = _pg("sec_frac_lon")
 
     # shape discriminator
     has_sec = sec_lat is not None or sec_lon is not None
@@ -326,11 +397,22 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
     else:
         shape = "dd"
 
-    # structural checks that must be rule-rejected: encode as out-of-range
+    # Structural facts recorded for the rule layer (values stay faithful).
     lat_contradiction = _is_contradictory(hemi_lat, sign_lat)
     lon_contradiction = _is_contradictory(hemi_lon, sign_lon)
     lat_overflow = _dms_overflow(min_lat, sec_lat)
     lon_overflow = _dms_overflow(min_lon, sec_lon)
+    defects = []
+    if lat_contradiction or lon_contradiction:
+        defects.append("sign_hemisphere_conflict")
+    # Hemisphere letters must match their component's axis: N/S latitude,
+    # E/W longitude. A mismatched letter has no authoritative reading.
+    if (hemi_lat is not None and hemi_lat.upper() in ("E", "W")) or (
+        hemi_lon is not None and hemi_lon.upper() in ("N", "S")
+    ):
+        defects.append("hemisphere_axis_mismatch")
+    if lat_overflow or lon_overflow:
+        defects.append("dms_unit_overflow")
     # sec_frac overflow: if sec is present and sec_frac present, the effective
     # seconds value is sec.sec_frac ; sec_str <60 ensures overflow detection
     # For sec_frac "123" meaning 26.123 seconds, integer part 26 <60
@@ -392,11 +474,6 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         hemi_lon,
         sign_lon,
     )
-    # encode structural invalidities as out-of-range sentinels for rule rejection
-    if lat_contradiction or lat_overflow:
-        lat_dec = Decimal("91") if lat_dec >= 0 else Decimal("-91")
-    if lon_contradiction or lon_overflow:
-        lon_dec = Decimal("181") if lon_dec >= 0 else Decimal("-181")
 
     lat_q = _quantize(lat_dec)
     lon_q = _quantize(lon_dec)
@@ -407,6 +484,7 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         altitude=None,
         coord_shape=shape,
         compact=compact,
+        defects=tuple(defects),
     )
 
 

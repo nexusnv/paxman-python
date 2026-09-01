@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from typing import ClassVar
 
 from paxman.capabilities.Coordinates.notation import CoordinatesNotation
-from paxman.capabilities.Coordinates.rules import component_in_range
+from paxman.capabilities.Coordinates.rules import component_in_range, fold_compact
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -21,31 +21,14 @@ PUBLICATION = Provenance(
 )
 
 
-def _fold_compact(compact: str) -> str:
-    parts = [p.strip() for p in compact.split(",")]
-    folded: list[str] = []
-    for p in parts:
-        try:
-            d = Decimal(p)
-        except (InvalidOperation, ValueError, AttributeError):
-            folded.append(p)
-            continue
-        if d == 0:
-            folded.append("0")
-        else:
-            nd = d.normalize()
-            if nd == 0:
-                folded.append("0")
-            else:
-                folded.append(format(nd, "f"))
-    return ", ".join(folded)
-
-
 class Section311Position(Rule[CoordinatesNotation]):
     """RFC 7946 Section 3.1.1 — position.
 
     Validates the GeoJSON branch: coord_shape == geojson, 2 or 3
     elements (altitude optional), lat in [-90,90], lon in [-180,180].
+    The lon-first input order is inverted by the grammar; this rule
+    enforces the publication's element-count and range law. Any defect
+    recorded at recognition invalidates the position.
     """
 
     name = "Section 3.1.1-position"
@@ -57,6 +40,8 @@ class Section311Position(Rule[CoordinatesNotation]):
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
         try:
+            if notation.defects:
+                return False
             if notation.coord_shape != "geojson":
                 return False
         except (AttributeError, TypeError):
@@ -95,9 +80,12 @@ class Section311Position(Rule[CoordinatesNotation]):
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
         try:
-            return _fold_compact(notation.compact)
-        except Exception:
-            try:
-                return str(getattr(notation, "compact", ""))
-            except Exception:
-                return ""
+            return fold_compact(notation.compact)
+        except (InvalidOperation, ValueError, TypeError, AttributeError):
+            pass
+        try:
+            # Last-resort best-effort return: rules never raise, even for
+            # hostile objects whose ``__str__`` itself raises.
+            return str(getattr(notation, "compact", ""))
+        except Exception:  # never-raise contract, last resort
+            return ""

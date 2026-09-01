@@ -321,10 +321,10 @@ def test_unit_overflow_invalid(overflow_min: int, overflow_sec: int) -> None:
     assert result_sec.status in (Resolution.INVALID, Resolution.MISSING)
     assert result_sec.status != Resolution.SUCCESS
 
-    # Grammar-level assertion: overflow is recognized (sentineled) but rule rejects.
+    # Grammar-level: overflow is recognized (defect) but the rule rejects.
     grammar = CoordinatesRecognitionGrammar()
     matches_min = grammar.recognize(txt_min)
-    # Grammar may still emit one match with sentineled 91/181; or may reject at regex.
+    # Grammar may emit a match carrying the defect; the rule must reject.
     # In either case pipeline is not SUCCESS (asserted above). For the grammar
     # emission path, rule must reject.
     for notation in [m.notation for m in matches_min]:
@@ -350,7 +350,7 @@ def test_unit_overflow_fixed_vector() -> None:
     txt = "40\u00b0 75\u2032 46\u2033 N 79\u00b0 58\u2032 56\u2033 W"
     grammar = CoordinatesRecognitionGrammar()
     matches = grammar.recognize(txt)
-    # Must be recognized (sentineled) so rule can reject; if no match then MISSING.
+    # Must be recognized (defect recorded) so rule can reject; if no match then MISSING.
     if matches:
         n = matches[0].notation
         assert Section6CoordinateStructure().matches(n, CoordinatesContract()) is False

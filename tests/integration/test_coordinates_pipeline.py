@@ -126,7 +126,7 @@ class TestCoordinatesPipeline:
 
     @pytest.mark.integration
     def test_invalid_hemisphere_contradiction(self) -> None:
-        """Sign and hemisphere that contradict is INVALID (grammar sentinel + range)."""
+        """Sign and hemisphere that contradict is INVALID (defect + rule reject)."""
         register_capability(CoordinatesCapability())
         contract = CoordinatesCapability.create_contract()
         result = canonicalize("-41.5 N, 2.295", contract)
@@ -137,7 +137,7 @@ class TestCoordinatesPipeline:
 
     @pytest.mark.integration
     def test_invalid_foreign_crs(self) -> None:
-        """Foreign CRS label is encoded as 91 sentinel so rule reports INVALID."""
+        """Foreign CRS label is recorded as a defect so the rule reports INVALID."""
         register_capability(CoordinatesCapability())
         contract = CoordinatesCapability.create_contract()
         result = canonicalize("+27.59+002.29CRSPS56/", contract)
@@ -145,6 +145,36 @@ class TestCoordinatesPipeline:
         assert result.status == Resolution.INVALID
         assert result.canonicalized_value is None
         assert result.candidates == ()
+
+    @pytest.mark.integration
+    def test_invalid_foreign_crs_geo_uri(self) -> None:
+        """A non-WGS-84 geo URI is INVALID — no silent datum transform."""
+        register_capability(CoordinatesCapability())
+        contract = CoordinatesCapability.create_contract()
+        result = canonicalize("geo:48.8,2.3;crs=ed50", contract)
+
+        assert result.status == Resolution.INVALID
+        assert result.canonicalized_value is None
+        assert result.candidates == ()
+
+    @pytest.mark.integration
+    def test_invalid_hemisphere_axis_mismatch(self) -> None:
+        """E/W on the latitude component has no authoritative reading → INVALID."""
+        register_capability(CoordinatesCapability())
+        contract = CoordinatesCapability.create_contract()
+        result = canonicalize("81.0 W, 41.5 N", contract)
+
+        assert result.status == Resolution.INVALID
+        assert result.canonicalized_value is None
+
+    @pytest.mark.integration
+    def test_missing_prose_number_pairs(self) -> None:
+        """Whitespace-separated prose numbers are not coordinates."""
+        register_capability(CoordinatesCapability())
+        contract = CoordinatesCapability.create_contract()
+        for text in ("pages 12 40", "1 2 3 4", "+48 22 694 60 00"):
+            result = canonicalize(text, contract)
+            assert result.status == Resolution.MISSING, text
 
     @pytest.mark.integration
     def test_missing_single_component(self) -> None:
@@ -220,7 +250,7 @@ class TestCoordinatesPipeline:
         result = canonicalize("48.8577, 2.295", contract)
 
         assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "+48.8577+002.295/"
+        assert result.canonicalized_value == "+48.8577+002.2950/"
         assert result.contract.output_format == "iso6709"
 
     @pytest.mark.integration
