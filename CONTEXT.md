@@ -45,6 +45,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Language:** `LanguageNotation(language, extlang, script, region, variant, extension, privateuse, grandfathered, compact, raw_value)` — `language` 2-8 lower, `extlang` 3-letter hyphen-joined (e.g. `cmn` for `zh-cmn`), `script` Title 4, `region` Upper 2|3-digit, `variant` lower prefix-constrained via `VARIANT_PREFIXES` dict (`sl-nedis` ok, `de-nedis` rejected), `grandfathered` lower (preferred via `GRANDFATHERED_PREFERRED`), `compact` BCP47 case-canonical tag or bare lower, `raw_value` trimmed lower for lexicon; grammar strips case/underscore via `StandardPre` (`_`→`-` in PipelineState, `raw_text` preserves original), rules own registry + Prefix + Deprecated chain + Suppress-Script (informative, never rejects)
 - **BIC:** `BICNotation(bank_code, country_code, location_code, branch_code, compact)` — `bank_code` 4-char A-Z0-9, `country_code` 2-letter ISO 3166-1 plus XK, `location_code` 2-char A-Z0-9, `branch_code` 3-char or empty when BIC8, `compact` full 8 or 11 equals bank+country+location+branch, grammar uppercases and strips label, location second char 0/1/2 informative only
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
+- **MacAddress:** `MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` discriminates `"eui48"` / `"eui64"`; grammar strips separators (colon/hyphen/tri-dot/bare) and uppercases, fused `MAC` label included in `raw_text`; rules own structure (no checksum, I/G + U/L informative), derived OUI = `compact[:6]`
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
 - **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
 - **Phone / URL:** capability-defined shapes for address / number / URI components
@@ -65,7 +66,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships fifteen built-in capabilities, each wired to an authoritative specification:
+Paxman ships sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -79,6 +80,7 @@ Paxman ships fifteen built-in capabilities, each wired to an authoritative speci
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **BIC** | Bank identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
+| **MacAddress** | MAC addresses | IEEE Std 802-2024 |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
@@ -342,6 +344,32 @@ Both rules validate the full conjunction (structure + MOD 11-2) and carry dual p
 #### Formats
 
 Default `orcid` (hyphenated `XXXX-XXXX-XXXX-XXXC`); offered `uri` (`https://orcid.org/XXXX-XXXX-XXXX-XXXC`) and `compact` (16 chars, no hyphens). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
+### MacAddress
+
+The MacAddress capability has **1 grammar** and **1 validation rule**:
+
+#### Notation
+
+`MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` is `"eui48"`/`"eui64"` length discriminator; grammar strips separators and uppercases, fused `MAC` label included in `raw_text`.
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `mac_address_recognition` | EUI-48/EUI-64, colon/hyphen/tri-dot/bare, optional fused `MAC` label (`[\s:-]+`), case-insensitive | `mac_midrun` guards on both sides, per-separator branches (mixed separators never match), 64-bit before 48-bit and 16-hex before 12-hex ordering, 48-bit-only truncation guard `(?!(?ai:[-:.][0-9A-F]{2}(?!\w)))` |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 8.2-eui-structure` | IEEE Std 802-2024 Section 8.2 | `XX:XX:XX:XX:XX:XX` colon uppercase (8 groups for EUI-64) |
+
+The I/G bit (0x01) and U/L bit (0x02) are informative predicates only — broadcast, nil, multicast, locally administered, and FF-FE/FF-FF mid-address markers are valid; no checksum.
+
+#### Formats
+
+Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64), `bit_reversed` (RFC 2469 per-octet bit swap). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Contract Rule Exclusion
 ```python
@@ -715,7 +743,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (15 capabilities), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (15 capabilities — MacAddress deferred, ISSN/IBAN/BIC precedent; paxman/capabilities/__init__.py exports 16), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -806,6 +834,12 @@ paxman/
     │   ├── notation.py            # ISSNNotation (digits)
     │   ├── grammar/               # issn_recognition
     │   └── rules/                 # iso_3297 (check digit + registrant validation)
+    ├── MacAddress/                # grammar/ (1) + rules/ (1) — IEEE Std 802-2024, no checksum
+    │   ├── capability.py          # MacAddressCapability
+    │   ├── contract.py            # MacAddressContract
+    │   ├── notation.py            # MacAddressNotation (compact, shape)
+    │   ├── grammar/               # mac_address_recognition
+    │   └── rules/                 # ieee_802_ed2024 (structure, I/G + U/L informative)
     ├── Money/                     # grammar/ (3) + rules/ (2) + grammar/data/ + rules/data/ — ISO 4217, CLDR
     │   ├── capability.py          # MoneyCapability
     │   ├── contract.py            # MoneyContract (precision, dollar_sign_currency)
@@ -879,7 +913,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (15 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (16 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy
@@ -896,6 +930,7 @@ tests/
 │   ├── ip/                        # test_grammar, test_rules, test_capability
 │   ├── isbn/                      # + test_contract, test_notation, test_data
 │   ├── issn/                      # test_grammar, test_rules, test_capability, test_contract, test_notation
+│   ├── mac_address/               # test_grammar, test_rules, test_capability, test_contract, test_notation
 │   ├── money/                      # + test_contract, test_notation, test_data, test_parsing
 │   ├── orcid/                      # test_grammar, test_rules, test_capability, test_notation
 │   ├── phone/                      # + test_data

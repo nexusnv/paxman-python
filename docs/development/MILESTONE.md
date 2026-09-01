@@ -2,7 +2,7 @@
 
 > **Purpose:** Roadmap guidance for capabilities to bring into Paxman, ordered by priority.
 > This table is a planning aid — details need not be exactly accurate in terms of implementation.
-> Existing capabilities (Email, Date, Country, IP, Phone) are excluded.
+> Existing capabilities (16 shipped: BIC, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, URL) are excluded.
 
 ---
 
@@ -21,7 +21,7 @@
 | 9 | **ISBN** | Book identifiers appear in bibliographic data in ISBN-10 and ISBN-13 forms, with or without hyphens/check digits. ISO 2108 provides the standard. | PARSER (strip hyphens/spaces, validate check digit, convert ISBN-10 → ISBN-13 via 978 prefix + recalculated check) | ISO 2108:2007, ISO 2108 Amendment 1 | "978-0-14-044913-6" → "9780140449136", "0-14-044913-2" → "9780140449136", "140449132" → "9780140449136" |
 | 10 | **ISSN** | Serial publications use ISSNs (8-digit, hyphenated). ISO 3297 defines the standard. | PARSER (strip hyphens/spaces, validate check digit, output uppercase X if needed) | ISO 3297:2007, ISSN Register (ISSN International Centre) | "1234-5678" → "12345678", "0024-9319" → "00249319" |
 | 11 | **DOI** | Digital Object Identifiers appear in academic and publishing contexts with varying prefixes ("doi:", "DOI:", "10.xxxx/..."). ISO 26324 defines the syntax. | PARSER (strip "doi:" prefix, lowercase, validate handle syntax) | ISO 26324:2012, DOI Handbook (IDF), Handle System (CNRI) | "doi:10.1000/xyz123" → "10.1000/xyz123", "DOI:10.1038/nature12345" → "10.1038/nature12345" |
-| 12 | **MAC address** | Media Access Control addresses appear in network data in multiple formats (colon-separated, hyphen-separated, Cisco dotted, no separators). IEEE 802 defines the EUI-48 and EUI-64 formats. | PARSER (strip separators, lowercase, reformat to canonical colon-separated or hyphenated form) | IEEE 802 (MAC Address), IEEE OUI Registry, RFC 7042 | "00:1A:2B:3C:4D:5E" → "00:1a:2b:3c:4d:5e", "001A.2B3C.4D5E" → "00:1a:2b:3c:4d:5e", "00-1A-2B-3C-4D-5E" → "00:1a:2b:3c:4d:5e" |
+| 12 | **MAC address** | Media Access Control addresses appear in network data in multiple formats (colon-separated, hyphen-separated, Cisco dotted, no separators). IEEE 802 defines the EUI-48 and EUI-64 formats. — **Built** (1 grammar `mac_address_recognition` — EUI-48/EUI-64, colon/hyphen/tri-dot/bare, fused `MAC` label; 1 rule `Section 8.2-eui-structure` IEEE Std 802-2024, no checksum, I/G + U/L informative; canonical colon uppercase, offered `hyphen`/`bare`/`cisco`/`eui64`/`bit_reversed`) — Research: `docs/development/research/2026-08-31-mac-address-canonicalization.md`, Plan: `docs/development/plans/2026-09-01-mac-address-capability.md` | PipelineGrammar (RegexStage + StandardPre + `BoundaryGuard.mac_midrun`, 8 shape branches, 48-bit truncation guard; `MacAddressNotation(compact, shape)`) | IEEE Std 802-2024 (https://standards.ieee.org/ieee/802/10894), RFC 7042 | "00:1A:2B:3C:4D:5E" → "00:1A:2B:3C:4D:5E", "001A.2B3C.4D5E" → "00:1A:2B:3C:4D:5E", "00-1A-2B-3C-4D-5E" → "00:1A:2B:3C:4D:5E", "001A2B3C4D5E6677" → "00:1A:2B:3C:4D:5E:66:77" |
 | 13 | **HTTP header name** | HTTP headers in user-facing data appear with inconsistent casing ("Content-Type", "content-type", "CONTENT-TYPE"). RFC 9110 defines field-name normalization. | PARSER (lowercase, preserve hyphens) | RFC 9110 (HTTP Semantics), RFC 9111 (HTTP Caching) | "Content-Type" → "content-type", "X-Custom-Header" → "x-custom-header", "ACCEPT-ENCODING" → "accept-encoding" |
 | 14 | **Unicode normalization** | Text with combining characters, compatibility equivalents, or different normalizations of the same visual string needs canonical form. Unicode UAX #15 defines NFC/NFD/NFKC/NFKD. | PARSER (apply NFC normalization, strip combining marks for NFD comparison) | Unicode UAX #15 (Unicode Normalization Forms), Unicode Standard Annex #15 | "é" (e + combining acute) → "é" (NFC), "ﬁ" (ligature) → "fi" (NFKC) |
 | 15 | **IBAN** | International Bank Account Numbers appear in financial data with spaces, uppercase/lowercase, and country-code prefixes. ISO 13616-1:2020 defines the structure. | PARSER (single-space paper tolerance, uppercase, validate check digits via MOD 97-10, canonical electronic + groups-of-four paper) | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10), SWIFT IBAN Registry (Release 100, Oct 2025 — deferred) | "DE89 3704 0044 0532 0130 00" → "DE89370400440532013000", "gb29 nwbk 6016 1331 9268 19" → "GB29NWBK60161331926819" |
@@ -58,11 +58,22 @@ Capabilities are ordered by a combination of:
 
 | Capability | Status |
 |-----------|--------|
-| Email | Built (RFC 5322, RFC 6761) |
-| Date | Built (ISO 8601, US federal, EN 50160) |
+| BIC | Built (ISO 9362:2022, ISO 3166-1) |
 | Country | Built (ISO 3166, CLDR) |
+| Currency | Built (ISO 4217, CLDR) |
+| Date | Built (ISO 8601, US federal, EN 50160) |
+| Email | Built (RFC 5322, RFC 6761) |
+| IBAN | Built (ISO 13616-1:2020, MOD 97-10) |
 | IP | Built (RFC 791, RFC 5952) |
+| ISBN | Built (ISO 2108) |
+| ISSN | Built (ISO 3297:2022) |
+| Language | Built (ISO 639, BCP 47) |
+| MacAddress | Built (IEEE Std 802-2024 — 1 grammar, 1 rule, colon canonical; see `docs/development/research/2026-08-31-mac-address-canonicalization.md` and `docs/development/plans/2026-09-01-mac-address-capability.md`) |
+| Money | Built (ISO 4217, CLDR) |
+| ORCID | Built (ISO 27729:2024) |
 | Phone | Built (ITU-T E.164, RFC 3966, NANP) |
+| SI Unit | Built (BIPM SI Brochure) |
+| URL | Built (WHATWG URL Standard) |
 
 ---
 
