@@ -2,7 +2,13 @@
 
 Extracts dotted-decimal IPv4 addresses. The word boundaries are kept verbatim
 (``\\b`` is a word boundary, not a hard-coded lookaround class —
-ADR-0009 §10). Syntax only: the grammar never validates the address.
+ADR-0009 §10). Syntax only: the grammar never validates the address (e.g.
+``999.999.999.999`` is emitted and rejected by the ``Section 3.2`` rule).
+Leading-zero forms such as ``010.020.030.040`` are recognized and later
+normalized to ``10.20.30.40``. The ``\\b`` tokenization means the trailing
+IPv4 inside an IPv6 mixed address (``::ffff:192.0.2.1``) is intentionally
+also emitted as a second candidate — see ``ipv6_recognition`` for the
+mixed-form grammar and the overlap note.
 """
 
 from __future__ import annotations

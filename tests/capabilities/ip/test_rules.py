@@ -103,6 +103,31 @@ class TestSection3Dot2IPv4Address:
         rule = Section3Dot2IPv4Address()
         assert rule.strategy == RuleStrategy.PARSER
 
+    @pytest.mark.capability
+    def test_normalize_never_raises_on_invalid(self) -> None:
+        rule = Section3Dot2IPv4Address()
+        contract = IPContract()
+        for bad in ["999.999.999.999", "not-an-ip", "::ffff:192", ""]:
+            result = rule.normalize(IPNotation(address=bad), contract)
+            assert result == bad
+
+    @pytest.mark.capability
+    def test_provenance_reference_url_is_datatracker(self) -> None:
+        rule = Section3Dot2IPv4Address()
+        assert rule.provenance.reference_url.startswith(
+            "https://datatracker.ietf.org/doc/html/"
+        )
+
+    @pytest.mark.capability
+    def test_notation_is_frozen_slots(self) -> None:
+        assert IPNotation.__dataclass_params__.frozen is True
+        params = IPNotation.__dict__.get("__dataclass_params__")  # type: ignore[attr-defined]
+        if params is not None and hasattr(params, "slots"):
+            assert getattr(params, "slots") is True  # noqa: B009
+        else:
+            assert hasattr(IPNotation, "__slots__")
+        assert hasattr(IPNotation, "__slots__")
+
 
 class TestSection4IPv6TextRepresentation:
     """RFC 5952 Section 4 — IPv6 text representation rule tests."""
@@ -202,3 +227,18 @@ class TestSection4IPv6TextRepresentation:
     def test_strategy_is_parser(self) -> None:
         rule = Section4IPv6TextRepresentation()
         assert rule.strategy == RuleStrategy.PARSER
+
+    @pytest.mark.capability
+    def test_normalize_never_raises_on_invalid(self) -> None:
+        rule = Section4IPv6TextRepresentation()
+        contract = IPContract()
+        for bad in ["not-an-ip", "192.168.1.1", "999.999.999.999", ""]:
+            result = rule.normalize(IPNotation(address=bad), contract)
+            assert result == bad
+
+    @pytest.mark.capability
+    def test_provenance_reference_url_is_datatracker(self) -> None:
+        rule = Section4IPv6TextRepresentation()
+        assert rule.provenance.reference_url.startswith(
+            "https://datatracker.ietf.org/doc/html/"
+        )
