@@ -192,7 +192,7 @@ round-trip exactly.
 - Issue #123 — origin of this ADR: the re-entry invariant requirement and the
   hard-decision scoping (Scope decision 1).
 - Issue #122 — common-word suppression decision record: A0 (whole-input exemption)
-  adopted, A1 fallback rejected (Scope decision 5; Rejected Alternative 3).
+  adopted, A1 fallback rejected (Scope decision 5; Alternatives Considered, item 3).
 - ADR-0004 (Single-Value Invariant) — invariant-family precedent: an engine-level
   correctness property enforced by tests rather than hot-path checks.
 - ADR-0009 (Recognition Kernel) — determinism first principles (§5), snapshot identity via
