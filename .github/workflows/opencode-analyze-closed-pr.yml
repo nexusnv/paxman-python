@@ -154,12 +154,19 @@ jobs:
             - Do NOT create empty or historical milestones. Start from `v0.4.0` (already exists, due 2026-09-09T00:00:00Z). Historical `v0.1.0`–`v0.3.1` are not backfilled.
             - If the latest open milestone's `due_on` is in the past or within 3 days, and there is no next minor milestone yet, create the next one proactively ONLY if needed (either current milestone is overloaded or you have a new issue that needs to target next release):
               ```bash
-              # Example: create v0.5.0 if needed
-              LAST_DUE=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq 'sort_by(.due_on) | last | .due_on')
+              # Derive NEXT_VERSION dynamically from the latest milestone (e.g., v0.4.0 -> v0.5.0, v0.5.0 -> v0.6.0) — do NOT hardcode
+              LAST_TITLE=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r 'sort_by(.due_on) | last | .title // "v0.4.0"')
+              if [[ "$LAST_TITLE" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+                MAJOR="${BASH_REMATCH[1]}"; MINOR="${BASH_REMATCH[2]}"; NEXT_MINOR=$((MINOR + 1))
+                NEXT_VERSION="v${MAJOR}.${NEXT_MINOR}.0"
+              else
+                NEXT_VERSION="v0.5.0"
+              fi
+              LAST_DUE=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r 'sort_by(.due_on) | last | .due_on')
               NEXT_DUE=$(date -u -d "$LAST_DUE + 7 days" +%Y-%m-%dT00:00:00Z)
-              gh api repos/$GITHUB_REPOSITORY/milestones -f title="v0.5.0" -f state="open" -f due_on="$NEXT_DUE" -f description="Weekly minor release — active development. Cadence: 1 week per minor version. Priority: docs for released caps > bug fixes for published caps > new capabilities. Keep v*.*.* labels alongside milestone."
+              gh api repos/$GITHUB_REPOSITORY/milestones -f title="$NEXT_VERSION" -f state="open" -f due_on="$NEXT_DUE" -f description="Weekly minor release — active development. Cadence: 1 week per minor version. Priority: docs for released caps > bug fixes for published caps > new capabilities. Keep v*.*.* labels alongside milestone."
               # Also ensure label exists:
-              gh label create v0.5.0 --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "v0.5.0 release" 2>/dev/null || true
+              gh label create "$NEXT_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$NEXT_VERSION release" 2>/dev/null || true
               ```
             - Description for every new milestone must note the weekly cadence and priority contract.
 
@@ -181,15 +188,17 @@ jobs:
               gh api repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100 --jq '[.[] | select(.pull_request==null) | select(.milestone.title=="v0.4.0") | {number,title,labels:[.labels[].name], created_at, body:(.body//""|split("\n")[0])}] | sort_by(.created_at)'
               ```
               - Rank each issue into tiers 1–5 using title/body/labels (e.g., label `followup` + body mentioning docstring → Tier 1; label `enhancement` + cap that exists on `main` → Tier 2; deferred low → Tier 4; ORCID/new → Tier 5). Within same tier, older `created_at` keeps earlier slot (stable).
-              - Keep top `threshold` (10) highest-priority issues in current milestone; move the lowest-priority excess to the next milestone (create `v0.5.0` if needed per 3b.3). For each moved issue:
+              - Keep top `threshold` (10) highest-priority issues in current milestone; move the lowest-priority excess to the next milestone (create `$NEXT_VERSION` if needed per 3b.3 — derived dynamically, not hardcoded `v0.5.0`). For each moved issue:
                 ```bash
-                NEXT_MILESTONE_NUMBER=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq 'sort_by(.due_on) | .[] | select(.title=="v0.5.0") | .number')
+                # NEXT_VERSION derived in 3b.3 (e.g., v0.5.0, v0.6.0); re-derive if running 3b.4 standalone using same LAST_TITLE logic above
+                NEXT_MILESTONE_NUMBER=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r --arg ver "$NEXT_VERSION" 'sort_by(.due_on) | .[] | select(.title==$ver) | .number')
+                # CURRENT_TITLE is the overloaded milestone's title (e.g., v0.4.0) — fetch dynamically: CURRENT_TITLE=$(gh api repos/$GITHUB_REPOSITORY/milestones/1 --jq -r .title)
                 gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -F milestone="$NEXT_MILESTONE_NUMBER" --jq '{number,milestone:.milestone.title}'
-                # Relabel: keep v* labels alongside milestone — remove old version label, add new
-                gh issue edit <number> --repo "$GITHUB_REPOSITORY" --remove-label "v0.4.0" --add-label "v0.5.0" 2>/dev/null || \
+                # Relabel: keep v* labels alongside milestone — remove old version label, add new (both derived, not hardcoded)
+                gh issue edit <number> --repo "$GITHUB_REPOSITORY" --remove-label "$CURRENT_TITLE" --add-label "$NEXT_VERSION" 2>/dev/null || \
                   gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> --jq '{labels:[.labels[].name]}' | jq .
                 # Alternative via API: PATCH with labels array
-                # gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -f labels[]="followup" -f labels[]="v0.5.0"
+                # gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -f labels[]="followup" -f labels[]="$NEXT_VERSION"
                 ```
               - Log each move with rationale: issue #, tier, why moved (e.g., "#39 ORCID defer is Tier 5 new capability, lowest priority vs #106 BIC bug Tier 2").
               - Never move `invalid`/`wontfix` — they have no milestone at all (handled in 3b.2).
@@ -212,9 +221,11 @@ jobs:
             # Choose target milestone based on priority tier and overload:
             # - Tier 1/2 (docs, bug for published cap) → earliest open milestone with capacity (open_issues <10)
             # - Tier 4/5 (new cap, low) → next milestone if earliest is >8 or overloaded
-            # If chosen milestone's label does not exist, create it:
-            gh label create v0.4.0 --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "v0.4.0 release" 2>/dev/null || true
-            gh label create v0.5.0 --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "v0.5.0 release" 2>/dev/null || true
+            # If chosen milestone's label does not exist, create it (derive version dynamically — do NOT hardcode v0.4.0/v0.5.0):
+            # TARGET_VERSION is the chosen milestone title (e.g., v0.4.0 or $NEXT_VERSION); create label for it dynamically
+            gh label create "$TARGET_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$TARGET_VERSION release" 2>/dev/null || true
+            # Fallback: ensure NEXT_VERSION label exists if targeting next release
+            gh label create "$NEXT_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$NEXT_VERSION release" 2>/dev/null || true
             # Create issue with BOTH label and milestone kept in sync:
             gh issue create --repo "$GITHUB_REPOSITORY" --title "followup(<scope>): <concise>" --body-file /tmp/issue_body.md --label "followup,<version-label>" --milestone "<version-label>"
             # Verify:
@@ -233,9 +244,9 @@ jobs:
             - If a finding was correctly skipped (e.g. SC 65020), document the triage reason in the issue that covers that PR, so future runs know it was intentional.
             - The chosen milestone and its due date, and the priority tier justification.
 
-            Label each new issue with `followup` and the version targeting label (e.g. `v0.4.0` or the latest `v*` label). Keep the milestone and label in sync — if you move an issue to `v0.5.0` later, update the label too. If the version label does not exist, create it first:
+            Label each new issue with `followup` and the version targeting label (e.g. `v0.4.0` or `$NEXT_VERSION`). Keep the milestone and label in sync — if you move an issue to `$NEXT_VERSION` later, update the label too. If the version label does not exist, create it first:
             ```bash
-            gh label create v0.5.0 --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "v0.5.0 release" 2>/dev/null || true
+            gh label create "$TARGET_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$TARGET_VERSION release" 2>/dev/null || true
             ```
 
             ## Guardrails
