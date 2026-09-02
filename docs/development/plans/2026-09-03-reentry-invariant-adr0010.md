@@ -96,7 +96,7 @@ Fixture inputs above are verified-good defaults from each capability's docs/test
 - [ ] Front-matter: Status Accepted, Date 2026-09-03, References #123, #122, ADR-0004 (invariant family), ADR-0009 (kernel).
 - [ ] Verify: `uv run ruff check docs/ 2>/dev/null; test -f docs/adr/0010-re-entry-fixed-point-invariant.md && echo OK`. Commit: `docs(adr): 0010 re-entry fixed-point invariant (#123)`.
 
-### Task 2: Property test — re-entry over all 15 capabilities (failing first)
+### Task 2: Property test — re-entry over all 15 capabilities
 
 **Files:** `tests/property/test_reentry_invariant.py` (create)
 
