@@ -11,7 +11,7 @@
 **References:**
 - Issue #123 (this plan), issue #122 (suppression decision A0 — cross-dependency)
 - `paxman/engine/orchestrator.py:63-71` (`ExecutionResult` shape), `paxman/engine/orchestrator.py:736-747` (`_determine_status`)
-- `paxman/core/domain.py:63-71` (`ExecutionResult` re-export surface), `paxman/core/capability_contract.py:45-56` (contract format class vars)
+- `paxman/api/canonicalize.py:6-12` (`canonicalize()` returning `ExecutionResult` to callers), `paxman/core/capability_contract.py:45-56` (contract format class vars)
 - `docs/adr/0004-single-value-invariant.md` (invariant-ADR style precedent), `docs/adr/0009-recognition-kernel.md` (current ADR numbering; next is 0010)
 - `docs/recipes/segmentation.md`, `docs/user/migration.md` (docs to cross-link)
 - Offered formats inventory: `paxman/capabilities/*/contract.py` `OFFERED_OUTPUT_FORMATS` (see Task 3 table)
@@ -100,7 +100,7 @@ Fixture inputs above are verified-good defaults from each capability's docs/test
 
 **Files:** `tests/property/test_reentry_invariant.py` (create)
 
-**Goal:** Red test proving the invariant is not yet enforced (Task 1's ADR is documentation; this task is the executable mandate). Because shipped capabilities currently *do* re-enter for most formats, the failing-first seed is the **test harness itself**: assert every capability × format pair in the fixture table is present AND re-enters — any absent pair or failing pair fails the suite.
+**Goal:** The executable mandate. Most shipped formats likely already re-enter; the suite's red state is **genuine violating formats** — any row that fails the fixed-point assertion is a Task-4 finding. If every row passes on first run, the suite still lands as the permanent CI enforcement (TDD red step is satisfied by whichever suspect formats fail; expected suspects listed at the Verify bullet).
 
 - [ ] Module docstring documents the full-pipeline exception per `tests/AGENTS.md` (mirrors `test_money_properties.py`'s `_fresh_registry` note): autouse `_clean_registry` + `register_all_shipped()` inside the fixture, property layer stays registry-free elsewhere.
 - [ ] Fixture table: `@dataclass(frozen=True)` per row — `capability` (imported class), `input`, `formats: tuple[str, ...]` = `("", "default") + offered`, `expected_default: str`. Populate all 15 rows from the Background table; confirm each `expected_default` against `tests/capabilities/<name>/test_capability.py` while writing the row.
@@ -126,7 +126,7 @@ Fixture inputs above are verified-good defaults from each capability's docs/test
 
 - [ ] For each **(a)** finding: no source change; the Task-2 suite is the fix. Mark the finding resolved in the audit list.
 - [ ] For each **(b)** finding, decide by the issue's bar — "an output format paxman cannot itself re-recognize must not be offered":
-  - If the format has a shipped recognition precedent elsewhere (e.g. ORCID `uri` — grammar already accepts `https://orcid.org/…` per research `docs/development/research/2026-08-23-orcid.md`), **fix**: extend the capability's grammar to recognize the rendered form (TDD: failing `tests/capabilities/<name>/test_grammar.py::test_<format>_reenters` first, minimal alternation/normalizer change, kernel-parity suites if `paxman/core/grammar` touched).
+  - If the format has a shipped recognition precedent elsewhere (e.g. ORCID `uri` — grammar already accepts `https://orcid.org/…` per research `docs/development/research/2026-08-23-orcid-canonicalization.md`), **fix**: extend the capability's grammar to recognize the rendered form (TDD: failing `tests/capabilities/<name>/test_grammar.py::test_<format>_reenters` first, minimal alternation/normalizer change, kernel-parity suites if `paxman/core/grammar` touched).
   - Else **de-offer**: remove the format from `OFFERED_OUTPUT_FORMATS` (contract frozen dataclass — direct edit), update the contract docstring + `docs/user/capabilities/<name>.md` table, note the removal in `CHANGELOG.md` under a breaking section. De-offer rationale recorded in ADR-0010 "Consequences".
 - [ ] Verify: `uv run pytest tests/property/test_reentry_invariant.py tests/capabilities -q` → PASS. Commit: `fix(<cap>): re-recognize <format> output` / `feat(<cap>)!: de-offer <format>` per finding.
 
