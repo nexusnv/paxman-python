@@ -38,6 +38,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Email:** `EmailNotation(local_part, domain_part)` → `["local_part", "domain_part"]`
 - **Date:** `DateNotation(N1, N2, N3)` → `["N1", "N2", "N3"]` (position-sensitive: grammar determines meaning)
 - **Country:** `CountryNotation(shape, value)` — `shape` discriminates `"alpha2"` / `"alpha3"` / `"numeric"` / `"name"`; `value` is the raw input (e.g., `"US"`, `"USA"`, `"840"`, `"United States"`)
+- **Coordinates:** `CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present). Grammar recognizes decimal pairs (signed or hemisphere-letter `N/S/E/W`, separators `[\s,;/]+`, optional `COORD`/`LAT` label), DMS/DDM with `°`/`D`/`*`, `′`/`'`/`m`, `″`/`"`/`s` and `''`→`″` fold, Geo URI `geo:lat,lon[,alt][;crs=wgs84][;u=...]`, ISO 6709 string-expression `±DD.DDD±DDD.DDD[/]` with optional altitude and `CRSWGS_84`, and GeoJSON lon-first bracketed pairs `[lon, lat[,alt]]`
 - **Currency:** `CurrencyNotation(text, shape)` — `shape` is `"code"` / `"qualified_symbol"` / `"symbol"` / `"word"`; codes are grammar-folded to uppercase, words to lowercase, symbols keep exact casing
 - **Money:** `MoneyNotation(currency_part, amount_part, currency_shape, amount_shape)` — verbatim currency + amount tokens with grammar-assigned shape discriminators
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
@@ -66,20 +67,21 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent), each wired to an authoritative specification:
+Paxman ships seventeen built-in capabilities (17 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
-| **Email** | Email addresses | RFC 5322, RFC 6761 |
-| **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **BIC** | Business identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
+| **Coordinates** | WGS 84 coordinates | ISO 6709:2022, RFC 5870, RFC 7946 |
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
+| **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **Email** | Email addresses | RFC 5322, RFC 6761 |
+| **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
-| **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
-| **BIC** | Bank identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
@@ -743,7 +745,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (15 capabilities — MacAddress deferred, ISSN/IBAN/BIC precedent; paxman/capabilities/__init__.py exports 16), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (17 capabilities, alphabetical; paxman/capabilities/__init__.py exports 17), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -770,6 +772,12 @@ paxman/
     │   ├── notation.py            # BICNotation (bank_code, country_code, location_code, branch_code, compact)
     │   ├── grammar/               # bic_recognition
     │   └── rules/                 # iso_9362_ed2022 (structure + country lookup, 250 codes incl. XK)
+    ├── Coordinates/               # grammar/ (1) + rules/ (3) — ISO 6709:2022, RFC 5870, RFC 7946
+    │   ├── capability.py          # CoordinatesCapability
+    │   ├── contract.py            # CoordinatesContract
+    │   ├── notation.py            # CoordinatesNotation (latitude, longitude, altitude, coord_shape, compact)
+    │   ├── grammar/               # coordinates_recognition
+    │   └── rules/                 # iso_6709_ed2022, rfc_5870_ed2010, rfc_7946_ed2016
     ├── Email/                     # grammar/ (3) + rules/ (2) — RFC 5322, RFC 6761
     │   ├── __init__.py
     │   ├── capability.py          # EmailCapability

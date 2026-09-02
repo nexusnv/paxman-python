@@ -9,6 +9,8 @@ import pytest
 
 from paxman.capabilities.BIC.capability import BICCapability
 from paxman.capabilities.BIC.contract import BICContract
+from paxman.capabilities.Coordinates.capability import CoordinatesCapability
+from paxman.capabilities.Coordinates.contract import CoordinatesContract
 from paxman.capabilities.Country.capability import CountryCapability
 from paxman.capabilities.Country.contract import CountryContract
 from paxman.capabilities.Country.notation import CountryNotation
@@ -67,6 +69,12 @@ _CAPABILITY_SURFACES = [
         EmailContract,
         "email",
         id="email",
+    ),
+    pytest.param(
+        CoordinatesCapability,
+        CoordinatesContract,
+        "decimal",
+        id="coordinates",
     ),
     pytest.param(
         BICCapability,

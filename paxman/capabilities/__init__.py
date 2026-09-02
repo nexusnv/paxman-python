@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 __all__ = [
     "BIC",
+    "Coordinates",
     "Country",
     "Currency",
     "Date",
@@ -33,6 +34,10 @@ __all__ = [
 
 _LAZY: dict[str, tuple[str, str]] = {
     "BIC": ("paxman.capabilities.BIC.capability", "BICCapability"),
+    "Coordinates": (
+        "paxman.capabilities.Coordinates.capability",
+        "CoordinatesCapability",
+    ),
     "Country": ("paxman.capabilities.Country.capability", "CountryCapability"),
     "Currency": ("paxman.capabilities.Currency.capability", "CurrencyCapability"),
     "Date": ("paxman.capabilities.Date.capability", "DateCapability"),
@@ -52,6 +57,9 @@ _LAZY: dict[str, tuple[str, str]] = {
 
 if TYPE_CHECKING:
     from paxman.capabilities.BIC.capability import BICCapability as BIC
+    from paxman.capabilities.Coordinates.capability import (
+        CoordinatesCapability as Coordinates,
+    )
     from paxman.capabilities.Country.capability import CountryCapability as Country
     from paxman.capabilities.Currency.capability import CurrencyCapability as Currency
     from paxman.capabilities.Date.capability import DateCapability as Date
