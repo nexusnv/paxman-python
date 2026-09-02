@@ -77,17 +77,24 @@ class _ReEntryRow:
     input: str
     expected_default: str
     formats: tuple[str, ...]
+    contract_kwargs: dict[str, object] | None = None
 
 
-def _row(capability: ContractFactory, text: str, expected_default: str) -> _ReEntryRow:
+def _row(
+    capability: ContractFactory,
+    text: str,
+    expected_default: str,
+    **contract_kwargs: object,
+) -> _ReEntryRow:
     """Build a row: unset + "default" + every offered format (sorted, stable)."""
-    contract = capability.create_contract()
+    contract = capability.create_contract(**contract_kwargs)  # type: ignore[arg-type]
     return _ReEntryRow(
         name=contract.capability_name,
         factory=capability,
         input=text,
         expected_default=expected_default,
         formats=("", "default", *sorted(contract.OFFERED_OUTPUT_FORMATS)),
+        contract_kwargs=dict(contract_kwargs) if contract_kwargs else None,
     )
 
 
@@ -136,7 +143,12 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # ::test_format_value_default_identity (hyphenated)
     _row(ORCID, "0000-0002-1825-0097", "0000-0002-1825-0097"),
     # Phone: e164 canonical; cf. tests/e2e/test_canonicalize.py phone tests
-    _row(Phone, "+12125550123", "+12125550123"),
+    # Fixture is a valid NANP number (212-555-1234, not the fictional
+    # 555-01xx range) and carries default_country="US" so the lossy
+    # "national" rendering (bare NSN) can re-enter via the NANP rule
+    # (ADR-0010 Scope decision 2 — recognize-own-output condition is
+    # contract-relative; national without country is not self-describing).
+    _row(Phone, "+12125551234", "+12125551234", default_country="US"),
     # SIUnit: tests/capabilities/si_unit/test_capability.py (symbol "kg")
     _row(SIUnit, "kg", "kg"),
     # URL: WHATWG canonical form appends the path "/"; cf.
@@ -181,7 +193,9 @@ def test_default_contract_reentry(row: _ReEntryRow, output_format: str) -> None:
     documented canonical value, and the emitted value must re-enter the same
     contract as a fixed point.
     """
-    contract = row.factory.create_contract(output_format=output_format or None)
+    kwargs: dict[str, object] = dict(row.contract_kwargs) if row.contract_kwargs else {}
+    kwargs["output_format"] = output_format or None
+    contract = row.factory.create_contract(**kwargs)  # type: ignore[arg-type]
     first = canonicalize(row.input, contract)
     assert first.status is Resolution.SUCCESS
     value = first.canonicalized_value
@@ -221,7 +235,10 @@ case_ws_variants: list[_CaseVariant] = [
 @given(variant=st.sampled_from(case_ws_variants))
 def test_reentry_case_whitespace_variants(variant: _CaseVariant) -> None:
     """Property 2 survives case/padding perturbation of each row's input."""
-    contract = variant.row.factory.create_contract()
+    kwargs: dict[str, object] = (
+        dict(variant.row.contract_kwargs) if variant.row.contract_kwargs else {}
+    )
+    contract = variant.row.factory.create_contract(**kwargs)  # type: ignore[arg-type]
     first = canonicalize(variant.text, contract)
     if first.status is not Resolution.SUCCESS:
         # Property 2 is conditional on the first call succeeding: a variant
