@@ -114,12 +114,18 @@ round-trip exactly.
 5. **Suppression interaction.** With `suppress_common_words=False` (the contract default)
    re-entry is unconditional. With `suppress_common_words=True`, the violator set today —
    canonical values that re-enter as `MISSING` because the suppression hit swallows the
-   entire input, which *is* the canonical word — is the intersection of (word-bounded
-   suppressible-matcher hit) ∩ (common English word) ∩ (no non-suppressible fallback
-   path): Country `TO`/`IN`/`CA`/`NO`, Language `en`/`ca`/`id`/…, Currency `ALL`. Two
-   notable survivors show the mechanism matters: Country `US` re-enters via the country
-   *name* grammar (`name_recognition`), which carries no `suppressible` mark — suppression
-   is per-matcher (`matcher.suppressible`), not per-capability, so a non-suppressible
+   entire input, which *is* the canonical word — is *defined by* the intersection of
+   (word-bounded suppressible-matcher hit) ∩ (common English word) ∩ (no non-suppressible
+   rescue path). As of the shipped `COMMON_WORDS` table its membership is large, not a
+   handful: 26 of the 250 ISO 3166-1 α2 codes (`TO`, `DE`, `CD`, `IT`, …) for Country,
+   50 ISO 639 codes (`en`, `de`, `no`, …) for Language, and 3 of the 178 ISO 4217 codes
+   (`ALL`, `TRY`, `TOP`) for Currency re-enter as `MISSING`. At the input level, 53
+   common-word inputs collapse onto these 50 Language codes (`in` and `id` both
+   canonicalize to `id`), and two inputs — `may` → `ms`, `per` → `fa` — canonicalize to
+   non-common-word codes and are rescued (re-entry `SUCCESS`). Two notable survivors show
+   the mechanism matters: Country `US` re-enters via the country *name* grammar
+   (`name_recognition`), which carries no `suppressible` mark — suppression is
+   per-matcher (`matcher.suppressible`), not per-capability, so a non-suppressible
    path rescues the value. SIUnit `cd` re-enters because no SIUnit matcher is marked
    `suppressible`; the capability is entirely outside suppression's reach today. A
    capability can opt out of suppression (by leaving its matchers unmarked) or gain
@@ -166,10 +172,11 @@ round-trip exactly.
 3. **A1 suppression fallback** ("if suppression would leave 0 mentions, keep the
    unsuppressed set"). Evaluated and rejected in issue #122: as a general mechanism it is
    hypothetical for the shipped capability set — the whole-input-suppressed class is
-   exactly the suppressible ∩ common-word ∩ no-rescue-path intersection of Scope decision
-   5, which A0 exempts mechanically — and a fallback that resurrects suppressed mentions
-   re-admits the short-code-in-prose false positives the flag exists to prevent. The
-   adopted decision A0 (whole-input exemption) is the narrower fix.
+   *defined by* the suppressible ∩ common-word ∩ no-rescue-path intersection of Scope
+   decision 5 (current membership: the counts given there), which A0 exempts
+   mechanically — and a fallback that resurrects suppressed mentions re-admits the
+   short-code-in-prose false positives the flag exists to prevent. The adopted decision
+   A0 (whole-input exemption) is the narrower fix.
 
 ## References
 
