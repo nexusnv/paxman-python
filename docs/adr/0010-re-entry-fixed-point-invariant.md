@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted — 2026-09-03.** Tracked as issue #123, which also fixes the decision as hard
+**Accepted — 2026-09-03.** Tracked as issue #123, which also records the decision as hard
 (see Scope decision 1).
 
 ## Context
@@ -86,8 +86,12 @@ round-trip exactly.
    **recognize-own-output condition**: `C`'s `active_grammars` must include a grammar that
    recognizes every format in `C`'s output chain (its resolved `output_format`), and `C`'s
    rule set (`pinned_rules`/`excluded_rules`/`year`) must not remove the rules that
-   validate that form. The engine does *not* enforce the condition at runtime (no hot-path
-   cost); the CI property suite plus a one-time offered-format audit are the enforcement.
+   validate that form. The condition is *necessary, not sufficient*: recognition plus
+   surviving validation guarantees `R'.status == SUCCESS`, and the property suite is the
+   arbiter that the resolved value is `V` itself — a contract can satisfy the condition
+   and still re-canonicalize `V` to some `W ≠ V`. The engine does *not* enforce the
+   condition at runtime (no hot-path cost); the CI property suite plus a one-time
+   offered-format audit are the enforcement.
    Rationale: a guarantee across arbitrary contracts is unachievable in general — a caller
    can always assemble a contract whose `active_grammars` exclude the grammar recognizing
    a given format — so paxman guarantees the defaults outright and reduces the narrowed
@@ -116,10 +120,15 @@ round-trip exactly.
    canonical values that re-enter as `MISSING` because the suppression hit swallows the
    entire input, which *is* the canonical word — is *defined by* the intersection of
    (word-bounded suppressible-matcher hit) ∩ (common English word) ∩ (no non-suppressible
-   rescue path). As of the shipped `COMMON_WORDS` table its membership is large, not a
-   handful: 26 of the 250 ISO 3166-1 α2 codes (`TO`, `DE`, `CD`, `IT`, …) for Country,
-   50 ISO 639 codes (`en`, `de`, `no`, …) for Language, and 3 of the 178 ISO 4217 codes
-   (`ALL`, `TRY`, `TOP`) for Currency re-enter as `MISSING`. At the input level, 53
+   rescue path) ∩ (a value the pipeline emits). As of the shipped `COMMON_WORDS` table
+   its membership is large, not a handful: 26 of the 250 ISO 3166-1 α2 codes (`TO`,
+   `DE`, `CD`, `IT`, …) for Country, 50 of the codes across the shipped ISO 639-1/-2/-3
+   tables that the pipeline emits as canonical values (`en`, `de`, `no`, …) for Language,
+   and 3 of the 178 ISO 4217 codes (`ALL`, `TRY`, `TOP`) for Currency re-enter as
+   `MISSING`. The counts cover default-format canonical values; offered-format renderings
+   are class members too until #122 lands — Country's offered α3 format alone has 6
+   re-entry failures under suppression today (`AGO`, `AND`, `ARE`, `CAN`, `MAR`, `PER`).
+   At the input level, 53
    common-word inputs collapse onto these 50 Language codes (`in` and `id` both
    canonicalize to `id`), and two inputs — `may` → `ms`, `per` → `fa` — canonicalize to
    non-common-word codes and are rescued (re-entry `SUCCESS`). Two notable survivors show
@@ -156,7 +165,7 @@ round-trip exactly.
   `ContractError` (`CapabilityContract.__post_init__`) — and must ship with a migration
   note.
 
-## Rejected Alternatives
+## Alternatives Considered
 
 1. **Runtime assertion in `run_capability()`.** The engine would re-canonicalize the
    rendered value of every successful call and fail on violation. Rejected — it doubles
