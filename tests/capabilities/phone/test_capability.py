@@ -257,12 +257,12 @@ class TestPhoneContractValidation:
         """All documented output formats construct successfully."""
         assert PhoneContract(output_format="e164").output_format == "e164"
         assert PhoneContract(output_format="rfc3966").output_format == "rfc3966"
-        # "national" works without default_country: for E.164/tel-URI/NANP
-        # inputs the country code is embedded in the value and split by the
-        # rules, so it needs no default_country to render the NSN.
-        contract = PhoneContract(output_format="national")
-        assert contract.output_format == "national"
-        # And it still works with a default_country present.
+        # "national" requires default_country to be a NANP country (ADR-0010
+        # re-entry: bare NSN without country cannot re-enter).
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national")
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national", default_country="GB")
         with_country = PhoneContract(default_country="US", output_format="national")
         assert with_country.output_format == "national"
 
@@ -299,12 +299,12 @@ class TestPhoneContractValidation:
 
 
 class TestPhoneNationalOutput:
-    """E2E behavior for output_format='national' without default_country.
+    """E2E behavior for output_format='national' (ADR-0010).
 
-    For E.164 / tel-URI / NANP inputs the country code is embedded in the
-    value and split out by the rules, so 'national' output must NOT require
-    a default_country (regression guard for the contract-level restriction
-    that previously blocked this working path).
+    ``national`` requires ``default_country`` to be a NANP country so the
+    rendered NSN can re-enter under the same contract. Rendering without a
+    country is rejected at construction (ContractError) — a default
+    (country-less) contract can never produce a non-re-enterable ``national`` V.
     """
 
     def setup_method(self) -> None:
@@ -316,16 +316,23 @@ class TestPhoneNationalOutput:
         """Reset the registry so other tests start clean."""
         reset_registry()
 
-    def test_national_from_e164_without_default_country(self) -> None:
-        """'+1 555 123 4567' → '5551234567' with no default_country."""
-        contract = PhoneContract(output_format="national")
-        result = canonicalize("+1 555 123 4567", contract)
-        assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "5551234567"
+    def test_national_requires_default_country(self) -> None:
+        """'national' without a NANP default_country is rejected at construction."""
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national")
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national", default_country="GB")
 
-    def test_national_from_tel_uri_without_default_country(self) -> None:
-        """'tel:+15551234567' → '5551234567' with no default_country."""
-        contract = PhoneContract(output_format="national")
-        result = canonicalize("tel:+15551234567", contract)
+    def test_national_from_e164_with_default_country(self) -> None:
+        """'+12125551234' → '2125551234' with default_country='US' (non-fictional)."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        result = canonicalize("+12125551234", contract)
         assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "5551234567"
+        assert result.canonicalized_value == "2125551234"
+
+    def test_national_from_tel_uri_with_default_country(self) -> None:
+        """'tel:+12125551234' → '2125551234' with default_country='US'."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        result = canonicalize("tel:+12125551234", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "2125551234"
