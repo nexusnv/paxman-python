@@ -112,13 +112,21 @@ round-trip exactly.
    (`recognition_revision`, ADR-0009 §13).
 
 5. **Suppression interaction.** With `suppress_common_words=False` (the contract default)
-   re-entry is unconditional. With `suppress_common_words=True`, canonical values that are
-   themselves common English words — Country `TO`/`IN`/`CA`/`NO`/`US`, Language
-   `en`/`ca`/`id`/…, Currency `ALL`, SIUnit `cd` — currently re-enter as `MISSING`: the
-   word-bounded suppression hit suppresses recognition of the entire input, which *is*
-   the canonical word. This is resolved by issue #122's adopted decision A0 (whole-input
-   exemption in the recognition engine loop — a word-bounded suppression hit may never
-   suppress the entire trimmed input). This ADR records the interaction and
+   re-entry is unconditional. With `suppress_common_words=True`, the violator set today —
+   canonical values that re-enter as `MISSING` because the suppression hit swallows the
+   entire input, which *is* the canonical word — is the intersection of (word-bounded
+   suppressible-matcher hit) ∩ (common English word) ∩ (no non-suppressible fallback
+   path): Country `TO`/`IN`/`CA`/`NO`, Language `en`/`ca`/`id`/…, Currency `ALL`. Two
+   notable survivors show the mechanism matters: Country `US` re-enters via the country
+   *name* grammar (`name_recognition`), which carries no `suppressible` mark — suppression
+   is per-matcher (`matcher.suppressible`), not per-capability, so a non-suppressible
+   path rescues the value. SIUnit `cd` re-enters because no SIUnit matcher is marked
+   `suppressible`; the capability is entirely outside suppression's reach today. A
+   capability can opt out of suppression (by leaving its matchers unmarked) or gain
+   rescue paths, moving values across this intersection — which is exactly why issue
+   #122's adopted decision A0 (whole-input exemption in the recognition engine loop — a
+   word-bounded suppression hit may never suppress the entire trimmed input) must hold
+   for the whole class, not a curated list. This ADR records the interaction and
    cross-references #122; it does not implement it. Rationale: the invariant must state
    honestly where it is conditionally violated today, and the fix belongs to the
    suppression decision that introduced the flag — not to a second enforcement mechanism
@@ -157,10 +165,11 @@ round-trip exactly.
    guarantee narrower than the offered surface is weaker than the API implies.
 3. **A1 suppression fallback** ("if suppression would leave 0 mentions, keep the
    unsuppressed set"). Evaluated and rejected in issue #122: as a general mechanism it is
-   hypothetical for the shipped capability set — the only whole-input-suppressed cases are
-   the canonical words listed in Scope decision 5 — and a fallback that resurrects
-   suppressed mentions re-admits the short-code-in-prose false positives the flag exists
-   to prevent. The adopted decision A0 (whole-input exemption) is the narrower fix.
+   hypothetical for the shipped capability set — the whole-input-suppressed class is
+   exactly the suppressible ∩ common-word ∩ no-rescue-path intersection of Scope decision
+   5, which A0 exempts mechanically — and a fallback that resurrects suppressed mentions
+   re-admits the short-code-in-prose false positives the flag exists to prevent. The
+   adopted decision A0 (whole-input exemption) is the narrower fix.
 
 ## References
 
