@@ -63,8 +63,8 @@ def components_valid(notation: object) -> bool:
     """
 
     try:
-        lat_str = notation.latitude  # type: ignore[attr-defined]
-        lon_str = notation.longitude  # type: ignore[attr-defined]
+        lat_str = getattr(notation, "latitude", None)
+        lon_str = getattr(notation, "longitude", None)
         if not isinstance(lat_str, str) or not isinstance(lon_str, str):
             return False
         d_lat = Decimal(lat_str)
@@ -89,7 +89,10 @@ def normalize_compact(notation: object) -> str:
     """Shared never-raise ``normalize()`` used by every coordinates rule."""
 
     try:
-        return fold_compact(notation.compact)  # type: ignore[attr-defined]
+        compact = getattr(notation, "compact", None)
+        if not isinstance(compact, str):
+            raise TypeError("compact not a string")
+        return fold_compact(compact)
     except (InvalidOperation, ValueError, TypeError, AttributeError):
         pass
     try:
