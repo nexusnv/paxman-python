@@ -372,7 +372,7 @@ The I/G bit (0x01) and U/L bit (0x02) are informative predicates only — broadc
 
 #### Formats
 
-Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64), `bit_reversed` (RFC 2469 per-octet bit swap). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64). `bit_reversed` (RFC 2469 per-octet bit swap) was offered through `v0.3.1` and removed in `v0.4.0` (ADR-0010: not a fixed point, `f(f(x))==x`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Contract Rule Exclusion
 ```python
