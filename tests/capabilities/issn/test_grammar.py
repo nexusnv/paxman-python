@@ -108,6 +108,20 @@ class TestISSNRecognitionGrammar:
         # letter-preceded must be rejected via word boundary
         assert grammar.recognize("a0317-8471") == []
 
+    def test_rejects_hyphen_digit_continuation(self) -> None:
+        grammar = ISSNRecognitionGrammar()
+        # Hyphen-digit continuation must not yield truncated prefix.
+        # WORD alone sees "-" as non-\w, so "0317-8471-2" would otherwise
+        # match "0317-8471" at 0; trailing (?![-]\d) blocks it.
+        assert grammar.recognize("0317-8471-2") == []
+        assert grammar.recognize("03178471-2") == []
+        assert grammar.recognize("ISSN 0317-8471-2") == []
+        # Hyphen alone or hyphen+space/punct is fine (prefix is isolated).
+        assert len(grammar.recognize("0317-8471.")) == 1
+        assert len(grammar.recognize("0317-8471, next")) == 1
+        assert len(grammar.recognize("0317-8471 ")) == 1
+        assert grammar.recognize("0317-8471- 2")[0].raw_text == "0317-8471"
+
     def test_multiple_spans(self) -> None:
         grammar = ISSNRecognitionGrammar()
         text = "0317-8471 0378-5955"
