@@ -107,13 +107,26 @@ class LabelMatcher:
             return []
         out: list[tuple[int, int]] = []
         subj = view.subject
-        for m in combined.finditer(subj):
+        # Manual search loop (not finditer): a boundary-rejected span must
+        # not consume input — a valid match may start inside it (e.g. an
+        # IBAN paper-form tail absorbs " IBAN" and the rejected span would
+        # otherwise swallow the labeled match). Resume just past a rejected
+        # start; accepted spans advance past their end as finditer would.
+        pos = 0
+        end = len(subj)
+        while pos <= end:
+            m = combined.search(subj, pos)
+            if m is None:
+                break
             s, e = m.start(), m.end()
             if s == e:
+                pos = s + 1
                 continue
             if self.boundary is not None and not check_boundary(
                 subj, s, e, self.boundary
             ):
+                pos = s + 1
                 continue
             out.append((s, e))
+            pos = e
         return out

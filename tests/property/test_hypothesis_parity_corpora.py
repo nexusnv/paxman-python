@@ -821,3 +821,29 @@ def test_iban_hypothesis_parity(text: str) -> None:
     new = IBANRecognitionGrammar()
     assume(len(old.recognize(text)) == len(new.recognize(text)))
     _assert_parity_and_span(old, new, text)
+
+
+def test_iban_label_bare_colon_parity() -> None:
+    """Pinned CI failure (PR #117, ci 3.12): a boundary-rejected paper-form
+    span must not swallow a labeled match starting inside it.
+
+    In ``'0AA00 0000 0000 0000 0000 IBAN:AA0000000000000'`` the paper-form
+    tail absorbs `` IBAN`` (space + 4 alnum), so the combined regex first
+    matches ``(1, 30)`` — which the WORD boundary then rejects (preceding
+    ``0``). The labeled match at ``(26, 46)`` must still be found; the
+    legacy grammar reports it via its in-pattern lookbehind.
+    """
+    from tests.property._legacy_issn_iban_grammars import (
+        LegacyIBANRecognitionGrammar,
+    )
+
+    text = "0AA00 0000 0000 0000 0000 IBAN:AA0000000000000"
+    old = LegacyIBANRecognitionGrammar()
+    new = IBANRecognitionGrammar()
+    assert [(m.start, m.end, m.raw_text) for m in old.recognize(text)] == [
+        (26, 46, "IBAN:AA0000000000000")
+    ]
+    assert [(m.start, m.end, m.raw_text) for m in new.recognize(text)] == [
+        (26, 46, "IBAN:AA0000000000000")
+    ]
+    _assert_parity_and_span(old, new, text)
