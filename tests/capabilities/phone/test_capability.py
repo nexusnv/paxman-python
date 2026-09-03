@@ -6,6 +6,9 @@ from paxman.api import canonicalize
 from paxman.capabilities.Phone.capability import PhoneCapability
 from paxman.capabilities.Phone.contract import PhoneContract
 from paxman.capabilities.Phone.notation import PhoneNotation
+from paxman.capabilities.Phone.rules.data.e164_country_codes import (
+    split_country_code,
+)
 from paxman.core.capability import Capability
 from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.domain import Resolution
@@ -229,7 +232,13 @@ class TestPhoneCapabilityFormatValue:
         """Taiwan (886) splits as 886, not 86 (China) plus a stray digit."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="886212345678")
-        assert cap.format_value("+886212345678", "national", notation) == "212345678"
+        # Non-NANP E.164 requested as national under a NANP contract preserves
+        # E.164 so the result re-enters (ADR-0010, #127); longest-prefix split
+        # is verified via split_country_code, not via rendered national output.
+        assert cap.format_value("+886212345678", "national", notation) == (
+            "+886212345678"
+        )
+        assert split_country_code("886212345678") == "886"
 
     def test_defensive_passthrough_when_no_country_code_splits(self) -> None:
         """National rendering passes the value through when no prefix splits."""
@@ -257,12 +266,12 @@ class TestPhoneContractValidation:
         """All documented output formats construct successfully."""
         assert PhoneContract(output_format="e164").output_format == "e164"
         assert PhoneContract(output_format="rfc3966").output_format == "rfc3966"
-        # "national" works without default_country: for E.164/tel-URI/NANP
-        # inputs the country code is embedded in the value and split by the
-        # rules, so it needs no default_country to render the NSN.
-        contract = PhoneContract(output_format="national")
-        assert contract.output_format == "national"
-        # And it still works with a default_country present.
+        # "national" requires default_country to be a NANP country (ADR-0010
+        # re-entry: bare NSN without country cannot re-enter).
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national")
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national", default_country="GB")
         with_country = PhoneContract(default_country="US", output_format="national")
         assert with_country.output_format == "national"
 
@@ -299,12 +308,12 @@ class TestPhoneContractValidation:
 
 
 class TestPhoneNationalOutput:
-    """E2E behavior for output_format='national' without default_country.
+    """E2E behavior for output_format='national' (ADR-0010).
 
-    For E.164 / tel-URI / NANP inputs the country code is embedded in the
-    value and split out by the rules, so 'national' output must NOT require
-    a default_country (regression guard for the contract-level restriction
-    that previously blocked this working path).
+    ``national`` requires ``default_country`` to be a NANP country so the
+    rendered NSN can re-enter under the same contract. Rendering without a
+    country is rejected at construction (ContractError) — a default
+    (country-less) contract can never produce a non-re-enterable ``national`` V.
     """
 
     def setup_method(self) -> None:
@@ -316,16 +325,36 @@ class TestPhoneNationalOutput:
         """Reset the registry so other tests start clean."""
         reset_registry()
 
-    def test_national_from_e164_without_default_country(self) -> None:
-        """'+1 555 123 4567' → '5551234567' with no default_country."""
-        contract = PhoneContract(output_format="national")
-        result = canonicalize("+1 555 123 4567", contract)
-        assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "5551234567"
+    def test_national_requires_default_country(self) -> None:
+        """'national' without a NANP default_country is rejected at construction."""
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national")
+        with pytest.raises(ContractError):
+            PhoneContract(output_format="national", default_country="GB")
 
-    def test_national_from_tel_uri_without_default_country(self) -> None:
-        """'tel:+15551234567' → '5551234567' with no default_country."""
-        contract = PhoneContract(output_format="national")
-        result = canonicalize("tel:+15551234567", contract)
+    def test_national_from_e164_with_default_country(self) -> None:
+        """'+12125551234' → '2125551234' with default_country='US' (non-fictional)."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        result = canonicalize("+12125551234", contract)
         assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "5551234567"
+        assert result.canonicalized_value == "2125551234"
+
+    def test_national_from_tel_uri_with_default_country(self) -> None:
+        """'tel:+12125551234' → '2125551234' with default_country='US'."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        result = canonicalize("tel:+12125551234", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "2125551234"
+
+    def test_national_from_non_nanp_preserves_e164(self) -> None:
+        """Non-NANP via national/US must preserve E.164 (#127)."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        for raw in ("+33142345678", "+442079460000"):
+            result = canonicalize(raw, contract)
+            assert result.status == Resolution.SUCCESS
+            # Non-NANP E.164 has no re-enterable national form under a NANP contract;
+            # format_value preserves the E.164 value so re-entry is a fixed point.
+            assert result.canonicalized_value == raw.replace(" ", "").replace("-", "")
+            result2 = canonicalize(result.canonicalized_value, contract)
+            assert result2.status == Resolution.SUCCESS
+            assert result2.canonicalized_value == result.canonicalized_value

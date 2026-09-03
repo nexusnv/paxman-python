@@ -79,20 +79,3 @@ def test_random_strings_never_raise(text):
         Resolution.INVALID,
         Resolution.AMBIGUOUS,
     )
-
-
-def test_bit_reversed_involution():
-    from paxman.capabilities.MacAddress.capability import MacAddressCapability
-    from paxman.capabilities.MacAddress.notation import MacAddressNotation
-
-    cap = MacAddressCapability()
-    for value in range(0, 256):
-        octet = f"{value:02X}"
-        notation = MacAddressNotation(compact=octet + "0000000000", shape="eui48")
-        once = cap.format_value(f"{octet}:00:00:00:00:00", "bit_reversed", notation)
-        back = cap.format_value(
-            once,
-            "bit_reversed",
-            MacAddressNotation(compact=once.replace(":", ""), shape="eui48"),
-        )
-        assert back == f"{octet}:00:00:00:00:00"

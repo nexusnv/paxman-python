@@ -29,7 +29,7 @@ Default `output_format` is `"e164"`.
 | `rfc3966` | `tel:` URI | `tel:+15551234567` |
 | `national` | National significant number (no `+` or `tel:`) | `5551234567` |
 
-`national` works without `default_country` for numbers whose country code is embedded (E.164, tel-URI, NANP inputs are split by the rules); for national-shaped input it requires `default_country` to validate in the first place.
+`national` requires `default_country` to be a NANP country (currently `"US"`) at contract construction — `ContractError` otherwise (ADR-0010 re-entry: the rendered national number must re-enter under the same contract).
 
 ```python
 from paxman.capabilities import Phone
@@ -43,7 +43,7 @@ paxman.canonicalize(
     "+15551234567", Phone.create_contract(output_format="rfc3966")
 ).canonicalized_value  # "tel:+15551234567"
 paxman.canonicalize(
-    "+15551234567", Phone.create_contract(output_format="national")
+    "+15551234567", Phone.create_contract(output_format="national", default_country="US")
 ).canonicalized_value  # "5551234567"
 
 # National-shaped input needs default_country
@@ -65,6 +65,7 @@ contract = Phone.create_contract(
 ```
 
 - When `default_country` is `None`, national-shaped input is recognized but never validated → `INVALID`. International, `00`-prefix, and `tel:` forms validate without it because the country code is in the number itself.
+- `output_format="national"` additionally requires `default_country` to be a NANP country (currently `"US"`) — `ContractError` at construction otherwise, so the rendered national number can re-enter under the same contract (ADR-0010, #123). For non-NANP E.164 (e.g. `+33…`, `+44…`) `national` preserves the E.164 value — stripping would yield a bare number that cannot re-enter as a valid NANP `national` number, so the capability returns the re-enterable E.164 form instead (#127).
 - `default_country` must be uppercase alpha-2 when present; otherwise `ContractError` at construction.
 
 ---

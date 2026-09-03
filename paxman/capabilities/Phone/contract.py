@@ -49,12 +49,13 @@ class PhoneContract(CapabilityContract):
             national-shaped input (e.g., "US" for "(555) 234-5678"). When None,
             national-shaped input is recognized but never validated (status
             INVALID) — national-shaped numbers carry no country code in their
-            digits and so cannot be resolved without a default country. For
-            E.164, tel-URI, and NANP inputs the country code is embedded in the
-            value itself, so "national" output works without default_country.
+            digits and so cannot be resolved without a default country.
+            Required when ``output_format="national"`` (see ``__post_init__``).
         output_format: Canonical output format ("e164" default, "rfc3966",
             or "national" for the national significant number). Optional —
-            None/"default"/"e164" all resolve to "e164".
+            None/"default"/"e164" all resolve to "e164". ``"national"``
+            requires ``default_country`` to be a NANP country (currently ``"US"``)
+            so the rendered NSN can re-enter (ADR-0010).
         excluded_rules: Tuple of rule names to exclude.
         pinned_rules: Pin to specific rules (takes precedence over excluded_rules).
         year: Year for temporal filtering.
@@ -70,23 +71,40 @@ class PhoneContract(CapabilityContract):
     # Capability-specific fields
     default_country: str | None = None
 
+    # Mirrors nanp_ed2024.py:34 _NANP_COUNTRIES = {"US"}.
+    # Kept inline to avoid import cycle (contract -> rules -> contract).
+    # TODO: keep in sync with nanp_ed2024._NANP_COUNTRIES when expanded
+    # beyond US (ADR-0010).
+    PHONE_NATIONAL_COUNTRIES: ClassVar[frozenset[str]] = frozenset({"US"})
+
     def __post_init__(self) -> None:
         """Validate contract configuration.
 
         Calls the base resolution first, then enforces Phone-specific rules:
         default_country must be an uppercase alpha-2 code when present.
 
-        ``output_format="national"`` is permitted with or without
-        ``default_country``. It is required only for *national-shaped* input,
-        which carries no country code in its digits — that requirement is
-        enforced by the NANP rules' ``matches()`` (they return False when
-        ``default_country`` is not a NANP country). For E.164, tel-URI, and
-        NANP inputs the country code is embedded in the value and is split out
-        by the rules, so ``"national"`` output works without default_country.
+        ``output_format="national"`` requires ``default_country`` to be a NANP
+        country (currently ``"US"`` — see ``PHONE_NATIONAL_COUNTRIES``,
+        mirroring ``nanp_ed2024._NANP_COUNTRIES``). Without a country the
+        rendered NSN (bare digits, no country code) cannot re-enter under the
+        same contract (ADR-0010 Scope decision 2 — unconditional for default
+        contracts). The NANP rules already gate ``matches()`` on
+        ``default_country``, but the contract now rejects the non-re-enterable
+        configuration at construction so a default (country-less) contract can
+        never produce a non-re-enterable ``national`` V.
 
         Raises:
-            ContractError: If output_format is unsupported or default_country is
-                present but not an uppercase alpha-2 code.
+            ContractError: If output_format is unsupported, default_country is
+                present but not an uppercase alpha-2 code, or
+                output_format is "national" without a NANP default_country.
         """
         super().__post_init__()
         _validate_alpha2(self.default_country)
+        if (
+            self.output_format == "national"
+            and self.default_country not in self.PHONE_NATIONAL_COUNTRIES
+        ):
+            raise ContractError(
+                "output_format 'national' requires default_country to be a "
+                f"NANP country (e.g. 'US') for re-entry; got {self.default_country!r}"
+            )

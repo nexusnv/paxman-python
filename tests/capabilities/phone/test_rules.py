@@ -39,7 +39,7 @@ class TestSection6_1InternationalNumber:
     def test_longest_prefix_rule_emits_default_e164(self) -> None:
         """Rules emit the default E.164 form regardless of output_format."""
         notation = PhoneNotation(shape="e164", value="886212345678")
-        contract = PhoneContract(output_format="national")
+        contract = PhoneContract(output_format="national", default_country="US")
         assert self.rule.normalize(notation, contract) == "+886212345678"
 
     def test_matches_max_length(self) -> None:
@@ -96,7 +96,7 @@ class TestSection6_1InternationalNumber:
     def test_normalize_ignores_national_contract_format(self) -> None:
         """Rules emit default E.164 even under a national contract."""
         notation = PhoneNotation(shape="e164", value="15551234567")
-        contract = PhoneContract(output_format="national")
+        contract = PhoneContract(output_format="national", default_country="US")
         assert self.rule.normalize(notation, contract) == "+15551234567"
 
     def test_provenance_attributes(self) -> None:
@@ -247,7 +247,7 @@ class TestSection3TelUri:
     def test_normalize_ignores_national_contract_format(self) -> None:
         """Rules emit default E.164 even under a national contract."""
         notation = PhoneNotation(shape="rfc3966", value="15551234567")
-        contract = PhoneContract(output_format="national")
+        contract = PhoneContract(output_format="national", default_country="US")
         assert self.rule.normalize(notation, contract) == "+15551234567"
 
     def test_provenance_attributes(self) -> None:
@@ -372,7 +372,7 @@ class TestSection1_1NANPStructure:
     def test_normalize_national_format_is_default_e164(self) -> None:
         """Rules emit default E.164 even under a national contract."""
         notation = PhoneNotation(shape="national", value="5552345678")
-        contract = PhoneContract(output_format="national")
+        contract = PhoneContract(output_format="national", default_country="US")
         assert self.rule.normalize(notation, contract) == "+15552345678"
 
     def test_normalize_ignores_rfc3966_contract_format(self) -> None:

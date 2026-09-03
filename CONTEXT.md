@@ -9,6 +9,7 @@ A **canonicalization authority resolver** — a library that takes ambiguous hum
 - **No fabrication:** Never guess, never infer, never suggest
 - **Provenance-first:** Always cite authority-defined specifications, registries, policies
 - **Deterministic:** Given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline yields the same canonical output — no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, no network inference across recognition, validation, and canonicalization.
+- **Re-entry invariant (fixed-point):** A `SUCCESS` canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` or `suppress_common_words=True` for whole-input common words may break this until #122 A0 lands; new capabilities must extend that suite (ADR-0010).
 
 ### Capability
 A domain module (e.g., Email) that:
@@ -371,7 +372,7 @@ The I/G bit (0x01) and U/L bit (0x02) are informative predicates only — broadc
 
 #### Formats
 
-Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64), `bit_reversed` (RFC 2469 per-octet bit swap). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64). `bit_reversed` (RFC 2469 per-octet bit swap) was offered through `v0.3.1` and removed in `v0.4.0` (ADR-0010: not a fixed point, `f(f(x))==x`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Contract Rule Exclusion
 ```python
