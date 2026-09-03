@@ -102,7 +102,7 @@ def test_scan_on_usd_remains_for_currency() -> None:
     assert len(mentions) == 2
 
 
-def test_canonicalize_to_off_vs_on() -> None:
+def test_canonicalize_to_off_vs_on_whole_input_exempt() -> None:
     reset_registry()
     paxman.register_all_shipped()
     off = canonicalize("to", _contract_country(False))
@@ -112,8 +112,99 @@ def test_canonicalize_to_off_vs_on() -> None:
     reset_registry()
     paxman.register_all_shipped()
     on = canonicalize("to", _contract_country(True))
-    assert on.status == Resolution.MISSING
-    assert on.canonicalized_value is None
+    assert on.status == Resolution.SUCCESS
+    assert on.canonicalized_value == "TO"
+
+
+def test_whole_input_exempt_variants() -> None:
+    for text in ("to", "TO", "  to  ", "to\n"):
+        reset_registry()
+        paxman.register_all_shipped()
+        result = canonicalize(text, _contract_country(True))
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "TO"
+
+
+def test_embedded_still_suppressed() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    missing = canonicalize("in/", _contract_country(True))
+    assert missing.status == Resolution.MISSING
+    assert missing.canonicalized_value is None
+
+    reset_registry()
+    paxman.register_all_shipped()
+    survived = canonicalize("to and usa", _contract_country(True))
+    assert survived.status == Resolution.SUCCESS
+    assert survived.canonicalized_value == "US"
+
+
+def test_boundary_never_recognized() -> None:
+    for text in ("in56", "2in"):
+        reset_registry()
+        paxman.register_all_shipped()
+        result = canonicalize(text, _contract_country(True))
+        assert result.status == Resolution.MISSING
+        assert result.canonicalized_value is None
+
+
+def test_scan_whole_input_exempt() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    result = scan("to", [_contract_country(True)])
+    mentions = result.mentions["country"]
+    assert len(mentions) == 1
+    assert mentions[0].span == (0, 2)
+
+
+def test_suppression_signal_defaults() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    result = canonicalize("to", _contract_country(False))
+    assert result.suppressed_count == 0
+    assert result.suppressed_spans == ()
+
+
+def test_suppression_signal_missing() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    result = canonicalize("in/", _contract_country(True))
+    assert result.status == Resolution.MISSING
+    assert result.suppressed_count == 1
+    assert result.suppressed_spans == ((0, 2),)
+
+
+def test_suppression_signal_invalid() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    result = canonicalize("to and 999", _contract_country(True))
+    assert result.status == Resolution.INVALID
+    assert result.suppressed_count == 2
+    assert set(result.suppressed_spans) == {(0, 2), (3, 6)}
+
+
+def test_suppression_signal_success_embedded() -> None:
+    reset_registry()
+    paxman.register_all_shipped()
+    result = canonicalize("to and usa", _contract_country(True))
+    assert result.status == Resolution.SUCCESS
+    assert result.suppressed_count == 3
+    assert set(result.suppressed_spans) == {(0, 2), (3, 6), (7, 10)}
+
+
+def test_suppression_signal_all_common_words_stays_missing() -> None:
+    """A1 fallback rejected (#122): all-common-word prose stays MISSING.
+
+    Every mention suppressed is observable, not resurrected — the signal
+    (count 3) is what distinguishes this from "nothing recognized".
+    """
+    reset_registry()
+    paxman.register_all_shipped()
+    result = canonicalize("to and is", _contract_country(True))
+    assert result.status == Resolution.MISSING
+    assert result.canonicalized_value is None
+    assert result.suppressed_count == 3
+    assert set(result.suppressed_spans) == {(0, 2), (3, 6), (7, 9)}
 
 
 def test_canonicalize_usd_not_suppressed() -> None:

@@ -175,6 +175,58 @@ new `ExecutionResult.span`/`Mention.span`; do not add `+1` for dropped
 chars. Golden samples that asserted `(0, 14)` for `"United States."`
 should assert `(0, 13)`.
 
+## 0.4.0 — Whole-input suppression exemption (A0, #122)
+
+Calling `canonicalize()` with a contract asserts the kind — "a canonical
+value is derivable from this input" — so suppressing the whole input
+contradicted the asserted intent (`MISSING` indistinguishable from
+`canonicalize("")`). Under `suppress_common_words=True`, a suppressible
+word-bounded hit that covers the entire trimmed input is now **never
+suppressed** (ADR-0009 Rev.5, §16 amendment). Embedded mentions stay
+suppressed — `scan()` prose behavior is unchanged.
+
+**Behavior change** (only under `suppress_common_words=True`; flag-off
+results are byte-identical):
+
+| Input | Contract | Before (0.2.0–0.3.x) | After (0.4.0) |
+|---|---|---|---|
+| `to` / `TO` / `  to  ` | Country, suppress on | `MISSING` | `SUCCESS "TO"` |
+| `ALL` | Currency, suppress on | `MISSING` | `SUCCESS "ALL"` |
+| `en` | Language, suppress on | `MISSING` | `SUCCESS "en"` |
+| `in/` | Country, suppress on | `MISSING` | `MISSING` (only the whole input is exempt), `suppressed_count=1` |
+| `to and usa` | Country, suppress on | `SUCCESS "US"` | unchanged (embedded `to`/`and` *and* the α3 `usa` hit stay suppressed — `usa` ∈ `COMMON_WORDS`; survival is via the non-suppressible `name_recognition` hit at the same span) |
+| `cd` | SIUnit, suppress on | `SUCCESS "cd"` | unchanged (no SIUnit matcher is `suppressible`) |
+
+This supersedes the whole-input row of the 0.2.0 suppression note below
+(`canonicalize("to", … suppress on)` → `MISSING` no longer holds); the
+rest of that note (table, matchers, scan guidance) still applies.
+
+**New `ExecutionResult` signal** — `suppressed_count: int = 0` and
+`suppressed_spans: tuple[tuple[int, int], ...] = ()`, populated whenever
+suppression fires (on `MISSING` *and* `INVALID`, not just `MISSING`;
+`0`/`()` when the flag is off), so `MISSING` + `suppressed_count == 1`
+("recognized but suppressed") is distinguishable from `MISSING` +
+`suppressed_count == 0` ("nothing recognized"):
+
+```python
+result = paxman.canonicalize("in/", Country.create_contract(suppress_common_words=True))
+assert result.status == Resolution.MISSING
+assert result.suppressed_count == 1
+assert result.suppressed_spans == ((0, 2),)
+```
+
+**A1 rejected:** the `x→0` fallback (keep the unsuppressed set when
+suppression would leave zero mentions, e.g. `"to and is"`) is evaluated
+and rejected in #122 — suppression-to-`MISSING` there is the desired
+noise reduction, now observable via the signal instead of silent.
+
+Migrate: if you worked around whole-input suppression (flag-off
+contracts for bare codes, special-casing `MISSING` for `to`/`ALL`/`en`),
+you can drop the workaround and pass the suppression contract straight
+through — whole-input canonical values now re-enter as fixed points
+under suppression (ADR-0010 property suite, #123 cross-link). See
+ADR-0009 Rev.5.
+
 ### 0.2.0 — Common-word suppression for scan (B1, ADR-0009 §16)
 
 ADR-0009 §16 was deferred as non-binding; it now ships off by default as the

@@ -61,7 +61,13 @@ PAXMAN_VERSION = _resolve_version()
 
 @dataclass(frozen=True)
 class ExecutionResult:
-    """Final output from the orchestration pipeline."""
+    """Final output from the orchestration pipeline.
+
+    ``suppressed_count``/``suppressed_spans`` (ADR-0009 §16, #122) diagnose
+    recognition suppressed under ``suppress_common_words=True``, populated
+    whenever suppression fires on any status; ``0``/``()`` when the flag is
+    off or nothing was suppressed. Spans are in sorted positional order.
+    """
 
     status: Resolution
     canonicalized_value: str | None
@@ -69,6 +75,8 @@ class ExecutionResult:
     contract: CapabilityContract
     version_stamp: VersionStamp
     span: tuple[int, int] | None = None
+    suppressed_count: int = 0
+    suppressed_spans: tuple[tuple[int, int], ...] = ()
 
 
 def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
@@ -103,11 +111,13 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     ]
     _assert_unique_names("rule", all_rules)
     _validate_affinity(semantics_by_name, all_rules)
+    suppressed: list[tuple[int, int]] = []
     recognitions = _recognize(
         text,
         all_grammars,
         [g.name for g in shipped_grammars],
         contract,
+        suppressed_out=suppressed,
     )
     had_recognitions = len(recognitions) > 0
 
@@ -136,6 +146,7 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     version_stamp = VersionStamp(
         paxman_version=PAXMAN_VERSION, recognition_revision=get_recognition_revision()
     )
+    suppressed_unique = tuple(sorted(dict.fromkeys(suppressed)))
 
     return ExecutionResult(
         status=status,
@@ -148,6 +159,8 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
             if candidates and len({c.value for c in candidates}) == 1
             else None
         ),
+        suppressed_count=len(suppressed_unique),
+        suppressed_spans=suppressed_unique,
     )
 
 
@@ -241,6 +254,7 @@ def _recognize(
     contract: CapabilityContract,
     *,
     scan_context: ScanContext | None = None,
+    suppressed_out: list[tuple[int, int]] | None = None,
 ) -> list[RecognizedRep[Any]]:
     """Run active grammars, dedup contained matches per grammar, and order.
 
@@ -300,7 +314,9 @@ def _recognize(
         _matchers = getattr(grammar, "matchers", None)
         if _matchers:
             try:
-                matches = run_matchers_with_context(shared_ctx, [grammar], contract)
+                matches = run_matchers_with_context(
+                    shared_ctx, [grammar], contract, suppressed_out=suppressed_out
+                )
             except (
                 re.error,
                 ValueError,

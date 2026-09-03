@@ -83,8 +83,14 @@ def _run_matchers_with_context(
     context: ScanContext,
     compiled: Sequence[Any],
     contract: Any | None = None,
+    *,
+    suppressed_out: list[tuple[int, int]] | None = None,
 ) -> list[RecognitionMatch[Any]]:
     text = context.text
+    suppress_on = contract is not None and bool(
+        getattr(contract, "suppress_common_words", False)
+    )
+    trimmed_input = text.strip() if suppress_on else None
     out: list[RecognitionMatch[Any]] = []
     for grammar in compiled:
         for matcher in getattr(grammar, "matchers", ()):
@@ -137,16 +143,20 @@ def _run_matchers_with_context(
                 if view.stripped_chars:
                     while o_e < len(text) and text[o_e] in view.stripped_chars:
                         o_e += 1
-                # ADR §16 common-word suppression (B1): short-code matchers marked
-                # suppressible are skipped when contract requests it and the
-                # word-bounded hit is a high-frequency English function word.
+                # ADR §16 common-word suppression (B1) with A0 whole-input
+                # exemption (#122): short-code matchers marked suppressible
+                # are skipped when contract requests it and the word-bounded
+                # hit is a high-frequency English function word, unless the
+                # hit covers the entire trimmed input.
                 # Provenance-neutral: suppressed recognition never canonicalizes.
                 if (
-                    contract is not None
-                    and bool(getattr(contract, "suppress_common_words", False))
+                    suppress_on
                     and bool(getattr(matcher, "suppressible", False))
                     and text[o_s:o_e].lower() in COMMON_WORDS
+                    and text[o_s:o_e] != trimmed_input
                 ):
+                    if suppressed_out is not None:
+                        suppressed_out.append((o_s, o_e))
                     continue
                 # ADR §10 consuming-mode: anchors consumed for advance
                 # but never part of emitted span. Lexicon/Scanner already
@@ -172,7 +182,13 @@ def _run_matchers_with_context(
 
 
 def run_matchers_with_context(
-    context: ScanContext, compiled: Sequence[Any], contract: Any | None = None
+    context: ScanContext,
+    compiled: Sequence[Any],
+    contract: Any | None = None,
+    *,
+    suppressed_out: list[tuple[int, int]] | None = None,
 ) -> list[RecognitionMatch[Any]]:
     """Public alias for :func:`_run_matchers_with_context`."""
-    return _run_matchers_with_context(context, compiled, contract)
+    return _run_matchers_with_context(
+        context, compiled, contract, suppressed_out=suppressed_out
+    )
