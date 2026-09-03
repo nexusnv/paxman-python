@@ -18,9 +18,9 @@
 - `docs/adr/0009-recognition-kernel.md` — revision history (Rev.4 row at line 43) + §16 (line 788+); `docs/adr/0010-re-entry-fixed-point-invariant.md` (untouched; cross-referenced).
 - `tests/unit/test_b1_common_word_suppression.py:105-116` (locked `MISSING` behavior — updated by Task 1), `:58-102` (scan snapshots — must keep passing).
 - `tests/property/test_reentry_invariant.py:105-163` (ROWS table), `:166-178` (`_fresh_registry` — documented registry exception; extended in place per `tests/AGENTS.md`).
-- Monkeypatch safety: `tests/unit/test_coverage_remediation.py:1151` patches `run_matchers_with_context` with `boom(*_a, **_kw)` — tolerates the new kwarg.
+- Monkeypatch safety: direct `_recognize`/`_run_matchers_with_context` callers pass positionally (`tests/unit/test_coverage_remediation.py::test_recognize_error_paths` ~:1050-1130, `tests/unit/test_contract_surface.py:75`), so the keyword-only `suppressed_out` addition (default `None`) keeps them passing; no test patches `run_matchers_with_context` with a strict signature (nearest monkeypatch is `CandidatesMatcher → None`).
 
-**Branch:** `feature/suppression-a0-whole-input` (cut from `dev` @ 450f87b; not a hotfix — no worktree).
+**Branch:** `feature/suppression-a0-whole-input` (cut from `dev` @ 450f87b — 15 commits behind current `dev` @ 096e340 at review time; rebase before implementing; not a hotfix — no worktree).
 
 ---
 
@@ -61,7 +61,7 @@ At this point in the loop `(o_s, o_e)` are already original-text coordinates: `v
 | `in56` / `2in` | Country, suppress=True | `MISSING` | `MISSING`, suppressed_count=0 (`\w` boundary → never recognized) |
 | `999` | Country, suppress=True | `INVALID` | `INVALID`, suppressed_count=0 |
 | `to and 999` | Country, suppress=True | `INVALID` | `INVALID`, suppressed_count=2 |
-| `to and usa` | Country, suppress=True | `SUCCESS "US"` | unchanged (embedded hits stay suppressed) |
+| `to and usa` | Country, suppress=True | `SUCCESS "US"` | unchanged (embedded `to`/`and` *and* the α3 `usa` hit stay suppressed — `usa` ∈ `COMMON_WORDS`; survival is via the non-suppressible `name_recognition` hit at the same span, verified: suppress-ON scan shows only `((7,10), 'name_recognition')`) |
 | `ALL` | Currency, suppress=True | `MISSING` | `SUCCESS "ALL"` |
 | `en` | Language, suppress=True | `MISSING` | `SUCCESS "en"` |
 | `cd` | SIUnit, suppress=True | `SUCCESS "cd"` | unchanged (no SIUnit matcher is `suppressible`) |
@@ -75,7 +75,7 @@ Fact behind the `to and 999` row: recognition matchers are shape-based (word-bou
 1. **Exemption comparison — raw slice equality:** suppress only when `text[o_s:o_e] != text.strip()`. Both sides derive from `text`, so equality holds iff the hit covers exactly the trimmed region; case plays no role. Matches the issue's phrasing ("hit span equals the trimmed whole input via `view.original_span` after re-absorption"). Padded inputs (`"  to  "`) are exempt — the hit lands exactly on the trimmed region.
 2. **Compute `text.strip()` once per call, only when the flag is on** (lazy: `None` when flag off) — zero cost on the default path, no per-hit recompute.
 3. **Collector, not a return-type change:** `_run_matchers_with_context` / `run_matchers_with_context` gain a keyword-only `suppressed_out: list[tuple[int, int]] | None = None`. `run_matchers` / `_run_matchers` (no contract → suppression can never fire) stay unchanged, so `PipelineGrammar.recognize` delegation (`paxman/core/grammar/pipeline.py:41`), SIUnit's internal call (`paxman/capabilities/SIUnit/grammar/symbol_recognition.py:111`), the parity property suites, and `benchmarks/` are untouched.
-4. **`_recognize` threads the collector** via keyword-only param (return type unchanged — direct callers in `tests/unit/test_coverage_remediation.py:1075-1262` and `tests/unit/test_contract_surface.py:75` keep passing). `run_scan` does **not** pass a collector (scan's signal is the absence of mentions; explicit non-goal).
+4. **`_recognize` threads the collector** via keyword-only param (return type unchanged — direct positional callers in `tests/unit/test_coverage_remediation.py::test_recognize_error_paths` and `tests/unit/test_contract_surface.py:75` keep passing). `run_scan` does **not** pass a collector (scan's signal is the absence of mentions; explicit non-goal).
 5. **`ExecutionResult` gains two defaulted frozen fields:** `suppressed_count: int = 0` and `suppressed_spans: tuple[tuple[int, int], ...] = ()`. Populated **unconditionally** when suppression fires (covers `MISSING` *and* `INVALID`, per the issue's "not just MISSING"); `0`/`()` when the flag is off. Spans deduplicated order-preserving (`dict.fromkeys`) because two matchers could in principle suppress the identical span.
 6. **CLI unchanged:** `_print_json` builds its payload from an explicit field list (`paxman/cli.py:269-300`); the issue scopes the signal to `ExecutionResult`. Documented as a non-goal, not an oversight.
 7. **No `recognition_revision` bump:** the revision digest covers matcher/table data (ADR-0009 §13), not engine cross-match policy; the guard is flag-gated and off by default. `benchmarks/grammar_stage_parity.py` drives no contract → suppression never fires there.
@@ -121,13 +121,13 @@ No new modules; no capability packages; no contract field changes.
   - `test_suppression_signal_defaults`: a `suppress_common_words=False` run (e.g. `canonicalize("to", Country)`) → `suppressed_count == 0`, `suppressed_spans == ()`.
   - `test_suppression_signal_missing`: `canonicalize("in/", Country suppress=True)` → `MISSING`, `suppressed_count == 1`, `suppressed_spans == ((0, 2),)`.
   - `test_suppression_signal_invalid`: `canonicalize("to and 999", Country suppress=True)` → `INVALID`, `suppressed_count == 2`, `set(suppressed_spans) == {(0, 2), (3, 6)}` (set-form assertion: cross-grammar emission order is deterministic but not what this test locks).
-  - `test_suppression_signal_success_embedded`: `canonicalize("to and usa", Country suppress=True)` → `SUCCESS`, `suppressed_count == 2` (signal populated regardless of status; embedded `to`/`and` suppressed while `usa` survives).
+  - `test_suppression_signal_success_embedded`: `canonicalize("to and usa", Country suppress=True)` → `SUCCESS`, `suppressed_count == 3`, `set(suppressed_spans) == {(0, 2), (3, 6), (7, 10)}` (signal populated regardless of status; embedded `to`/`and` suppressed while `usa` survives via `name_recognition` — note the α3 `usa` hit at `(7, 10)` IS itself suppressed since `usa` ∈ `COMMON_WORDS`, so the count is 3, not 2).
 - [ ] Implement:
   - `ExecutionResult` (`orchestrator.py:62-71`): add `suppressed_count: int = 0` and `suppressed_spans: tuple[tuple[int, int], ...] = ()` after `span`, with a docstring line citing ADR-0009 §16 + #122 (diagnostic for `MISSING`/`INVALID` under `suppress_common_words=True`; `0`/`()` when the flag is off).
   - `_run_matchers_with_context` + `run_matchers_with_context` (`engine_loop.py`): keyword-only `suppressed_out: list[tuple[int, int]] | None = None`; append `(o_s, o_e)` inside the suppression branch before `continue`. `run_matchers`/`_run_matchers` signatures unchanged.
   - `_recognize` (`orchestrator.py:237`): keyword-only `suppressed_out: list[tuple[int, int]] | None = None`, forwarded to the `run_matchers_with_context` call at `:303`. Return type unchanged; `run_scan` call at `:194` passes nothing.
   - `run_capability` (`:106`): create `suppressed: list[tuple[int, int]] = []`, pass `suppressed_out=suppressed`, then `suppressed_unique = tuple(dict.fromkeys(suppressed))` and set both new fields from it in the `ExecutionResult(...)` construction at `:140-151`.
-- [ ] Run: `uv run pytest tests/unit/test_b1_common_word_suppression.py tests/unit/test_coverage_remediation.py -q` → Expected: PASS (monkeypatched `boom(*_a, **_kw)` at `test_coverage_remediation.py:1151` absorbs the new kwarg). Commit: `feat(engine): suppression observability on ExecutionResult (#122)`.
+- [ ] Run: `uv run pytest tests/unit/test_b1_common_word_suppression.py tests/unit/test_coverage_remediation.py -q` → Expected: PASS (direct `_recognize` callers pass positionally, so the keyword-only addition is compatible). Commit: `feat(engine): suppression observability on ExecutionResult (#122)`.
 
 ### Task 3: Re-entry under suppression (cross-link #123)
 
@@ -136,7 +136,7 @@ No new modules; no capability packages; no contract field changes.
 **Goal:** Canonical values that collide with `COMMON_WORDS` re-enter as fixed points under `suppress_common_words=True` — the ADR-0010 invariant extended to the suppressed surface.
 
 - [ ] Extend the module docstring with one paragraph: the `SUPPRESS_ROWS` section is the #122 A0 cross-link to #123 — common-word canonical values must satisfy Property 2 with the suppression flag on (this file is already the documented registry exception, `tests/AGENTS.md` CONVENTIONS).
-- [ ] Add `SUPPRESS_ROWS: tuple[tuple[ContractFactory, str], ...]` covering every suppressible matcher family plus the not-suppressible control:
+- [ ] Add `SUPPRESS_ROWS` reusing the module's `_row` factory with the suppression flag as contract kwarg (e.g. `_row(Country, "TO", "TO", suppress_common_words=True)`), covering every suppressible matcher family plus the not-suppressible control. Keep it a **separate** table from `ROWS` so the `assert ROWS == shipped` structural gate is untouched:
   - `(Country, "TO")`, `(Country, "IN")`, `(Country, "US")`, `(Country, "ST")` (α2)
   - `(Language, "en")`, `(Language, "ca")` (ISO 639-1)
   - `(Currency, "ALL")` (ISO 4217 — the only suppressed α3 currency)
@@ -161,8 +161,8 @@ No new modules; no capability packages; no contract field changes.
 
 **Goal:** User-facing surfaces describe the new behavior and the new fields; the #122-pending note in CONTEXT.md is retired.
 
-- [ ] `README.md:472` contract-table row → describe the exemption: suppresses common-word noise on scan/prose **except** when the whole input is the word (A0, #122); default `False` (ADR-0009 §16).
-- [ ] `README.md:665-666` prose → reword the "bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off" sentence: it now holds with the flag on too (whole-input exempt), while `scan()` prose still drops embedded `to`.
+- [ ] `README.md:484` contract-table row → describe the exemption: suppresses common-word noise on scan/prose **except** when the whole input is the word (A0, #122); default `False` (ADR-0009 §16).
+- [ ] `README.md:677-678` prose → reword the "bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off" sentence: it now holds with the flag on too (whole-input exempt), while `scan()` prose still drops embedded `to`.
 - [ ] `docs/user/migration.md` → new "0.4.0 — Whole-input suppression exemption (A0, #122)" section before the 0.2.0 suppression note: behavior-change table (`MISSING` → `SUCCESS` for `to/TO/padded/ALL/en` under the flag), the new `ExecutionResult` fields with a `MISSING`+`suppressed_count` diagnostic example, A1 rejection note, link to ADR-0009 Rev.5.
 - [ ] `docs/user/api-reference.md:223` (`class ExecutionResult`) → add the two fields with types/defaults/meaning; `docs/user/concepts/execution-result.md` → add a short "Suppression signal" subsection (when populated, what it distinguishes).
 - [ ] `CONTEXT.md:12` re-entry note → replace "or `suppress_common_words=True` for whole-input common words may break this until #122 A0 lands" with the landed guarantee (whole-input canonical values re-enter; enforced by the extended property suite). `CONTEXT.md:902` suppression line → append A0 + signal mention.
@@ -183,7 +183,7 @@ No new modules; no capability packages; no contract field changes.
 1. **A1 `x→0` fallback** — rejected in the issue; `"to and is"` under `suppress=True` stays `MISSING` (with `suppressed_count == 3` making the why visible).
 2. **`scan()`/CLI suppression signal** — issue scopes the observability sub-task to `ExecutionResult`; scan callers see suppression as absent mentions. CLI `--json` payload stays as-is (explicit field list).
 3. **`recognition_revision` bump / benchmark changes** — flag-gated engine policy, off by default; parity suites and `benchmarks/` drive no contract.
-4. **New capabilities** (Element et al.) — blocked on #123 per the issue.
+4. **New capabilities** (Element et al.) — out of scope for this plan; sequencing note: the issue's "blocked on #123" gate is spent (#123 closed with ADR-0010 merged), so capability work resumes under the ADR-0010 `ROWS` gate, not this issue.
 5. **Version bump to 0.4.0** — release chore, separate from this issue.
 
 ## QA scenarios (post-implementation spot checks)
@@ -194,7 +194,7 @@ No new modules; no capability packages; no contract field changes.
 | `canonicalize("  ALL  ", C)` | Currency, suppress on | `SUCCESS "ALL"` |
 | `canonicalize("in/", C)` | Country, suppress on | `MISSING`, count 1, spans `((0,2),)` |
 | `canonicalize("to and is", C)` | Country, suppress on | `MISSING`, count 3 (A1 rejected — visible, not hidden) |
-| `canonicalize("to and usa", C)` | Country, suppress on | `SUCCESS "US"`, count 2 |
+| `canonicalize("to and usa", C)` | Country, suppress on | `SUCCESS "US"`, count 3, spans `{(0,2),(3,6),(7,10)}` (α3 `usa` suppressed; survives via `name_recognition`) |
 | `canonicalize("to", C)` | Country, suppress off | `SUCCESS "TO"`, count 0 (byte-identical default path) |
 | `scan("Ship to United States", [C])` | Country, suppress on | 1 mention `(8, 21)` = "United States" — embedded `to` suppressed |
 | `canonicalize("cd", C)` | SIUnit, suppress on | `SUCCESS "cd"` (not suppressible — unchanged) |
