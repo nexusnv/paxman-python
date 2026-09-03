@@ -12,6 +12,18 @@ For a deeper understanding of the system, see [ARCHITECTURE.md](ARCHITECTURE.md)
 pip install paxman
 ```
 
+Latest development snapshot (unreleased `dev` branch, installable from GitHub instead of PyPI):
+
+```bash
+pip install --force-reinstall git+https://github.com/nexusnv/paxman-python.git@dev
+```
+
+or with `uv`:
+
+```bash
+uv add git+https://github.com/nexusnv/paxman-python.git@dev
+```
+
 ---
 
 ## Quick Start
