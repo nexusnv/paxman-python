@@ -59,23 +59,14 @@ def _is_well_formed(tag: str) -> bool:
             return False
     if not _BCP47_WELL_FORMED.match(tag):
         return False
-    # Reject duplicate extension singletons (e.g., en-a-foo-a-bar)
-    seen_singletons: set[str] = set()
-    for part in tag.split("-"):
-        if len(part) == 1 and part.lower() not in {"x"} and part.lower().isalnum():
-            low = part.lower()
-            if low in seen_singletons:
-                return False
-            # Only count if it's an extension singleton (followed by 2-8 alphanum)
-            # We detect singleton positions by checking next part length 2-8
-            # Simpler: track all singletons encountered before privateuse
-            seen_singletons.add(low)
-            if part.lower() == "x":
-                break
-    # More precise: re-parse to ensure no duplicate singleton before x-
+    # Reject duplicate extension singletons (e.g., en-a-foo-a-bar).
+    # Only extension singletons (singleton + 2-8 follower) count; private-use
+    # tail after x- is not checked.
     parts = tag.split("-")
     seen: set[str] = set()
     for i, p in enumerate(parts):
+        if p.lower() == "x":
+            break
         if (
             len(p) == 1
             and p.isalnum()
@@ -88,23 +79,21 @@ def _is_well_formed(tag: str) -> bool:
             if low in seen:
                 return False
             seen.add(low)
-        if p.lower() == "x":
-            break
     return True
 
 
 class SectionBCP47Syntax(Rule[LanguageNotation]):
-    """BCP 47 RFC 5646 Section 2.1 — syntax well-formed."""
+    """BCP 47 RFC 5646 Section 2.1 — syntax well-formed + variant Prefix guard."""
 
     name = "Section 2.1-syntax"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "Section 2.1 (Language-Tag ABNF, well-formed only)"
+    citation = "Section 2.1 (Language-Tag ABNF, well-formed) + Prefix (de-nedis)"
     target_semantics = frozenset({"bcp47_tag"})
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
-        """Accept well-formed BCP47 tags only (no registry)."""
+        """Accept well-formed BCP47; Prefix guard for nedis keeps both rules INVALID."""
         tag = notation.compact
         if not tag:
             return False
