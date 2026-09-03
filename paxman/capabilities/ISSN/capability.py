@@ -17,8 +17,20 @@ __all__ = ["ISSNCapability", "ISSNContract", "ISSNNotation"]
 class ISSNCapability(Capability[ISSNNotation]):
     """ISSN canonicalization capability.
 
-    Canonicalizes ISSN input to the hyphenated form XXXX-XXXX
-    per ISO 3297:2022 with full provenance.
+    Canonicalizes ISSN input to the hyphenated form ``XXXX-XXXX`` per
+    ISO 3297:2022 (7th edition 2022-06, ISSN International Centre, Paris)
+    with full provenance.
+
+    Recognition: :class:`ISSNRecognitionGrammar` (``LabelMatcher``,
+    ``ISSN``/``ISSN-L``/``ISSN-H`` label, ``[\\s:-]*`` glued allow,
+    ``\\d{4}-?\\d{3}[0-9Xx]`` strict hyphen at pos 4, ``BoundarySpec.WORD``,
+    ``re.IGNORECASE|ASCII``). Validation: :class:`Section4CheckDigit`
+    (mod-11 weights 8→2, ``10→X``). Output via :meth:`format_value`
+    seam (``hyphenated`` default, ``compact`` strips hyphen, ``urn``
+    wraps ``urn:issn:``) — rules never read ``output_format``.
+    Single entity per call (``single_value=True``); multi-ISSN input
+    → ``AMBIGUOUS``/``MultipleMentionsError`` (segment first, see
+    ``docs/recipes/segmentation.md``).
     """
 
     name = "issn"
@@ -40,7 +52,20 @@ class ISSNCapability(Capability[ISSNNotation]):
         extra_grammars: Sequence[str] | None = None,
         suppress_common_words: bool = False,
     ) -> ISSNContract:
-        """Factory for contracts with proper defaults."""
+        """Factory for contracts with proper defaults.
+
+        Common block (keyword-only, fixed order per HOW_TO_ADD_NEW_CAPABILITY.md §3):
+        ``excluded_rules``, ``pinned_rules``, ``year``, ``output_format``,
+        ``extra_grammars``, ``suppress_common_words``. ``output_format``
+        resolves via ``CapabilityContract.__post_init__`` (``None``/``"default"``
+        → ``"hyphenated"``, offered ``"compact"``/``"urn"`` pass, else
+        ``ContractError``). ``year`` filters rules by
+        ``publication_year`` (``ISO 3297:2022`` → ``2022``; ``year=2021``
+        → ``INVALID`` even though check digit stable since earlier editions,
+        per engine temporal filtering). ``extra_grammars`` opts in community
+        grammars idempotently. No ISSN-specific ``include_*`` flags (single
+        always-active grammar, ``active_grammars=None``).
+        """
         return ISSNContract(
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),
             pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,

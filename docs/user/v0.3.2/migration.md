@@ -292,8 +292,6 @@ flowchart TB
 5. **Log or store `version_stamp`** — for audit trails, persist `result.version_stamp.paxman_version` alongside `canonicalized_value` so you can explain which build produced which answer.
 6. **Segmentation review** — if you added a new capability or flag, confirm the caller-owned split-then-canonicalize loop (see [Segmentation](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)) still routes each piece to the right capability/contract.
 
-Re-entry: a `SUCCESS` canonical value `V` is safe to feed back as `canonicalize(V, C)` → `SUCCESS V` for any `output_format` under the same **default** contract (ADR-0010, #123); custom `pinned_rules`/`excluded_rules`/`year`, or `suppress_common_words=True` for whole-input common words until the A0 exemption lands, make `MISSING`/`INVALID` possible and are conditional (#122).
-
 Minimal golden-sample harness:
 
 ```python

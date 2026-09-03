@@ -35,6 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of being silently accepted or dropped; `--48.5, 2.3` sign glue is MISSING;
   `iso6709` output pads fractions to the 4-place Annex H presentation width.
 
+## [0.3.2] - 2026-09-03
+
+> **Hotfix release — no new capability added.** ISBN + ISSN deep-audit fixes and one kernel label-matching fix (all contract-compatible).
+
+### Fixed
+
+- **ISBN — deep audit (#116, #117):** truncated hyphen continuations (`1 0-306-40615-2`, `978-…` cut mid-group) are now rejected via a trailing `(?![-]\d)` guard on both grammars instead of matching a truncated prefix (→ `MISSING`); `_find_length` duplication extracted to `find_registrant_length` in `rules/data/range_message.py` (emitted by `tools/regenerate_isbn_range_data.py`, back-compat alias kept); `Rule.normalize()` / `_to_isbn13` now `try/except ValueError` → return input instead of raising; recognition-vs-validation table clarified in `docs/user/capabilities/isbn.md`.
+- **ISSN — deep audit (#125, #126):** truncated hyphen-digit continuations (`0317-8471-2`) rejected via the same trailing-guard class; new user doc `docs/user/capabilities/issn.md` (every shipped capability now has a page); capability/contract/notation/rule docstrings expanded (7th edition 2022-06 provenance, weights 8→2, `X=10`).
+- **Kernel — LabelMatcher span swallow (#130):** a boundary-rejected span no longer consumes input, so valid label matches starting inside it surface. Concretely, an IBAN paper-form tail absorbing ` IBAN` hid the labeled match in `'...0000 IBAN:AA0000000000000'` (new reported core-only `(31, 46)`, legacy `(26, 46)` with label) — now both report `(26, 46, 'IBAN:AA0000000000000')`. Only IBAN + ISSN consume `LabelMatcher`; parity corpora pin the behavior.
+
 ## [0.3.1] - 2026-09-02
 
 ### Fixed
@@ -245,7 +255,8 @@ and `docs/adr/0009-recognition-kernel.md` for the full guide.
   Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
   `0.1.0`, tag `v0.1.0`).
 
-[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/nexusnv/paxman-python/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/nexusnv/paxman-python/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/nexusnv/paxman-python/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/nexusnv/paxman-python/compare/v0.2.1...v0.2.2

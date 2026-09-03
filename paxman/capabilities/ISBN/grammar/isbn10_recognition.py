@@ -16,9 +16,15 @@ from paxman.capabilities.ISBN.notation import ISBNNotation
 from paxman.core.grammar import BoundaryGuard, PipelineGrammar, RegexStage, StandardPre
 
 _LEAD = BoundaryGuard.isbn10_lead()
+# Trailing (?![-]\d) rejects a hyphen+digit continuation that would indicate
+# a truncated 10-digit prefix of a longer digit run with hyphen separators
+# (e.g. "1 0-306-40615-2" → "1 0-306-40615" prefix). The plain (?![\d]) inside
+# the lookahead only blocks an immediate digit, not hyphen+digit. The \b still
+# handles word boundaries; space+digit trailing (e.g. "0306406152 1") remains
+# allowed as a separate token.
 _ISBN10_PATTERN = (
     _LEAD.lookbehind
-    + r"(?:ISBN(?:-10)?[\s:-]+)?(?=((?:\d[ -]?){9}[0-9Xx])(?![\d]))\1"
+    + r"(?:ISBN(?:-10)?[\s:-]+)?(?=((?:\d[ -]?){9}[0-9Xx])(?![\d]))\1(?![-]\d)"
     + r"\b"
 )
 

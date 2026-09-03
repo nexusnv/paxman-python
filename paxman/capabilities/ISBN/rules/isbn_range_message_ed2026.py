@@ -5,6 +5,9 @@ from paxman.capabilities.ISBN.rules.data.range_message import (
     EAN_PREFIX_RULES,
     GROUP_RULES,
 )
+from paxman.capabilities.ISBN.rules.data.range_message import (
+    find_registrant_length as _find_length,
+)
 from paxman.core.domain import Contract, Provenance, Rule, RuleStrategy
 
 PUBLICATION = Provenance(
@@ -16,15 +19,6 @@ PUBLICATION = Provenance(
     lifecycle="active",
     publication_year=2026,
 )
-
-
-def _find_length(rules: tuple[tuple[str, str, int], ...], digits: str) -> int | None:
-    """Length of the first rule whose 7-digit window covers the digit prefix."""
-    window = (digits + "0" * 7)[:7]
-    for start, end, length in rules:
-        if start <= window <= end:
-            return length
-    return None
 
 
 class Section4RegistrantRange(Rule[ISBNNotation]):
@@ -68,8 +62,11 @@ class Section4RegistrantRange(Rule[ISBNNotation]):
             if not notation.digits[:9].isdigit():
                 return None
             base = "978" + notation.digits[:9]
-            weighted = sum(
-                int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base)
-            )
+            try:
+                weighted = sum(
+                    int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(base)
+                )
+            except ValueError:
+                return None
             return base + str((10 - weighted % 10) % 10)
         return None

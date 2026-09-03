@@ -15,7 +15,10 @@ from paxman.capabilities.ISBN.notation import ISBNNotation
 from paxman.core.grammar import PipelineGrammar, RegexStage, StandardPre
 
 _ISBN13_BODY = r"\b(?:ISBN(?:-13)?[\s:-]+)?(?=((?:\d[ -]?){12}\d)(?![\d]))\1"
-_ISBN13_PATTERN = _ISBN13_BODY + r"\b"
+# Trailing (?![-]\d) mirrors ISBN-10 fix: reject hyphen+digit continuation that
+# would indicate a truncated 13-digit prefix (e.g. "1-9780306406157" handling).
+# Plain (?![\d]) only blocks immediate digit; \b still handles word boundaries.
+_ISBN13_PATTERN = _ISBN13_BODY + r"(?![-]\d)\b"
 
 
 def _isbn13_notation(match: re.Match[str]) -> ISBNNotation:

@@ -137,6 +137,17 @@ class TestISBN13RecognitionGrammar:
         assert len(results) == 1
         assert results[0].notation.digits == "9780306406157"
 
+    def test_rejects_isbn13_truncated_hyphen_continuation(self) -> None:
+        """Hyphen+digit continuation must not yield truncated 13-digit hit."""
+        grammar = ISBN13RecognitionGrammar()
+        # "1-9780306406157" would be 14 digits with hyphen; trailing hyphen+digit
+        # guard prevents truncated prefix match; \b still handles word boundaries.
+        # The valid ISBN-13 at pos 2 is still recognized when isolated via space.
+        assert grammar.recognize("9780306406157")[0].notation.digits == "9780306406157"
+        # Double hyphen/space is not single-separator-tolerant
+        assert grammar.recognize("978--0306406157") == []
+        assert grammar.recognize("978  0306406157") == []
+
 
 class TestISBN10RecognitionGrammar:
     """Tests for ISBN10RecognitionGrammar."""
@@ -194,3 +205,22 @@ class TestISBN10RecognitionGrammar:
         results = grammar.recognize("0-306-40615-2 ")
         assert len(results) == 1
         assert results[0].notation.digits == "0306406152"
+
+    def test_rejects_isbn10_truncated_hyphen_prefix(self) -> None:
+        """Digit + hyphen prefix must not yield a truncated 10-digit hit (B1)."""
+        grammar = ISBN10RecognitionGrammar()
+        # "1 0-306-40615-2" contains 11 digits with separators; the truncated
+        # prefix "1 0-306-40615" (digits 1030640615) must be rejected via
+        # trailing (?![-]\d) and the isolated "0-306-40615-2" at pos 2 is
+        # blocked by BoundaryGuard.isbn10_lead() (digit+space prefix) → MISSING.
+        assert grammar.recognize("1 0-306-40615-2") == []
+        assert grammar.recognize("1-0-306-40615-2") == []
+        # Valid hyphenated ISBN-10 still recognized in isolation
+        assert grammar.recognize("0-306-40615-2")[0].notation.digits == "0306406152"
+        # Trailing hyphen+digit without digit must not be consumed
+        assert grammar.recognize("0-306-40615-2 ")[0].notation.digits == "0306406152"
+
+    def test_rejects_isbn10_double_separator(self) -> None:
+        grammar = ISBN10RecognitionGrammar()
+        assert grammar.recognize("0--306-40615-2") == []
+        assert grammar.recognize("0  306406152") == []
