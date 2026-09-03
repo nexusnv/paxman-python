@@ -27,6 +27,12 @@ identically), and every offered format from that contract's
 the capability (extend recognition/validation so the rendered form
 re-enters) or to remove by de-offering the format with a migration note —
 never silently accepted.
+
+The ``SUPPRESS_ROWS`` section below is the #122 A0 cross-link to #123:
+canonical values that collide with ``COMMON_WORDS`` must satisfy Property 2
+with ``suppress_common_words=True`` on. This module is already the
+documented registry exception per tests/AGENTS.md, so the suppression rows
+reuse the same ``_fresh_registry`` full-pipeline pattern.
 """
 
 from __future__ import annotations
@@ -163,6 +169,31 @@ assert {row.name for row in ROWS} == set(list_shipped_capabilities()), (
 )
 
 
+# Suppression re-entry rows (#122 A0 cross-link to #123): canonical values
+# that collide with COMMON_WORDS must re-enter with suppress_common_words on.
+# Kept as a SEPARATE table so the ROWS == shipped structural gate above is
+# untouched. Covers every suppressible matcher family plus a not-suppressible
+# control (SIUnit "cd").
+SUPPRESS_ROWS: tuple[_ReEntryRow, ...] = (
+    # Country α2 (alpha2_recognition, suppressible)
+    _row(Country, "TO", "TO", suppress_common_words=True),
+    _row(Country, "IN", "IN", suppress_common_words=True),
+    _row(Country, "US", "US", suppress_common_words=True),
+    _row(Country, "ST", "ST", suppress_common_words=True),
+    # Language ISO 639-1 (language_code_recognition, suppressible)
+    _row(Language, "en", "en", suppress_common_words=True),
+    _row(Language, "ca", "ca", suppress_common_words=True),
+    # Currency ISO 4217 (code_recognition, suppressible — only ALL collides)
+    _row(Currency, "ALL", "ALL", suppress_common_words=True),
+    # Country α3 offered format (alpha3_recognition, suppressible): the
+    # pre-A0 posture had 6 α3 violators (AGO, AND, ARE, CAN, MAR, PER) —
+    # lock the offered-format surface too, not just the default α2.
+    _row(Country, "AGO", "AGO", output_format="alpha3", suppress_common_words=True),
+    # SIUnit control: no SIUnit matcher is suppressible — must already pass
+    _row(SIUnit, "cd", "cd", suppress_common_words=True),
+)
+
+
 @pytest.fixture(autouse=True)
 def _fresh_registry() -> None:
     """Reset the registry and register all shipped capabilities around each test.
@@ -248,6 +279,64 @@ def test_reentry_case_whitespace_variants(variant: _CaseVariant) -> None:
         return
     value = first.canonicalized_value
     assert value is not None
+    second = canonicalize(value, contract)
+    assert second.status is Resolution.SUCCESS
+    assert second.canonicalized_value == value
+
+
+_SUPPRESS_CASES: list[pytest.param] = [
+    pytest.param(row, id=f"{row.name}-{row.input}") for row in SUPPRESS_ROWS
+]
+
+
+@pytest.mark.parametrize("row", _SUPPRESS_CASES)
+def test_reentry_under_suppression(row: _ReEntryRow) -> None:
+    """Property 2 with suppress_common_words on (#122 A0 cross-link to #123).
+
+    Single-token canonicals are their own fixed point: the first call *is*
+    the re-entry of an emitted ``V``, so it must succeed and land on itself.
+    """
+    kwargs: dict[str, object] = dict(row.contract_kwargs) if row.contract_kwargs else {}
+    kwargs["suppress_common_words"] = True
+    contract = row.factory.create_contract(**kwargs)  # type: ignore[arg-type]
+    first = canonicalize(row.input, contract)
+    assert first.status is Resolution.SUCCESS
+    value = first.canonicalized_value
+    assert value is not None
+    assert value == row.expected_default
+    assert value == row.input
+    second = canonicalize(value, contract)
+    assert second.status is Resolution.SUCCESS
+    assert second.canonicalized_value == value
+
+
+_SUPPRESS_WS_CASES: list[pytest.param] = [
+    pytest.param(row, label, text, id=f"{row.name}-{row.input}-{label}")
+    for row in SUPPRESS_ROWS
+    for label, text in (
+        ("padded", f"  {row.input}  "),
+        ("newline", f"{row.input}\n"),
+    )
+]
+
+
+@pytest.mark.parametrize(("row", "label", "text"), _SUPPRESS_WS_CASES)
+def test_reentry_under_suppression_padded_variants(
+    row: _ReEntryRow, label: str, text: str
+) -> None:
+    """Property 2 under suppression survives padding (#122 A0 trimmed region).
+
+    The exempt hit lands exactly on the trimmed region, so padded and
+    newline-terminated whole inputs must reach the same fixed point.
+    """
+    kwargs: dict[str, object] = dict(row.contract_kwargs) if row.contract_kwargs else {}
+    kwargs["suppress_common_words"] = True
+    contract = row.factory.create_contract(**kwargs)  # type: ignore[arg-type]
+    first = canonicalize(text, contract)
+    assert first.status is Resolution.SUCCESS
+    value = first.canonicalized_value
+    assert value is not None
+    assert value == row.expected_default
     second = canonicalize(value, contract)
     assert second.status is Resolution.SUCCESS
     assert second.canonicalized_value == value

@@ -126,8 +126,8 @@ round-trip exactly.
    tables that the pipeline emits as canonical values (`en`, `de`, `no`, …) for Language,
    and 3 of the 178 ISO 4217 codes (`ALL`, `TRY`, `TOP`) for Currency re-enter as
    `MISSING`. The counts cover default-format canonical values; offered-format renderings
-   are class members too until #122 lands — Country's offered α3 format alone has 6
-   re-entry failures under suppression today (`AGO`, `AND`, `ARE`, `CAN`, `MAR`, `PER`).
+   are class members too before #122 A0 landed (see amendment below) — Country's offered α3 format alone had 6
+   re-entry failures under suppression pre-A0 (`AGO`, `AND`, `ARE`, `CAN`, `MAR`, `PER`).
    At the input level, 53
    common-word inputs collapse onto these 50 Language codes (`in` and `id` both
    canonicalize to `id`), and two inputs — `may` → `ms`, `per` → `fa` — canonicalize to
@@ -146,6 +146,17 @@ round-trip exactly.
    honestly where it is conditionally violated today, and the fix belongs to the
    suppression decision that introduced the flag — not to a second enforcement mechanism
    invented here.
+
+   *Amendment (2026-09-03 — #122 A0 landed, ADR-0009 Rev.5).* The whole-input
+   member of this class is resolved: a word-bounded suppression hit may never
+   suppress the entire trimmed input, so single-token canonical values (`TO`,
+   `en`, `ALL`, …) re-enter as fixed points under `suppress_common_words=True`,
+   locked by suppression rows in `tests/property/test_reentry_invariant.py`.
+   The per-matcher rescue paths described above still govern embedded mentions,
+   and `ExecutionResult` now carries `suppressed_count`/`suppressed_spans` so
+   suppression-to-`MISSING` (multi-word inputs where every mention is a common
+   word — A1 remains rejected) stays observable. The violator counts above
+   describe the pre-A0 posture and are retained as the rationale record.
 
 ## Consequences
 

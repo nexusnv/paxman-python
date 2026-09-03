@@ -481,7 +481,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | `pinned_rules` | `Sequence[str]` | Pin to specific rules (overrides `excluded_rules`) |
 | `year` | `int` | Temporal filter — only rules with `publication_year ≤ year` run |
 | `extra_grammars` | `tuple[str, ...]` | Community grammar names to opt in (appended after shipped grammars) |
-| `suppress_common_words` | `bool` | Suppress common-word noise on scan (e.g. `to` → Tonga); default `False` (ADR-0009 §16) |
+| `suppress_common_words` | `bool` | Suppress common-word noise on scan/prose (e.g. `to` → Tonga), except when the whole input is the word (A0 whole-input exemption, #122); default `False` (ADR-0009 §16) |
 
 ### Capability-Specific Parameters
 
@@ -675,7 +675,7 @@ For inputs with multiple mentions of the same capability, split the text first �
 
 For scan on prose, short-code noise (`to`→Tonga) can dominate: use the off-by-default
 `suppress_common_words` gate (ADR-0009 §16) — `Country.create_contract(suppress_common_words=True)` /
-`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency and bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note.
+`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency. Bare `canonicalize("to")` stays `SUCCESS "TO"` with the flag off *and* with it on (A0 whole-input exemption, #122 — a suppressible hit covering the trimmed whole input is never suppressed), while `scan()` prose still drops embedded `to`. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note and the 0.4.0 exemption.
 
 ---
 

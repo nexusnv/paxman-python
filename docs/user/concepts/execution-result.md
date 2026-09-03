@@ -101,6 +101,32 @@ This makes highlighting in UIs, logging, and downstream span-aware processing st
 
 ---
 
+## Suppression signal
+
+When you pass `suppress_common_words=True` (ADR-0009 §16), word-bounded short-code hits in `COMMON_WORDS` (67) are dropped before validation — and the drop is now observable. `suppressed_count` says how many hits were suppressed; `suppressed_spans` gives each hit's half-open `[start, end)` span:
+
+```python
+import paxman
+from paxman.capabilities import Country
+from paxman.core.domain import Resolution
+
+paxman.register_all_shipped()
+contract = Country.create_contract(suppress_common_words=True)
+
+r = paxman.canonicalize("in/", contract)
+print(r.status, r.suppressed_count, r.suppressed_spans)
+# Resolution.MISSING 1 ((0, 2),)
+```
+
+This distinguishes the two ways to get `MISSING`: `suppressed_count == 0` means nothing was recognized (e.g. `"in56"` never matches — `\w` boundary), while `suppressed_count >= 1` means something *was* recognized but suppressed as noise. The signal is populated whenever suppression fires, on any status (including `SUCCESS` with surviving embedded mentions), and is `0`/`()` when the flag is off. Spans are in sorted positional order.
+
+Two things it does **not** mean:
+
+- A whole-input word is never suppressed (A0 whole-input exemption, #122): `canonicalize("to", contract)` → `SUCCESS "TO"` with `suppressed_count == 0`. Only embedded mentions are dropped.
+- Suppression is per-matcher, not per-capability: in `canonicalize("to and usa", contract)` the embedded `to`/`and` hits *and* the α3 `usa` hit at `(7, 10)` are all suppressed (`usa` ∈ `COMMON_WORDS`), yet the result is `SUCCESS "US"` — the value survives via the non-suppressible `name_recognition` hit at the same span.
+
+---
+
 ## `candidates` — the full evidence
 
 `candidates` holds every validated `(value, recognition_rule, validation_rule, provenance, span)` tuple the pipeline produced, after deduplication by `(value, recognition_rule, validation_rule)`.

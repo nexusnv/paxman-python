@@ -9,7 +9,7 @@ A **canonicalization authority resolver** — a library that takes ambiguous hum
 - **No fabrication:** Never guess, never infer, never suggest
 - **Provenance-first:** Always cite authority-defined specifications, registries, policies
 - **Deterministic:** Given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline yields the same canonical output — no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, no network inference across recognition, validation, and canonicalization.
-- **Re-entry invariant (fixed-point):** A `SUCCESS` canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` or `suppress_common_words=True` for whole-input common words may break this until #122 A0 lands; new capabilities must extend that suite (ADR-0010).
+- **Re-entry invariant (fixed-point):** A `SUCCESS` canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` may break this. Whole-input canonical values that collide with `COMMON_WORDS` (`TO`, `en`, `ALL`) re-enter under `suppress_common_words=True` via the A0 whole-input exemption (#122), enforced by the extended property suite; new capabilities must extend that suite (ADR-0010).
 
 ### Capability
 A domain module (e.g., Email) that:
@@ -899,7 +899,7 @@ paxman/
 | `paxman.api` | Public API entry points |
 
 ### Kernel notes (ADR-0009)
-- Common-word suppression: `COMMON_WORDS` 67 via `BoundarySpec` WORD guard (`suppressible`, contract `suppress_common_words` default off).
+- Common-word suppression: `COMMON_WORDS` 67 via `BoundarySpec` WORD guard (`suppressible`, contract `suppress_common_words` default off). A0 whole-input exemption (#122): a suppressible hit covering the trimmed whole input is never suppressed; suppressed hits are observable via `ExecutionResult.suppressed_count` / `suppressed_spans`.
 - Country `country_normalized` view — NFD-normalized view for lexicon scanning.
 - `BoundarySpec` frozensets O(1) word/anchor checks.
 - Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` (`starts`/`ends` parallel arrays).

@@ -227,6 +227,8 @@ class ExecutionResult:
     contract: CapabilityContract  # the contract you passed in
     version_stamp: VersionStamp  # .paxman_version
     span: tuple[int, int] | None  # [start, end) of resolved value on SUCCESS, else None
+    suppressed_count: int = 0  # hits dropped by suppress_common_words (ADR-0009 §16, #122)
+    suppressed_spans: tuple[tuple[int, int], ...] = ()  # [start, end) of each suppressed hit
 ```
 
 ```python
@@ -279,6 +281,8 @@ else:
 ```
 
 `span` semantics: on `SUCCESS` it is the span of the single resolved value; on `AMBIGUOUS` use each `candidate.span`; on `MISSING`/`INVALID` it is `None` and `candidates` is empty.
+
+`suppressed_count` / `suppressed_spans`: populated whenever `suppress_common_words=True` suppression fires, on any status (ADR-0009 §16, A0 #122) — `0`/`()` when the flag is off or nothing was suppressed. Spans are in sorted positional order. A whole-input suppressible hit is never suppressed (A0 exemption), so `canonicalize("to", Country suppress on)` → `SUCCESS "TO"` with `0`/`()`, while `canonicalize("in/", …)` → `MISSING` with `suppressed_count == 1`, `suppressed_spans == ((0, 2),)`.
 
 ---
 

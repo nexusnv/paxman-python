@@ -11,11 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Coordinates — WGS 84 coordinates:** new capability with one grammar (`coordinates_recognition`) covering decimal pairs, hemisphere letters, DMS/DDM, Geo URI `geo:`, ISO 6709 string-expression, and GeoJSON lon-first pairs, and four parser rules backed by ISO 6709:2022 (`Section 6-coordinate-structure`, `Section Annex-h-string-expression`), RFC 5870 (`Section 3.3-geo-uri-validity`), and RFC 7946 (`Section 3.1.1-position`). Canonical form is lat-first signed decimal degrees quantized to 6dp round-half-even with `-0` folded to `0`; six output formats `decimal` (default), `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm`.
 - **Bootstrap — MacAddress registration activated:** `register_all_shipped()` / `paxman --list` now include the `mac_address` capability (17 shipped capabilities). The registration had been deliberately deferred on `dev`; it ships together with Coordinates in this release.
+- **Suppression signal — `suppressed_count` / `suppressed_spans` on `ExecutionResult` (#122, ADR-0009 Rev.5):** two defaulted frozen fields (`0` / `()`) populated whenever `suppress_common_words=True` suppression fires — on `MISSING` *and* `INVALID`, not just `MISSING` — so callers can distinguish "nothing recognized" (`MISSING` + `0`) from "recognized but suppressed" (`MISSING` + `1`, e.g. `canonicalize("in/", Country suppress on)` → spans `((0, 2),)`). `0`/`()` when the flag is off.
 
 ### Breaking
 
 - **MacAddress — de-offer `bit_reversed` output format (#123, ADR-0010):** `MacAddressContract(output_format="bit_reversed")` now raises `ContractError` (was `SUCCESS` with per-octet bit-swap). The format is an involution (`f(f(x)) == x`) and therefore not a fixed point — `canonicalize(V, bit_reversed)` re-flips to `W != V`. Per ADR-0010 an offered format must re-enter as itself, so the view is no longer offered. The `Capability.format_value()` `bit_reversed` branch and `_bit_reverse_octet` helper have been removed (no dead code; off-contract direct use would previously have silently succeeded). Migrate: use the default `colon` form for storage and round-tripping; compute the Token-Ring display locally if needed.
 - **Phone — `national` now requires `default_country` (#123, ADR-0010):** `PhoneContract(output_format="national")` without a NANP `default_country` (currently `"US"`) now raises `ContractError` (was `SUCCESS` with a non-re-enterable bare NSN). Per ADR-0010 Scope decision 2 re-entry is unconditional for default contracts; a default (country-less) contract must never produce a non-re-enterable `national` V (`2125551234` → `INVALID` on re-entry without country). Callers needing `national` must supply `default_country="US"`; `PhoneContract(output_format="national", default_country="US")` re-enters as a fixed point and remains offered. Migrate: add `default_country="US"` where `national` is used, or use `e164`/`rfc3966` for country-less contracts.
+
+### Changed
+
+- **Suppression — A0 whole-input exemption (#122, ADR-0009 Rev.5):** under `suppress_common_words=True`, a suppressible word-bounded hit covering the entire trimmed input is never suppressed. `canonicalize("to"/"TO"/"  to  ", Country suppress on)` → `SUCCESS "TO"` (was `MISSING`); same for Currency `ALL` and Language `en`. Embedded mentions stay suppressed (`scan()` prose behavior unchanged; `canonicalize("to and usa", …)` still `SUCCESS "US"` via the non-suppressible `name_recognition` rescue path). A1 (`x→0` fallback) evaluated and rejected — `"to and is"` stays `MISSING` with `suppressed_count == 3`. Flag-off results are byte-identical.
 
 ### Fixed
 
@@ -34,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URI or ISO 6709 string resolves INVALID (no silent datum transform) instead
   of being silently accepted or dropped; `--48.5, 2.3` sign glue is MISSING;
   `iso6709` output pads fractions to the 4-place Annex H presentation width.
+
+### Docs
+
+- **ADR-0009 Rev.5 — §16 A0 amendment (#122):** whole-input exemption semantics, A1 rejection rationale, `suppressed_count`/`suppressed_spans` signal, ADR-0010/#123 cross-link. User surfaces synced: `README.md` contract table + scan prose, `CONTEXT.md` re-entry note + kernel notes, new `docs/user/migration.md` 0.4.0 section, `ExecutionResult` fields in `docs/user/api-reference.md` + new "Suppression signal" subsection in `docs/user/concepts/execution-result.md`.
 
 ## [0.3.2] - 2026-09-03
 
