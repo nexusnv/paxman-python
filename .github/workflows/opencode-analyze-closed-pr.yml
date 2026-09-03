@@ -1,0 +1,265 @@
+name: opencode-analyze-closed-pr
+
+on:
+  schedule:
+    # 00:01 UTC daily (08:01 CST / UTC+8). Covers PRs merged in the last 24h via dynamic window, so timezone drift is irrelevant.
+    - cron: "1 0 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  precheck:
+    name: Check for PRs merged to dev in last 24h
+    runs-on: ubuntu-latest
+    outputs:
+      has_prs: ${{ steps.check.outputs.has_prs }}
+      pr_count: ${{ steps.check.outputs.pr_count }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check merged PRs in last 24h
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          echo "Checking for PRs merged to 'dev' since $SINCE (UTC)"
+          # Fetch up to 50 merged PRs to dev and filter by mergedAt >= SINCE (Zulu ISO8601, lexicographically comparable)
+          PRS_JSON=$(gh pr list --repo "${{ github.repository }}" --state merged --base dev --limit 50 --json number,title,mergedAt,url 2>/dev/null || echo "[]")
+          # Filter via jq with --arg since (both sides are Zulu, e.g. 2026-08-30T16:00:00Z)
+          FILTERED=$(echo "$PRS_JSON" | jq --arg since "$SINCE" '[.[] | select(.mergedAt >= $since)]')
+          COUNT=$(echo "$FILTERED" | jq 'length')
+          echo "Found $COUNT PR(s) merged to dev in last 24h"
+          echo "$FILTERED" | jq .
+          if [ "$COUNT" -eq 0 ]; then
+            echo "has_prs=false" >> "$GITHUB_OUTPUT"
+            echo "pr_count=0" >> "$GITHUB_OUTPUT"
+            echo "No PRs merged to dev in last 24h — downstream opencode job will be skipped."
+          else
+            echo "has_prs=true" >> "$GITHUB_OUTPUT"
+            echo "pr_count=$COUNT" >> "$GITHUB_OUTPUT"
+            # Expose PR numbers for logs (not used by opencode step directly; opencode will re-query)
+            echo "pr_numbers=$(echo "$FILTERED" | jq -r '[.[].number] | join(",")')" >> "$GITHUB_OUTPUT"
+          fi
+
+  opencode:
+    name: Analyze closed PRs and create follow-up issues
+    needs: precheck
+    if: needs.precheck.outputs.has_prs == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run opencode — analyze merged PRs and open follow-up issues
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: ${{ secrets.OPENCODE_MODEL_ID }}
+          prompt: |
+            You are running as a scheduled GitHub Actions job (00:01 UTC daily). Your task is to analyze PRs that were CLOSED and MERGED into the `dev` branch in the last 24 hours, find deferred/skipped review concerns that are still valid, group them into implementation runs, create GitHub issues without duplication, AND manage milestones/labels per the repository's weekly cadence and priority contract.
+
+            ## Step 1 — Identify the PRs (last 24h window)
+
+            - The precheck job has already verified that at least one PR was merged to `dev` in the last 24h (UTC). You must re-derive the exact set yourself for provenance:
+              ```bash
+              SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+              gh pr list --repo "$GITHUB_REPOSITORY" --state merged --base dev --limit 50 --json number,title,mergedAt,url,baseRefName,headRefName,author | jq --arg since "$SINCE" '[.[] | select(.mergedAt >= $since)]'
+              ```
+            - This covers the last 24 hours from the runner's current UTC time. Do NOT use a fixed calendar day; use the dynamic 24h window.
+            - If the filtered list is empty, log "No PRs merged to dev in last 24h — nothing to do" and END the run gracefully with exit 0 (do not create any issue, do not fail). Still run Step 3b (milestone hygiene) even if no PRs? No — skip if precheck already gated, but if you re-derive empty, exit 0.
+
+            ## Step 2 — Deep analyze each PR
+
+            For each PR number in the filtered list:
+            1. Fetch PR metadata:
+               ```bash
+               gh pr view <number> --repo "$GITHUB_REPOSITORY" --json number,title,body,state,mergedAt,closedAt,author,baseRefName,headRefName,labels,comments,reviews
+               gh pr diff <number> --repo "$GITHUB_REPOSITORY" | head -n 2000
+               gh api repos/<owner>/<repo>/pulls/<number>/comments --jq '.[] | {path, line, body, user: .user.login}'
+               gh api repos/<owner>/<repo>/pulls/<number>/reviews --jq '.[] | {state, body, author: .user.login}'
+               gh api repos/<owner>/<repo>/issues/<number>/comments --jq '.[] | {author: .user.login, body: .body}'
+               ```
+            2. Look for:
+               - Inline review comments (CodeRabbit or human) with actionable findings that were marked as deferred, skipped, "Addressed in commit" but still reproduces, or with checkboxes unchecked (`- [ ]`).
+               - PR body or comments mentioning `defer`, `follow-up`, `TODO`, `FIXME`, `skipped with reason`, `merge risk`, `pre-merge checks` warnings (e.g. Docstring Coverage, Linked Issues).
+               - Walkthrough `Merge Risk` or `Failed checks` sections in CodeRabbit summaries.
+               - Any `TODO`/`FIXME` introduced in the diff that was intentionally left for later.
+            3. Validate each finding against the current `origin/dev` code (read the affected files via `read` tool or `gh` + `cat`). A finding is VALID only if:
+               - The code still exhibits the bug / missing coverage / fragile pattern when you reproduce it (e.g. via `uv run python -c "..."` or reading the file).
+               - The reviewer's suggestion was skipped for an invalid reason, or the fix was partial and a residual bug remains.
+               - The pre-merge check warning (docstring, coverage) still reproduces locally.
+            4. Discard invalid/duplicate findings (e.g. PR #104's `65020` removal was correctly skipped because `65020` is `0xFDFC` Rial Sign which *is* `Sc` — document why it was skipped and do not re-file).
+
+            ## Step 3 — Deduplicate against existing open issues (CRITICAL)
+
+            Before creating ANY issue, you MUST ensure there is no duplicating open issue for the same matter:
+
+            ```bash
+            gh label list --repo "$GITHUB_REPOSITORY" --limit 100 --json name,description
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open --label followup --limit 100 --json number,title,body,labels,url
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title,body,labels --jq '.[] | select(.title | test("bic|grouped|unicode|scanner|docstring"; "i"))'
+            gh issue list --repo "$GITHUB_REPOSITORY" --search "followup in:title" --state open --limit 100 --json number,title
+            ```
+
+            - For each candidate follow-up group you plan to file, compute a normalized matter key (e.g. `bic-grouped-english-phrase`, `core-docstring-unicode-scanner`). Search open issues for:
+              - Same label `followup` + similar title keywords (case-insensitive).
+              - Body containing the same PR number (`#102`, `#103`, etc.) and same file paths.
+              - Same underlying bug (e.g. bare `call me at` false positive).
+            - If an open issue already covers the matter (similar title OR body mentions same PR and same technical root cause), DO NOT recreate. Instead, add a comment to the existing issue with new evidence if you have additional repro, and skip creation for that group.
+            - Only create a new issue when no open `followup` issue matches the matter. Closed issues do not block creation.
+
+            ## Step 3b — Milestone hygiene (MANDATORY, every run)
+
+            You MUST run milestone hygiene on every invocation before creating new issues. Milestones are the source of truth for release planning; labels `v*.*.*` are kept alongside milestones (never replace one with the other).
+
+            ### 3b.1 — Fetch current milestones and issues
+
+            ```bash
+            gh api repos/$GITHUB_REPOSITORY/milestones?state=all&per_page=100 --jq '.[] | {number,title,state,due_on,open_issues,closed_issues,description}'
+            gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq 'sort_by(.due_on) | .[] | "\(.title) due \(.due_on) #\(.number) open:\(.open_issues)"'
+            gh api repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100 --jq '[.[] | select(.pull_request == null) | {number,title,labels:[.labels[].name], milestone:.milestone.title, milestone_number:.milestone.number}] | sort_by(.number)'
+            # Paginated check: if open issues >100, also fetch page 2
+            gh api repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100&page=2 --jq '[.[] | select(.pull_request == null) | {number,title,labels:[.labels[].name], milestone:.milestone.title}]'
+            gh api repos/$GITHUB_REPOSITORY/labels?per_page=100 --jq '.[] | select(.name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' | sort -V
+            ```
+
+            ### 3b.2 — Enforce invalid/wontfix exclusion
+
+            **Rule:** Any issue or PR bearing label `invalid` or `wontfix` MUST NOT have a milestone. This applies retroactively.
+
+            - For each open issue (and open PR, via same endpoint) where `labels` contains `invalid` or `wontfix` and `milestone != null`:
+              ```bash
+              gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -F milestone=null --jq '{number,milestone}'
+              # Alternatively: gh issue edit <number> --remove-milestone  (if gh supports)
+              gh api repos/$GITHUB_REPOSITORY/issues/<number> --jq '{number,labels:[.labels[].name], milestone:.milestone.title}'
+              ```
+              Also add a comment explaining removal: "Removed from milestone because labelled `invalid`/`wontfix` per milestone policy (weekly cadence)."
+            - For any future issue you create: if it would be created with `invalid` or `wontfix`, do NOT assign a milestone at all (still create label if needed, but milestone stays null).
+
+            ### 3b.3 — Ensure weekly cadence (1 week per minor)
+
+            - Cadence: each minor release milestone `v0.<minor>.0` is 1 week apart by default. Example `v0.3.0` due 2026-08-31 → `v0.4.0` due 2026-09-09 → `v0.5.0` due 2026-09-16, etc. Due time is `00:00:00Z` UTC.
+            - Do NOT create empty or historical milestones. Start from `v0.4.0` (already exists, due 2026-09-09T00:00:00Z). Historical `v0.1.0`–`v0.3.1` are not backfilled.
+            - If the latest open milestone's `due_on` is in the past or within 3 days, and there is no next minor milestone yet, create the next one proactively ONLY if needed (either current milestone is overloaded or you have a new issue that needs to target next release):
+              ```bash
+              # Derive NEXT_VERSION dynamically from the latest milestone (e.g., v0.4.0 -> v0.5.0, v0.5.0 -> v0.6.0) — do NOT hardcode
+              LAST_TITLE=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r 'sort_by(.due_on) | last | .title // "v0.4.0"')
+              if [[ "$LAST_TITLE" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+                MAJOR="${BASH_REMATCH[1]}"; MINOR="${BASH_REMATCH[2]}"; NEXT_MINOR=$((MINOR + 1))
+                NEXT_VERSION="v${MAJOR}.${NEXT_MINOR}.0"
+              else
+                NEXT_VERSION="v0.5.0"
+              fi
+              LAST_DUE=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r 'sort_by(.due_on) | last | .due_on')
+              NEXT_DUE=$(date -u -d "$LAST_DUE + 7 days" +%Y-%m-%dT00:00:00Z)
+              gh api repos/$GITHUB_REPOSITORY/milestones -f title="$NEXT_VERSION" -f state="open" -f due_on="$NEXT_DUE" -f description="Weekly minor release — active development. Cadence: 1 week per minor version. Priority: docs for released caps > bug fixes for published caps > new capabilities. Keep v*.*.* labels alongside milestone."
+              # Also ensure label exists:
+              gh label create "$NEXT_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$NEXT_VERSION release" 2>/dev/null || true
+              ```
+            - Description for every new milestone must note the weekly cadence and priority contract.
+
+            ### 3b.4 — Overload detection and reclassification (priority-based, not just count/date)
+
+            If any open milestone has `open_issues` > threshold, you MUST rebalance. Default threshold is **10 open issues** per weekly milestone (tunable: if the milestone is `v0.4.0` with 13 open, it is overloaded).
+
+            - Reclassification is NOT purely by number or creation date — use **expected deliverables priority**:
+              1. **Highest: Documentation updates for missing docs of capabilities that have been released** (e.g., docstring coverage 80% gate, README, ADR, missing capability docs). These stay in the earliest milestone.
+              2. **High: Bug fixes for published / shipped capabilities** (grammar/scanner/boundary/normalizer bugs that affect already-released caps like BIC, ISBN, Email, Currency, Language, IP, IBAN). Higher than new capabilities.
+              3. **High: Foundational invariants / decisions that block other work** (re-entry fixed-point invariant #123, suppression scope #122). Treat as Tier 2 — keep early because they gate v0.4.0 invariants.
+              4. **Medium: Fixes for known bugs with no user complaint yet / low deferred findings** (e.g., deferred low L1-L3 #73, CodeRabbit polish #71 with no user impact). Lower than docs, higher than pure new.
+              5. **Lowest: New capabilities or extensions** (ORCID compact/spaced #39, span enforcement #23, $ sign decision #15 if still question, Coordinates polish #120/#121 if cap not yet released). Move first when overloaded.
+
+            - Procedure:
+              ```bash
+              # For overloaded milestone M (e.g., v0.4.0, #1, 13 open)
+              gh api repos/$GITHUB_REPOSITORY/milestones/1 --jq '{title,due_on,open_issues}'
+              gh api repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100 --jq '[.[] | select(.pull_request==null) | select(.milestone.title=="v0.4.0") | {number,title,labels:[.labels[].name], created_at, body:(.body//""|split("\n")[0])}] | sort_by(.created_at)'
+              ```
+              - Rank each issue into tiers 1–5 using title/body/labels (e.g., label `followup` + body mentioning docstring → Tier 1; label `enhancement` + cap that exists on `main` → Tier 2; deferred low → Tier 4; ORCID/new → Tier 5). Within same tier, older `created_at` keeps earlier slot (stable).
+              - Keep top `threshold` (10) highest-priority issues in current milestone; move the lowest-priority excess to the next milestone (create `$NEXT_VERSION` if needed per 3b.3 — derived dynamically, not hardcoded `v0.5.0`). For each moved issue:
+                ```bash
+                # NEXT_VERSION derived in 3b.3 (e.g., v0.5.0, v0.6.0); re-derive if running 3b.4 standalone using same LAST_TITLE logic above
+                NEXT_MILESTONE_NUMBER=$(gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq -r --arg ver "$NEXT_VERSION" 'sort_by(.due_on) | .[] | select(.title==$ver) | .number')
+                # CURRENT_TITLE is the overloaded milestone's title (e.g., v0.4.0) — fetch dynamically: CURRENT_TITLE=$(gh api repos/$GITHUB_REPOSITORY/milestones/1 --jq -r .title)
+                gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -F milestone="$NEXT_MILESTONE_NUMBER" --jq '{number,milestone:.milestone.title}'
+                # Relabel: keep v* labels alongside milestone — remove old version label, add new (both derived, not hardcoded)
+                gh issue edit <number> --repo "$GITHUB_REPOSITORY" --remove-label "$CURRENT_TITLE" --add-label "$NEXT_VERSION" 2>/dev/null || \
+                  gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> --jq '{labels:[.labels[].name]}' | jq .
+                # Alternative via API: PATCH with labels array
+                # gh api --method PATCH repos/$GITHUB_REPOSITORY/issues/<number> -f labels[]="followup" -f labels[]="$NEXT_VERSION"
+                ```
+              - Log each move with rationale: issue #, tier, why moved (e.g., "#39 ORCID defer is Tier 5 new capability, lowest priority vs #106 BIC bug Tier 2").
+              - Never move `invalid`/`wontfix` — they have no milestone at all (handled in 3b.2).
+
+            ## Step 4 — Synthesize and group into implementation runs
+
+            - Group related valid findings into implementation runs that can be built together (e.g. all BIC grouped-display hardening in one run, all core docstring/coverage + UnicodePropertyStage polish in another). Do NOT file one issue per inline comment; group by layer/capability.
+            - Aim for 1–3 issues per daily run, each representing a coherent PR-sized run.
+
+            ## Step 5 — Create GitHub issues (with milestone + label sync)
+
+            For each group, create ONE issue via:
+
+            ```bash
+            gh label create followup --repo "$GITHUB_REPOSITORY" --color F39C12 --description "Follow-up from merged PR — deferred or skipped review concern" 2>/dev/null || true
+            # Determine version targeting label: read pyproject.toml version and map to milestone
+            VERSION=$(grep -E '^version = ' pyproject.toml | head -n1 | cut -d'"' -f2)
+            # List open milestones sorted by due date
+            gh api repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100 --jq 'sort_by(.due_on) | .[] | "\(.title) due \(.due_on) #\(.number) open:\(.open_issues)"'
+            # Choose target milestone based on priority tier and overload:
+            # - Tier 1/2 (docs, bug for published cap) → earliest open milestone with capacity (open_issues <10)
+            # - Tier 4/5 (new cap, low) → next milestone if earliest is >8 or overloaded
+            # If chosen milestone's label does not exist, create it (derive version dynamically — do NOT hardcode v0.4.0/v0.5.0):
+            # TARGET_VERSION is the chosen milestone title (e.g., v0.4.0 or $NEXT_VERSION); create label for it dynamically
+            gh label create "$TARGET_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$TARGET_VERSION release" 2>/dev/null || true
+            # Fallback: ensure NEXT_VERSION label exists if targeting next release
+            gh label create "$NEXT_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$NEXT_VERSION release" 2>/dev/null || true
+            # Create issue with BOTH label and milestone kept in sync:
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "followup(<scope>): <concise>" --body-file /tmp/issue_body.md --label "followup,<version-label>" --milestone "<version-label>"
+            # Verify:
+            gh api repos/$GITHUB_REPOSITORY/issues/<new_number> --jq '{number,title,labels:[.labels[].name], milestone:.milestone.title}'
+            ```
+
+            Each issue body MUST contain at least these three sections (use markdown headings):
+
+            1. **In simple term, what the issue is about** — one paragraph, non-technical, for triage.
+            2. **The PR from which this issue surfaces** — PR number, title, mergedAt (UTC and UTC+8), and link. List the specific review comment IDs or CodeRabbit check that was deferred/skipped.
+            3. **The technicalities of the issue, explained in detail** — file:line refs (`paxman/...:123`), current code snippet, reproduction (`uv run python -c "..."` output), why the review concern is still valid, what was skipped vs what remains, and a concrete suggested fix with verification steps (`uv run ruff check`, `pyright`, `pytest`).
+
+            Also in the body include:
+            - The matter key used for dedup and the `gh issue list` evidence that no duplicate was found.
+            - References to related open issues if any (e.g. deferred design docs, but do not duplicate).
+            - If a finding was correctly skipped (e.g. SC 65020), document the triage reason in the issue that covers that PR, so future runs know it was intentional.
+            - The chosen milestone and its due date, and the priority tier justification.
+
+            Label each new issue with `followup` and the version targeting label (e.g. `v0.4.0` or `$NEXT_VERSION`). Keep the milestone and label in sync — if you move an issue to `$NEXT_VERSION` later, update the label too. If the version label does not exist, create it first:
+            ```bash
+            gh label create "$TARGET_VERSION" --repo "$GITHUB_REPOSITORY" --color 0e8a16 --description "$TARGET_VERSION release" 2>/dev/null || true
+            ```
+
+            ## Guardrails
+
+            - Do NOT edit code or open PRs in this workflow — this is an analysis + filing + milestone-hygiene run only. Milestone and label edits via `gh api`/`gh issue edit` are allowed and required for hygiene.
+            - Do NOT use `as any`, `type: ignore`, `pyright: ignore` in any snippet you propose.
+            - Be deterministic and cite primary sources (file paths, PR numbers, commit SHAs, `gh` output, milestone numbers and due dates).
+            - If you create 0 issues because everything was deduplicated or no valid findings remain, still run milestone hygiene (3b) and log the summary, then exit 0 — this is a success, not a failure.
+            - Always keep `v*.*.*` labels alongside milestones; never have one without the other (except invalid/wontfix which have neither).
+
+            ## Example of what to look for (from 2026-08-31 run that created #106 and #107)
+
+            - PR #102 BIC grouped display: CodeRabbit comments `3889918799`/`3889918801` were marked addressed but bare `call me at` at end-of-text still `g.recognize("call me at")==1` (should be `[]`); word lists `_COMMON_SHORT_WORDS`/`_ENGLISH_BIC_WORDS` duplicate `COMMON_WORDS` (67). These were grouped into `followup(bic)` #106 (Tier 2, bug for shipped BIC, kept in v0.4.0).
+            - PRs #103/#104/#105: Docstring Coverage 52–72% vs 80% warnings deferred, and SC `65020` triage (correctly kept as `0xFDFC` Rial Sign). Grouped into `followup(core)` #107 (Tier 1, docs for released core, kept in v0.4.0).
+
+            Replicate this rigor for whatever PRs you find in the last 24h, and apply milestone hygiene every run.
