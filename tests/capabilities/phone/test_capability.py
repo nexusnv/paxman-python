@@ -6,6 +6,9 @@ from paxman.api import canonicalize
 from paxman.capabilities.Phone.capability import PhoneCapability
 from paxman.capabilities.Phone.contract import PhoneContract
 from paxman.capabilities.Phone.notation import PhoneNotation
+from paxman.capabilities.Phone.rules.data.e164_country_codes import (
+    split_country_code,
+)
 from paxman.core.capability import Capability
 from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.domain import Resolution
@@ -229,7 +232,13 @@ class TestPhoneCapabilityFormatValue:
         """Taiwan (886) splits as 886, not 86 (China) plus a stray digit."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="886212345678")
-        assert cap.format_value("+886212345678", "national", notation) == "212345678"
+        # Non-NANP E.164 requested as national under a NANP contract preserves
+        # E.164 so the result re-enters (ADR-0010, #127); longest-prefix split
+        # is verified via split_country_code, not via rendered national output.
+        assert cap.format_value("+886212345678", "national", notation) == (
+            "+886212345678"
+        )
+        assert split_country_code("886212345678") == "886"
 
     def test_defensive_passthrough_when_no_country_code_splits(self) -> None:
         """National rendering passes the value through when no prefix splits."""
@@ -336,3 +345,16 @@ class TestPhoneNationalOutput:
         result = canonicalize("tel:+12125551234", contract)
         assert result.status == Resolution.SUCCESS
         assert result.canonicalized_value == "2125551234"
+
+    def test_national_from_non_nanp_preserves_e164(self) -> None:
+        """Non-NANP via national/US must preserve E.164 (#127)."""
+        contract = PhoneContract(output_format="national", default_country="US")
+        for raw in ("+33142345678", "+442079460000"):
+            result = canonicalize(raw, contract)
+            assert result.status == Resolution.SUCCESS
+            # Non-NANP E.164 has no re-enterable national form under a NANP contract;
+            # format_value preserves the E.164 value so re-entry is a fixed point.
+            assert result.canonicalized_value == raw.replace(" ", "").replace("-", "")
+            result2 = canonicalize(result.canonicalized_value, contract)
+            assert result2.status == Resolution.SUCCESS
+            assert result2.canonicalized_value == result.canonicalized_value

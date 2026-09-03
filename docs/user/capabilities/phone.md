@@ -65,7 +65,7 @@ contract = Phone.create_contract(
 ```
 
 - When `default_country` is `None`, national-shaped input is recognized but never validated → `INVALID`. International, `00`-prefix, and `tel:` forms validate without it because the country code is in the number itself.
-- `output_format="national"` additionally requires `default_country` to be a NANP country (currently `"US"`) — `ContractError` at construction otherwise, so the rendered national number can re-enter under the same contract (ADR-0010, #123).
+- `output_format="national"` additionally requires `default_country` to be a NANP country (currently `"US"`) — `ContractError` at construction otherwise, so the rendered national number can re-enter under the same contract (ADR-0010, #123). For non-NANP E.164 (e.g. `+33…`, `+44…`) `national` preserves the E.164 value — stripping would yield a bare number that cannot re-enter as a valid NANP `national` number, so the capability returns the re-enterable E.164 form instead (#127).
 - `default_country` must be uppercase alpha-2 when present; otherwise `ContractError` at construction.
 
 ---

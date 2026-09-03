@@ -123,9 +123,10 @@ class PhoneCapability(Capability[PhoneNotation]):
         wraps the value in a ``tel:`` URI, appending ``;ext=<extension>``
         only when the notation carries an RFC 3966 extension. ``"national"``
         strips the assigned country-code prefix via ``split_country_code``
-        to yield the national significant number, passing the value through
-        unchanged when no assigned prefix can be split (a defensive
-        best-effort, unreachable after rule validation).
+        to yield the national significant number **only for NANP numbers**
+        (country code ``"1"``); for non-NANP E.164 (e.g. ``+33``, ``+44``)
+        the E.164 value is preserved so the result re-enters under the same
+        NANP ``default_country`` contract (ADR-0010, #127).
 
         Args:
             value: The default canonical value produced by ``Rule.normalize()``
@@ -149,5 +150,11 @@ class PhoneCapability(Capability[PhoneNotation]):
         country_code = split_country_code(digits)
         if country_code is None:
             # unreachable post-matches(); defensive best-effort
+            return value
+        if country_code != "1":
+            # Non-NANP E.164 (e.g. +33, +44) has no re-enterable national
+            # representation under a NANP default_country contract — stripping
+            # would yield a bare number that NationalGrammar cannot re-validate
+            # (ADR-0010, #127). Preserve the E.164 value so it re-enters.
             return value
         return digits[len(country_code) :]

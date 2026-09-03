@@ -75,7 +75,7 @@ docs/               # adr/, development/, recipes/, user/
 ## ANTI-PATTERNS (THIS PROJECT)
 - **No `# type: ignore` / `# noqa` / `# pyright: ignore` in `paxman/` source** — fix root cause or use scoped ruff `per-file-ignores` (sanctioned pattern in pyproject). Tests may use `# type: ignore[misc]` for immutability checks.
 - Deterministic by construction: given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline always yields the same canonical output — no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, no network inference across recognition, validation, and canonicalization.
-- Re-entry (fixed-point): a SUCCESS canonical value `V` re-canonicalizes to `V` under the same contract, any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; new capabilities must extend that suite (ADR-0010).
+- Re-entry (fixed-point): a SUCCESS canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` that remove validation for a non-default format may break this, and with `suppress_common_words=True` whole-input common words (e.g. `TO` → `MISSING`) remain suppressed until the A0 whole-input exemption lands (#122); new capabilities must extend that suite (ADR-0010).
 - No cross-capability imports; capabilities import only from `paxman.core`; `paxman.core` imports nothing from `paxman.*`.
 - Grammars must not map tokens to canonical values or import rule-layer data.
 - Rules never contain the token `output_format` (code, comments, or docstrings).
