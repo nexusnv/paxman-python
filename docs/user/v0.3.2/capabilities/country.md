@@ -1,5 +1,6 @@
 ---
 title: "Country"
+slug: v0.3.2/capabilities/country
 ---
 
 Canonicalizes **one country mention** per call — a code or a name — to a canonical code.

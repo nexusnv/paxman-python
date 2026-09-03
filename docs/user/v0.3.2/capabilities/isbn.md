@@ -1,5 +1,6 @@
 ---
 title: "ISBN"
+slug: v0.3.2/capabilities/isbn
 ---
 
 Canonicalizes **one ISBN identifier** per call with check-digit validation, converting legacy ISBN-10 to ISBN-13 when enabled.

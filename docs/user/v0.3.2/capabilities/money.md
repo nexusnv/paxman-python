@@ -1,5 +1,6 @@
 ---
 title: "Money"
+slug: v0.3.2/capabilities/money
 ---
 
 Canonicalizes **one money amount paired with a currency** per call to `CODE amount` padded to ISO 4217 minor units.

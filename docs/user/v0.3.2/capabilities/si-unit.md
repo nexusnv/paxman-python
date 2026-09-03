@@ -1,5 +1,6 @@
 ---
 title: "SI Unit"
+slug: v0.3.2/capabilities/si-unit
 ---
 
 Canonicalizes **one SI unit expression** per call — a symbol, a name, or a product/quotient compound — to its canonical symbol.

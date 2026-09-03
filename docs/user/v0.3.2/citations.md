@@ -1,5 +1,6 @@
 ---
 title: "Citations"
+slug: v0.3.2/citations
 ---
 
 Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 15 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.

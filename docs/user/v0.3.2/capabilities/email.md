@@ -1,5 +1,6 @@
 ---
 title: "Email"
+slug: v0.3.2/capabilities/email
 ---
 
 Canonicalizes **one email address** per call — standard, obfuscated, or localhost — to a lowercased `addr-spec`.

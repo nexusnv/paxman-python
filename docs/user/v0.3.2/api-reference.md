@@ -1,5 +1,6 @@
 ---
 title: "API Reference"
+slug: v0.3.2/api-reference
 ---
 
 This page is the concise reference for the public Python surface you import. For the mental model behind these types, see [Concepts](concepts/).

@@ -1,5 +1,6 @@
 ---
 title: "Date"
+slug: v0.3.2/capabilities/date
 ---
 
 Canonicalizes **one calendar date** per call to ISO `YYYY-MM-DD` — or to US form when requested.

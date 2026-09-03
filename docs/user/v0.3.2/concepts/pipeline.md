@@ -1,5 +1,6 @@
 ---
 title: "Pipeline"
+slug: v0.3.2/concepts/pipeline
 ---
 
 Every `paxman.canonicalize(text, contract)` call runs the same deterministic pipeline. Understanding its three stages — **recognition → validation → resolution** — explains every status you will ever see.

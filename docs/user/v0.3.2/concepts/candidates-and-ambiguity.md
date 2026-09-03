@@ -1,5 +1,6 @@
 ---
 title: "Candidates & Ambiguity"
+slug: v0.3.2/concepts/candidates-and-ambiguity
 ---
 
 One input can legitimately mean two different things. Paxman does not guess — it shows you the disagreement. This page explains what a **candidate** is, how `AMBIGUOUS` differs from other statuses, and what to do about it.

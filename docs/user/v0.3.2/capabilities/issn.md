@@ -1,5 +1,6 @@
 ---
 title: "ISSN"
+slug: v0.3.2/capabilities/issn
 ---
 
 Canonicalizes **one ISSN identifier** per call to its hyphenated canonical form with mod-11 check-digit validation.

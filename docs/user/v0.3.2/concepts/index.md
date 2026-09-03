@@ -1,5 +1,6 @@
 ---
 title: "Concepts — Overview"
+slug: v0.3.2/concepts
 ---
 
 If you understand the seven ideas below, you understand Paxman. This page is the hub — start here, then dive into whichever concept you need.

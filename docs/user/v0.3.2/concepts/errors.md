@@ -1,5 +1,6 @@
 ---
 title: "Errors"
+slug: v0.3.2/concepts/errors
 ---
 
 Paxman uses two different signals for "something went wrong": **statuses** for domain answers and **exceptions** for setup, caller misuse, and pipeline failures. Knowing which is which keeps your code and notebooks simple.
