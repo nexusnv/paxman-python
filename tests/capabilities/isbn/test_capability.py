@@ -107,3 +107,22 @@ def test_format_value_hyphenated_too_long() -> None:
     assert (
         cap.format_value("97801100022241", "hyphenated", notation) == "97801100022241"
     )
+
+
+def test_format_value_hyphenated_979_allocated() -> None:
+    """979 prefix with allocated group hyphenates (uses shared _find_length)."""
+    cap = ISBNCapability()
+    # 979-10 is allocated (prefix 979, group 10 → registrant length via 979-10 table)
+    # Use a synthetic valid ISBN-13 under 979-10; check that hyphenation inserts hyphens
+    # and does not pass through as bare digits.
+    notation = ISBNNotation(shape="isbn13", digits="9791000000000")
+    hyphenated = cap.format_value("9791000000000", "hyphenated", notation)
+    assert hyphenated.count("-") >= 2
+    assert hyphenated.startswith("979-10-")
+
+
+def test_format_value_hyphenated_979_unallocated() -> None:
+    """979-9 has no GROUP_RULES entry → hyphenation falls through."""
+    cap = ISBNCapability()
+    notation = ISBNNotation(shape="isbn13", digits="9799000000000")
+    assert cap.format_value("9799000000000", "hyphenated", notation) == "9799000000000"

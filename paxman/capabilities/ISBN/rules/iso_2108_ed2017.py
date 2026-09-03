@@ -46,7 +46,13 @@ class Section53Isbn13CheckDigit(Rule[ISBNNotation]):
 
 
 class Section42Gs1Prefix(Rule[ISBNNotation]):
-    """ISO 2108 Section 4.2 - GS1 prefix is 978 or 979."""
+    """ISO 2108 Section 4.2 - GS1 prefix is 978 or 979.
+
+    Note: §4.2 defines the GS1 prefix set, but operationally this rule also
+    verifies the §5.3 check digit so that both ISO 2108 provenances (prefix
+    + check digit) are independently attributable. The duplicate check is
+    intentional — see audit B3.
+    """
 
     name = "Section 4.2-gs1-prefix"
     strategy = RuleStrategy.LOOKUP_TABLE

@@ -2248,3 +2248,18 @@ GROUP_RULES: dict[str, tuple[tuple[str, str, int], ...]] = {
         ("9985000", "9999999", 7),
     ),
 }
+
+
+def find_registrant_length(
+    rules: tuple[tuple[str, str, int], ...], digits: str
+) -> int | None:
+    """Length of the first rule whose 7-digit window covers the digit prefix."""
+    window = (digits + "0" * 7)[:7]
+    for start, end, length in rules:
+        if start <= window <= end:
+            return length
+    return None
+
+
+# Back-compat alias — older capability/rule modules imported _find_length.
+_find_length = find_registrant_length

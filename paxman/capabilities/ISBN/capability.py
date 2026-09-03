@@ -16,6 +16,9 @@ from paxman.capabilities.ISBN.rules.data.range_message import (
     EAN_PREFIX_RULES,
     GROUP_RULES,
 )
+from paxman.capabilities.ISBN.rules.data.range_message import (
+    find_registrant_length as _find_length,
+)
 from paxman.capabilities.ISBN.rules.isbn_range_message_ed2026 import (
     Section4RegistrantRange,
 )
@@ -30,15 +33,6 @@ from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
 __all__ = ["ISBNCapability", "ISBNContract", "ISBNNotation"]
-
-
-def _find_length(rules: tuple[tuple[str, str, int], ...], digits: str) -> int | None:
-    """Length of the first rule whose 7-digit window covers the digit prefix."""
-    window = (digits + "0" * 7)[:7]
-    for start, end, length in rules:
-        if start <= window <= end:
-            return length
-    return None
 
 
 def _hyphenate(value: str) -> str:
@@ -74,7 +68,14 @@ class ISBNCapability(Capability[ISBNNotation]):
     """ISBN canonicalization capability.
 
     Canonicalizes ISBN-13 and legacy ISBN-10 input to the bare 13-digit
-    form with full provenance.
+    form with full provenance via ISO 2108 (GS1 prefix + check digit),
+    ISBN Users' Manual (ISBN-10 mod-11), and optionally the ISBN Range
+    Message registrant-range registry.
+
+    Grammars: ``isbn13_recognition`` (always) + ``isbn10_recognition``
+    (gated by ``ISBNContract.include_isbn10``). Single-value: multiple
+    distinct ISBNs in one call raise ``MultipleMentionsError`` (see
+    ``docs/recipes/segmentation.md``).
     """
 
     name = "isbn"
@@ -102,7 +103,19 @@ class ISBNCapability(Capability[ISBNNotation]):
         include_isbn10: bool = True,
         include_range_validation: bool = False,
     ) -> ISBNContract:
-        """Factory method for creating contracts with proper defaults."""
+        """Factory method for creating contracts with proper defaults.
+
+        Args:
+            excluded_rules: Rule names to exclude from validation.
+            pinned_rules: Pin to specific rules (takes precedence).
+            year: Year for temporal filtering (unused for ISBN).
+            output_format: "isbn13" (default) or "hyphenated" (Range Message).
+            extra_grammars: Community grammar names to run alongside shipped set.
+            suppress_common_words: Suppress common-word matches via WORD guard.
+            include_isbn10: Enable ISBN-10 recognition (default True).
+            include_range_validation: Enable Range Message registrant-range
+                provenance (default False).
+        """
         return ISBNContract(
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),
             pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,
