@@ -1,5 +1,6 @@
 ---
 title: "Migration — Staying Current"
+slug: v0.3.2/migration
 ---
 
 Paxman follows **Semantic Versioning**. The capability set, the contract surface, and the data tables grow across releases — your code should be ready to move forward without surprise.

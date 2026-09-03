@@ -1,5 +1,6 @@
 ---
 title: "Paxman — User Documentation"
+slug: v0.3.2
 ---
 
 :::note[Docs since v0.2.0]

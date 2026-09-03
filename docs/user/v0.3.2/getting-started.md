@@ -1,5 +1,6 @@
 ---
 title: "Getting Started"
+slug: v0.3.2/getting-started
 ---
 
 This guide gets you from zero to your first `canonicalize()` call in about two minutes. It is written for all three audiences — **Python developers, notebook researchers, and operators** — so it shows each step both as plain Python and as you would run it in a Jupyter cell.

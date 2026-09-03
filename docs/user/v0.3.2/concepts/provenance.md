@@ -1,5 +1,6 @@
 ---
 title: "Provenance"
+slug: v0.3.2/concepts/provenance
 ---
 
 Every validated value in Paxman carries **provenance** — a citation of the authoritative specification that vouches for it. Provenance is what makes a canonicalization result citable, auditable, and comparable, rather than a guess.

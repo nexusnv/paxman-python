@@ -1,5 +1,6 @@
 ---
 title: "Glossary"
+slug: v0.3.2/glossary
 ---
 
 Common terms used throughout Paxman — in the library API, the pipeline, the capability guides, and the provenance tables. Definitions are short; each links to the concept page where the term is introduced.

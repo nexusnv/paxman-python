@@ -1,5 +1,6 @@
 ---
 title: "IP"
+slug: v0.3.2/capabilities/ip
 ---
 
 Canonicalizes **one IP address** per call to its normalized textual form.

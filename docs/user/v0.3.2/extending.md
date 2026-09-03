@@ -1,5 +1,6 @@
 ---
 title: "Extending Paxman — Community Grammars & Rules"
+slug: v0.3.2/extending
 ---
 
 Paxman ships with capabilities that already cover their domain, but every capability is **closed for modification yet open for extension**: you can add new recognition and validation without forking the library. A new grammar finds a new form; a new rule says which spec accepts it.

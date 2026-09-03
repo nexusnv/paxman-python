@@ -1,5 +1,6 @@
 ---
 title: "URL"
+slug: v0.3.2/capabilities/url
 ---
 
 Canonicalizes **one absolute URI / IRI** per call per the **WHATWG URL Standard** (plus UTS #46 IDNA for internationalized hosts), preserving percent-encoding byte-for-byte.

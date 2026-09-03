@@ -1,5 +1,6 @@
 ---
 title: "Capabilities — Overview"
+slug: v0.3.2/capabilities
 ---
 
 Each page below is a self-contained guide for one kind of identifier Paxman can canonicalize. Read the one that matches your data, copy the notebook snippet, and adapt the contract flags to your needs.

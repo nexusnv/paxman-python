@@ -1,5 +1,6 @@
 ---
 title: "Currency"
+slug: v0.3.2/capabilities/currency
 ---
 
 Canonicalizes **one currency identifier** per call — a code, a symbol, or a display name — to the uppercase ISO 4217 alpha-3 code. No amounts: `"USD 500"` is the [Money](money/) capability's domain.
