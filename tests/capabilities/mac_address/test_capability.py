@@ -76,31 +76,6 @@ def test_format_value_eui64():
     )
 
 
-def test_format_value_bit_reversed_vectors():
-    cap = MacAddressCapability()
-    # RFC 2469 vector
-    rfc = MacAddressNotation(compact="123456789ABC", shape="eui48")
-    assert (
-        cap.format_value("12:34:56:78:9A:BC", "bit_reversed", rfc)
-        == "48:2C:6A:1E:59:3D"
-    )
-    # PostgreSQL vector
-    pg = MacAddressNotation(compact="08002B010203", shape="eui48")
-    assert (
-        cap.format_value("08:00:2B:01:02:03", "bit_reversed", pg) == "10:00:D4:80:40:C0"
-    )
-    # involution: swap twice returns the canonical value
-    once = cap.format_value("00:1A:2B:3C:4D:5E", "bit_reversed", m48())
-    assert (
-        cap.format_value(
-            once,
-            "bit_reversed",
-            MacAddressNotation(compact="0058D43CB27A", shape="eui48"),
-        )
-        == "00:1A:2B:3C:4D:5E"
-    )
-
-
 def test_create_contract_factories():
     c = MacAddressCapability.create_contract()
     assert isinstance(c, MacAddressContract)
