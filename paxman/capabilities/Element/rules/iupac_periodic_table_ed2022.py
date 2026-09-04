@@ -45,7 +45,14 @@ class SectionPtoeRegistry(Rule[ElementNotation]):
 
     @staticmethod
     def _parse_z(token: str) -> int | None:
-        """Return the atomic number for a digits token, else None."""
+        """Return the atomic number for a digits token, else None.
+
+        ASCII decimal digits only: ``int()`` alone would also accept a
+        leading ``+``/``-``, surrounding whitespace, and non-ASCII decimal
+        digits (e.g. Arabic-Indic), none of which the grammar emits.
+        """
+        if not token.isascii() or not token.isdecimal():
+            return None
         try:
             z = int(token)
         except (TypeError, ValueError):

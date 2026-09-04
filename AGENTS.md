@@ -15,7 +15,7 @@ paxman/
 ├── __main__.py     # python -m paxman entry
 ├── engine/         # run_capability() pipeline orchestrator
 ├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop/matchers/anchors/boundary_spec/normalizers + legacy stages)
-├── capabilities/   # 17 self-contained capability packages
+├── capabilities/   # 18 self-contained capability packages
 ├── shared_data/    # cross-capability source snapshots (currency_snapshot.json → Currency + Money data)
 └── py.typed        # PEP 561 marker
 benchmarks/         # harness.py (CI-run), grammar_stage_parity.py, baseline.json
@@ -47,7 +47,7 @@ docs/               # adr/, development/, recipes/, user/
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
 | `canonicalize()` | function | `paxman/api/canonicalize.py` | Sole user entry point → `run_capability()` |
-| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 17 shipped capabilities; deterministic name list |
+| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 18 shipped capabilities; deterministic name list |
 | `list_registered_capabilities()` | function | `paxman/core/discovery.py` | Introspection of the live registry |
 | `register_capability()` | function | `paxman/core/discovery.py` | Registry add; freezes on first run |
 | `register_grammar()` / `register_rule()` | functions | `paxman/core/extensions.py` | Community extension seam (opt-in via contract `extra_grammars`) |

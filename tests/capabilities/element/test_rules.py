@@ -186,7 +186,9 @@ class TestSectionPtoeRegistry:
             notation = ElementNotation(token=str(z), shape="atomic_number")
             assert self.rule.matches(notation, contract) is True
 
-    @pytest.mark.parametrize("token", ["0", "119", "300", "1000", "-1", "abc", ""])
+    @pytest.mark.parametrize(
+        "token", ["0", "119", "300", "1000", "-1", "abc", "", "+26", " 26", "٢٦"]
+    )
     def test_rejects_out_of_range_z(
         self, contract: ElementContract, token: str
     ) -> None:
@@ -229,7 +231,7 @@ class TestSectionPtoeRegistry:
         )
 
     def test_normalize_never_raises(self, contract: ElementContract) -> None:
-        for token in ["0", "119", "abc", ""]:
+        for token in ["0", "119", "abc", "", "+26", " 26", "٢٦"]:
             assert isinstance(
                 self.rule.normalize(
                     ElementNotation(token=token, shape="atomic_number"), contract
