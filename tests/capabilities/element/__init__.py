@@ -1,0 +1,1 @@
+"""element capability tests (scaffold)."""
