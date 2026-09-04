@@ -20,6 +20,8 @@ from paxman.capabilities.Currency.notation import CurrencyNotation
 from paxman.capabilities.Date.capability import DateCapability
 from paxman.capabilities.Date.contract import DateContract
 from paxman.capabilities.Date.notation import DateNotation
+from paxman.capabilities.Element.capability import ElementCapability
+from paxman.capabilities.Element.contract import ElementContract
 from paxman.capabilities.Email.capability import EmailCapability
 from paxman.capabilities.Email.contract import EmailContract
 from paxman.capabilities.Email.notation import EmailNotation
@@ -69,6 +71,12 @@ _CAPABILITY_SURFACES = [
         EmailContract,
         "email",
         id="email",
+    ),
+    pytest.param(
+        ElementCapability,
+        ElementContract,
+        "symbol",
+        id="element",
     ),
     pytest.param(
         CoordinatesCapability,

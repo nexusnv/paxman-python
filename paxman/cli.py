@@ -152,6 +152,10 @@ def _create_contract(
         from paxman.capabilities import Date
 
         return Date.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "element":
+        from paxman.capabilities import Element
+
+        return Element.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "email":
         from paxman.capabilities import Email
 

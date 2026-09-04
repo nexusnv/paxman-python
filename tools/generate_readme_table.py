@@ -37,6 +37,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale)",
     ),
     "email": ("Email addresses", "RFC 5322, RFC 6761"),
+    "element": (
+        "Chemical elements",
+        "IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022",
+    ),
     "iban": ("Bank account numbers", "ISO 13616, SWIFT Registry, MOD 97-10"),
     "ip": ("IP addresses", "RFC 791, RFC 5952"),
     "isbn": ("ISBNs", "ISO 2108, ISBN Users' Manual, ISBN Range Message"),
@@ -60,6 +64,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "currency": "Currency",
     "date": "Date",
     "email": "Email",
+    "element": "Element",
     "iban": "IBAN",
     "ip": "IP",
     "isbn": "ISBN",

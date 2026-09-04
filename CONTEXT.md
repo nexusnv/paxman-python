@@ -49,6 +49,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
 - **MacAddress:** `MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` discriminates `"eui48"` / `"eui64"`; grammar strips separators (colon/hyphen/tri-dot/bare) and uppercases, fused `MAC` label included in `raw_text`; rules own structure (no checksum, I/G + U/L informative), derived OUI = `compact[:6]`
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
+- **Element:** `ElementNotation(token, shape)` — `shape` discriminates `"symbol"` / `"name"` / `"atomic_number"`; `token` is the grammar-normalized designation (symbols in IUPAC case e.g. `Fe`, names lowercase e.g. `iron`, atomic numbers bare digits e.g. `26`); symbol matching is case-exact (`FE` unclaimed), names case-insensitive, atomic numbers label-required (`element 26` / `Z=26` — bare `26` unclaimed)
 - **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
@@ -68,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships seventeen built-in capabilities (17 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -77,6 +78,7 @@ Paxman ships seventeen built-in capabilities (17 in `paxman/capabilities/__init_
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **Element** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
@@ -746,7 +748,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (17 capabilities, alphabetical; paxman/capabilities/__init__.py exports 17), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (18 capabilities, alphabetical; paxman/capabilities/__init__.py exports 18), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -779,6 +781,14 @@ paxman/
     │   ├── notation.py            # CoordinatesNotation (latitude, longitude, altitude, coord_shape, compact)
     │   ├── grammar/               # coordinates_recognition
     │   └── rules/                 # iso_6709_ed2022, rfc_5870_ed2010, rfc_7946_ed2016
+    ├── Element/                     # grammar/ (1) + rules/ (2) + grammar/data/ + rules/data/ — IUPAC Red Book 2005, Periodic Table 04 May 2022
+    │   ├── capability.py          # ElementCapability
+    │   ├── contract.py            # ElementContract
+    │   ├── notation.py            # ElementNotation (token, shape)
+    │   ├── grammar/               # element_recognition
+    │   ├── grammar/data/          # element_keys
+    │   ├── rules/                 # iupac_red_book_2005, iupac_periodic_table_ed2022
+    │   └── rules/data/            # periodic_table_ed2022
     ├── Email/                     # grammar/ (3) + rules/ (2) — RFC 5322, RFC 6761
     │   ├── __init__.py
     │   ├── capability.py          # EmailCapability

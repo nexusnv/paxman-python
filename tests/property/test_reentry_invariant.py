@@ -60,6 +60,7 @@ from paxman.capabilities import (
     Country,
     Currency,
     Date,
+    Element,
     Email,
     Language,
     MacAddress,
@@ -125,6 +126,9 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # Email: tests/e2e/test_bootstrap.py
     # ::test_bootstrap_then_canonicalize_round_trip
     _row(Email, "user@example.com", "user@example.com"),
+    # Element: tests/capabilities/element/test_capability.py (symbol "Fe";
+    # offered "name" renders lowercase "iron" which re-enters as itself)
+    _row(Element, "Iron", "Fe"),
     # IBAN: tests/capabilities/iban/test_capability.py
     # ::test_format_value_paper_roundtrip (electronic)
     _row(IBAN, "GB29NWBK60161331926819", "GB29NWBK60161331926819"),
@@ -191,6 +195,11 @@ SUPPRESS_ROWS: tuple[_ReEntryRow, ...] = (
     _row(Country, "AGO", "AGO", output_format="alpha3", suppress_common_words=True),
     # SIUnit control: no SIUnit matcher is suppressible — must already pass
     _row(SIUnit, "cd", "cd", suppress_common_words=True),
+    # Element "In" (indium): the symbol matcher is suppressible and "in" is
+    # a common word — canonical-case input re-enters whole-input-exempt
+    # (lowercase "in" would trip the suite's value == input identity assert
+    # since in -> In).
+    _row(Element, "In", "In", suppress_common_words=True),
 )
 
 
