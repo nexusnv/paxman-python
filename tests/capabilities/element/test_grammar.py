@@ -139,6 +139,7 @@ class TestRecognitionNegatives:
             "Xx",
             "Uut",
             "element 1000",
+            "element ٢٦",  # non-ASCII digits never claimed ([0-9] is ASCII-only)
             "",
             "   ",
         ],

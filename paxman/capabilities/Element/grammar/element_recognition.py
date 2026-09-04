@@ -55,6 +55,8 @@ def _emit_name(span: tuple[int, int], ctx: ScanContext) -> ElementNotation:
 
 def _emit_z(span: tuple[int, int], ctx: ScanContext) -> ElementNotation:
     raw = ctx.text[span[0] : span[1]]
+    # [0-9] matches ASCII digits only (unlike \d), so this re-search cannot
+    # diverge from the (?a)-flagged pattern core into a Unicode digit run.
     found = _re.search(r"[0-9]{1,3}", raw)
     digits = found.group(0) if found is not None else raw
     return ElementNotation(token=str(int(digits)), shape="atomic_number")
