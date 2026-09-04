@@ -13,12 +13,12 @@ Canonicalizes **one language mention** per call — a bare code, a BCP 47 tag, o
 | Recognizes (current release — growing) | Does not recognize |
 |----------------------------------------|--------------------|
 | Bare ISO 639 codes: alpha-2 (`en`, `de`), alpha-3 Term/Bib (`eng`/`ger`), comprehensive (`cmn`), collective (`aav` when `include_collective=True`), private `qaa` when `include_private=True` | Bare 4-letter codes (`abcd`) — 4 is script, not language; 1-letter (`x`) |
-| BCP 47 tags (`en-US`, `zh-Hans-CN`, `es-419`, `sl-nedis`, `en-a-foo`, `x-private`, `art-lojban`→`jbo`, `en-GB-oed`→`en-GB-oxendict`) with `_`→`-` folding (`fr_FR`→`fr-FR`) | Malformed tags (`en--US`, `en-`, `en-US-123456789` 9-char subtag, duplicate extension `en-a-foo-a-bar` second `a`) |
+| BCP 47 tags (`en-US`, `zh-Hans-CN`, `es-419`, `sl-nedis`, `en-a-foo`, `x-private`, `art-lojban`→`jbo`, `en-GB-oed`→`en-GB-oxendict`) with `_`→`-` folding (`fr_FR`→`fr-FR`) | Inputs with no valid tag (`-en`, `--`, single `x`) → `MISSING`; overlong/double-hyphen inputs still yield `SUCCESS` via valid prefix (`en-US-123456789`→`en-US`) |
 | English display names — 60-entry curatorial subset (`German`→`de`, `Serbo Croatian`→`sh`, `Norwegian Bokmal`→`nb`, `Cherokee`→`chr`) | Names outside the 60 (`Klingonish`) → `MISSING` (grammar emits no match, not `INVALID`) |
 | CLDR localized names — 24-entry subset (`allemand`→`de`, `deutsch`→`de`) — only when `include_localized=True` | Localized names when flag off — recognized but `INVALID` (no authority claims them) |
 | Grandfathered / deprecated Preferred-Value (`i-cherokee`→`chr`, `iw`→`he`, `scc`→`sr` historical) | Private subtags (`qaa`, `Qaaa`, `ZZ`) without `include_private` → `INVALID` |
 
-> **Subset disclaimer:** English 60 + localized 24 are hand-curated from `paxman/shared_data/language_snapshot.json` — not the full IANA Registry Description set (7,900+) or CLDR v46 root. Names outside are `MISSING`, not `INVALID`, so no false negative under current completeness. ISO 639 code tables (alpha-2 184, alpha-3 487, comprehensive 7,000+, collective 115) *are* comprehensive. Plan: generate full IANA Description + CLDR root via `tools/regenerate_language_data.py`.
+> **Subset disclaimer:** English 60 + localized 24 are hand-curated from `paxman/shared_data/language_snapshot.json` — not the full IANA Registry Description set (7,900+) or CLDR v46 root. Names outside are `MISSING`, not `INVALID`, so no false negative under current completeness. ISO 639 code tables are curated subsets of their authorities (alpha-2 184 comprehensive; alpha-3 T 420 + B 21; comprehensive 995; collective 84 — see `language_snapshot.json` _meta and per-rule data headers). Plan: generate full IANA Description + CLDR root via `tools/regenerate_language_data.py`.
 
 ---
 
@@ -64,7 +64,7 @@ contract = Language.create_contract(
 ```
 
 - `include_private` gates `Section 4-private-alpha-3` and `Section-iana-registry-private`; without it `qaa` is `INVALID` (grammar claims, no rule validates).
-- `include_collective` gates `Section 4-collective-code`; without it `aav` is `INVALID` (use `aav` as clean vector; `aus` overlaps ISO 639-2 so it succeeds even without flag).
+- `include_collective` gates `Section 4-collective-code`; without it `aav` is `INVALID`.
 - `include_localized` gates `Section-localized-names`; without it `allemand` is recognized but `INVALID`.
 - `year` filters by `publication_year`; e.g., `year=2008` drops BCP 47 RFC 5646 (2009) → `en-US` becomes `INVALID`.
 
@@ -75,7 +75,7 @@ contract = Language.create_contract(
 | Input | Contract | Status | Value / why |
 |-------|----------|--------|-------------|
 | `en` | defaults | `SUCCESS` | `"en"` |
-| `eng` | defaults | `SUCCESS` | `"de"`? `eng→en` via alpha2 mapping |
+| `eng` | defaults | `SUCCESS` | `"en"` (`eng→en` via alpha2 mapping) |
 | `ger` | defaults | `SUCCESS` | `"de"` (B→T `ger→deu`→`de`) |
 | `German` | defaults | `SUCCESS` | `de` (English name) |
 | `deutsch` | `include_localized=True` | `SUCCESS` | `de` (CLDR) |

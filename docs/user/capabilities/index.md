@@ -29,10 +29,10 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `USD`, `$`, `euro`, `¥` (identifiers without amounts) | [Currency](currency/) |
 | `192.168.1.1`, `2001:db8::1` | [IP](ip/) |
 | `9780306406157`, `0306406152` | [ISBN](isbn/) |
-| `039335246X`, `0316769501` (ISSN `0317-8471`) | [ISSN](issn/) |
+| `0317-8471`, `0378-5955` | [ISSN](issn/) |
 | `en`, `en-US`, `zh-Hans-CN`, `German` | [Language](language/) |
 | `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money/) |
-| `+1 555 123 4567`, `(555) 234-5678`, `tel:+155****4567` | [Phone](phone/) |
+| `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone/) |
 | `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit/) |
 | `https://example.com`, `http://münchen.de` | [URL](url/) |
 

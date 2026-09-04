@@ -1,6 +1,8 @@
-"""BCP 47 RFC 5646 validation — ABNF well-formed only (PARSER).
+"""BCP 47 RFC 5646 validation — ABNF well-formed + variant Prefix guard (PARSER).
 
-ABNF well-formed only — no registry, no Prefix, no Deprecated.
+ABNF well-formed plus IANA variant Prefix enforcement (e.g. nedis requires sl).
+The Prefix check keeps syntax and registry rules agreeing on INVALID for
+de-nedis; see SectionBCP47Syntax citation for the split.
 """
 
 from __future__ import annotations
