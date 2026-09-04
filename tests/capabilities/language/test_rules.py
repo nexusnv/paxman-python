@@ -145,6 +145,15 @@ class TestISO6392:
     def test_xx_invalid(self) -> None:
         assert self.rule.matches(_code_notation("xxx"), self.contract) is False
 
+    def test_deprecated_scc_scr_mol_resolve_to_preferred(self) -> None:
+        # IANA Deprecated → Preferred-Value chain (scc→sr, scr→hr, mol→ro).
+        for deprecated, preferred in (("scc", "sr"), ("scr", "hr"), ("mol", "ro")):
+            assert self.rule.matches(_code_notation(deprecated), self.contract) is True
+            assert (
+                self.rule.normalize(_code_notation(deprecated), self.contract)
+                == preferred
+            )
+
 
 @pytest.mark.capability
 class TestISO6393:
@@ -185,6 +194,14 @@ class TestISO6393:
 
     def test_normalize_lower(self) -> None:
         assert self.rule.normalize(_code_notation("CMN"), self.contract) == "cmn"
+
+    def test_deprecated_scc_scr_mol_resolve_to_preferred(self) -> None:
+        for deprecated, preferred in (("scc", "sr"), ("scr", "hr"), ("mol", "ro")):
+            assert self.rule.matches(_code_notation(deprecated), self.contract) is True
+            assert (
+                self.rule.normalize(_code_notation(deprecated), self.contract)
+                == preferred
+            )
 
 
 @pytest.mark.capability
