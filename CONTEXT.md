@@ -437,7 +437,7 @@ contract = Email.create_contract(
 Presentation is a single seam, not a rule concern:
 - `output_format` is always optional (`None` / `"default"` / the capability's `DEFAULT_OUTPUT_FORMAT` resolve to the default; offered formats resolve to themselves; anything else raises `ContractError`). Resolved once in `CapabilityContract.__post_init__`; contracts declare `DEFAULT_OUTPUT_FORMAT` / `OFFERED_OUTPUT_FORMATS` class vars.
 - `format_value()` on the capability is the **ONLY presentation seam** — `normalize()` always returns the default canonical form.
-- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract.
+- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract. Per ADR-0011, every offered format is an encoding, a same-entity expansion, or a documented quantization (declared in the capability's contract docstring); projections are not offered.
 - Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"national"`).
 
 ### Feature Gating — two loci, two statuses

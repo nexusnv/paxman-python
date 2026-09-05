@@ -219,3 +219,4 @@ round-trip exactly.
 - `paxman/core/capability.py` — the `format_value()` presentation seam.
 - `tests/property/test_reentry_invariant.py` — the CI property suite (landing separately)
   and the per-capability re-entry gate.
+- ADR-0011 (Information-Preservation / output-format equality) — strengthens this invariant: re-entry stays required; entity-relative injectivity and param-free (or bounded-drift) pre-image recovery are added value-relative corollaries.
