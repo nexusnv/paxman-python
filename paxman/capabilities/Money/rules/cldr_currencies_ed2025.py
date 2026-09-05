@@ -25,6 +25,16 @@ from paxman.capabilities.Money.rules.data.iso4217_list_one import MINOR_UNITS
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
+# Case-insensitive fallback for word lookup: Money's WORD_TOKENS / NAME_TO_CODES
+# keys are Title-Case ("Dollar"), but WordRecognition is case-insensitive
+# (re.IGNORECASE) and preserves as-written ("euro"). Currency folds to lower
+# and stores lower keys (D4); Money keeps Title-Case storage but must resolve
+# any case variant. This lower map mirrors Currency's lower-key discipline
+# without touching generated data.
+_NAME_TO_CODES_LOWER: dict[str, tuple[str, ...]] = {
+    k.lower(): v for k, v in NAME_TO_CODES.items()
+}
+
 PUBLICATION = Provenance(
     authority="Unicode CLDR",
     specification_name="Unicode CLDR",
@@ -69,12 +79,14 @@ def _resolve_name_code(
     notation: MoneyNotation,
     contract: MoneyContract,
 ) -> str | None:
-    """Resolve a word notation to an ISO 4217 code (definitive or default).
+    """Resolve a word notation to an ISO 4217 code (case-insensitive).
 
-    A display name with exactly one candidate is definitive and never
-    remapped; a multi-candidate name resolves via the opt-in
-    ``contract.dollar_sign_currency`` (None, the default, -> matches()
-    False -> INVALID).
+    WordRecognition is case-insensitive (re.IGNORECASE) and preserves
+    as-written (e.g. "euro"), while NAME_TO_CODES keys are Title-Case
+    ("Euro"). The lookup is therefore case-insensitive via the lower-case
+    fallback map (mirrors Currency's D4 lower folding without touching
+    generated data). Single-candidate remains definitive; multi-candidate
+    resolves via dollar_sign_currency.
 
     Args:
         notation: Money notation to resolve.
@@ -84,6 +96,8 @@ def _resolve_name_code(
         The resolved ISO 4217 code, or None when no code can be resolved.
     """
     codes = NAME_TO_CODES.get(notation.currency_part)
+    if codes is None:
+        codes = _NAME_TO_CODES_LOWER.get(notation.currency_part.lower())
     if codes is None:
         return None
     if len(codes) == 1:
