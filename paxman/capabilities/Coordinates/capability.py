@@ -54,6 +54,8 @@ def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int
     if minute == 60:
         minute = 0
         deg += 1
+    if deg == 0 and minute == 0 and sec == 0:
+        hemi = "N" if is_lat else "E"
     return deg, minute, sec, hemi
 
 
@@ -75,6 +77,8 @@ def _decimal_to_dm_parts(decimal_str: str, is_lat: bool) -> tuple[int, Decimal, 
         if not is_lat and deg > 180:
             deg = 180
             minutes_q = Decimal("0")
+    if deg == 0 and minutes_q == 0:
+        hemi = "N" if is_lat else "E"
     return deg, minutes_q, hemi
 
 
