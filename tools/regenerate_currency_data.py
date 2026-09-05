@@ -202,6 +202,13 @@ def _emit_currency_words(snapshot: dict[str, Any], *, for_money: bool) -> str:
             "paxman/capabilities/Money/rules/data/\n"
             "cldr_currencies.py (Unicode CLDR v47 English display names).\n"
             "\n"
+            "Keys are Title-Case (D4 divergence: Currency folds to lowercase and\n"
+            "stores lowercase keys; Money keeps Title-Case and does case-\n"
+            "insensitive lookup via _NAME_TO_CODES_LOWER in\n"
+            "cldr_currencies_ed2025.py — WordRecognition is case-insensitive\n"
+            "(re.IGNORECASE) and preserves as-written, so the rule normalizes\n"
+            "via the lower fallback map).\n"
+            "\n"
             "Ordered longest-first so the grammar alternates multi-word names\n"
             "before their shorter tails when present.\n"
         )

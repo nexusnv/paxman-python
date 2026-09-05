@@ -388,3 +388,30 @@ class TestSectionNames:
         contract = MoneyContract()
         notation = _notation("Euro", "(500)", "word", "accounting")
         assert self.rule.matches(notation, contract) is False
+
+    @pytest.mark.parametrize(
+        ("word", "raw_amount", "expected"),
+        [
+            ("euro", "5", "EUR 5.00"),
+            ("EURO", "5", "EUR 5.00"),
+            ("EuRo", "5", "EUR 5.00"),
+            ("dollar", "18", "USD 18.00"),
+            ("DOLLAR", "18", "USD 18.00"),
+            ("DoLlAr", "18", "USD 18.00"),
+            ("ringgit", "500", "MYR 500.00"),
+            ("RINGGIT", "500", "MYR 500.00"),
+        ],
+    )
+    def test_case_insensitive_word_variants(
+        self, word: str, raw_amount: str, expected: str
+    ) -> None:
+        """Word lookup is case-insensitive: any casing of a Title-Case key validates.
+
+        Grammar is case-insensitive (re.IGNORECASE) and preserves as-written;
+        the rule normalizes via the lower fallback map (D4 divergence from
+        Currency's lower folding). Regression for audit #137 B1.
+        """
+        contract = MoneyContract()
+        notation = _notation(word, raw_amount, "word", "integer")
+        assert self.rule.matches(notation, contract) is True
+        assert self.rule.normalize(notation, contract) == expected
