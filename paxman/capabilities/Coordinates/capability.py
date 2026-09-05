@@ -37,7 +37,11 @@ def _quantized_str(value: Decimal) -> str:
 
 
 def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int, str]:
-    """Convert decimal-degree string to (deg, min, sec, hemi)."""
+    """Convert decimal-degree string to (deg, min, sec, hemi).
+
+    Zero magnitude renders N/E (hemisphere from post-quantization
+    magnitude, folding -0 to match recognition).
+    """
     dec = Decimal(decimal_str)
     hemi = ("N" if dec >= 0 else "S") if is_lat else ("E" if dec >= 0 else "W")
     abs_dec = abs(dec)
@@ -60,7 +64,11 @@ def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int
 
 
 def _decimal_to_dm_parts(decimal_str: str, is_lat: bool) -> tuple[int, Decimal, str]:
-    """Convert decimal-degree string to (deg, decimal_minutes, hemi)."""
+    """Convert decimal-degree string to (deg, decimal_minutes, hemi).
+
+    Zero magnitude renders N/E (hemisphere from post-quantization
+    magnitude, folding -0 to match recognition).
+    """
     dec = Decimal(decimal_str)
     hemi = ("N" if dec >= 0 else "S") if is_lat else ("E" if dec >= 0 else "W")
     abs_dec = abs(dec)
@@ -127,6 +135,7 @@ def _format_iso(lat_str: str, lon_str: str, alt_str: str | None) -> str:
 
 
 def _format_dms(lat_str: str, lon_str: str) -> str:
+    """Format lat/lon as DMS. Render quantum: 1″ integer seconds."""
     deg_lat, min_lat, sec_lat, hemi_lat = _decimal_to_dms_parts(lat_str, True)
     deg_lon, min_lon, sec_lon, hemi_lon = _decimal_to_dms_parts(lon_str, False)
     return (
@@ -136,6 +145,7 @@ def _format_dms(lat_str: str, lon_str: str) -> str:
 
 
 def _format_dm(lat_str: str, lon_str: str) -> str:
+    """Format lat/lon as degrees-decimal-minutes. Render quantum: 0.001′."""
     deg_lat, minutes_lat_q, hemi_lat = _decimal_to_dm_parts(lat_str, True)
     deg_lon, minutes_lon_q, hemi_lon = _decimal_to_dm_parts(lon_str, False)
     lat_min_str = format(minutes_lat_q.normalize(), "f") if minutes_lat_q != 0 else "0"
@@ -188,6 +198,13 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
     def format_value(
         self, value: str, output_format: str | None, notation: CoordinatesNotation
     ) -> str:
+        """Render the canonical value in the requested output format.
+
+        Non-numeric hand-built notations fall back to the canonical value
+        instead of crashing the pipeline. ``dms``/``dm`` are documented
+        quantizations (see ``CoordinatesContract``): sub-quantum canonical
+        digits are not recoverable from those renderings.
+        """
         lat = notation.latitude
         lon = notation.longitude
         alt = notation.altitude
