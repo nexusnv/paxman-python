@@ -323,6 +323,33 @@ Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; leg
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
 
+### Coordinates
+
+The Coordinates capability has **1 grammar** and **4 validation rules**:
+
+#### Notation
+
+`CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6 dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present).
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `coordinates_recognition` | decimal pairs (signed or `N/S/E/W` hemisphere letters), DMS/DDM with `°`/`′`/`″`, Geo URI `geo:lat,lon[,alt]`, ISO 6709 string-expression, GeoJSON lon-first pairs | the pair is the unit of identity; structural facts (hemisphere/sign contradiction, DMS unit overflow, ISO digit width, foreign CRS label, hemisphere axis mismatch) are recorded as notation defects for the rules to reject — no silent datum transform |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 6-coordinate-structure` | ISO 6709:2022 Section 6 | `lat, lon[, alt]` decimal pair |
+| `Section Annex-h-string-expression` | ISO 6709:2022 Annex H | `lat, lon[, alt]` decimal pair |
+| `Section 3.3-geo-uri-validity` | RFC 5870 Section 3.3 | `lat, lon[, alt]` decimal pair |
+| `Section 3.1.1-position` | RFC 7946 Section 3.1.1 | `lat, lon[, alt]` decimal pair |
+
+#### Formats
+
+Default `decimal` (lat-first signed decimal pair, quantized 6 dp round-half-even, `-0` folded); offered `iso6709` (`+DD.DDDD+DDD.DDDD[/alt]/`), `geo_uri` (`geo:lat,lon[,alt]`), `geojson_pair` (`[lon, lat[, alt]]`, lon-first), `dms` (`51°30′27″N 0°7′40″W`), `dm` (`51°30.445′N 0°7.6′W`). `dms`/`dm` are documented quantizations: `dms` renders seconds as integers (render quantum 1″ ≈ 2.78e-4°), `dm` renders minutes to 0.001′ — sub-quantum digits are not recoverable; re-canonicalization is a fixed point and pre-image recovery drifts by at most half a render quantum (locked by `tests/property/test_coordinates_quantization.py`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
 ### ORCID
 
 The ORCID capability has **1 grammar** and **2 validation rules**:
