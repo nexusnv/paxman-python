@@ -212,11 +212,11 @@ class TestPhoneCapabilityFormatValue:
             == "tel:+15551234567"
         )
 
-    def test_national_strips_country_code(self) -> None:
-        """National rendering strips the embedded country code."""
+    def test_split_renders_plus_cc_space_nsn(self) -> None:
+        """Split rendering inserts one space between country code and NSN."""
         cap = PhoneCapability()
         assert (
-            cap.format_value("+15551234567", "national", self.NOTATION) == "5551234567"
+            cap.format_value("+15551234567", "split", self.NOTATION) == "+1 5551234567"
         )
 
     def test_rfc3966_preserves_extension(self) -> None:
@@ -228,24 +228,37 @@ class TestPhoneCapabilityFormatValue:
             == "tel:+15551234567;ext=890"
         )
 
-    def test_national_uses_longest_country_code_prefix(self) -> None:
+    def test_split_ignores_extension(self) -> None:
+        """Split rendering never appends ;ext=, even when noted."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="rfc3966", value="15551234567", extension="890")
+        assert (
+            cap.format_value("+15551234567", "split", notation) == "+1 5551234567"
+        )
+
+    def test_split_uses_longest_country_code_prefix(self) -> None:
         """Taiwan (886) splits as 886, not 86 (China) plus a stray digit."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="886212345678")
-        # Non-NANP E.164 requested as national under a NANP contract preserves
-        # E.164 so the result re-enters (ADR-0010, #127); longest-prefix split
-        # is verified via split_country_code, not via rendered national output.
-        assert cap.format_value("+886212345678", "national", notation) == (
-            "+886212345678"
+        assert (
+            cap.format_value("+886212345678", "split", notation) == "+886 212345678"
         )
         assert split_country_code("886212345678") == "886"
 
+    def test_split_uniform_for_non_nanp(self) -> None:
+        """Non-NANP renders the same +CC NSN shape — no preservation branch."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="e164", value="442079460958")
+        assert (
+            cap.format_value("+442079460958", "split", notation) == "+44 2079460958"
+        )
+
     def test_defensive_passthrough_when_no_country_code_splits(self) -> None:
-        """National rendering passes the value through when no prefix splits."""
+        """Split rendering passes the value through when no prefix splits."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="999123456789")
         assert (
-            cap.format_value("+999123456789", "national", notation) == "+999123456789"
+            cap.format_value("+999123456789", "split", notation) == "+999123456789"
         )
 
 
@@ -329,3 +342,70 @@ class TestPhoneSplitContract:
     def test_split_resolves(self) -> None:
         """'split' constructs and resolves to itself."""
         assert PhoneContract(output_format="split").output_format == "split"
+
+
+class TestPhoneSplitOutput:
+    """E2E behavior for output_format='split' (ADR-0011 Phase 2).
+
+    ``split`` renders ``+CC NSN`` (single space, uniform for every country
+    code) and re-enters param-free through the existing E.164 grammar.
+    """
+
+    def setup_method(self) -> None:
+        """Register the Phone capability for each test."""
+        reset_registry()
+        register_capability(PhoneCapability())
+
+    def teardown_method(self) -> None:
+        """Reset the registry so other tests start clean."""
+        reset_registry()
+
+    def test_split_nanp(self) -> None:
+        """'+12125551234' → '+1 2125551234' (non-fictional)."""
+        contract = PhoneContract(output_format="split")
+        result = canonicalize("+12125551234", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "+1 2125551234"
+
+    def test_split_non_nanp_uniform(self) -> None:
+        """'+4412341234' → '+44 12341234' — same shape as NANP, no branch."""
+        contract = PhoneContract(output_format="split")
+        result = canonicalize("+4412341234", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "+44 12341234"
+
+    def test_split_extension_ignored(self) -> None:
+        """A tel: URI extension never surfaces in split output."""
+        contract = PhoneContract(output_format="split")
+        result = canonicalize("tel:+12125551234;ext=45", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "+1 2125551234"
+
+    def test_split_round_trip(self) -> None:
+        """A split render re-enters under the default contract (param-free)."""
+        contract = PhoneContract(output_format="split")
+        first = canonicalize("+12125551234", contract)
+        assert first.status == Resolution.SUCCESS
+        assert first.canonicalized_value == "+1 2125551234"
+        second = canonicalize("+1 2125551234", PhoneContract())
+        assert second.status == Resolution.SUCCESS
+        assert second.canonicalized_value == "+12125551234"
+
+    def test_split_injective_across_country_codes(self) -> None:
+        """GB '+4412341234' and MY '+6012341234' render distinctly."""
+        contract = PhoneContract(output_format="split")
+        gb = canonicalize("+4412341234", contract)
+        my = canonicalize("+6012341234", contract)
+        assert gb.status == Resolution.SUCCESS
+        assert my.status == Resolution.SUCCESS
+        assert gb.canonicalized_value == "+44 12341234"
+        assert my.canonicalized_value == "+60 12341234"
+        assert gb.canonicalized_value != my.canonicalized_value
+
+    def test_format_value_split_identity_equivalence(self) -> None:
+        """The default contract still renders E.164 identity."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="e164", value="12125551234")
+        assert (
+            cap.format_value("+12125551234", "e164", notation) == "+12125551234"
+        )
