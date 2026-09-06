@@ -306,11 +306,11 @@ class TestLanguageFormatValue:
 
     def test_alpha2_from_bcp47_tag(self) -> None:
         cap = LanguageCapability()
-        assert cap.format_value("en-US", "alpha2", _bcp47_notation("en-US")) == "en"
-        assert cap.format_value("fr-FR", "alpha2", _bcp47_notation("fr-FR")) == "fr"
+        assert cap.format_value("en-US", "alpha2", _bcp47_notation("en-US")) == "en-US"
+        assert cap.format_value("fr-FR", "alpha2", _bcp47_notation("fr-FR")) == "fr-FR"
         assert (
             cap.format_value("zh-Hans-CN", "alpha2", _bcp47_notation("zh-Hans-CN"))
-            == "zh"
+            == "zh-Hans-CN"
         )
         assert (
             cap.format_value("ger", "alpha2", _notation("ger", language="ger")) == "de"
@@ -341,7 +341,9 @@ class TestLanguageFormatValue:
 
     def test_alpha3_term_from_bcp47(self) -> None:
         cap = LanguageCapability()
-        assert cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng"
+        assert (
+            cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng-US"
+        )
         assert cap.format_value("de", "alpha3", _notation("de")) == "deu"
 
     def test_alpha3_term_identity_when_already_term(self) -> None:
@@ -381,7 +383,8 @@ class TestLanguageFormatValue:
     def test_alpha3_bib_from_bcp47(self) -> None:
         cap = LanguageCapability()
         assert (
-            cap.format_value("en-US", "alpha3-bib", _bcp47_notation("en-US")) == "eng"
+            cap.format_value("en-US", "alpha3-bib", _bcp47_notation("en-US"))
+            == "eng-US"
         )
         assert cap.format_value("de", "alpha3-bib", _notation("de")) == "ger"
 

@@ -68,6 +68,14 @@ class LanguageCapability(Capability[LanguageNotation]):
     to BCP 47 canonical tag with full provenance. Alternative output formats
     via ``format_value``: alpha2, alpha3, alpha3-bib, name.
 
+    The three code formats map the primary language subtag through the
+    existing ISO 639 tables and carry the remaining subtags (region, script,
+    variant, extension, privateuse) through verbatim, so extended tags are
+    encodings per ADR-0011 (``en-US`` renders ``en-US`` under alpha2).
+    ``name`` renders the English name of the primary subtag only — a waived
+    projection for extended tags per ADR-0011 (subtag-carrying names do not
+    re-enter).
+
     Display-name completeness (v1.0.0): English language names are a curatorial
     subset (60 entries from ISO 639 English Descriptions + IANA Registry; see
     ``language_snapshot.json`` _meta) — not the full IANA Registry Description
@@ -159,10 +167,20 @@ class LanguageCapability(Capability[LanguageNotation]):
         """Render a default canonical value in the requested format.
 
         The default ``"bcp47"`` path is identity (rule-produced canonical tag
-        unchanged). ``"alpha2"`` maps via ISO 639-1 else T→alpha2 else term
-        itself (``ger``→``de``). ``"alpha3"`` returns Term lower (``deu``),
-        ``"alpha3-bib"`` returns Bib lower (``ger``), ``"name"`` returns
-        English Description title.
+        unchanged). ``"alpha2"`` maps the primary subtag via ISO 639-1 else
+        T→alpha2 else term itself (``ger``→``de``) and carries the remaining
+        subtags verbatim (``en-US``→``en-US``). ``"alpha3"`` returns Term
+        lower plus carried rest (``de-CH-1901``→``deu-CH-1901``),
+        ``"alpha3-bib"`` returns Bib lower plus carried rest
+        (``de-CH-1901``→``ger-CH-1901``), ``"name"`` returns the English
+        Description title of the primary subtag only.
+
+        The carried rest is canonical input copied verbatim — never
+        re-normalized — so each code-format rendering re-enters exactly
+        under the default contract (encodings per ADR-0011). ``"name"`` is
+        the documented waiver: it keeps today's primary-name rendering for
+        extended tags (``en-US``→``English``) because subtag-carrying names
+        are not lexicon keys and do not re-enter.
 
         Args:
             value: The default canonical value produced by ``Rule.normalize()``
@@ -182,32 +200,37 @@ class LanguageCapability(Capability[LanguageNotation]):
             return value
 
         primary = _primary_language(value)
+        rest = value.split("-", 1)[1] if "-" in value else ""
+        suffix = f"-{rest}" if rest else ""
 
         if output_format == "alpha2":
             if primary in ISO6391_CODES:
-                return primary
+                return primary + suffix
             term = ISO6392_BIB_TO_TERM.get(primary, primary)
             mapped = ISO6392_T_TO_ALPHA2.get(term)
             if mapped is not None:
-                return mapped
-            return term
+                return mapped + suffix
+            return term + suffix
 
         if output_format == "alpha3":
             if len(primary) == 2:
                 mapped = _ALPHA2_TO_T.get(primary)
                 if mapped is not None:
-                    return mapped
-                return ISO6392_BIB_TO_TERM.get(primary, primary)
-            return ISO6392_BIB_TO_TERM.get(primary, primary)
+                    return mapped + suffix
+                return ISO6392_BIB_TO_TERM.get(primary, primary) + suffix
+            return ISO6392_BIB_TO_TERM.get(primary, primary) + suffix
 
         if output_format == "alpha3-bib":
             if len(primary) == 2:
                 term = _ALPHA2_TO_T.get(primary, primary)
-                return _TERM_TO_BIB.get(term, term)
+                return _TERM_TO_BIB.get(term, term) + suffix
             term = ISO6392_BIB_TO_TERM.get(primary, primary)
-            return _TERM_TO_BIB.get(term, term)
+            return _TERM_TO_BIB.get(term, term) + suffix
 
         if output_format == "name":
+            # Waiver (ADR-0011): the English name of the primary subtag only.
+            # Carrying subtags into the name ("English-US") would not re-enter
+            # (not a lexicon key; unregistered primary), so the projection stays.
             # Normalize primary to canonical code for name lookup
             if primary in ISO6391_CODES:
                 canonical = primary
