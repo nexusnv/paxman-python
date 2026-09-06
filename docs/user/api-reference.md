@@ -186,7 +186,7 @@ Current defaults and offered alternatives:
 | IP | `ip` | *(none)* |
 | ISBN | `isbn13` | `hyphenated` |
 | Money | `code_amount` | `compact` |
-| Phone | `e164` | `rfc3966`, `national` |
+| Phone | `e164` | `rfc3966`, `split` |
 | SI Unit | `symbol` | *(none)* |
 | URL | `url` | *(none)* |
 

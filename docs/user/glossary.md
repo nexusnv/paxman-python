@@ -146,7 +146,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **ORCID** — Open Researcher and Contributor ID (ISO 27729:2024). Paxman capability. See [Citations](citations/).
 
-**Output format** — Presentation choice per capability (e.g. `Country` `alpha2`/`alpha3`/`numeric`/`name`, `ISBN` `isbn13`/`hyphenated`, `Phone` `e164`/`rfc3966`/`national`). Default via `DEFAULT_OUTPUT_FORMAT`; alternatives via `OFFERED_OUTPUT_FORMATS`; validation never reads it. See [Contracts](concepts/contracts/) and [API Reference](api-reference/).
+**Output format** — Presentation choice per capability (e.g. `Country` `alpha2`/`alpha3`/`numeric`/`name`, `ISBN` `isbn13`/`hyphenated`, `Phone` `e164`/`rfc3966`/`split`). Default via `DEFAULT_OUTPUT_FORMAT`; alternatives via `OFFERED_OUTPUT_FORMATS`; validation never reads it. See [Contracts](concepts/contracts/) and [API Reference](api-reference/).
 
 ---
 

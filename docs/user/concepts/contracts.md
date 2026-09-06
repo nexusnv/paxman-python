@@ -161,7 +161,7 @@ from paxman.capabilities import Phone, ISBN
 
 Phone.create_contract(output_format="rfc3966")  # tel:+15551234567
 ISBN.create_contract(output_format="hyphenated")  # 978-0-11-000222-4
-Phone.create_contract(output_format="national")  # national form
+Phone.create_contract(output_format="split")  # +1 5551234567
 ISBN.create_contract(output_format="isbn13")  # bare digits (default)
 # None / "default" also resolve to the default for any capability
 ```

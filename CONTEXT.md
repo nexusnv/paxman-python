@@ -350,6 +350,14 @@ The Coordinates capability has **1 grammar** and **4 validation rules**:
 
 Default `decimal` (lat-first signed decimal pair, quantized 6 dp round-half-even, `-0` folded); offered `iso6709` (`+DD.DDDD+DDD.DDDD[/alt]/`), `geo_uri` (`geo:lat,lon[,alt]`), `geojson_pair` (`[lon, lat[, alt]]`, lon-first), `dms` (`51°30′27″N 0°7′40″W`), `dm` (`51°30.445′N 0°7.6′W`). `dms`/`dm` are documented quantizations: `dms` renders seconds as integers (render quantum 1″ ≈ 2.78e-4°), `dm` renders minutes to 0.001′ — sub-quantum digits are not recoverable; re-canonicalization is a fixed point and pre-image recovery drifts by at most half a render quantum (locked by `tests/property/test_coordinates_quantization.py`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
+### Phone
+
+The Phone capability has **4 grammars** (`e164_recognition`, `tel_uri_recognition`, `international_00_recognition`, `national_recognition`) and **5 validation rules** (ITU-T E.164 `Section 6.1-international-number` / `Section 6.2-country-code`, IETF RFC 3966 `Section 3-tel-uri`, NANPA `Section 1.1-nanp-structure` / `Section 1.2-service-npa`).
+
+#### Formats
+
+Default `e164` (`+CCNSN`, e.g. `+12125551234`); offered `rfc3966` (`tel:+CCNSN[;ext=]`, the only extension-preserving format) and `split` (`+CC NSN`, e.g. `+1 2125551234` — single ASCII space, uniform for every country code; the space is presentation-only and stripped on re-entry, so every `split` value re-enters param-free under the default contract via the existing E.164 grammar; extension carried only by `rfc3966`). `national` (bare NSN) was de-offered per ADR-0011: it dropped the country code recognition/validation depend on and could not re-enter under the default contract — `PhoneContract(output_format="national")` raises `ContractError` with a migration message naming `split`. `default_country` remains supported for domestic **input** recognition only. Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
 ### ORCID
 
 The ORCID capability has **1 grammar** and **2 validation rules**:
@@ -438,7 +446,7 @@ Presentation is a single seam, not a rule concern:
 - `output_format` is always optional (`None` / `"default"` / the capability's `DEFAULT_OUTPUT_FORMAT` resolve to the default; offered formats resolve to themselves; anything else raises `ContractError`). Resolved once in `CapabilityContract.__post_init__`; contracts declare `DEFAULT_OUTPUT_FORMAT` / `OFFERED_OUTPUT_FORMATS` class vars.
 - `format_value()` on the capability is the **ONLY presentation seam** — `normalize()` always returns the default canonical form.
 - Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract. Per ADR-0011, every offered format is an encoding, a same-entity expansion, or a documented quantization (declared in the capability's contract docstring); projections are not offered.
-- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"national"`).
+- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"split"`).
 
 ### Feature Gating — two loci, two statuses
 
