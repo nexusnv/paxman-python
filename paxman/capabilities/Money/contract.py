@@ -63,6 +63,10 @@ class MoneyContract(CapabilityContract):
         excluded_rules: Tuple of rule names to exclude.
         pinned_rules: Pin to specific rules (takes precedence over excluded_rules).
         year: Year for temporal filtering.
+
+    Formats (ADR-0011 classes): ``compact`` — encoding (removes the single
+    ASCII space separator; the amount's U+202F narrow no-break space is
+    never touched, so code and amount both survive re-entry).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "code_amount"

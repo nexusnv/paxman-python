@@ -37,7 +37,11 @@ def _quantized_str(value: Decimal) -> str:
 
 
 def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int, str]:
-    """Convert decimal-degree string to (deg, min, sec, hemi)."""
+    """Convert decimal-degree string to (deg, min, sec, hemi).
+
+    Zero magnitude renders N/E (hemisphere from post-quantization
+    magnitude, folding -0 to match recognition).
+    """
     dec = Decimal(decimal_str)
     hemi = ("N" if dec >= 0 else "S") if is_lat else ("E" if dec >= 0 else "W")
     abs_dec = abs(dec)
@@ -54,11 +58,28 @@ def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int
     if minute == 60:
         minute = 0
         deg += 1
+    # Range clamp (mirrors _decimal_to_dm_parts): post-carry degrees beyond
+    # the axis limit — or sitting on it with residue — are capped with a
+    # zeroed remainder. Unreachable for validated canonicals: |lat| <= 90
+    # and |lon| <= 180, and carry-overflow from <= 90.0 / <= 180.0 lands
+    # exactly on the boundary with nothing left over. Defensive for
+    # hand-built notations, where format_value catches InvalidOperation
+    # but not range overflow.
+    if is_lat and (deg > 90 or (deg == 90 and (minute or sec))):
+        deg, minute, sec = 90, 0, 0
+    if not is_lat and (deg > 180 or (deg == 180 and (minute or sec))):
+        deg, minute, sec = 180, 0, 0
+    if deg == 0 and minute == 0 and sec == 0:
+        hemi = "N" if is_lat else "E"
     return deg, minute, sec, hemi
 
 
 def _decimal_to_dm_parts(decimal_str: str, is_lat: bool) -> tuple[int, Decimal, str]:
-    """Convert decimal-degree string to (deg, decimal_minutes, hemi)."""
+    """Convert decimal-degree string to (deg, decimal_minutes, hemi).
+
+    Zero magnitude renders N/E (hemisphere from post-quantization
+    magnitude, folding -0 to match recognition).
+    """
     dec = Decimal(decimal_str)
     hemi = ("N" if dec >= 0 else "S") if is_lat else ("E" if dec >= 0 else "W")
     abs_dec = abs(dec)
@@ -75,6 +96,8 @@ def _decimal_to_dm_parts(decimal_str: str, is_lat: bool) -> tuple[int, Decimal, 
         if not is_lat and deg > 180:
             deg = 180
             minutes_q = Decimal("0")
+    if deg == 0 and minutes_q == 0:
+        hemi = "N" if is_lat else "E"
     return deg, minutes_q, hemi
 
 
@@ -123,6 +146,7 @@ def _format_iso(lat_str: str, lon_str: str, alt_str: str | None) -> str:
 
 
 def _format_dms(lat_str: str, lon_str: str) -> str:
+    """Format lat/lon as DMS. Render quantum: 1″ integer seconds."""
     deg_lat, min_lat, sec_lat, hemi_lat = _decimal_to_dms_parts(lat_str, True)
     deg_lon, min_lon, sec_lon, hemi_lon = _decimal_to_dms_parts(lon_str, False)
     return (
@@ -132,6 +156,7 @@ def _format_dms(lat_str: str, lon_str: str) -> str:
 
 
 def _format_dm(lat_str: str, lon_str: str) -> str:
+    """Format lat/lon as degrees-decimal-minutes. Render quantum: 0.001′."""
     deg_lat, minutes_lat_q, hemi_lat = _decimal_to_dm_parts(lat_str, True)
     deg_lon, minutes_lon_q, hemi_lon = _decimal_to_dm_parts(lon_str, False)
     lat_min_str = format(minutes_lat_q.normalize(), "f") if minutes_lat_q != 0 else "0"
@@ -184,6 +209,13 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
     def format_value(
         self, value: str, output_format: str | None, notation: CoordinatesNotation
     ) -> str:
+        """Render the canonical value in the requested output format.
+
+        Non-numeric hand-built notations fall back to the canonical value
+        instead of crashing the pipeline. ``dms``/``dm`` are documented
+        quantizations (see ``CoordinatesContract``): sub-quantum canonical
+        digits are not recoverable from those renderings.
+        """
         lat = notation.latitude
         lon = notation.longitude
         alt = notation.altitude

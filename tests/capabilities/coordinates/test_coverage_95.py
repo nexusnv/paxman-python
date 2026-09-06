@@ -127,6 +127,47 @@ class TestCapabilityDmsDmCarry:
         assert hemi6 == "S"
         assert deg6 == 90
 
+    def test_dms_dm_zero_hemisphere_fold(self) -> None:
+        # Sub-quantum negatives quantize to zero magnitude and must render
+        # N/E (hemisphere from post-quantization magnitude, folding -0),
+        # matching recognition-time -0 fold.
+        assert _decimal_to_dms_parts("-0.000001", True) == (0, 0, 0, "N")
+        assert _decimal_to_dms_parts("-0.000001", False) == (0, 0, 0, "E")
+        assert _decimal_to_dms_parts("0", True) == (0, 0, 0, "N")
+        assert _decimal_to_dms_parts("0", False) == (0, 0, 0, "E")
+        assert _decimal_to_dms_parts("-0", True) == (0, 0, 0, "N")
+        assert _decimal_to_dms_parts("-0", False) == (0, 0, 0, "E")
+        deg, mins, hemi = _decimal_to_dm_parts("-0.000001", True)
+        assert deg == 0
+        assert mins == 0
+        assert hemi == "N"
+        deg2, mins2, hemi2 = _decimal_to_dm_parts("-0.000001", False)
+        assert deg2 == 0
+        assert mins2 == 0
+        assert hemi2 == "E"
+        assert _format_dms("0", "-0.000001") == "0°0′0″N 0°0′0″E"
+        assert _format_dms("-0.000001", "0") == "0°0′0″N 0°0′0″E"
+        assert _format_dm("0", "-0.000001") == "0°0.0′N 0°0.0′E"
+        assert _format_dm("-0.000001", "0") == "0°0.0′N 0°0.0′E"
+        # Non-zero magnitudes keep their sign hemisphere.
+        assert _decimal_to_dms_parts("-0.001", True)[3] == "S"
+        assert _decimal_to_dms_parts("-0.001", False)[3] == "W"
+        assert _decimal_to_dm_parts("-0.001", True)[2] == "S"
+        assert _decimal_to_dm_parts("-0.001", False)[2] == "W"
+
+    def test_dms_parts_clamps_range_overflow(self) -> None:
+        # Clamp to the axis limit with a zeroed remainder, mirroring the
+        # DM clamp semantics. Unreachable for validated canonicals
+        # (|lat| <= 90 / |lon| <= 180, and the 89.999999 / 179.999999
+        # 60-carry lands exactly on the boundary); defensive for
+        # hand-built notations, where format_value catches
+        # InvalidOperation but not range overflow.
+        assert _decimal_to_dms_parts("90.500000", True) == (90, 0, 0, "N")
+        assert _decimal_to_dms_parts("180.500000", False) == (180, 0, 0, "E")
+        # The clamp keeps the sign hemisphere (computed pre-clamp).
+        assert _decimal_to_dms_parts("-90.500000", True) == (90, 0, 0, "S")
+        assert _decimal_to_dms_parts("-180.500000", False) == (180, 0, 0, "W")
+
     def test_format_iso_integer_only_and_alt_variants(self) -> None:
         # integer-only components hit else branches for lat_int/lon_int without frac
         assert _format_iso("48", "2", None) == "+48+002/"

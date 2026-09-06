@@ -21,6 +21,10 @@ class ISSNContract(CapabilityContract):
     → ``INVALID`` per temporal filtering). No ISSN-specific
     ``include_*`` flags (single grammar, ``active_grammars=None`` →
     engine runs every ``get_grammars()`` grammar in order).
+
+    Formats (ADR-0011 classes): ``compact`` and ``urn`` — encodings (hyphen
+    strip / ``urn:issn:`` prefix; the check digit is unaffected and both
+    re-enter exactly).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "hyphenated"

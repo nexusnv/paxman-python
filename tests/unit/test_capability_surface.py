@@ -482,7 +482,7 @@ _FORMATTED_EXPECTATIONS = [
         PhoneContract,
         "+15551234567",
         PhoneNotation(shape="e164", value="15551234567"),
-        {"rfc3966": "tel:+15551234567", "national": "5551234567"},
+        {"rfc3966": "tel:+15551234567", "split": "+1 5551234567"},
         id="phone",
     ),
 ]

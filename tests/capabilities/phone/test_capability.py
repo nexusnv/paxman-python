@@ -212,11 +212,11 @@ class TestPhoneCapabilityFormatValue:
             == "tel:+15551234567"
         )
 
-    def test_national_strips_country_code(self) -> None:
-        """National rendering strips the embedded country code."""
+    def test_split_renders_plus_cc_space_nsn(self) -> None:
+        """Split rendering inserts one space between country code and NSN."""
         cap = PhoneCapability()
         assert (
-            cap.format_value("+15551234567", "national", self.NOTATION) == "5551234567"
+            cap.format_value("+15551234567", "split", self.NOTATION) == "+1 5551234567"
         )
 
     def test_rfc3966_preserves_extension(self) -> None:
@@ -228,25 +228,30 @@ class TestPhoneCapabilityFormatValue:
             == "tel:+15551234567;ext=890"
         )
 
-    def test_national_uses_longest_country_code_prefix(self) -> None:
+    def test_split_ignores_extension(self) -> None:
+        """Split rendering never appends ;ext=, even when noted."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="rfc3966", value="15551234567", extension="890")
+        assert cap.format_value("+15551234567", "split", notation) == "+1 5551234567"
+
+    def test_split_uses_longest_country_code_prefix(self) -> None:
         """Taiwan (886) splits as 886, not 86 (China) plus a stray digit."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="886212345678")
-        # Non-NANP E.164 requested as national under a NANP contract preserves
-        # E.164 so the result re-enters (ADR-0010, #127); longest-prefix split
-        # is verified via split_country_code, not via rendered national output.
-        assert cap.format_value("+886212345678", "national", notation) == (
-            "+886212345678"
-        )
+        assert cap.format_value("+886212345678", "split", notation) == "+886 212345678"
         assert split_country_code("886212345678") == "886"
 
+    def test_split_uniform_for_non_nanp(self) -> None:
+        """Non-NANP renders the same +CC NSN shape — no preservation branch."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="e164", value="442079460958")
+        assert cap.format_value("+442079460958", "split", notation) == "+44 2079460958"
+
     def test_defensive_passthrough_when_no_country_code_splits(self) -> None:
-        """National rendering passes the value through when no prefix splits."""
+        """Split rendering passes the value through when no prefix splits."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="999123456789")
-        assert (
-            cap.format_value("+999123456789", "national", notation) == "+999123456789"
-        )
+        assert cap.format_value("+999123456789", "split", notation) == "+999123456789"
 
 
 class TestPhoneContractValidation:
@@ -266,14 +271,13 @@ class TestPhoneContractValidation:
         """All documented output formats construct successfully."""
         assert PhoneContract(output_format="e164").output_format == "e164"
         assert PhoneContract(output_format="rfc3966").output_format == "rfc3966"
-        # "national" requires default_country to be a NANP country (ADR-0010
-        # re-entry: bare NSN without country cannot re-enter).
-        with pytest.raises(ContractError):
+        assert PhoneContract(output_format="split").output_format == "split"
+        # "national" was de-offered per ADR-0011 — rejected with a migration
+        # message naming "split", even with a NANP default_country.
+        with pytest.raises(ContractError, match="split"):
             PhoneContract(output_format="national")
-        with pytest.raises(ContractError):
-            PhoneContract(output_format="national", default_country="GB")
-        with_country = PhoneContract(default_country="US", output_format="national")
-        assert with_country.output_format == "national"
+        with pytest.raises(ContractError, match="split"):
+            PhoneContract(output_format="national", default_country="US")
 
     def test_accepts_default_output_format(self) -> None:
         """'default' reverts to the default e164 output."""
@@ -307,13 +311,36 @@ class TestPhoneContractValidation:
             PhoneContract(default_country="USA")
 
 
-class TestPhoneNationalOutput:
-    """E2E behavior for output_format='national' (ADR-0010).
+class TestPhoneSplitContract:
+    """Contract surface for output_format='split' (ADR-0011 Phase 2).
 
-    ``national`` requires ``default_country`` to be a NANP country so the
-    rendered NSN can re-enter under the same contract. Rendering without a
-    country is rejected at construction (ContractError) — a default
-    (country-less) contract can never produce a non-re-enterable ``national`` V.
+    ``national`` was de-offered: it dropped the country code and could not
+    re-enter under the default contract. Construction with
+    ``output_format="national"`` is rejected with a migration message naming
+    ``split``. Offered surface is ``rfc3966`` + ``split``.
+    """
+
+    def test_national_removed_with_migration_message(self) -> None:
+        """'national' raises ContractError naming 'split', with or without country."""
+        with pytest.raises(ContractError, match="split"):
+            PhoneContract(output_format="national")
+        with pytest.raises(ContractError, match="split"):
+            PhoneContract(output_format="national", default_country="US")
+
+    def test_offered_formats_set(self) -> None:
+        """OFFERED_OUTPUT_FORMATS is exactly rfc3966 + split."""
+        assert frozenset({"rfc3966", "split"}) == PhoneContract.OFFERED_OUTPUT_FORMATS
+
+    def test_split_resolves(self) -> None:
+        """'split' constructs and resolves to itself."""
+        assert PhoneContract(output_format="split").output_format == "split"
+
+
+class TestPhoneSplitOutput:
+    """E2E behavior for output_format='split' (ADR-0011 Phase 2).
+
+    ``split`` renders ``+CC NSN`` (single space, uniform for every country
+    code) and re-enters param-free through the existing E.164 grammar.
     """
 
     def setup_method(self) -> None:
@@ -325,36 +352,50 @@ class TestPhoneNationalOutput:
         """Reset the registry so other tests start clean."""
         reset_registry()
 
-    def test_national_requires_default_country(self) -> None:
-        """'national' without a NANP default_country is rejected at construction."""
-        with pytest.raises(ContractError):
-            PhoneContract(output_format="national")
-        with pytest.raises(ContractError):
-            PhoneContract(output_format="national", default_country="GB")
-
-    def test_national_from_e164_with_default_country(self) -> None:
-        """'+12125551234' → '2125551234' with default_country='US' (non-fictional)."""
-        contract = PhoneContract(output_format="national", default_country="US")
+    def test_split_nanp(self) -> None:
+        """'+12125551234' → '+1 2125551234' (non-fictional)."""
+        contract = PhoneContract(output_format="split")
         result = canonicalize("+12125551234", contract)
         assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "2125551234"
+        assert result.canonicalized_value == "+1 2125551234"
 
-    def test_national_from_tel_uri_with_default_country(self) -> None:
-        """'tel:+12125551234' → '2125551234' with default_country='US'."""
-        contract = PhoneContract(output_format="national", default_country="US")
-        result = canonicalize("tel:+12125551234", contract)
+    def test_split_non_nanp_uniform(self) -> None:
+        """'+4412341234' → '+44 12341234' — same shape as NANP, no branch."""
+        contract = PhoneContract(output_format="split")
+        result = canonicalize("+4412341234", contract)
         assert result.status == Resolution.SUCCESS
-        assert result.canonicalized_value == "2125551234"
+        assert result.canonicalized_value == "+44 12341234"
 
-    def test_national_from_non_nanp_preserves_e164(self) -> None:
-        """Non-NANP via national/US must preserve E.164 (#127)."""
-        contract = PhoneContract(output_format="national", default_country="US")
-        for raw in ("+33142345678", "+442079460000"):
-            result = canonicalize(raw, contract)
-            assert result.status == Resolution.SUCCESS
-            # Non-NANP E.164 has no re-enterable national form under a NANP contract;
-            # format_value preserves the E.164 value so re-entry is a fixed point.
-            assert result.canonicalized_value == raw.replace(" ", "").replace("-", "")
-            result2 = canonicalize(result.canonicalized_value, contract)
-            assert result2.status == Resolution.SUCCESS
-            assert result2.canonicalized_value == result.canonicalized_value
+    def test_split_extension_ignored(self) -> None:
+        """A tel: URI extension never surfaces in split output."""
+        contract = PhoneContract(output_format="split")
+        result = canonicalize("tel:+12125551234;ext=45", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "+1 2125551234"
+
+    def test_split_round_trip(self) -> None:
+        """A split render re-enters under the default contract (param-free)."""
+        contract = PhoneContract(output_format="split")
+        first = canonicalize("+12125551234", contract)
+        assert first.status == Resolution.SUCCESS
+        assert first.canonicalized_value == "+1 2125551234"
+        second = canonicalize("+1 2125551234", PhoneContract())
+        assert second.status == Resolution.SUCCESS
+        assert second.canonicalized_value == "+12125551234"
+
+    def test_split_injective_across_country_codes(self) -> None:
+        """GB '+4412341234' and MY '+6012341234' render distinctly."""
+        contract = PhoneContract(output_format="split")
+        gb = canonicalize("+4412341234", contract)
+        my = canonicalize("+6012341234", contract)
+        assert gb.status == Resolution.SUCCESS
+        assert my.status == Resolution.SUCCESS
+        assert gb.canonicalized_value == "+44 12341234"
+        assert my.canonicalized_value == "+60 12341234"
+        assert gb.canonicalized_value != my.canonicalized_value
+
+    def test_format_value_split_identity_equivalence(self) -> None:
+        """The default contract still renders E.164 identity."""
+        cap = PhoneCapability()
+        notation = PhoneNotation(shape="e164", value="12125551234")
+        assert cap.format_value("+12125551234", "e164", notation) == "+12125551234"

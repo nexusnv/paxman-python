@@ -504,7 +504,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | Money | `dollar_sign_currency` | `str` \| `None` | ISO 4217 alpha-3 code resolving bare/shared symbols (opt-in); `None` (default) makes bare symbols INVALID |
 | Money | `output_format` | `str` | Output format (`"code_amount"` default, `"compact"`) |
 | Phone | `default_country` | `str` | ISO 3166-1 alpha-2 country code to resolve national numbers (e.g., `"US"`) |
-| Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"national"`) |
+| Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"split"`) |
 | SIUnit | `allow_split_word_prefixes` | `bool` | Merge a word prefix split from its unit by whitespace (e.g. `"kilo gram"` → `"kg"`) when True; default False rejects the spoken form (→ INVALID) |
 | SIUnit | `allow_multi_solidus` | `bool` | Preserve the legacy accept-multi-solidus behavior (e.g. `"kg/m/s"`) when True; default False rejects more than one top-level solidus (→ INVALID) per ISO 80000-1 §6.6.2 |
 

@@ -33,6 +33,10 @@ class DateContract(CapabilityContract):
             ``None`` defaults to 2000; explicit ``0`` is honored (year 26 → 0026).
             Must be in ``0 <= year <= 9999`` when set — out-of-range raises
             ``ContractError``.
+
+    Formats (ADR-0011 classes): ``US`` — encoding (``YYYY-MM-DD`` →
+    ``MM/DD/YYYY`` field reorder; same fields, strict parse, exact
+    pre-image under the default contract).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "ISO"

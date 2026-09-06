@@ -22,6 +22,13 @@ class CountryContract(CapabilityContract):
         year: Year for temporal filtering.
         include_localized: Enable CLDR multilingual names.
         include_historical: Enable deprecated country names.
+
+    Formats (ADR-0011 classes): ``alpha3`` — encoding (ISO 3166-1 alpha-3
+    table map, 1:1 per entity; re-enters via its own grammar); ``numeric``
+    — encoding (UN M49 numeric map); ``name`` — encoding (English
+    short-name map; the rendering re-enters through the name grammar).
+    Historical codes without a mapping pass through unchanged rather than
+    mis-mapping.
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "alpha2"

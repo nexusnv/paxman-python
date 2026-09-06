@@ -23,6 +23,10 @@ class ElementContract(CapabilityContract):
     fixed point. Per ADR-0010 an offered format must re-enter as itself,
     so the view is not offered. Use the default ``symbol`` form for
     round-trippable storage.
+
+    Formats (ADR-0011 classes): ``name`` — encoding (1:1 symbol↔name map;
+    the lowercase rendering re-enters through the name path to the
+    proper-case symbol).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "symbol"

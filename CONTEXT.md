@@ -323,6 +323,49 @@ Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; leg
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
 
+### Coordinates
+
+The Coordinates capability has **1 grammar** and **4 validation rules**:
+
+#### Notation
+
+`CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6 dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present).
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `coordinates_recognition` | decimal pairs (signed or `N/S/E/W` hemisphere letters), DMS/DDM with `°`/`′`/`″`, Geo URI `geo:lat,lon[,alt]`, ISO 6709 string-expression, GeoJSON lon-first pairs | the pair is the unit of identity; structural facts (hemisphere/sign contradiction, DMS unit overflow, ISO digit width, foreign CRS label, hemisphere axis mismatch) are recorded as notation defects for the rules to reject — no silent datum transform |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 6-coordinate-structure` | ISO 6709:2022 Section 6 | `lat, lon[, alt]` decimal pair |
+| `Section Annex-h-string-expression` | ISO 6709:2022 Annex H | `lat, lon[, alt]` decimal pair |
+| `Section 3.3-geo-uri-validity` | RFC 5870 Section 3.3 | `lat, lon[, alt]` decimal pair |
+| `Section 3.1.1-position` | RFC 7946 Section 3.1.1 | `lat, lon[, alt]` decimal pair |
+
+#### Formats
+
+Default `decimal` (lat-first signed decimal pair, quantized 6 dp round-half-even, `-0` folded); offered `iso6709` (`+DD.DDDD+DDD.DDDD[/alt]/`), `geo_uri` (`geo:lat,lon[,alt]`), `geojson_pair` (`[lon, lat[, alt]]`, lon-first), `dms` (`51°30′27″N 0°7′40″W`), `dm` (`51°30.445′N 0°7.6′W`). `dms`/`dm` are documented quantizations: `dms` renders seconds as integers (render quantum 1″ ≈ 2.78e-4°), `dm` renders minutes to 0.001′ — sub-quantum digits are not recoverable; re-canonicalization is a fixed point and pre-image recovery drifts by at most half a render quantum (locked by `tests/property/test_coordinates_quantization.py`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
+### Phone
+
+The Phone capability has **4 grammars** (`e164_recognition`, `tel_uri_recognition`, `international_00_recognition`, `national_recognition`) and **5 validation rules** (ITU-T E.164 `Section 6.1-international-number` / `Section 6.2-country-code`, IETF RFC 3966 `Section 3-tel-uri`, NANPA `Section 1.1-nanp-structure` / `Section 1.2-service-npa`).
+
+#### Formats
+
+Default `e164` (`+CCNSN`, e.g. `+12125551234`); offered `rfc3966` (`tel:+CCNSN[;ext=]`, the only extension-preserving format) and `split` (`+CC NSN`, e.g. `+1 2125551234` — single ASCII space, uniform for every country code; the space is presentation-only and stripped on re-entry, so every `split` value re-enters param-free under the default contract via the existing E.164 grammar; extension carried only by `rfc3966`). `national` (bare NSN) was de-offered per ADR-0011: it dropped the country code recognition/validation depend on and could not re-enter under the default contract — `PhoneContract(output_format="national")` raises `ContractError` with a migration message naming `split`. `default_country` remains supported for domestic **input** recognition only. Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
+### Language
+
+The Language capability has **3 grammars** (`bcp47_tag_recognition`, `language_code_recognition`, `language_name_recognition`) and **10 validation rules** (ISO 639-1 `Section 4-alpha-2-code` / `Section-english-name-mapping`, ISO 639-2 `Section 4-alpha-3-code`, ISO 639-3 `Section 4-comprehensive-alpha-3` / `Section 4-private-alpha-3`, ISO 639-5 `Section 4-collective-code`, BCP 47 RFC 5646 `Section 2.1-syntax`, IANA Registry `Section-iana-registry` / `Section-iana-registry-private`, CLDR `Section-localized-names`).
+
+#### Formats
+
+Default `bcp47` (case-canonical tag, e.g. `en-US`); offered `alpha2` (maps the primary subtag through the ISO 639 tables, carries region/script/variant/extension/privateuse verbatim — `en-US` → `en-US`; an encoding per ADR-0011), `alpha3` / `alpha3-bib` (map the primary subtag only for extended tags — `de-CH-1901` → `deu` / `ger`; waived projections — a mapped primary plus carried rest emits tags the authority rejects) and `name` (English name of the primary subtag — `en-US` renders `English`; waived projection for extended tags per ADR-0011, revisit at the hard-mandate promotion). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
 ### ORCID
 
 The ORCID capability has **1 grammar** and **2 validation rules**:
@@ -410,8 +453,8 @@ contract = Email.create_contract(
 Presentation is a single seam, not a rule concern:
 - `output_format` is always optional (`None` / `"default"` / the capability's `DEFAULT_OUTPUT_FORMAT` resolve to the default; offered formats resolve to themselves; anything else raises `ContractError`). Resolved once in `CapabilityContract.__post_init__`; contracts declare `DEFAULT_OUTPUT_FORMAT` / `OFFERED_OUTPUT_FORMATS` class vars.
 - `format_value()` on the capability is the **ONLY presentation seam** — `normalize()` always returns the default canonical form.
-- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract.
-- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"national"`).
+- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract. Per ADR-0011, every offered format is an encoding, a same-entity expansion, or a documented quantization (declared in the capability's contract docstring); projections are not offered.
+- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"split"`).
 
 ### Feature Gating — two loci, two statuses
 
