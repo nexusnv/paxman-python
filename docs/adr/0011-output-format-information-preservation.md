@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted — 2026-09-06.** Tracked as issue #TBD (number to be filled in at PR time). Phase 1 of the output-format invariant sequencing (after Phase 0, the Coordinates quantization obligations).
+**Accepted — 2026-09-06.** Tracked as issue #139. Phase 1 of the output-format invariant sequencing (after Phase 0, the Coordinates quantization obligations).
 
 ## Context
 
@@ -257,7 +257,7 @@ future ADR per this section's criteria.
 
 ## References
 
-- Issue #TBD — origin of this ADR: the information-preservation invariant requirement
+- Issue #139 — origin of this ADR: the information-preservation invariant requirement
   and the Accepted-status scoping (Scope decision 1). (Number to be filled in at PR
   time.)
 - ADR-0004 (Single-Value Invariant) — invariant-family root: an engine-level
