@@ -31,6 +31,10 @@ class ISBNContract(CapabilityContract):
         include_range_validation: Gate the Range Message validation rule
             (default False). When True, adds registrant-range provenance via
             Section 4-registrant-range.
+
+    Formats (ADR-0011 classes): ``hyphenated`` — encoding (Range Message
+    longest-match hyphenation; hyphens are presentation-only and do not
+    affect the check digit).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "isbn13"
