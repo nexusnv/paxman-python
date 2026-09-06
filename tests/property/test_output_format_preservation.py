@@ -22,9 +22,9 @@ The matrix (Corollary 2, per offered format class):
   ``F(V') == F(V)`` (entity-preserving merge; the expansion spelling is a
   fixed point under the producing format);
 - **documented quantization** — bounded drift ≤ ½ declared render quantum
-  (Coordinates ``dms``/``dm``; the drift itself is locked by
-  ``tests/property/test_coordinates_quantization.py`` — here only SUCCESS
-  and param-free recovery are re-pinned);
+  plus ½ canonical quantum (Coordinates ``dms``/``dm``; the drift itself is
+  locked by ``tests/property/test_coordinates_quantization.py`` — here only
+  SUCCESS and param-free recovery are re-pinned);
 - **waived projection** — excluded from the matrix; own-contract fixed
   points are locked in the capability suite
   (``tests/capabilities/language/test_capability.py::TestLanguageExtendedTagCarry``).
@@ -49,7 +49,9 @@ Cross-entity injectivity (Corollary 1) is pinned by an explicit pairs
 table (``_INJECTIVITY_PAIRS``): mandatory distinct-entity pairs per
 ADR-0011 Consequences obligation 4, rendered under the named format,
 asserting distinct strings. Quantized formats are excluded from injectivity
-by their class — sub-quantum neighbors may share a rendering there.
+by their class — sub-quantum neighbors may share a rendering there. The
+coverage gate below ties every encoding/expansion ``CLASS_MAP`` entry to a
+pair, so a future encoding cannot land unpinned.
 """
 
 from __future__ import annotations
@@ -282,6 +284,15 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
     _InjectivityPair(
         "phone", Phone, "split", "+4412341234", "+6012341234", "GB vs MY NSN"
     ),
+    # rfc3966 wraps the full E.164 value — same pair, tel: URI shape.
+    _InjectivityPair(
+        "phone",
+        Phone,
+        "rfc3966",
+        "+4412341234",
+        "+6012341234",
+        "GB vs MY tel: URI",
+    ),
     # Coordinates sub-quantum neighbors under the exact encodings.
     _InjectivityPair(
         "coordinates",
@@ -298,6 +309,24 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "51.507400, -0.1278",
         "51.507412, -0.1278",
         "Annex H string expression",
+    ),
+    # The other two lossless Coordinates carriers pin the same neighbors
+    # (both are exact encodings — no quantum to hide behind).
+    _InjectivityPair(
+        "coordinates",
+        Coordinates,
+        "geo_uri",
+        "51.507400, -0.1278",
+        "51.507412, -0.1278",
+        "geo URI carrier",
+    ),
+    _InjectivityPair(
+        "coordinates",
+        Coordinates,
+        "geojson_pair",
+        "51.507400, -0.1278",
+        "51.507412, -0.1278",
+        "GeoJSON lon-first carrier",
     ),
     # Country: same two entities across every rendering (alpha2 is the
     # default format — not in OFFERED_OUTPUT_FORMATS — hence None here).
@@ -405,6 +434,30 @@ def test_cross_entity_injectivity_pairs(pair: _InjectivityPair) -> None:
         f"{pair.output_format or 'default'}): distinct entities "
         f"{pair.first!r} / {pair.second!r} render identically"
         + (f" ({pair.note})" if pair.note else "")
+    )
+
+
+def test_injectivity_covers_all_encoding_expansion_formats() -> None:
+    """Corollary 1 coverage: every encoding/expansion CLASS_MAP entry has a pair.
+
+    Without this gate a future encoding could land with no injectivity pin
+    (the shipped ``geo_uri`` / ``geojson_pair`` / ``rfc3966`` gap this gate
+    closed). Quantized formats are excluded by class; waived projections are
+    excluded (their fixed points live in the capability suite).
+    """
+    covered = {
+        (pair.name, pair.output_format)
+        for pair in _INJECTIVITY_PAIRS
+        if pair.output_format is not None
+    }
+    required = {
+        (cap, fmt)
+        for (cap, fmt), cls in CLASS_MAP.items()
+        if cls in ("encoding", "expansion")
+    }
+    assert required <= covered, (
+        "ADR-0011 gate: every encoding/expansion offered format needs a "
+        f"cross-entity injectivity pair; uncovered={sorted(required - covered)}"
     )
 
 

@@ -12,15 +12,17 @@ class CoordinatesContract(CapabilityContract):
     Default ``decimal`` is the lat-first signed pair, quantized to 6 dp
     round-half-even. Offered formats: ``iso6709``
     (``+DD.DDDD+DDD.DDDD[/alt]/``), ``geo_uri`` (``geo:lat,lon[,alt]``),
-    ``geojson_pair`` (``[lon, lat[, alt]]``, lon-first), ``dms``
-    (``51°30′27″N 0°7′40″W``), ``dm`` (``51°30.445′N 0°7.6′W``).
+    ``geojson_pair`` (``[lon, lat[, alt]]``, lon-first) — all three are
+    encodings (lossless re-encodings of the canonical pair) — plus ``dms``
+    (``51°30′27″N 0°7′40″W``) and ``dm`` (``51°30.445′N 0°7.6′W``).
 
     ``dms`` renders seconds as integers (render quantum 1″ ≈ 2.78e-4°)
     and ``dm`` renders minutes to 0.001′; both are documented
     quantizations: sub-quantum canonical digits are not recoverable from
     the rendering, re-canonicalization is a fixed point, and pre-image
-    recovery drifts by at most half a render quantum — locked by
-    ``tests/property/test_coordinates_quantization.py``.
+    recovery drifts by at most half a render quantum plus half the
+    1e-6° canonical quantum (0.00014° for ``dms``, 0.000009° for ``dm``) —
+    locked by ``tests/property/test_coordinates_quantization.py``.
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "decimal"

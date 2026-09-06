@@ -35,7 +35,7 @@ never projections over recognition/validation information.**
 > **Information-Preservation (output-format equality).** For every capability, for every `F ∈ OFFERED_OUTPUT_FORMATS`, for every default canonical `V` the capability can produce: `W = format_value(V, F, notation)` must preserve every bit of `V` used by any shipped grammar to recognize `V`'s form or any shipped rule to validate `V` — recoverable from `W` alone under the default (param-free) contract. Corollaries:
 >
 > 1. **Entity-relative injectivity.** For all canonicals `V1 ≠ V2` denoting **different entities** (§2), `F(V1) ≠ F(V2)`. Same-entity spelling merges are permitted only as documented same-entity expansions (`AAAABBCC`/`AAAABBCCXXX` under `bic11`) and must be fixed-point. String-level injectivity is deliberately *not* required — it would condemn the audit's own PASS verdicts for `bic11`/`eui64` (§7.3).
-> 2. **Param-free pre-image re-entry** (stronger than ADR-0010's same-contract `V→V`): `canonicalize(W, default_contract)` succeeds and returns the pre-image `V` — **exact** for encodings and same-entity expansions, **bounded-drift** (within ½ of the declared render quantum, deterministic) for documented quantizations. No offered format may require a contract parameter to make its own output readable.
+> 2. **Param-free pre-image re-entry** (stronger than ADR-0010's same-contract `V→V`): `canonicalize(W, default_contract)` succeeds and returns the pre-image `V` — **exact** for encodings and same-entity expansions, **bounded-drift** (within ½ of the declared render quantum plus ½ of the canonical quantum, deterministic) for documented quantizations. No offered format may require a contract parameter to make its own output readable.
 >
 > Classification clause: every offered format belongs to exactly one class — encoding, same-entity expansion, or documented quantization — declared in the capability (contract docstring), with the class's obligations attached. Projections are not offered.
 
@@ -92,8 +92,8 @@ or bits with no unit declared. Field removal is banned.
    implementable CI gate both require it — a literal string-level gate would flag
    `bic11` the first time it samples the `AAAABBCC` / `AAAABBCCXXX` pair.
 3. **Declared-quantization exception in Corollary 2.** Exact pre-image for
-   encodings/expansions; bounded-drift (≤ ½ declared render quantum) for documented
-   quantizations. The quantum must be declared at the contract seam and the
+   encodings/expansions; bounded-drift (≤ ½ declared render quantum plus
+   ½ canonical quantum) for documented quantizations. The quantum must be declared at the contract seam and the
    fixpoint/bounded-drift properties pinned in CI — `tests/property/test_coordinates_quantization.py`
    is the charter lock. `W→W` never stands in for `W→V`: render→parse→render
    stability and pre-image recovery are different properties, and only the first holds

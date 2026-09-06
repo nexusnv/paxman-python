@@ -69,8 +69,8 @@ class PhoneContract(CapabilityContract):
     Formats (ADR-0011 classes): ``rfc3966`` — encoding (``tel:`` scheme
     wrap; every digit preserved); ``split`` — encoding (``CC NSN``
     bijection over the canonical space; param-free re-entry via the E.164
-    grammar). ``national`` was a projection and is de-offered (see
-    ``output_format`` above).
+    grammar). ``national`` is de-offered: it dropped the country code
+    recognition and validation depend on (see ``output_format`` above).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "e164"

@@ -15,12 +15,14 @@ class LanguageContract(CapabilityContract):
     Default ``bcp47`` (case-canonical tag). Offered ``alpha2`` maps the
     primary subtag through the ISO 639 tables and carries the remaining
     subtags verbatim — an encoding per ADR-0011. Offered ``alpha3`` /
-    ``alpha3-bib`` map the primary subtag only (waived projections for
-    extended tags: a mapped primary plus carried rest emits tags the
-    authority rejects — variant Prefix is primary-relative, deprecated /
-    macrolanguage resolution is primary-relative). Offered ``name`` is the
-    English name of the primary subtag — same waiver class per the
-    ADR-0011 soft mandate (revisit at the hard-mandate promotion).
+    ``alpha3-bib`` map the primary subtag only for mapped primaries
+    (identity-mapped primaries such as private-use ``x`` carry the rest
+    verbatim — the rendering is the canonical itself); both are waived
+    projections for extended tags: a mapped primary plus carried rest
+    emits tags the authority rejects — variant Prefix is primary-relative,
+    deprecated / macrolanguage resolution is primary-relative). Offered
+    ``name`` is the English name of the primary subtag — same waiver class
+    per the ADR-0011 soft mandate (revisit at the hard-mandate promotion).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "bcp47"
