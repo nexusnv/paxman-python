@@ -358,6 +358,14 @@ The Phone capability has **4 grammars** (`e164_recognition`, `tel_uri_recognitio
 
 Default `e164` (`+CCNSN`, e.g. `+12125551234`); offered `rfc3966` (`tel:+CCNSN[;ext=]`, the only extension-preserving format) and `split` (`+CC NSN`, e.g. `+1 2125551234` — single ASCII space, uniform for every country code; the space is presentation-only and stripped on re-entry, so every `split` value re-enters param-free under the default contract via the existing E.164 grammar; extension carried only by `rfc3966`). `national` (bare NSN) was de-offered per ADR-0011: it dropped the country code recognition/validation depend on and could not re-enter under the default contract — `PhoneContract(output_format="national")` raises `ContractError` with a migration message naming `split`. `default_country` remains supported for domestic **input** recognition only. Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
+### Language
+
+The Language capability has **3 grammars** (`bcp47_tag_recognition`, `language_code_recognition`, `language_name_recognition`) and **10 validation rules** (ISO 639-1 `Section 4-alpha-2-code` / `Section-english-name-mapping`, ISO 639-2 `Section 4-alpha-3-code`, ISO 639-3 `Section 4-comprehensive-alpha-3` / `Section 4-private-alpha-3`, ISO 639-5 `Section 4-collective-code`, BCP 47 RFC 5646 `Section 2.1-syntax`, IANA Registry `Section-iana-registry` / `Section-iana-registry-private`, CLDR `Section-localized-names`).
+
+#### Formats
+
+Default `bcp47` (case-canonical tag, e.g. `en-US`); offered `alpha2` / `alpha3` / `alpha3-bib` (map the primary subtag through the ISO 639 tables, carry region/script/variant/extension/privateuse verbatim — `en-US` → `en-US` under `alpha2`, `zh-Hant-TW` → `zho-Hant-TW` under `alpha3` and `chi-Hant-TW` under `alpha3-bib`) and `name` (English name of the primary subtag — `en-US` renders `English`; waived projection for extended tags per ADR-0011, revisit at the hard-mandate promotion). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
 ### ORCID
 
 The ORCID capability has **1 grammar** and **2 validation rules**:
