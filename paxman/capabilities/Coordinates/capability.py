@@ -58,6 +58,17 @@ def _decimal_to_dms_parts(decimal_str: str, is_lat: bool) -> tuple[int, int, int
     if minute == 60:
         minute = 0
         deg += 1
+    # Range clamp (mirrors _decimal_to_dm_parts): post-carry degrees beyond
+    # the axis limit — or sitting on it with residue — are capped with a
+    # zeroed remainder. Unreachable for validated canonicals: |lat| <= 90
+    # and |lon| <= 180, and carry-overflow from <= 90.0 / <= 180.0 lands
+    # exactly on the boundary with nothing left over. Defensive for
+    # hand-built notations, where format_value catches InvalidOperation
+    # but not range overflow.
+    if is_lat and (deg > 90 or (deg == 90 and (minute or sec))):
+        deg, minute, sec = 90, 0, 0
+    if not is_lat and (deg > 180 or (deg == 180 and (minute or sec))):
+        deg, minute, sec = 180, 0, 0
     if deg == 0 and minute == 0 and sec == 0:
         hemi = "N" if is_lat else "E"
     return deg, minute, sec, hemi

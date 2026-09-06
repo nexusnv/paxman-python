@@ -84,8 +84,20 @@ class PhoneContract(CapabilityContract):
     def __post_init__(self) -> None:
         """Validate contract configuration.
 
-        Calls the base resolution first, then enforces Phone-specific rules:
-        default_country must be an uppercase alpha-2 code when present.
+        Pre-checks removed ``national`` for a migration error, then calls
+        base resolution, then validates ``default_country``. This is the
+        sole intentional exception to the base's super-first ordering (all
+        other contracts call ``super().__post_init__()`` first).
+
+        Two consequences of that ordering: the ``national`` pre-check is an
+        exact match on ``output_format == "national"`` — case variants
+        (e.g. ``"NATIONAL"``) fall through to the base resolution's generic
+        unsupported-format error instead of the migration message
+        (acceptable: it matches the base resolver's exactness) — and the
+        removed-format rejection precedes ``default_country`` validation,
+        so ``PhoneContract(output_format="national",
+        default_country="USA")`` reports the migration error, not the
+        alpha-2 error.
 
         ``output_format="national"`` was de-offered per ADR-0011 and is
         rejected here with a migration message naming ``"split"`` before

@@ -155,6 +155,19 @@ class TestCapabilityDmsDmCarry:
         assert _decimal_to_dm_parts("-0.001", True)[2] == "S"
         assert _decimal_to_dm_parts("-0.001", False)[2] == "W"
 
+    def test_dms_parts_clamps_range_overflow(self) -> None:
+        # Clamp to the axis limit with a zeroed remainder, mirroring the
+        # DM clamp semantics. Unreachable for validated canonicals
+        # (|lat| <= 90 / |lon| <= 180, and the 89.999999 / 179.999999
+        # 60-carry lands exactly on the boundary); defensive for
+        # hand-built notations, where format_value catches
+        # InvalidOperation but not range overflow.
+        assert _decimal_to_dms_parts("90.500000", True) == (90, 0, 0, "N")
+        assert _decimal_to_dms_parts("180.500000", False) == (180, 0, 0, "E")
+        # The clamp keeps the sign hemisphere (computed pre-clamp).
+        assert _decimal_to_dms_parts("-90.500000", True) == (90, 0, 0, "S")
+        assert _decimal_to_dms_parts("-180.500000", False) == (180, 0, 0, "W")
+
     def test_format_iso_integer_only_and_alt_variants(self) -> None:
         # integer-only components hit else branches for lat_int/lon_int without frac
         assert _format_iso("48", "2", None) == "+48+002/"
