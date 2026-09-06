@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from paxman.api.canonicalize import canonicalize
 from paxman.capabilities.Language.capability import LanguageCapability
 from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.capability import Capability
-from paxman.core.domain import RuleStrategy
+from paxman.core.discovery import register_capability, reset_registry
+from paxman.core.domain import Resolution, RuleStrategy
 from paxman.core.errors import ContractError
 
 
@@ -422,3 +424,132 @@ class TestLanguageFormatValue:
             cap.format_value("ger", "name", _notation("ger", language="ger"))
             == "German"
         )
+
+
+class TestLanguageExtendedTagCarry:
+    """Extended-tag carry for alpha2/alpha3/alpha3-bib (ADR-0011 Phase 3).
+
+    The three code formats map the primary subtag through the existing
+    ISO 639 tables unchanged and carry the remaining subtags verbatim, so
+    extended tags no longer collapse onto the bare primary (``en-US`` and
+    ``en-GB`` rendered distinctly). ``name`` stays a primary-name
+    projection (waived per ADR-0011 — subtag-carrying names do not
+    re-enter); bare codes are unaffected (nothing to carry).
+    """
+
+    def setup_method(self) -> None:
+        """Register the Language capability for each test."""
+        reset_registry()
+        register_capability(LanguageCapability())
+
+    def teardown_method(self) -> None:
+        """Reset the registry so other tests start clean."""
+        reset_registry()
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en-US", "alpha2", "en-US"),
+            ("en-US", "alpha3", "eng-US"),
+            ("en-US", "alpha3-bib", "eng-US"),
+            ("zh-Hant-TW", "alpha2", "zh-Hant-TW"),
+            ("zh-Hant-TW", "alpha3", "zho-Hant-TW"),
+            # Bib of zho is chi (_TERM_TO_BIB): mapped primary + rest.
+            ("zh-Hant-TW", "alpha3-bib", "chi-Hant-TW"),
+            ("de-CH-1901", "alpha2", "de-CH-1901"),
+            ("de-CH-1901", "alpha3", "deu-CH-1901"),
+            ("de-CH-1901", "alpha3-bib", "ger-CH-1901"),
+            ("x-foo", "alpha2", "x-foo"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+            # Extlang compacts canonicalize to themselves (no folding).
+            ("zh-cmn", "alpha2", "zh-cmn"),
+            ("zh-cmn", "alpha3", "zho-cmn"),
+            ("zh-cmn", "alpha3-bib", "chi-cmn"),
+        ],
+    )
+    def test_carry_rows(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """Each code format renders mapped primary + verbatim rest."""
+        contract = LanguageCapability.create_contract(output_format=output_format)
+        result = canonicalize(source, contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == expected
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en-US", "alpha2", "en-US"),
+            ("zh-Hant-TW", "alpha2", "zh-Hant-TW"),
+            ("de-CH-1901", "alpha2", "de-CH-1901"),
+            ("x-foo", "alpha2", "x-foo"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+            ("en-US", "alpha3", "eng-US"),
+            ("en-US", "alpha3-bib", "eng-US"),
+            ("zh-Hant-TW", "alpha3-bib", "chi-Hant-TW"),
+            ("zh-cmn", "alpha2", "zh-cmn"),
+            ("zh-cmn", "alpha3-bib", "chi-cmn"),
+        ],
+    )
+    def test_carry_reenters_param_free(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """Each carried rendering re-enters under the default contract.
+
+        Excluded by empirical run (default contract, pre- and post-fix —
+        the default path is untouched by the renderer): ``zho-Hant-TW``
+        re-enters AMBIGUOUS and ``deu-CH-1901`` / ``ger-CH-1901`` /
+        ``zho-cmn`` re-enter INVALID/AMBIGUOUS. Variant/script Prefix
+        validation is primary-relative, so a mapped primary breaks the
+        prefix constraints the carried subtags were validated against.
+        Known limitation, flagged for the hard-mandate promotion ADR
+        alongside the ``name`` waiver.
+        """
+        rendered = canonicalize(
+            source, LanguageCapability.create_contract(output_format=output_format)
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == expected
+        reentry = canonicalize(expected, LanguageCapability.create_contract())
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == expected
+
+    def test_carry_injective_en_us_en_gb(self) -> None:
+        """``en-US`` and ``en-GB`` render distinctly under alpha2."""
+        contract = LanguageCapability.create_contract(output_format="alpha2")
+        us = canonicalize("en-US", contract)
+        gb = canonicalize("en-GB", contract)
+        assert us.status == Resolution.SUCCESS
+        assert gb.status == Resolution.SUCCESS
+        assert us.canonicalized_value == "en-US"
+        assert gb.canonicalized_value == "en-GB"
+        assert us.canonicalized_value != gb.canonicalized_value
+
+    def test_name_waived_projection_locked(self) -> None:
+        """``name`` of ``en-US`` stays ``English`` (waived per ADR-0011)."""
+        contract = LanguageCapability.create_contract(output_format="name")
+        result = canonicalize("en-US", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "English"
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en", "alpha2", "en"),
+            ("en", "alpha3", "eng"),
+            ("en", "alpha3-bib", "eng"),
+            ("deu", "alpha2", "de"),
+            ("deu", "alpha3", "deu"),
+            ("deu", "alpha3-bib", "ger"),
+        ],
+    )
+    def test_bare_codes_unchanged(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """Bare codes render exactly as before (nothing to carry)."""
+        contract = LanguageCapability.create_contract(output_format=output_format)
+        result = canonicalize(source, contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == expected
