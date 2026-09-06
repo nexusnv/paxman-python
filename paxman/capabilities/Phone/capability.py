@@ -37,7 +37,7 @@ def _format_split(value: str) -> str:
     if country_code is None:
         # unreachable post-matches(); defensive best-effort
         return value
-    return f"+{country_code} {digits[len(country_code):]}"
+    return f"+{country_code} {digits[len(country_code) :]}"
 
 
 class PhoneCapability(Capability[PhoneNotation]):

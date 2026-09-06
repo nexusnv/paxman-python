@@ -232,34 +232,26 @@ class TestPhoneCapabilityFormatValue:
         """Split rendering never appends ;ext=, even when noted."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="rfc3966", value="15551234567", extension="890")
-        assert (
-            cap.format_value("+15551234567", "split", notation) == "+1 5551234567"
-        )
+        assert cap.format_value("+15551234567", "split", notation) == "+1 5551234567"
 
     def test_split_uses_longest_country_code_prefix(self) -> None:
         """Taiwan (886) splits as 886, not 86 (China) plus a stray digit."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="886212345678")
-        assert (
-            cap.format_value("+886212345678", "split", notation) == "+886 212345678"
-        )
+        assert cap.format_value("+886212345678", "split", notation) == "+886 212345678"
         assert split_country_code("886212345678") == "886"
 
     def test_split_uniform_for_non_nanp(self) -> None:
         """Non-NANP renders the same +CC NSN shape — no preservation branch."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="442079460958")
-        assert (
-            cap.format_value("+442079460958", "split", notation) == "+44 2079460958"
-        )
+        assert cap.format_value("+442079460958", "split", notation) == "+44 2079460958"
 
     def test_defensive_passthrough_when_no_country_code_splits(self) -> None:
         """Split rendering passes the value through when no prefix splits."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="999123456789")
-        assert (
-            cap.format_value("+999123456789", "split", notation) == "+999123456789"
-        )
+        assert cap.format_value("+999123456789", "split", notation) == "+999123456789"
 
 
 class TestPhoneContractValidation:
@@ -337,7 +329,7 @@ class TestPhoneSplitContract:
 
     def test_offered_formats_set(self) -> None:
         """OFFERED_OUTPUT_FORMATS is exactly rfc3966 + split."""
-        assert PhoneContract.OFFERED_OUTPUT_FORMATS == frozenset({"rfc3966", "split"})
+        assert frozenset({"rfc3966", "split"}) == PhoneContract.OFFERED_OUTPUT_FORMATS
 
     def test_split_resolves(self) -> None:
         """'split' constructs and resolves to itself."""
@@ -406,6 +398,4 @@ class TestPhoneSplitOutput:
         """The default contract still renders E.164 identity."""
         cap = PhoneCapability()
         notation = PhoneNotation(shape="e164", value="12125551234")
-        assert (
-            cap.format_value("+12125551234", "e164", notation) == "+12125551234"
-        )
+        assert cap.format_value("+12125551234", "e164", notation) == "+12125551234"

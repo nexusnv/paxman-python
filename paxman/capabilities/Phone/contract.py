@@ -68,9 +68,7 @@ class PhoneContract(CapabilityContract):
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "e164"
-    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset(
-        {"rfc3966", "split"}
-    )
+    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"rfc3966", "split"})
 
     capability_name: str = field(default="phone", init=False)
 
