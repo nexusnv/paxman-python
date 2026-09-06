@@ -223,6 +223,25 @@ verbatim since the rendering is the canonical itself. Revisit (de-offer vs.
 mapping-aware validation vs. locale-aware name grammar) at the
 hard-mandate promotion.
 
+*Amendment (2026-09-06 — ADR-0011 Phase 4; suite hardening + deferred
+fold-ins landed).* The soft mandate is now locked in CI: the Corollary 1–2
+preservation matrix over every offered format per class
+(``tests/property/test_output_format_preservation.py`` — encoding exact
+pre-image, expansion merge-and-fixpoint, quantization param-free recovery;
+registry-exception #4), the mandatory cross-entity injectivity pairs
+(Corollary 1), the expansion fixtures (``DEUTDEFF``/``DEUTDEFFXXX`` under
+``bic11``, the EUI-48/EUI-64 pair under ``eui64``), the class-declaration
+scan (``tests/unit/test_offered_format_class_declarations.py`` — every
+offered format named in its contract docstring with a class term), and the
+``HOW_TO_ADD_NEW_CAPABILITY.md`` offered-format checklist. All shipped
+formats are measured and classified; the waived set is exactly Language
+``alpha3`` / ``alpha3-bib`` / ``name`` (amended above). **Promotion
+readiness, not promotion**: the hard mandate (static ``format_value``
+param-branching scan, sampled entity-injectivity gate as a merge blocker,
+de-offer deadlines for the waivers) waits until every capability complies
+and a new capability ships clean under the invariant — promoted by a
+future ADR per this section's criteria.
+
 ## Alternatives Considered
 
 1. **String-level injectivity.** Rejected: it condemns the audit's own PASS verdicts
