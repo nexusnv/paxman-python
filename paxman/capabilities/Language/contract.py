@@ -12,13 +12,15 @@ from paxman.core.capability_contract import CapabilityContract
 class LanguageContract(CapabilityContract):
     """Contract for the Language capability.
 
-    Default ``bcp47`` (case-canonical tag). Offered ``alpha2`` /
-    ``alpha3`` / ``alpha3-bib`` map the primary subtag through the ISO 639
-    tables and carry the remaining subtags verbatim — encodings per
-    ADR-0011. Offered ``name`` is the English name of the primary subtag —
-    a waived projection for extended tags per the ADR-0011 soft mandate
-    (extension-preservation would break re-entry; revisit at the
-    hard-mandate promotion).
+    Default ``bcp47`` (case-canonical tag). Offered ``alpha2`` maps the
+    primary subtag through the ISO 639 tables and carries the remaining
+    subtags verbatim — an encoding per ADR-0011. Offered ``alpha3`` /
+    ``alpha3-bib`` map the primary subtag only (waived projections for
+    extended tags: a mapped primary plus carried rest emits tags the
+    authority rejects — variant Prefix is primary-relative, deprecated /
+    macrolanguage resolution is primary-relative). Offered ``name`` is the
+    English name of the primary subtag — same waiver class per the
+    ADR-0011 soft mandate (revisit at the hard-mandate promotion).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "bcp47"

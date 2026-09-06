@@ -364,7 +364,7 @@ The Language capability has **3 grammars** (`bcp47_tag_recognition`, `language_c
 
 #### Formats
 
-Default `bcp47` (case-canonical tag, e.g. `en-US`); offered `alpha2` / `alpha3` / `alpha3-bib` (map the primary subtag through the ISO 639 tables, carry region/script/variant/extension/privateuse verbatim — `en-US` → `en-US` under `alpha2`, `zh-Hant-TW` → `zho-Hant-TW` under `alpha3` and `chi-Hant-TW` under `alpha3-bib`) and `name` (English name of the primary subtag — `en-US` renders `English`; waived projection for extended tags per ADR-0011, revisit at the hard-mandate promotion). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+Default `bcp47` (case-canonical tag, e.g. `en-US`); offered `alpha2` (maps the primary subtag through the ISO 639 tables, carries region/script/variant/extension/privateuse verbatim — `en-US` → `en-US`; an encoding per ADR-0011), `alpha3` / `alpha3-bib` (map the primary subtag only for extended tags — `de-CH-1901` → `deu` / `ger`; waived projections — a mapped primary plus carried rest emits tags the authority rejects) and `name` (English name of the primary subtag — `en-US` renders `English`; waived projection for extended tags per ADR-0011, revisit at the hard-mandate promotion). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### ORCID
 

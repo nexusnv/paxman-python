@@ -205,20 +205,23 @@ it; removing it changes the contract surface — callers still passing the forma
 to receive `ContractError` (`CapabilityContract.__post_init__`) — and must ship with a
 migration note.
 
-*Amendment (2026-09-06 — ADR-0011 Phase 3).* Language option (b) landed for
-`alpha2` / `alpha3` / `alpha3-bib`: each maps the primary subtag and carries the
-remaining subtags verbatim, so extended tags render distinctly (`en-US` →
-`en-US` under `alpha2`, `zh-Hant-TW` → `zho-Hant-TW` under `alpha3`) instead of
-colliding onto the bare primary. The `alpha2` column is identity for extended
-tags (exact pre-image); the carried `alpha3` / `alpha3-bib` renderings that
-re-enter do so as fixed points (`eng-US` → `eng-US`). `name` is retained under
-a documented waiver: subtag-carrying names do not re-enter (not lexicon keys;
-unregistered primary), so `name` stays a primary-name projection for extended
-tags — revisit (de-offer vs. locale-aware name grammar) at the hard-mandate
-promotion. Known limitation in the same area: `alpha3` / `alpha3-bib`
-renderings whose mapped primary breaks primary-relative Prefix validation
-(e.g. `deu-CH-1901`, `zho-Hant-TW`) do not re-enter — flagged for the same
-promotion decision.
+*Amendment (2026-09-06 — ADR-0011 Phase 3; corrected same day after review).*
+Language option (b) landed for `alpha2`: it maps the primary subtag and
+carries the remaining subtags verbatim, so extended tags render distinctly
+(`en-US` → `en-US`) instead of colliding onto the bare primary — an
+encoding with exact pre-image. `alpha3` / `alpha3-bib` were first shipped
+with the same carry, but review found the carried renderings do not
+re-enter: variant Prefix is primary-relative (``deu-CH-1901`` INVALID) and
+deprecated/macrolanguage resolution is primary-relative (``zho-Hant-TW``
+AMBIGUOUS) — including same-contract `W→W` failures, i.e. an ADR-0010
+violation introduced by the carry. Both formats were therefore reverted to
+primary-only renderings for extended tags (``de-CH-1901`` → ``deu`` /
+``ger``), which re-enter as fixed points; they are waived projections
+alongside `name` (subtag-carrying names are not lexicon keys). The narrow
+exception is identity-mapped primaries (private-use ``x-foo``), which carry
+verbatim since the rendering is the canonical itself. Revisit (de-offer vs.
+mapping-aware validation vs. locale-aware name grammar) at the
+hard-mandate promotion.
 
 ## Alternatives Considered
 

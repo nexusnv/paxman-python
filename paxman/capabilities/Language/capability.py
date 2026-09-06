@@ -169,18 +169,19 @@ class LanguageCapability(Capability[LanguageNotation]):
         The default ``"bcp47"`` path is identity (rule-produced canonical tag
         unchanged). ``"alpha2"`` maps the primary subtag via ISO 639-1 else
         T→alpha2 else term itself (``ger``→``de``) and carries the remaining
-        subtags verbatim (``en-US``→``en-US``). ``"alpha3"`` returns Term
-        lower plus carried rest (``de-CH-1901``→``deu-CH-1901``),
-        ``"alpha3-bib"`` returns Bib lower plus carried rest
-        (``de-CH-1901``→``ger-CH-1901``), ``"name"`` returns the English
-        Description title of the primary subtag only.
-
-        The carried rest is canonical input copied verbatim — never
-        re-normalized — so each code-format rendering re-enters exactly
-        under the default contract (encodings per ADR-0011). ``"name"`` is
-        the documented waiver: it keeps today's primary-name rendering for
-        extended tags (``en-US``→``English``) because subtag-carrying names
-        are not lexicon keys and do not re-enter.
+        subtags verbatim (``en-US``→``en-US``) — an encoding per ADR-0011:
+        the carried tag re-enters exactly under the default contract.
+        ``"alpha3"`` returns Term lower (``deu``) and ``"alpha3-bib"``
+        returns Bib lower (``ger``) of the primary subtag only — waived
+        projections for extended tags (``de-CH-1901``→``deu``): carrying a
+        mapped primary would emit tags the authority rejects (variant Prefix
+        is primary-relative, so ``deu-CH-1901`` is INVALID; ``zho-Hant-TW``
+        re-enters AMBIGUOUS via deprecated/macrolanguage resolution), while
+        the primary-only rendering re-enters as a fixed point, except
+        identity-mapped primaries (private-use ``x-foo``) which carry the
+        rest verbatim since the rendering is the canonical itself. ``"name"``
+        returns the English Description title of the primary subtag only
+        (same waiver class).
 
         Args:
             value: The default canonical value produced by ``Rule.normalize()``
@@ -215,22 +216,34 @@ class LanguageCapability(Capability[LanguageNotation]):
         if output_format == "alpha3":
             if len(primary) == 2:
                 mapped = _ALPHA2_TO_T.get(primary)
-                if mapped is not None:
-                    return mapped + suffix
-                return ISO6392_BIB_TO_TERM.get(primary, primary) + suffix
-            return ISO6392_BIB_TO_TERM.get(primary, primary) + suffix
+                if mapped is None:
+                    mapped = ISO6392_BIB_TO_TERM.get(primary, primary)
+            else:
+                mapped = ISO6392_BIB_TO_TERM.get(primary, primary)
+            # Identity-mapped primaries (private-use / irregular, e.g. "x",
+            # or unmapped 2-letter primaries) carry the rest verbatim: the
+            # rendering is the canonical itself, so it re-enters trivially.
+            # Anything else renders the primary only (waiver — see below).
+            return mapped + suffix if mapped == primary else mapped
 
         if output_format == "alpha3-bib":
             if len(primary) == 2:
                 term = _ALPHA2_TO_T.get(primary, primary)
-                return _TERM_TO_BIB.get(term, term) + suffix
-            term = ISO6392_BIB_TO_TERM.get(primary, primary)
-            return _TERM_TO_BIB.get(term, term) + suffix
+                mapped = _TERM_TO_BIB.get(term, term)
+            else:
+                term = ISO6392_BIB_TO_TERM.get(primary, primary)
+                mapped = _TERM_TO_BIB.get(term, term)
+            return mapped + suffix if mapped == primary else mapped
 
         if output_format == "name":
             # Waiver (ADR-0011): the English name of the primary subtag only.
             # Carrying subtags into the name ("English-US") would not re-enter
             # (not a lexicon key; unregistered primary), so the projection stays.
+            # alpha3/alpha3-bib carry the same waiver class: a mapped primary
+            # plus carried rest emits tags the authority rejects (variant
+            # Prefix is primary-relative, e.g. "deu-CH-1901" INVALID;
+            # "zho-Hant-TW" AMBIGUOUS via deprecated/macrolanguage
+            # resolution), so both render the primary only for extended tags.
             # Normalize primary to canonical code for name lookup
             if primary in ISO6391_CODES:
                 canonical = primary

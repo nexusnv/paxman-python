@@ -341,7 +341,7 @@ class TestLanguageFormatValue:
 
     def test_alpha3_term_from_bcp47(self) -> None:
         cap = LanguageCapability()
-        assert cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng-US"
+        assert cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng"
         assert cap.format_value("de", "alpha3", _notation("de")) == "deu"
 
     def test_alpha3_term_identity_when_already_term(self) -> None:
@@ -381,8 +381,7 @@ class TestLanguageFormatValue:
     def test_alpha3_bib_from_bcp47(self) -> None:
         cap = LanguageCapability()
         assert (
-            cap.format_value("en-US", "alpha3-bib", _bcp47_notation("en-US"))
-            == "eng-US"
+            cap.format_value("en-US", "alpha3-bib", _bcp47_notation("en-US")) == "eng"
         )
         assert cap.format_value("de", "alpha3-bib", _notation("de")) == "ger"
 
@@ -428,14 +427,15 @@ class TestLanguageFormatValue:
 
 
 class TestLanguageExtendedTagCarry:
-    """Extended-tag carry for alpha2/alpha3/alpha3-bib (ADR-0011 Phase 3).
+    """Extended-tag formats for alpha2 carry + alpha3/name waivers (ADR-0011 Phase 3).
 
-    The three code formats map the primary subtag through the existing
-    ISO 639 tables unchanged and carry the remaining subtags verbatim, so
-    extended tags no longer collapse onto the bare primary (``en-US`` and
-    ``en-GB`` rendered distinctly). ``name`` stays a primary-name
-    projection (waived per ADR-0011 — subtag-carrying names do not
-    re-enter); bare codes are unaffected (nothing to carry).
+    ``alpha2`` maps the primary subtag and carries the remaining subtags
+    verbatim (an encoding: ``en-US`` and ``en-GB`` render distinctly and
+    re-enter exactly). ``alpha3`` / ``alpha3-bib`` / ``name`` render the
+    primary only for extended tags (waived projections — a mapped primary
+    plus carried rest emits tags the authority rejects: variant Prefix is
+    primary-relative, deprecated/macrolanguage resolution is
+    primary-relative). Bare codes are unaffected (nothing to carry).
     """
 
     def setup_method(self) -> None:
@@ -451,67 +451,92 @@ class TestLanguageExtendedTagCarry:
         ("source", "output_format", "expected"),
         [
             ("en-US", "alpha2", "en-US"),
-            ("en-US", "alpha3", "eng-US"),
-            ("en-US", "alpha3-bib", "eng-US"),
+            # alpha3/alpha3-bib render the primary only (waived projection:
+            # "eng-US" re-enters, but prefix/deprecated-constrained rows like
+            # "deu-CH-1901"/"zho-Hant-TW" would be INVALID/AMBIGUOUS).
+            ("en-US", "alpha3", "eng"),
+            ("en-US", "alpha3-bib", "eng"),
             ("zh-Hant-TW", "alpha2", "zh-Hant-TW"),
-            ("zh-Hant-TW", "alpha3", "zho-Hant-TW"),
-            # Bib of zho is chi (_TERM_TO_BIB): mapped primary + rest.
-            ("zh-Hant-TW", "alpha3-bib", "chi-Hant-TW"),
+            ("zh-Hant-TW", "alpha3", "zho"),
+            ("zh-Hant-TW", "alpha3-bib", "chi"),
             ("de-CH-1901", "alpha2", "de-CH-1901"),
-            ("de-CH-1901", "alpha3", "deu-CH-1901"),
-            ("de-CH-1901", "alpha3-bib", "ger-CH-1901"),
+            ("de-CH-1901", "alpha3", "deu"),
+            ("de-CH-1901", "alpha3-bib", "ger"),
             ("x-foo", "alpha2", "x-foo"),
             ("x-foo", "alpha3", "x-foo"),
             ("x-foo", "alpha3-bib", "x-foo"),
             # Extlang compacts canonicalize to themselves (no folding).
             ("zh-cmn", "alpha2", "zh-cmn"),
-            ("zh-cmn", "alpha3", "zho-cmn"),
-            ("zh-cmn", "alpha3-bib", "chi-cmn"),
+            ("zh-cmn", "alpha3", "zho"),
+            ("zh-cmn", "alpha3-bib", "chi"),
         ],
     )
     def test_carry_rows(self, source: str, output_format: str, expected: str) -> None:
-        """Each code format renders mapped primary + verbatim rest."""
+        """alpha2 carries rest; alpha3/alpha3-bib render the primary only."""
         contract = LanguageCapability.create_contract(output_format=output_format)
         result = canonicalize(source, contract)
         assert result.status == Resolution.SUCCESS
         assert result.canonicalized_value == expected
 
     @pytest.mark.parametrize(
-        ("source", "output_format", "expected"),
+        ("source", "expected"),
         [
-            ("en-US", "alpha2", "en-US"),
-            ("zh-Hant-TW", "alpha2", "zh-Hant-TW"),
-            ("de-CH-1901", "alpha2", "de-CH-1901"),
-            ("x-foo", "alpha2", "x-foo"),
-            ("x-foo", "alpha3", "x-foo"),
-            ("x-foo", "alpha3-bib", "x-foo"),
-            ("en-US", "alpha3", "eng-US"),
-            ("en-US", "alpha3-bib", "eng-US"),
-            ("zh-Hant-TW", "alpha3-bib", "chi-Hant-TW"),
-            ("zh-cmn", "alpha2", "zh-cmn"),
-            ("zh-cmn", "alpha3-bib", "chi-cmn"),
+            ("en-US", "en-US"),
+            ("zh-Hant-TW", "zh-Hant-TW"),
+            ("de-CH-1901", "de-CH-1901"),
+            ("x-foo", "x-foo"),
+            ("zh-cmn", "zh-cmn"),
         ],
     )
-    def test_carry_reenters_param_free(
+    def test_alpha2_carry_reenters_param_free(self, source: str, expected: str) -> None:
+        """alpha2 carry rows re-enter exactly under the default contract (encodings)."""
+        rendered = canonicalize(
+            source, LanguageCapability.create_contract(output_format="alpha2")
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == expected
+        reentry = canonicalize(expected, LanguageCapability.create_contract())
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == expected
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en-US", "alpha3", "eng"),
+            ("en-US", "alpha3-bib", "eng"),
+            ("zh-Hant-TW", "alpha3", "zho"),
+            ("zh-Hant-TW", "alpha3-bib", "chi"),
+            ("de-CH-1901", "alpha3", "deu"),
+            ("de-CH-1901", "alpha3-bib", "ger"),
+            ("zh-cmn", "alpha3", "zho"),
+            ("zh-cmn", "alpha3-bib", "chi"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+        ],
+    )
+    def test_waived_projection_fixed_point(
         self, source: str, output_format: str, expected: str
     ) -> None:
-        """Each carried rendering re-enters under the default contract.
+        """alpha3/alpha3-bib primary-only rows fixpoint under own contract.
 
-        Excluded by empirical run (default contract, pre- and post-fix —
-        the default path is untouched by the renderer): ``zho-Hant-TW``
-        re-enters AMBIGUOUS and ``deu-CH-1901`` / ``ger-CH-1901`` /
-        ``zho-cmn`` re-enter INVALID/AMBIGUOUS. Variant/script Prefix
-        validation is primary-relative, so a mapped primary breaks the
-        prefix constraints the carried subtags were validated against.
-        Known limitation, flagged for the hard-mandate promotion ADR
-        alongside the ``name`` waiver.
+        Waived projections do not satisfy default-contract pre-image
+        (``canonicalize("eng", default)`` → ``"en"``) — that is what makes
+        them projections. They satisfy ADR-0010 same-contract re-entry:
+        ``canonicalize(W, C(fmt))`` renders ``W`` again. The carried-rest
+        variants (``deu-CH-1901`` / ``zho-Hant-TW``) would be
+        INVALID/AMBIGUOUS because variant Prefix and deprecated /
+        macrolanguage resolution are primary-relative, so they are never
+        emitted.
         """
         rendered = canonicalize(
             source, LanguageCapability.create_contract(output_format=output_format)
         )
         assert rendered.status == Resolution.SUCCESS
         assert rendered.canonicalized_value == expected
-        reentry = canonicalize(expected, LanguageCapability.create_contract())
+        reentry = canonicalize(
+            expected,
+            LanguageCapability.create_contract(output_format=output_format),
+        )
         assert reentry.status == Resolution.SUCCESS
         assert reentry.canonicalized_value == expected
 
