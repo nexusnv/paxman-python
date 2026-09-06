@@ -154,11 +154,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     _row(ORCID, "0000-0002-1825-0097", "0000-0002-1825-0097"),
     # Phone: e164 canonical; cf. tests/e2e/test_canonicalize.py phone tests
     # Fixture is a valid NANP number (212-555-1234, not the fictional
-    # 555-01xx range) and carries default_country="US" so the lossy
-    # "national" rendering (bare NSN) can re-enter via the NANP rule
-    # (ADR-0010 Scope decision 2 — recognize-own-output condition is
-    # contract-relative; national without country is not self-describing).
-    _row(Phone, "+12125551234", "+12125551234", default_country="US"),
+    # 555-01xx range). The row is param-free per ADR-0011 — pre-image
+    # recovery under the default contract is locked by the Phase 4 suite
+    # hardening.
+    _row(Phone, "+12125551234", "+12125551234"),
     # SIUnit: tests/capabilities/si_unit/test_capability.py (symbol "kg")
     _row(SIUnit, "kg", "kg"),
     # URL: WHATWG canonical form appends the path "/"; cf.
