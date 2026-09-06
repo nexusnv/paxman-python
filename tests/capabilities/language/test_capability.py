@@ -341,9 +341,7 @@ class TestLanguageFormatValue:
 
     def test_alpha3_term_from_bcp47(self) -> None:
         cap = LanguageCapability()
-        assert (
-            cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng-US"
-        )
+        assert cap.format_value("en-US", "alpha3", _bcp47_notation("en-US")) == "eng-US"
         assert cap.format_value("de", "alpha3", _notation("de")) == "deu"
 
     def test_alpha3_term_identity_when_already_term(self) -> None:
@@ -471,9 +469,7 @@ class TestLanguageExtendedTagCarry:
             ("zh-cmn", "alpha3-bib", "chi-cmn"),
         ],
     )
-    def test_carry_rows(
-        self, source: str, output_format: str, expected: str
-    ) -> None:
+    def test_carry_rows(self, source: str, output_format: str, expected: str) -> None:
         """Each code format renders mapped primary + verbatim rest."""
         contract = LanguageCapability.create_contract(output_format=output_format)
         result = canonicalize(source, contract)
