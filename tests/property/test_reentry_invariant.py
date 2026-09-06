@@ -143,6 +143,11 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # Language: tests/capabilities/language/test_capability.py
     # ::test_bcp47_identity
     _row(Language, "en", "en"),
+    # Language extended-tag surface (ADR-0011 Phase 3): code formats carry
+    # subtags, so "en-US" pins the extended path beside the bare row. The
+    # suite is W->W, which holds for every format including the waived
+    # "name" projection ("English" re-renders "English").
+    _row(Language, "en-US", "en-US"),
     # MacAddress: tests/capabilities/mac_address/test_capability.py
     # ::test_format_value_identity_default (colon)
     _row(MacAddress, "00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:5E"),

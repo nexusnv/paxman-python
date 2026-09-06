@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Language — `alpha2`/`alpha3`/`alpha3-bib` carry extended subtags (ADR-0011):** the three code formats now map the primary subtag and carry the remaining subtags verbatim (`en-US` → `en-US` under `alpha2`, was `en`; `zh-Hant-TW` → `zho-Hant-TW` under `alpha3`, was `zho`) — the projection silently changed the entity (`en-US`/`en-GB` collided onto `en`). `name` is unchanged (waived projection — `en-US` still renders `English`; revisit at the hard-mandate promotion). Bare-code rendering unchanged.
 - **Suppression — A0 whole-input exemption (#122, ADR-0009 Rev.5):** under `suppress_common_words=True`, a suppressible word-bounded hit covering the entire trimmed input is never suppressed. `canonicalize("to"/"TO"/"  to  ", Country suppress on)` → `SUCCESS "TO"` (was `MISSING`); same for Currency `ALL` and Language `en`. Embedded mentions stay suppressed (`scan()` prose behavior unchanged; `canonicalize("to and usa", …)` still `SUCCESS "US"` via the non-suppressible `name_recognition` rescue path). A1 (`x→0` fallback) evaluated and rejected — `"to and is"` stays `MISSING` with `suppressed_count == 3`. Flag-off results are byte-identical.
 
 ### Fixed
