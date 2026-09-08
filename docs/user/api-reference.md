@@ -54,7 +54,7 @@ flowchart LR
 
 | Function | Signature | What it does |
 |----------|-----------|--------------|
-| `paxman.register_all_shipped()` | `() -> None` | Registers every capability shipped in this release. Idempotent by name. |
+| `paxman.register_all_shipped()` | `() -> tuple[str, ...]` | Registers every capability shipped in this release. Idempotent by name. Returns the names newly registered by this call. |
 | `paxman.register_capability(cap)` | `(cap: Capability) -> None` | Registers one capability instance, e.g. `Email()`. Fails if the name already exists or the registry is frozen. |
 | `paxman.register_grammar(name, cls)` | `(capability_name: str, grammar_cls: type[Grammar]) -> None` | Registers a community grammar (see [Extending](extending/)). Must happen before the first call. |
 | `paxman.register_rule(name, cls)` | `(capability_name: str, rule_cls: type[Rule]) -> None` | Registers a community rule. Must happen before the first call. |
@@ -89,7 +89,7 @@ def canonicalize(text: str, contract: CapabilityContract) -> ExecutionResult
 
 | Exception | Cause |
 |-----------|-------|
-| `CapabilityError` | No capability matches `contract.capability_name`, duplicate name, or registry frozen |
+| `CapabilityError` | No capability matches `contract.capability_name` |
 | `ContractError` | Malformed contract (unknown `pinned_rules`, unknown `output_format`, unknown semantics, missing required feature) |
 | `MultipleMentionsError` | Two or more non-overlapping mentions resolved to different values — caller must split first |
 | `RecognitionError` | Grammar raised or returned a malformed match (`rule`, `original_error`) |
@@ -316,5 +316,13 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Phone numbers | Phone | `Phone.create_contract(...)` |
 | SI unit expressions | SI Unit | `SIUnit.create_contract(...)` |
 | Absolute URLs / IRIs | URL | `URL.create_contract(...)` |
+| Business identifier codes | BIC | `BIC.create_contract(...)` |
+| WGS 84 coordinates | Coordinates | `Coordinates.create_contract(...)` |
+| Chemical elements | Element | `Element.create_contract(...)` |
+| Bank account numbers | IBAN | `IBAN.create_contract(...)` |
+| Serial identifiers | ISSN | `ISSN.create_contract(...)` |
+| Language identifiers | Language | `Language.create_contract(...)` |
+| MAC addresses | MacAddress | `MacAddress.create_contract(...)` |
+| Researcher identifiers | ORCID | `ORCID.create_contract(...)` |
 
 New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

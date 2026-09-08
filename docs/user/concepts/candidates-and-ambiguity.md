@@ -24,10 +24,10 @@ Candidates are deduplicated by `(value, recognition_rule, validation_rule)`. If 
 flowchart TB
     M[One mention<br>'01/02/2026'] --> G1[ISO/US grammar]
     M --> G2[European grammar]
-    G1 --> R1[Rule: Section 1-date-format<br>US federal]
-    G2 --> R2[Rule: Section 4-date-format<br>CENELEC EN 50160]
-    R1 --> C1[Candidate<br>2026-01-02<br>provenance: US spec]
-    R2 --> C2[Candidate<br>2026-02-01<br>provenance: EN 50160]
+    G1 --> R1[Rule: Derived-US-date-format<br>derived convention]
+    G2 --> R2[Rule: Derived-European-date-format<br>derived convention]
+    R1 --> C1[Candidate<br>2026-01-02<br>provenance: US locale convention]
+    R2 --> C2[Candidate<br>2026-02-01<br>provenance: European locale convention]
 
     style M fill:#eef6ff,stroke:#4a90d9
     style C1 fill:#fff8e1,stroke:#d4a017
@@ -64,7 +64,7 @@ Concrete examples:
 
 `AMBIGUOUS` is a **domain signal**, not a failure. The input is real; the specs genuinely conflict. Contrast with:
 
-- `MISSING` — no grammar matched at all (the text does not look like this entity).
+- `MISSING` — no grammar matched, or a recognized match was suppressed (`suppressed_count > 0` tells the two apart — see [Execution Result](execution-result/)).
 - `INVALID` — a grammar matched but no spec accepted it (looks like the entity but is malformed).
 - `MultipleMentionsError` — two **separate** mentions with different values in one call (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)). That raises an exception rather than returning a status, because it signals you need to split the input first.
 
@@ -79,10 +79,11 @@ You have three tools, all through the contract (see [Contracts](contracts/)):
 If you know which interpretation you want, narrow the rules:
 
 ```python
+import paxman
 from paxman.capabilities import Date
 
 # Only the US reading
-contract = Date.create_contract(pinned_rules=["Section 4.3.1-calendar-date-us"])
+contract = Date.create_contract(pinned_rules=["Derived-US-date-format"])
 result = paxman.canonicalize("01/02/2026", contract)
 # may become SUCCESS, or INVALID if no pinned rule validates
 ```
@@ -92,6 +93,8 @@ Use `pinned_rules` when you want to enforce a single authority. Note that `pinne
 ### 2. Filter by time
 
 ```python
+from paxman.capabilities import Date
+
 contract = Date.create_contract(year=2019)  # only rules published ≤ 2019
 ```
 
@@ -100,6 +103,8 @@ contract = Date.create_contract(year=2019)  # only rules published ≤ 2019
 Often the right behavior is to surface the candidates, not to suppress them:
 
 ```python
+import paxman
+from paxman.capabilities import Date
 from paxman.core.domain import Resolution
 
 result = paxman.canonicalize("01/02/2026", Date.create_contract())

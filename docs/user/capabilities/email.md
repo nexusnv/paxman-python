@@ -43,7 +43,7 @@ There are no offered alternatives for Email — `None`, `"default"`, and `"email
 
 ```python
 contract = Email.create_contract(
-    include_obfuscated=False,  # bool, default False — recognize "user at example dot com"
+    include_obfuscated=False,  # bool, default False — set True to recognize "user at example dot com"
     include_localhost=True,  # bool, default True  — recognize admin@localhost
     # plus every common field: excluded_rules / pinned_rules / year / output_format / extra_grammars
 )
@@ -130,6 +130,10 @@ Validated values carry provenance from:
 Inspect `candidate.provenance` and `candidate.validation_rule` for the exact citation:
 
 ```python
+import paxman
+from paxman.capabilities import Email
+
+result = paxman.canonicalize("user@Example.COM", Email.create_contract())
 for c in result.candidates:
     p = c.provenance[0]
     print(

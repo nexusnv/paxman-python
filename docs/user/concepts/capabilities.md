@@ -77,6 +77,14 @@ The set below reflects the **current release** and is intentionally not presente
 | **Phone** | Phone numbers | E.164, tel-URI, 00-prefix international, NANP national | E.164 (`+15551234567`) or other via `output_format` |
 | **SI Unit** | SI unit expressions | symbols, names, product/quotient compounds | canonical symbol form (`"kg"`, `"m/s2"`) |
 | **URL** | Absolute URIs / IRIs | absolute URIs (WHATWG URL Standard) | WHATWG serialization (lowercased host, etc.) |
+| **BIC** | Business identifier codes (ISO 9362) | 8/11-character codes | `bic` form |
+| **Coordinates** | WGS 84 coordinates | decimal pairs, DMS, Geo URI, ISO 6709, GeoJSON | lat-first signed decimal degrees |
+| **Element** | Chemical elements (IUPAC) | symbols, names, labeled atomic numbers | proper-case symbol (`"Fe"`) |
+| **IBAN** | Bank account numbers (ISO 13616) | electronic compact, paper groups-of-four, labels | compact `electronic` form |
+| **ISSN** | Serial identifiers (ISO 3297) | hyphenated, compact, labels | `hyphenated` (`"0317-8471"`) |
+| **Language** | Language identifiers (BCP 47) | tags, codes, names | `bcp47` tag |
+| **MacAddress** | MAC addresses (IEEE 802) | colon/hyphen/dot groups | `colon` form |
+| **ORCID** | Researcher identifiers (ISO 27729) | hyphenated, compact, URIs | hyphenated `orcid` form |
 
 > This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts/) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/).
 

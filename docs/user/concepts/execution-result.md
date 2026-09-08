@@ -27,7 +27,7 @@ candidate.span  # (start, end) of this candidate's match in the input, or None
 candidate.provenance  # tuple[Provenance, ...] — the spec(s) that vouched for it
 ```
 
-`version_stamp` is currently `VersionStamp(paxman_version="…")`; it records the installed build so results are auditable. `contract` is echoed back for logging and debugging.
+`version_stamp` is currently `VersionStamp(paxman_version="…", recognition_revision="…")`; it records the installed build so results are auditable. `contract` is echoed back for logging and debugging.
 
 ---
 

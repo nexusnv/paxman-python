@@ -33,6 +33,14 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone/) |
 | `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit/) |
 | `https://example.com`, `http://münchen.de` | [URL](url/) |
+| `DEUTDEFF`, `DEUTDEFF500` | [BIC](../api-reference/) — guide forthcoming |
+| `48.8566, 2.3522`, `geo:48.8566,2.3522` | [Coordinates](../api-reference/) — guide forthcoming |
+| `Fe`, `iron`, `element 26` | [Element](../api-reference/) — guide forthcoming |
+| `DE89370400440532013000` | [IBAN](../api-reference/) — guide forthcoming |
+| `0317-8471` | [ISSN](issn/) |
+| `en-US`, `eng`, `German` | [Language](../api-reference/) — guide forthcoming |
+| `00:1A:2B:3C:4D:5E` | [MacAddress](../api-reference/) — guide forthcoming |
+| `0000-0002-1825-0097` | [ORCID](../api-reference/) — guide forthcoming |
 
 > The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
 

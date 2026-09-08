@@ -22,7 +22,7 @@ for c in result.candidates:
         # IETF  RFC 5322  2008  Section 3.4.1-addr-spec
 ```
 
-A `Provenance` object has six fields:
+A `Provenance` object has seven fields:
 
 | Field | Meaning | Example |
 |-------|---------|---------|
@@ -34,7 +34,7 @@ A `Provenance` object has six fields:
 | `lifecycle` | Publication lifecycle stage | `"active"`, `"deprecated"` |
 | `publication_year` | Year the cited section was published | `2008` |
 
-The seventh piece of information — **which section** of the spec — lives on the rule that produced the candidate as `validation_rule` (e.g. `"Section 3.4.1-addr-spec"`), not on provenance itself. Together they form a complete citation: *"this value was validated by IETF RFC 5322, Section 3.4.1, publication year 2008."*
+The other piece of information — **which section** of the spec — lives on the rule that produced the candidate as `validation_rule` (e.g. `"Section 3.4.1-addr-spec"`), not on provenance itself. Together they form a complete citation: *"this value was validated by IETF RFC 5322, Section 3.4.1, publication year 2008."*
 
 ```mermaid
 flowchart TB

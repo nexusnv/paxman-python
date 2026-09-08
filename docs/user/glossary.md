@@ -90,7 +90,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 ## H
 
-**Historical** — Opt-in temporal coverage (e.g. `Country(include_historical=True)` for ISO 3166-3 formerly-used names). Gated via `requires_features` or contract flags; `year` also filters by `publication_year`. See [Contracts](concepts/contracts/).
+**Historical** — Opt-in temporal coverage (e.g. `Country.create_contract(include_historical=True)` for ISO 3166-3 formerly-used names). Gated via `requires_features` or contract flags; `year` also filters by `publication_year`. See [Contracts](concepts/contracts/).
 
 ---
 
