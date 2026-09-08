@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-09-08
+
+> **Docs-only patch — no contract or behavior changes.** Follows up the 0.4.0 release review (#141, issue #142).
+
+### Fixed
+
+- **Date docs — false spec citations:** capability and Candidates guides cited rule names that no longer exist (`Section 4.3.1-calendar-date`, `Section 1-date-format`, `Section 4-date-format`, CENELEC EN 50160). Real rules are `Section 5.2.1.1-calendar-date` (ISO 8601) and `Derived-US-date-format` / `Derived-European-date-format` (both authority `Derived convention`; the EN 50160 attribution was retracted in code). The Candidates pin example used a fictional rule (`Section 4.3.1-calendar-date-us`, would raise `ContractError`) — now `Derived-US-date-format`, verified `SUCCESS`.
+- **API reference:** `register_all_shipped()` returns `tuple[str, ...]` (names newly registered), not `None`; `canonicalize()` `CapabilityError` row trimmed to unknown-capability (duplicate-name/frozen causes belong to registration calls).
+- **Concepts:** `Provenance` has seven fields (was "six"); `VersionStamp` example includes `recognition_revision`; `suppress_common_words` added to the common-contract table; `MISSING` definition covers suppression (`suppressed_count > 0`); runnable blocks made self-contained.
+- **Snippets:** Email obfuscated-flag comment and provenance setup; ISSN `-?` notation; Currency wrong-length wording; extending freeze/opt-in imports and illustrative (non-ISO) DotDateRule provenance; getting-started fence language; glossary contract factory.
+- **Inventories:** capability chooser, concepts table, and API quick lookup now list all 18 shipped capabilities (were 10/18).
+
 ## [0.4.0] - 2026-09-08
 
 ### Added

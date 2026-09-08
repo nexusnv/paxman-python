@@ -1,5 +1,6 @@
 ---
 title: "Phone"
+slug: v0.4.1/capabilities/phone
 ---
 
 Canonicalizes **one phone number** per call to E.164 (or to tel-URI / split form when requested).

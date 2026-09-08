@@ -1,5 +1,6 @@
 ---
 title: "Capabilities"
+slug: v0.4.1/concepts/capabilities
 ---
 
 A **capability** is one kind of identifier Paxman knows how to canonicalize. Each capability is a self-contained package — its own patterns, its own specifications, its own rendering — that plugs into the shared pipeline.
