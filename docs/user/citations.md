@@ -21,16 +21,18 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | Authority | Specifications | Capabilities | Rules |
 |-----------|---------------|--------------|-------|
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
-| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646 | Email, IP, Phone, Language | 6 |
+| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946 | Email, IP, Phone, Language, Coordinates | 8 |
 | **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08) | Language | 2 |
-| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/3/5, ISO 80000-1:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit | 18 |
+| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/3/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates | 21 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
-| **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 7 |
+| **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 6 |
 | **SIL International (ISO 639-3 RA)** | ISO 639-3:2007 | Language | 2 |
 | **International ISBN Agency** | ISBN Users' Manual (2012), ISBN Range Message (2026-08-05) | ISBN | 2 |
 | **WHATWG** | URL Standard (Living Standard) | URL | 1 |
+| **IEEE** | IEEE Std 802-2024 | MacAddress | 1 |
+| **IUPAC** | IUPAC Periodic Table 04 May 2022, IUPAC Red Book 2005 Ch. IR-3 | Element | 2 |
 | **Derived convention** | US locale — MM/DD/YYYY, European locale — DD/MM/YYYY | Date | 2 |
 
 > **Note on "Derived convention":** The two Date rules for `MM/DD/YYYY` and `DD/MM/YYYY` are locale conventions rather than an external standards publication. They are included here for completeness and carry `kind="convention"` with no `reference_url`.
@@ -62,6 +64,8 @@ Specification: **SI Brochure: The International System of Units (SI)**, 9th edit
 | IP | RFC 5952 | 2010 | `Section 4-ipv6-text-representation` | Section 4 (IPv6 text representation) + RFC 4291 §2.2 (mixed `LS32` `::ffff:192.0.2.1`) | 2010 | https://datatracker.ietf.org/doc/html/rfc5952 |
 | Phone | RFC 3966 | 2004 | `Section 3-tel-uri` | Section 3 (tel URI) / Section 3.1 (global numbers) | 2004 | https://tools.ietf.org/html/rfc3966 |
 | Language | BCP 47 RFC 5646 | 2009-09 | `Section 2.1-syntax` | Section 2.1 (Language-Tag ABNF, well-formed only) | 2009 | https://www.rfc-editor.org/rfc/rfc5646.txt |
+| Coordinates | RFC 5870 | 2010 | `Section 3.3-geo-uri-validity` | Section 3.3 (Geo URI validity) | 2010 | https://www.rfc-editor.org/rfc/rfc5870.txt |
+| Coordinates | RFC 7946 | 2016 | `Section 3.1.1-position` | Section 3.1.1 (Position) | 2016 | https://www.rfc-editor.org/rfc/rfc7946.txt |
 
 All IETF entries are `kind="specification"`, `lifecycle="active"`.
 
@@ -80,7 +84,7 @@ Specification: **IANA Language Subtag Registry**, Rolling File-Date 2026-08-08 �
 
 ## ISO — International Organization for Standardization
 
-Across 10 ISO publications (18 rules):
+Across 11 ISO publications (21 rules):
 
 | Capability | Specification | Version | Rule | Citation | Year | Reference |
 |------------|---------------|---------|------|----------|------|-----------|
@@ -98,6 +102,8 @@ Across 10 ISO publications (18 rules):
 | ISBN | ISO 2108:2017 | 2017 | `Section 5.3-isbn13-check-digit` | Section 5.3 (ISBN-13 check digit) | 2017 | https://www.iso.org/standard/65483.html |
 | ISBN | ISO 2108:2017 | 2017 | `Section 4.2-gs1-prefix` | Section 4.2 (GS1 prefix) | 2017 | https://www.iso.org/standard/65483.html |
 | IBAN | ISO 13616-1:2020 | 2020 | `Section 4-iban-structure-mod97` | Section 4-5 (structure + MOD 97-10, via ISO/IEC 7064:2003) | 2020 | https://www.iso.org/standard/81090.html |
+| Coordinates | ISO 6709:2022 | 2022 | `Section 6-coordinate-structure` | Section 6 (Coordinate structure) | 2022 | https://www.iso.org/standard/75147.html |
+| Coordinates | ISO 6709:2022 | 2022 | `Section Annex-h-string-expression` | Annex H (String expression of a point) | 2022 | https://www.iso.org/standard/75147.html |
 | Language | ISO 639-1:2002 | 2002 | `Section 4-alpha-2-code` | Section 4 (alpha-2 code, 184 entries) | 2002 | https://www.iso.org/standard/22109.html |
 | Language | ISO 639-1:2002 | 2002 | `Section-english-name-mapping` | Section 4 (English language names → alpha-2) | 2002 | https://www.iso.org/standard/22109.html |
 | Language | ISO 639-2:1998 | 1998 | `Section 4-alpha-3-code` | Section 4 (alpha-3 code, 487 entries T/B) | 1998 | https://www.iso.org/standard/4767.html |
@@ -184,6 +190,23 @@ Specification: **URL Standard**, Living Standard — `https://url.spec.whatwg.or
 | URL | `WHATWG URL Standard` | Section 4.4 (basic URL parser); RFC 3986 §3.1 / RFC 3987 §2 grammar |
 
 ---
+
+## IEEE — Institute of Electrical and Electronics Engineers
+
+| Capability | Specification | Version | Rule | Citation | Year | Reference |
+|------------|---------------|---------|------|----------|------|-----------|
+| MacAddress | IEEE Std 802-2024 | 2024 | `Section 8.2-eui-structure` | Section 8.2 (Universal addresses; EUI-48/EUI-64, I/G and U/L bits) | 2024 | https://standards.ieee.org/ieee/802/10894 |
+
+All IEEE entries are `kind="specification"`, `lifecycle="active"`.
+
+## IUPAC — International Union of Pure and Applied Chemistry
+
+| Capability | Specification | Version | Rule | Citation | Year | Reference |
+|------------|---------------|---------|------|----------|------|-----------|
+| Element | IUPAC Periodic Table of the Elements | 04 May 2022 | `Section PTOE-element-registry` | Table I names and symbols (118 elements, Z 1-118) | 2022 | https://iupac.org/wp-content/uploads/2022/07/IUPAC_Periodic_Table-04May22_CRA.pdf |
+| Element | IUPAC Red Book 2005, Ch. IR-3 (Nomenclature of Inorganic Chemistry) | 2005 | `Section IR-3.1-names-and-symbols` | Chapter IR-3, Table I (names and symbols) | 2005 | https://iupac.qmul.ac.uk/RedBook2005.pdf |
+
+The registry entry is `kind="registry"`; the Red Book entry is `kind="specification"`; both are `lifecycle="active"`.
 
 ## Derived conventions — Date (non-authoritative)
 

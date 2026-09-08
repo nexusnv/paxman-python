@@ -80,7 +80,7 @@ Start with the capability that matches your column; if you need more than one, r
 
 ## One mention per call
 
-Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline](../concepts/pipeline/)). Text that contains two different entities with different canonical values raises `MultipleMentionsError` rather than returning a merged answer — split first, then loop.
+Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline](../concepts/pipeline/)). Text that contains two different entities with different canonical values raises `MultipleMentionsError` rather than returning a merged answer — split first, then loop. To extract *every* mention in a longer text instead, use the batch API `paxman.scan()`, which returns per-capability `Mention` records (see [API reference](../api-reference/)).
 
 ```python
 from paxman.core.errors import MultipleMentionsError

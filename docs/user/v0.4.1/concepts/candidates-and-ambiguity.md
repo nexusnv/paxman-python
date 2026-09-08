@@ -83,6 +83,8 @@ If you know which interpretation you want, narrow the rules:
 import paxman
 from paxman.capabilities import Date
 
+paxman.register_all_shipped()
+
 # Only the US reading
 contract = Date.create_contract(pinned_rules=["Derived-US-date-format"])
 result = paxman.canonicalize("01/02/2026", contract)
@@ -108,6 +110,7 @@ import paxman
 from paxman.capabilities import Date
 from paxman.core.domain import Resolution
 
+paxman.register_all_shipped()
 result = paxman.canonicalize("01/02/2026", Date.create_contract())
 if result.status == Resolution.AMBIGUOUS:
     for c in result.candidates:

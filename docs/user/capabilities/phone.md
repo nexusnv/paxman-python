@@ -4,7 +4,7 @@ title: "Phone"
 
 Canonicalizes **one phone number** per call to E.164 (or to tel-URI / split form when requested).
 
-> **In plain language:** give it `"+1 555 123 4567"` or `"(555) 234-5678"` and it hands back `"+15551234567"` if the numbering plan says the number is valid. National-shaped numbers need you to say which country's plan to use.
+> **In plain language:** give it `"+1 555 123 4567"` and it hands back `"+15551234567"` if the numbering plan says the number is valid. National-shaped numbers like `"(555) 234-5678"` carry no country code, so they need `default_country="US"` (→ `"+15552345678"`); without it they are `INVALID`.
 
 ---
 

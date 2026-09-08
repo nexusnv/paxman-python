@@ -79,6 +79,6 @@ for c in result.candidates:
 
 ## In plain language
 
-Provenance is the footnote on the answer. Instead of "Paxman says `Alemania` is `DE`," provenance lets you say "Paxman says `Alemania` is `DE` per Unicode CLDR, validated under the CLDR localized-name rule, publication year 2025" — a claim you can check, cite, and reproduce.
+Provenance is the footnote on the answer. Instead of "Paxman says `Alemania` is `DE`," provenance lets you say "Paxman says `Alemania` is `DE` per Unicode CLDR, validated under the CLDR localized-name rule, publication year 2024" — a claim you can check, cite, and reproduce.
 
 Next: [Candidates & Ambiguity →](candidates-and-ambiguity/) — when provenance disagrees and what to do about it.

@@ -126,7 +126,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 ## M
 
-**MISSING** — A `Resolution` status. No grammar recognized the input (consider toggling an `include_*` flag). Distinct from `INVALID`. See [Execution Result](concepts/execution-result/).
+**MISSING** — A `Resolution` status. No grammar recognized the input, or a recognized match was suppressed (`suppressed_count > 0` tells the two apart). Consider toggling an `include_*` flag. Distinct from `INVALID`. See [Execution Result](concepts/execution-result/).
 
 **Money** — Paxman capability for amounts paired with currency identifiers (ISO 4217 + CLDR). See [Capabilities](capabilities/).
 

@@ -127,6 +127,7 @@ Validated values cite the calendar spec whose rule accepted the notation — e.g
 import paxman
 from paxman.capabilities import Date
 
+paxman.register_all_shipped()
 result = paxman.canonicalize("2026-01-15", Date.create_contract())
 for c in result.candidates:
     p = c.provenance[0]

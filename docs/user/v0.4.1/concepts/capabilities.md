@@ -26,7 +26,7 @@ flowchart LR
 1. Each capability has a lowercase name (e.g. `"email"`, `"country"`, `"url"`).
 2. Its contract carries that name in `capability_name`.
 3. `paxman.canonicalize(text, contract)` looks up the capability by that name in the registry.
-4. Only that capability's grammars and rules run — others stay unloaded.
+4. Only that capability's grammars and rules run for the call — other capabilities' grammars never see the input. (With `register_all_shipped()` every shipped capability is loaded; with `register_capability(Email())` only Email is.)
 
 This keeps imports cheap: `from paxman.capabilities import Email` loads only Email, not every capability.
 

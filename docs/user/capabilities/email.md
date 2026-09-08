@@ -133,6 +133,7 @@ Inspect `candidate.provenance` and `candidate.validation_rule` for the exact cit
 import paxman
 from paxman.capabilities import Email
 
+paxman.register_all_shipped()
 result = paxman.canonicalize("user@Example.COM", Email.create_contract())
 for c in result.candidates:
     p = c.provenance[0]

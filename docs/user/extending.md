@@ -148,6 +148,8 @@ A community grammar runs **only** when named in `contract.extra_grammars`. A com
 import paxman
 from paxman.capabilities import Date
 
+paxman.register_all_shipped()
+
 # Dormant contract — dot dates not opted in, shipped behavior only
 paxman.canonicalize("2024-01-01", Date.create_contract()).canonicalized_value
 # "2024-01-01"

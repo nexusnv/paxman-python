@@ -14,7 +14,7 @@ Canonicalizes **one money amount paired with a currency** per call to `CODE amou
 | Recognizes (currency + amount adjacent) | Does not recognize |
 |-----------------------------------------|--------------------|
 | `USD500`, `USD 500.00`, `EUR 1.000,50` | Currency identifier alone (`USD`) — use [Currency](currency/) |
-| `€500`, `¥1000`, `US$ 500` (qualified symbol) | Bare shared symbol without disambiguation (`$500` with default contract) — recognized but `INVALID` |
+| `€500`, `CN¥1000`, `US$ 500` (qualified symbols) | Bare shared symbol without disambiguation (`$500` or `¥1000` with default contract — `¥` is shared by CNY/JPY) — recognized but `INVALID` |
 | `1.000,50 EUR` — European comma-decimal: last separator is the decimal point | Amount-glued tokens without a clean boundary — `MISSING` |
 | `$500` with `dollar_sign_currency="USD"` — opt-in for shared symbols | Bare `$` without `dollar_sign_currency` — `INVALID` |
 

@@ -361,7 +361,7 @@ Either approach is supported; pick explicit when you want the upgrade to be a co
 These are **major-bump** signals — check the release notes and review the checklist below:
 
 - A `DEFAULT_OUTPUT_FORMAT` or `OFFERED_OUTPUT_FORMATS` change — the string behind `canonicalized_value` for the same input may differ even though `status` stays `SUCCESS`.
-- A rule's provenance year or spec version changes — `contract.year` boundaries move and `include_historical` vs active coverage may shift.
+- A rule's provenance year or spec version changes — treat as an audit signal: `contract.year` boundaries move and `include_historical` vs active coverage may shift. Alone it is not a MAJOR trigger (see above).
 - A capability renamed, merged, or removed.
 
 ---

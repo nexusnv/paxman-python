@@ -103,7 +103,7 @@ flowchart TB
 
 - **Deduplication** collapses identical `(value, recognition_rule, validation_rule)` triples. Different provenance that happens to produce the same string does not create ambiguity — one value, one status.
 - **Status decision** (see [Execution Result](execution-result/)):
-  - `MISSING` vs `INVALID` depends precisely on whether recognition found *anything* — the pipeline remembers `had_recognitions`.
+  - `MISSING` vs `INVALID` depends precisely on whether recognition found *anything that survived suppression* — the pipeline remembers `had_recognitions` over unsuppressed matches (suppressed hits are reported via `suppressed_count`, not as recognitions).
   - `SUCCESS` means exactly one distinct canonical value survived.
   - `AMBIGUOUS` means one logical mention produced two or more distinct values (e.g. `"01/02/2026"` → US `2026-01-02` vs European `2026-02-01`). This is a genuine spec conflict, not an input with two mentions.
 - **Single-mention invariant:** Paxman resolves one entity per call. If recognition found two *non-overlapping* mentions that resolve to different values (e.g. two email addresses with different canonical values), the engine fails fast with `MultipleMentionsError` instead of returning a misleading aggregate. See the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md).

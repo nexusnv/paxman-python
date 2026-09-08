@@ -190,6 +190,14 @@ Current defaults and offered alternatives:
 | Phone | `e164` | `rfc3966`, `split` |
 | SI Unit | `symbol` | *(none)* |
 | URL | `url` | *(none)* |
+| BIC | `bic` | `grouped`, `bic11` |
+| Coordinates | `decimal` | `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm` |
+| Element | `symbol` | `name` |
+| IBAN | `electronic` | `paper` |
+| ISSN | `hyphenated` | `compact`, `urn` |
+| Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
+| MacAddress | `colon` | `hyphen`, `bare`, `cisco`, `eui64` |
+| ORCID | `orcid` | `uri`, `compact` |
 
 > The set of capabilities — and their offered formats — grows over time. Treat this table as the current release, not a closed list.
 
