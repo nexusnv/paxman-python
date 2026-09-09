@@ -62,7 +62,7 @@ contract = Money.create_contract(
 )
 ```
 
-- **`dollar_sign_currency`**: when `None` (default), a multi-candidate bare symbol amount like `$500` is recognized but never resolved → `INVALID`. When set, `$` resolves to that code **only if** it is one of `$`'s own CLDR candidates. `€500` never needs this — `€` is definitive for `EUR`.
+- **`dollar_sign_currency`**: when `None` (default), a multi-candidate bare symbol amount like `$500` is recognized but never resolved → `INVALID`. When set, bare `$`/`¥`/`£` resolve to that code (any ISO 4217 code with minor units; e.g. `MYR` or `EUR` both work). `€500` never needs this — `€` is definitive for `EUR` and ignores `dollar_sign_currency`; qualified symbols like `US$`/`CA$` are also definitive. An unknown code like `ZZZ` stays `INVALID` via the minor-unit guard.
 - **`precision`**: how to treat more fractional digits than the currency's minor units allow — `strict` rejects → `INVALID`, `truncate` drops excess digits, `round` half-to-even.
 - `output_format` never affects validation — only the space.
 
@@ -71,9 +71,13 @@ paxman.canonicalize("$500", Money.create_contract()).status.value  # "invalid"
 paxman.canonicalize(
     "$500", Money.create_contract(dollar_sign_currency="USD")
 ).canonicalized_value  # "USD 500.00"
-# MYR is not a "$" candidate (its CLDR symbol is "RM"), so it stays INVALID even when requested
+# Bare "$" resolves to any requested code with minor units (loose, tested with MYR/EUR)
 paxman.canonicalize(
     "$500", Money.create_contract(dollar_sign_currency="MYR")
+).canonicalized_value  # "MYR 500.00"
+# Unknown code never resolves — INVALID via MINOR_UNITS guard
+paxman.canonicalize(
+    "$500", Money.create_contract(dollar_sign_currency="ZZZ")
 ).status.value  # "invalid"
 paxman.canonicalize(
     "USD 1.999", Money.create_contract(precision="strict")
@@ -103,7 +107,7 @@ flowchart TB
     A[Text e.g. $500] --> G[Grammars:<br>code / symbol / word + amount]
     G --> R{Rules: ISO 4217 +<br>CLDR symbols/names<br>+ minor units}
     R -->|definitive symbol<br>or code/word| OK[SUCCESS<br>CODE amount]
-    R -->|shared symbol<br>needs dollar_sign_currency| INV[INVALID<br>or SUCCESS if matches]
+    R -->|shared symbol<br>+ dollar_sign_currency| INV[INVALID default<br>or SUCCESS when requested]
     R -->|over-precision + strict| INV2[INVALID]
     G -->|no pattern| MISS[MISSING]
 
@@ -145,8 +149,14 @@ for text in rows:
 
 ## Provenance
 
-- **ISO 4217** — currency codes and minor units.
-- **CLDR** — currency symbols and display names.
+- **ISO 4217:2015** — currency codes and minor units (List One, as amended through #180, snapshot 2026-01-01 via SIX; provenance `PUBLICATION` year 2015, `https://www.iso.org/iso-4217-currency-codes.html`). `CURRENCY_CODES` holds 165 codes with numeric minor units (13 N.A. codes excluded); `MINOR_UNITS` maps exponent (0 for JPY/KRW, 2 for most, 3 for BHD, 4 for CLF/UYW).
+- **Unicode CLDR v47 (2025-03-13)** — currency symbols and English display names (`https://cldr.unicode.org/`, `https://cldr.unicode.org/downloads/cldr-47`). Word recognition is case-insensitive (any casing of `Euro`/`euro`/`EURO` resolves to `EUR`); symbols are case-exact (`lei` vs `Lei`). Newer CLDR v48/48.1 (2025-10 and 2026-01) exists — regeneration planned via `tools/regenerate_currency_data.py`.
+- Amount parsing: last separator wins, single separator always decimal (`1,00` → `1`, `1.234` → `1.234`); grouping with multiple separators folds base-1000 (`1,00.50` → `1000.50`); narrow NBSP (`U+202F`) is the only space-grouping form — ASCII `1 234.56` is not grouped (see Limitations).
+
+## Limitations
+
+- **Single separator is always decimal — no thousand grouping.** `USD 1,000` → `SUCCESS USD 1.00`, not `USD 1000.00`. A lone `,`/`.` is read as the decimal point per the locked `parse_amount` table, so thousand-grouped input without a decimal part mis-canonicalizes. Treating a single separator with exactly 3 trailing digits as grouping would need a spec ruling (see follow-up); until then, pre-normalize thousand-grouped amounts before calling.
+- **ASCII space never groups.** `USD 1 234.56` does not parse as grouped thousands; only narrow NBSP (`U+202F`) groups with spaces.
 
 Compare [Currency](currency/) for identifier-only canonicalization (no amount).
 

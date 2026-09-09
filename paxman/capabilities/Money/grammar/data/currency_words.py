@@ -5,6 +5,13 @@ English currency word recognition keys (grammar data).
 Source: keys of NAME_TO_CODES in paxman/capabilities/Money/rules/data/
 cldr_currencies.py (Unicode CLDR v47 English display names).
 
+Keys are Title-Case (D4 divergence: Currency folds to lowercase and
+stores lowercase keys; Money keeps Title-Case and does case-
+insensitive lookup via _NAME_TO_CODES_LOWER in
+cldr_currencies_ed2025.py — WordRecognition is case-insensitive
+(re.IGNORECASE) and preserves as-written, so the rule normalizes
+via the lower fallback map).
+
 Ordered longest-first so the grammar alternates multi-word names
 before their shorter tails when present.
 """
