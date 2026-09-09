@@ -59,6 +59,16 @@ no per-rule precedence.**
 > grammar, same span, same notation object). `LOOKUP_TABLE` candidates are never
 > provisional — each cites authority membership directly. `REGEX` is out of
 > scope (no shipped Language rule uses it).
+>
+> **Vacuity.** The filter applies to a recognition only when at least one
+> *active* `LOOKUP_TABLE` rule (post contract filtering: `pinned_rules`,
+> `excluded_rules`, `year`, `requires_features` gating) targets its semantics.
+> Where no authority is in force — all-`PARSER` capabilities (Date, URL,
+> Coordinates, IP, ORCID, MacAddress, ISSN, BIC), or contracts that filter the
+> lookup authority out (e.g. Language `year=2009`, which drops the 2026 IANA
+> rule) — there is nothing that could corroborate, so `PARSER` stands as today.
+> This is still disqualification, not ranking: corroboration is demanded only
+> where an authority exists to give or withhold it.
 
 Corollaries:
 
@@ -85,10 +95,16 @@ Language pilot (the only behavior change in this ADR):
 - Lone ghosts (`xx-yyyyy` and kin) → `INVALID`: recognized but with no surviving
   candidate, per the existing `_determine_status` branch for empty candidates
   with recognitions present.
+- `en-x-private` without `include_private` → `INVALID` (was `SUCCESS` via
+  syntax alone): the gated-off authority speaks by its absence, and the
+  two-locus model already resolves this class to `INVALID` (`qaa`/`aav`/
+  `allemand` without flags). With `include_private=True` the private rule
+  corroborates → `SUCCESS` unchanged.
 - No other capability changes behavior: qualification is vacuous where no
-  `PARSER` rule runs, and the per-grammar dedup scoping preserves current
-  results for grammars that never shared a call with an `"all"`-strategy
-  grammar.
+  *active* `LOOKUP_TABLE` rule targets the recognition's semantics (all-`PARSER`
+  capabilities; year/feature-filtered contracts), and the per-grammar dedup
+  scoping preserves current results for grammars that never shared a call with
+  an `"all"`-strategy grammar.
 
 Enforcement follows the invariant-family precedent (ADR-0010/ADR-0011): CI
 property tests plus review, no scores or ranking state in `run_capability()`.
