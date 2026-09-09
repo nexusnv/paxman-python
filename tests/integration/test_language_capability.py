@@ -181,6 +181,33 @@ def test_serbo_croatian_hyphenated_is_ambiguous_documented() -> None:
 
 
 @pytest.mark.integration
+def test_syntax_ghost_never_denotes() -> None:
+    _register()
+    r = paxman.canonicalize("xx-yyyyy", LanguageCapability.create_contract())
+    assert r.status == Resolution.INVALID
+    assert r.candidates == ()
+
+
+@pytest.mark.integration
+def test_serbo_croatian_resolves_to_sh() -> None:
+    _register()
+    r = paxman.canonicalize("Serbo-Croatian", LanguageCapability.create_contract())
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "sh"
+
+
+@pytest.mark.integration
+def test_valid_tag_keeps_both_validations() -> None:
+    _register()
+    r = paxman.canonicalize("en-US", LanguageCapability.create_contract())
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "en-US"
+    rules = {c.validation_rule for c in r.candidates}
+    assert "Section 2.1-syntax" in rules
+    assert "Section-iana-registry" in rules
+
+
+@pytest.mark.integration
 def test_two_distinct_raise() -> None:
     _register()
     with pytest.raises(MultipleMentionsError):
