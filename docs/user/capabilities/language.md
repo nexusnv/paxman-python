@@ -29,10 +29,10 @@ Default `output_format` is `"bcp47"` (identity).
 | `output_format` | Renders | Example |
 |-----------------|---------|---------|
 | *(default)* `bcp47` / `None` / `"default"` | BCP 47 canonical tag (B→T, Deprecated→Preferred, case-canonical) | `en-US`, `zh-Hans-CN`, `chr` (from `i-cherokee`) |
-| `alpha2` | ISO 639-1 alpha-2 when available else Term else itself (`ger`→`de`) | `en` from `eng`, `de` from `ger`/`deu`, `chr` passthrough |
-| `alpha3` | ISO 639-2 Term lower (`de`→`deu`, `en`→`eng`) | `eng` from `en`, `deu` from `de` |
-| `alpha3-bib` | Bibliographic (`deu`→`ger`, `fra`→`fre`) | `ger` from `de`, `fre` from `fr` |
-| `name` | English Description title (via reverse map) | `German` from `de`, `English` from `eng`, `Chinese` from `zh-Hans-CN` |
+| `alpha2` | ISO 639-1 alpha-2 when available else Term else itself, carrying extended subtags verbatim per ADR-0011 (`ger`→`de`) | `en` from `eng`, `de` from `ger`/`deu`, `en-US` from `en-US` (carry), `chr` passthrough |
+| `alpha3` | ISO 639-2 Term lower of the primary subtag only for extended tags — waived projection per ADR-0011 (`de`→`deu`, `en`→`eng`) | `eng` from `en`, `deu` from `de`, `deu` from `de-CH-1901` (primary-only) |
+| `alpha3-bib` | Bibliographic of the primary subtag only for extended tags — waived projection per ADR-0011 (`deu`→`ger`, `fra`→`fre`) | `ger` from `de`, `fre` from `fr`, `ger` from `de-CH-1901` (primary-only) |
+| `name` | English Description title of the primary subtag only — waived projection per ADR-0011 | `German` from `de`, `English` from `eng`, `English` from `en-US` (primary-only) |
 
 Any other value raises `ContractError`.
 
@@ -146,9 +146,9 @@ for text in rows:
 ## Provenance
 
 - **ISO 639-1:2002** alpha-2 (184) + English names — `Section 4-alpha-2-code`, `Section-english-name-mapping`
-- **ISO 639-2:1998** alpha-3 T/B (487, B→T `ger→deu`) — `Section 4-alpha-3-code`
-- **ISO 639-3:2007** comprehensive (7,000+, SIL RA) — `Section 4-comprehensive-alpha-3`, `Section 4-private-alpha-3` (`qaa-qtz`)
-- **ISO 639-5:2008** collective families (115, when `include_collective`) — `Section 4-collective-code`
+- **ISO 639-2:1998** alpha-3 T/B curated subset (T 420 + B 21, B→T `ger→deu`) — `Section 4-alpha-3-code`
+- **ISO 639-3:2007** comprehensive curated subset (995, SIL RA) — `Section 4-comprehensive-alpha-3`, `Section 4-private-alpha-3` (`qaa-qtz`)
+- **ISO 639-5:2008** collective families curated subset (84, when `include_collective`) — `Section 4-collective-code`
 - **BCP 47 RFC 5646** Section 2.1 Language-Tag ABNF (2009-09) + variant Prefix guard — `Section 2.1-syntax`
 - **IANA Language Subtag Registry** Rolling File-Date 2026-08-08 — `Section-iana-registry`, `Section-iana-registry-private` (qaa-qtz/Qaaa-Qabx/QM-QZ/AA/XA-XZ/ZZ/x-)
 - **CLDR Language Display Names** v46 (2025, Unicode) — `Section-localized-names` (24, when `include_localized`)
