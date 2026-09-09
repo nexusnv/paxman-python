@@ -42,10 +42,18 @@ import paxman
 
 paxman.register_all_shipped()
 paxman.canonicalize("German", Language.create_contract()).canonicalized_value  # "de"
-paxman.canonicalize("de", Language.create_contract(output_format="alpha3")).canonicalized_value  # "deu"
-paxman.canonicalize("de", Language.create_contract(output_format="alpha3-bib")).canonicalized_value  # "ger"
-paxman.canonicalize("deu", Language.create_contract(output_format="alpha2")).canonicalized_value  # "de"
-paxman.canonicalize("de", Language.create_contract(output_format="name")).canonicalized_value  # "German"
+paxman.canonicalize(
+    "de", Language.create_contract(output_format="alpha3")
+).canonicalized_value  # "deu"
+paxman.canonicalize(
+    "de", Language.create_contract(output_format="alpha3-bib")
+).canonicalized_value  # "ger"
+paxman.canonicalize(
+    "deu", Language.create_contract(output_format="alpha2")
+).canonicalized_value  # "de"
+paxman.canonicalize(
+    "de", Language.create_contract(output_format="name")
+).canonicalized_value  # "German"
 paxman.canonicalize("en-US", Language.create_contract()).canonicalized_value  # "en-US"
 ```
 
@@ -55,10 +63,10 @@ paxman.canonicalize("en-US", Language.create_contract()).canonicalized_value  # 
 
 ```python
 contract = Language.create_contract(
-    include_private=False,     # bool, default False — qaa-qtz / Qaaa-Qabx / QM-QZ etc. + x-
+    include_private=False,  # bool, default False — qaa-qtz / Qaaa-Qabx / QM-QZ etc. + x-
     include_collective=False,  # bool, default False — ISO 639-5 families (aav, ber, gem…)
-    include_localized=False,   # bool, default False — CLDR 24 localized display names
-    output_format=None,        # "bcp47" (default), "alpha2", "alpha3", "alpha3-bib", "name"
+    include_localized=False,  # bool, default False — CLDR 24 localized display names
+    output_format=None,  # "bcp47" (default), "alpha2", "alpha3", "alpha3-bib", "name"
     # plus every common field: suppress_common_words / excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -126,10 +134,26 @@ paxman.register_all_shipped()
 contract = Language.create_contract(include_localized=True, include_private=True)
 contract_coll = Language.create_contract(include_collective=True)
 
-rows = ["en", "eng", "ger", "German", "deutsch", "zh-Hans-CN", "en-US", "qaa", "aav", "Serbo-Croatian", "not a language", "en, fr"]
+rows = [
+    "en",
+    "eng",
+    "ger",
+    "German",
+    "deutsch",
+    "zh-Hans-CN",
+    "en-US",
+    "qaa",
+    "aav",
+    "Serbo-Croatian",
+    "not a language",
+    "en, fr",
+]
 
 for text in rows:
-    for label, c in [("default+local+private", contract), ("+collective", contract_coll)]:
+    for label, c in [
+        ("default+local+private", contract),
+        ("+collective", contract_coll),
+    ]:
         try:
             r = paxman.canonicalize(text, c)
         except (MultipleMentionsError, CapabilityError, ContractError) as e:
@@ -138,7 +162,9 @@ for text in rows:
         val = r.canonicalized_value if r.status == Resolution.SUCCESS else "—"
         prov = r.candidates[0].provenance[0].specification_name if r.candidates else "—"
         rule = r.candidates[0].validation_rule if r.candidates else "—"
-        print(f"{text!r:20} [{label:22}] → {r.status.value:10} {val!r:15} ({rule} / {prov})")
+        print(
+            f"{text!r:20} [{label:22}] → {r.status.value:10} {val!r:15} ({rule} / {prov})"
+        )
 ```
 
 ---
