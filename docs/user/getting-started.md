@@ -188,7 +188,7 @@ for text in raw:
 
 Output:
 
-```
+```text
 'United States'      → success    'US'   span=(0, 13)
 'Alemania'           → success    'DE'   span=(0, 8)
 'JP'                 → success    'JP'   span=(0, 2)

@@ -6,6 +6,7 @@ Comprehensive alpha-3 7000+ (Terminology only).
 from __future__ import annotations
 
 from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.rules.data.iana_deprecated_map import DEPRECATED_MAP
 from paxman.capabilities.Language.rules.data.iso_639_2 import ISO6392_T_TO_ALPHA2
 from paxman.capabilities.Language.rules.data.iso_639_3 import ISO6393_CODES
 from paxman.core.contract import Contract
@@ -37,17 +38,21 @@ class SectionComprehensiveAlpha3(Rule[LanguageNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
-        """Check comprehensive membership (private qaa-qtz excluded)."""
+        """Check comprehensive (private qaa-qtz excluded) incl. deprecated."""
         lang = notation.language.lower()
         if len(lang) != 3:
             return False
         if _is_private_qaa(lang):
             return False
-        return lang in ISO6393_CODES
+        if lang in ISO6393_CODES:
+            return True
+        return lang in DEPRECATED_MAP
 
     def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
-        """Return lower canonical; alpha-2 preferred when available."""
+        """Return lower canonical; alpha-2 if avail, resolving deprecated."""
         lang = notation.language.lower()
+        if lang in DEPRECATED_MAP:
+            return DEPRECATED_MAP[lang]
         alpha2 = ISO6392_T_TO_ALPHA2.get(lang)
         if alpha2 is not None:
             return alpha2

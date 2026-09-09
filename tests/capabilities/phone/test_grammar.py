@@ -92,6 +92,18 @@ class TestE164Grammar:
         """Verify grammar name."""
         assert self.grammar.name == "e164_recognition"
 
+    def test_e164_recognizes_split_render(self) -> None:
+        """The split render "+1 2125551234" re-enters via the E.164 grammar."""
+        results = self.grammar.recognize("+1 2125551234")
+        assert len(results) == 1
+        assert results[0].notation.value == "12125551234"
+
+    def test_e164_recognizes_split_render_grouped(self) -> None:
+        """The split render "+44 12341234" re-enters via the E.164 grammar."""
+        results = self.grammar.recognize("+44 12341234")
+        assert len(results) == 1
+        assert results[0].notation.value == "4412341234"
+
     def test_spaced_15_digit_with_two_char_separators(self) -> None:
         """(#65) 15-digit spaced with 2-char gaps must not be truncated."""
         # 2-char gaps: " -" (space+dash) => 15 digits +14*2 +1 =44

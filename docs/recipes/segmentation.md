@@ -120,6 +120,8 @@ represents Paxman state; it tells you to tighten the segmenter so each slice
 holds at most one mention. Handle it as an invariant violation in the caller,
 not as a domain outcome to branch on.
 
+Canonical `SUCCESS` output is safe to feed back under a **default** contract — `canonicalize(V, C)` re-resolves `V` to itself for any `output_format` (ADR-0010, #123); custom `pinned_rules`/`excluded_rules`/`year` that drop the validating rule, or `suppress_common_words=True` whole-input common words (e.g. `TO` → `MISSING`) until the A0 exemption lands, break this and remain conditional (#122).
+
 ---
 
 ## 5. Pitfalls

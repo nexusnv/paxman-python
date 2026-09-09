@@ -23,7 +23,7 @@ def test_defaults():
 def test_class_variables():
     assert MacAddressContract.DEFAULT_OUTPUT_FORMAT == "colon"
     assert (
-        frozenset({"hyphen", "bare", "cisco", "eui64", "bit_reversed"})
+        frozenset({"hyphen", "bare", "cisco", "eui64"})
         == MacAddressContract.OFFERED_OUTPUT_FORMATS
     )
 
@@ -38,14 +38,15 @@ def test_class_variables():
         ("bare", "bare"),
         ("cisco", "cisco"),
         ("eui64", "eui64"),
-        ("bit_reversed", "bit_reversed"),
     ],
 )
 def test_output_format_resolution(fmt, expected):
     assert MacAddressContract(output_format=fmt).output_format == expected
 
 
-@pytest.mark.parametrize("fmt", ["unix", "", "None", "none", "eui-64", "Mac"])
+@pytest.mark.parametrize(
+    "fmt", ["unix", "", "None", "none", "eui-64", "Mac", "bit_reversed"]
+)
 def test_output_format_invalid_raises(fmt):
     with pytest.raises(ContractError):
         MacAddressContract(output_format=fmt)

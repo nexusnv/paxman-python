@@ -2,9 +2,9 @@
 title: "Phone"
 ---
 
-Canonicalizes **one phone number** per call to E.164 (or to tel-URI / national form when requested).
+Canonicalizes **one phone number** per call to E.164 (or to tel-URI / split form when requested).
 
-> **In plain language:** give it `"+1 555 123 4567"` or `"(555) 234-5678"` and it hands back `"+15551234567"` if the numbering plan says the number is valid. National-shaped numbers need you to say which country's plan to use.
+> **In plain language:** give it `"+1 555 123 4567"` and it hands back `"+15551234567"` if the numbering plan says the number is valid. National-shaped numbers like `"(555) 234-5678"` carry no country code, so they need `default_country="US"` (→ `"+15552345678"`); without it they are `INVALID`.
 
 ---
 
@@ -27,9 +27,9 @@ Default `output_format` is `"e164"`.
 |-----------------|---------|---------|
 | *(default)* `e164` / `None` / `"default"` | `+` + country code + national significant number | `+15551234567` |
 | `rfc3966` | `tel:` URI | `tel:+15551234567` |
-| `national` | National significant number (no `+` or `tel:`) | `5551234567` |
+| `split` | `+` + country code + space + national significant number (uniform for every country code) | `+1 5551234567` |
 
-`national` works without `default_country` for numbers whose country code is embedded (E.164, tel-URI, NANP inputs are split by the rules); for national-shaped input it requires `default_country` to validate in the first place.
+`national` (bare national significant number) was de-offered per ADR-0011 — it dropped the country code and could not re-enter under the default contract. `Phone.create_contract(output_format="national")` raises `ContractError` with a migration message naming `split`.
 
 ```python
 from paxman.capabilities import Phone
@@ -43,8 +43,8 @@ paxman.canonicalize(
     "+15551234567", Phone.create_contract(output_format="rfc3966")
 ).canonicalized_value  # "tel:+15551234567"
 paxman.canonicalize(
-    "+15551234567", Phone.create_contract(output_format="national")
-).canonicalized_value  # "5551234567"
+    "+15551234567", Phone.create_contract(output_format="split")
+).canonicalized_value  # "+1 5551234567"
 
 # National-shaped input needs default_country
 paxman.canonicalize(
@@ -59,12 +59,13 @@ paxman.canonicalize(
 ```python
 contract = Phone.create_contract(
     default_country=None,  # str | None — uppercase alpha-2, e.g. "US"
-    output_format=None,  # "e164" (default), "rfc3966", "national"
+    output_format=None,  # "e164" (default), "rfc3966", "split"
     # plus every common field: excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
 
 - When `default_country` is `None`, national-shaped input is recognized but never validated → `INVALID`. International, `00`-prefix, and `tel:` forms validate without it because the country code is in the number itself.
+- `default_country` is input-only: it resolves national-shaped input and plays no role in output rendering. `output_format="split"` re-enters param-free under the default contract (uniform `+CC NSN` for every country code; the space is presentation-only). `rfc3966` is the only extension-preserving format.
 - `default_country` must be uppercase alpha-2 when present; otherwise `ContractError` at construction.
 
 ---

@@ -136,6 +136,10 @@ def _create_contract(
         from paxman.capabilities import BIC
 
         return BIC.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "coordinates":
+        from paxman.capabilities import Coordinates
+
+        return Coordinates.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "country":
         from paxman.capabilities import Country
 
@@ -148,6 +152,10 @@ def _create_contract(
         from paxman.capabilities import Date
 
         return Date.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "element":
+        from paxman.capabilities import Element
+
+        return Element.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "email":
         from paxman.capabilities import Email
 
@@ -172,6 +180,10 @@ def _create_contract(
         from paxman.capabilities import Language
 
         return Language.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "mac_address":
+        from paxman.capabilities import MacAddress
+
+        return MacAddress.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "money":
         from paxman.capabilities import Money
 

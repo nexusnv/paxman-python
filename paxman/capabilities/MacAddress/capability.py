@@ -14,22 +14,6 @@ from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
 
-def _bit_reverse_octet(octet: str) -> str:
-    """RFC 2469 per-octet bit swap: 0x12 -> 0x48, 0xBC -> 0x3D."""
-    value = int(octet, 16)
-    reversed_bits = (
-        ((value & 0x01) << 7)
-        | ((value & 0x02) << 5)
-        | ((value & 0x04) << 3)
-        | ((value & 0x08) << 1)
-        | ((value & 0x10) >> 1)
-        | ((value & 0x20) >> 3)
-        | ((value & 0x40) >> 5)
-        | ((value & 0x80) >> 7)
-    )
-    return f"{reversed_bits:02X}"
-
-
 class MacAddressCapability(Capability[MacAddressNotation]):
     name = "mac_address"  # lowercase identifier - what users pass to the registry
 
@@ -75,6 +59,4 @@ class MacAddressCapability(Capability[MacAddressNotation]):
             if len(compact) == 12:
                 return ":".join([*octets[:3], "FF", "FE", *octets[3:]])
             return value  # already EUI-64 - deterministic identity
-        if output_format == "bit_reversed":
-            return ":".join(_bit_reverse_octet(o) for o in octets)
         return value  # colon default is identity - normalize() returns colon form
