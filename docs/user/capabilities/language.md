@@ -85,7 +85,7 @@ contract = Language.create_contract(
 | `qaa` | `include_private=True` | `SUCCESS` | `qaa` |
 | `en-US` | `year=2008` | `INVALID` | BCP 47 rule is 2009, dropped |
 | `de-nedis` | any | `INVALID` | variant prefix `nedis` requires `sl` |
-| `Serbo-Croatian` | any | `AMBIGUOUS` | `serbo-croatian` (BCP 47 well-formed) vs `sh` (English name) — use spaced `Serbo Croatian` |
+| `Serbo-Croatian` | any | `SUCCESS` | `sh` (name rule `Section-english-name-mapping` stands alone; the BCP 47 syntax-only ghost is disqualified per ADR-0012) |
 | `Klingonish` | any | `MISSING` | no language pattern |
 | `en, fr` (two different mentions) | any | raises `MultipleMentionsError` | split first |
 

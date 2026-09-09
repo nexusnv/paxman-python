@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Language — candidate qualification pilot (ADR-0012):** the BCP 47 syntax-only ghost `serbo-croatian` is disqualified, so `Serbo-Croatian` → `SUCCESS sh` (was `AMBIGUOUS`); lone well-formed-but-unregistered tags (`xx-yyyyy` and kin) → `INVALID` (were wrongly `SUCCESS` on syntax alone); `en-x-private` without `include_private` → `INVALID` per the two-locus model (was `SUCCESS` via syntax alone; with the flag it stays `SUCCESS`).
+
 ## [0.4.1] - 2026-09-08
 
 > **Docs-only patch — no contract or behavior changes.** Follows up the 0.4.0 release review (#141, issue #142).
