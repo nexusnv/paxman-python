@@ -144,14 +144,10 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
         collected, strategy_by_rule, semantics_by_name, lookup_semantics
     )
 
-    keep_dup = False
-    if CandidatesMatcher is not None:
-        for g in all_grammars:
-            for m in getattr(g, "matchers", None) or ():
-                if isinstance(m, CandidatesMatcher) and m.strategy == "all":
-                    keep_dup = True
-                    break
-    candidates = _dedup_candidates(qualified, keep_duplicate_spans=keep_dup)
+    candidates = _dedup_candidates(
+        qualified,
+        keep_duplicate_spans_for=_keep_duplicate_span_grammars(all_grammars),
+    )
 
     status = _determine_status(candidates, had_recognitions)
     canonical_value = _extract_canonical_value(candidates, status)
@@ -782,16 +778,54 @@ def _require_lookup_corroboration(
     return qualified
 
 
+def _keep_duplicate_span_grammars(
+    all_grammars: Sequence[Grammar[Any]],
+) -> frozenset[str]:
+    """Names whose candidates skip span dedup (ADR-0012 corollary 3, issue #71).
+
+    A grammar opts in with a ``CandidatesMatcher(strategy="all")``. The set
+    holds the grammar name plus that matcher's ``candidate_names``: the
+    engine re-attributes recognitions to candidate names in ``_recognize``,
+    and ``_collect_candidates`` stores the attributed name on
+    ``Candidate.recognition_rule``, so the opt-in must cover both for the
+    per-candidate decision in ``_dedup_candidates`` to see it. Grammars
+    without an ``"all"`` matcher contribute nothing. Pure function.
+    """
+    keep: set[str] = set()
+    if CandidatesMatcher is not None:
+        for grammar in all_grammars:
+            for matcher in getattr(grammar, "matchers", None) or ():
+                if isinstance(matcher, CandidatesMatcher) and matcher.strategy == "all":
+                    keep.add(grammar.name)
+                    keep.update(matcher.candidate_names)
+    return frozenset(keep)
+
+
 def _dedup_candidates(
     collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
     *,
     keep_duplicate_spans: bool = False,
+    keep_duplicate_spans_for: frozenset[str] | None = None,
 ) -> list[Candidate]:
-    if keep_duplicate_spans:
-        return [c for c, _ in collected]
+    """Collapse duplicate candidates, sparing opted-in grammars (ADR-0012).
+
+    Per-grammar scoping (issue #71): a candidate whose ``recognition_rule``
+    names a grammar in ``keep_duplicate_spans_for`` survives unconditionally;
+    every other candidate dedups by
+    ``(value, recognition_rule, validation_rule)`` as before. ``None`` keeps
+    the legacy capability-wide ``keep_duplicate_spans`` path. Pure function
+    of its inputs; preserves input order.
+    """
+    if keep_duplicate_spans_for is None:
+        if keep_duplicate_spans:
+            return [c for c, _ in collected]
+        keep_duplicate_spans_for = frozenset()
     seen: set[tuple[str, str, str]] = set()
     deduped: list[Candidate] = []
     for candidate, _rep in collected:
+        if candidate.recognition_rule in keep_duplicate_spans_for:
+            deduped.append(candidate)
+            continue
         key = (
             candidate.value,
             candidate.recognition_rule,
