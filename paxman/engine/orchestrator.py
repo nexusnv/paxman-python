@@ -24,6 +24,7 @@ from paxman.core.domain import (
     RecognizedRep,
     Resolution,
     Rule,
+    RuleStrategy,
     ScanResult,
     VersionStamp,
 )
@@ -132,6 +133,17 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
     _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
+    strategy_by_rule: dict[str, RuleStrategy] = {r.name: r.strategy for r in rules}
+    lookup_semantics: frozenset[str] = frozenset(
+        s
+        for r in rules
+        if r.strategy is RuleStrategy.LOOKUP_TABLE
+        for s in r.target_semantics
+    )
+    qualified = _require_lookup_corroboration(
+        collected, strategy_by_rule, semantics_by_name, lookup_semantics
+    )
+
     keep_dup = False
     if CandidatesMatcher is not None:
         for g in all_grammars:
@@ -139,7 +151,7 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
                 if isinstance(m, CandidatesMatcher) and m.strategy == "all":
                     keep_dup = True
                     break
-    candidates = _dedup_candidates(collected, keep_duplicate_spans=keep_dup)
+    candidates = _dedup_candidates(qualified, keep_duplicate_spans=keep_dup)
 
     status = _determine_status(candidates, had_recognitions)
     canonical_value = _extract_canonical_value(candidates, status)
@@ -726,6 +738,48 @@ def _recognitions_to_mentions(
         )
     mentions.sort(key=lambda m: (m.span[0], m.span[1], m.grammar))
     return tuple(mentions)
+
+
+def _require_lookup_corroboration(
+    collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
+    strategy_by_rule: dict[str, RuleStrategy],
+    semantics_by_name: dict[str, str],
+    lookup_semantics: frozenset[str],
+) -> list[tuple[Candidate, RecognizedRep[Any]]]:
+    """Drop PARSER candidates no LOOKUP_TABLE rule corroborates (ADR-0012).
+
+    A candidate whose validation rule has strategy PARSER is provisional: it
+    survives if and only if a LOOKUP_TABLE-strategy candidate was produced
+    from the same RecognizedRep. Recognition identity is object identity
+    (``id(rep)``) — never span overlap — so one semantics cannot vouch for
+    another. LOOKUP_TABLE and REGEX candidates always survive; unknown rule
+    names (absent from the strategy map) are kept fail-open so missing
+    metadata never silently drops a candidate.
+
+    Vacuity: the filter applies to a recognition only when at least one
+    active LOOKUP_TABLE rule targets its semantics. Where no authority is in
+    force — all-PARSER capabilities, or contracts that filter the lookup
+    authority out (pinned/excluded/year/requires_features gating) — there is
+    nothing that could corroborate, so PARSER pairs stand untouched.
+    Pure function of its inputs; preserves input order.
+    """
+    corroborated: set[int] = set()
+    for candidate, rep in collected:
+        if strategy_by_rule.get(candidate.validation_rule) is RuleStrategy.LOOKUP_TABLE:
+            corroborated.add(id(rep))
+    qualified: list[tuple[Candidate, RecognizedRep[Any]]] = []
+    for candidate, rep in collected:
+        strategy = strategy_by_rule.get(candidate.validation_rule)
+        if strategy is not RuleStrategy.PARSER:
+            qualified.append((candidate, rep))
+            continue
+        rep_semantics = semantics_by_name.get(rep.grammar.grammar_name)
+        if rep_semantics is None or rep_semantics not in lookup_semantics:
+            qualified.append((candidate, rep))
+            continue
+        if id(rep) in corroborated:
+            qualified.append((candidate, rep))
+    return qualified
 
 
 def _dedup_candidates(

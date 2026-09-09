@@ -166,21 +166,6 @@ def test_deprecated_three_letter_resolve_to_preferred() -> None:
 
 
 @pytest.mark.integration
-def test_serbo_croatian_hyphenated_is_ambiguous_documented() -> None:
-    # Hyphenated display name collides with BCP47 well-formed variant path:
-    # serbo-croatian (language 5-8 + variant 5-8) vs sh (English name).
-    # Spaced form is the supported spelling.
-    _register()
-    r = paxman.canonicalize("Serbo-Croatian", LanguageCapability.create_contract())
-    assert r.status == Resolution.AMBIGUOUS
-    reset_registry()
-    _register()
-    r2 = paxman.canonicalize("Serbo Croatian", LanguageCapability.create_contract())
-    assert r2.status == Resolution.SUCCESS
-    assert r2.canonicalized_value == "sh"
-
-
-@pytest.mark.integration
 def test_syntax_ghost_never_denotes() -> None:
     _register()
     r = paxman.canonicalize("xx-yyyyy", LanguageCapability.create_contract())
@@ -194,6 +179,11 @@ def test_serbo_croatian_resolves_to_sh() -> None:
     r = paxman.canonicalize("Serbo-Croatian", LanguageCapability.create_contract())
     assert r.status == Resolution.SUCCESS
     assert r.canonicalized_value == "sh"
+    reset_registry()
+    _register()
+    r2 = paxman.canonicalize("Serbo Croatian", LanguageCapability.create_contract())
+    assert r2.status == Resolution.SUCCESS
+    assert r2.canonicalized_value == "sh"
 
 
 @pytest.mark.integration
@@ -297,10 +287,12 @@ def test_extlang_and_private() -> None:
     reset_registry()
     _register()
     r2 = paxman.canonicalize("en-x-private", LanguageCapability.create_contract())
-    # privateuse without flag: BCP47 syntax succeeds, IANA gated
-    assert r2.status == Resolution.SUCCESS
-    assert r2.canonicalized_value == "en-x-private"
-    assert any(c.validation_rule == "Section 2.1-syntax" for c in r2.candidates)
+    # Gated-off authority speaks by its absence (two-locus model): without
+    # include_private no LOOKUP_TABLE authority corroborates the bcp47_tag
+    # recognition, so the PARSER-only ghost is disqualified → INVALID like
+    # qaa/aav/allemand without flags (ADR-0012).
+    assert r2.status == Resolution.INVALID
+    assert r2.candidates == ()
     reset_registry()
     _register()
     r3 = paxman.canonicalize(
