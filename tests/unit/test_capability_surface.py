@@ -9,6 +9,8 @@ import pytest
 
 from paxman.capabilities.BIC.capability import BICCapability
 from paxman.capabilities.BIC.contract import BICContract
+from paxman.capabilities.Coordinates.capability import CoordinatesCapability
+from paxman.capabilities.Coordinates.contract import CoordinatesContract
 from paxman.capabilities.Country.capability import CountryCapability
 from paxman.capabilities.Country.contract import CountryContract
 from paxman.capabilities.Country.notation import CountryNotation
@@ -18,6 +20,8 @@ from paxman.capabilities.Currency.notation import CurrencyNotation
 from paxman.capabilities.Date.capability import DateCapability
 from paxman.capabilities.Date.contract import DateContract
 from paxman.capabilities.Date.notation import DateNotation
+from paxman.capabilities.Element.capability import ElementCapability
+from paxman.capabilities.Element.contract import ElementContract
 from paxman.capabilities.Email.capability import EmailCapability
 from paxman.capabilities.Email.contract import EmailContract
 from paxman.capabilities.Email.notation import EmailNotation
@@ -67,6 +71,18 @@ _CAPABILITY_SURFACES = [
         EmailContract,
         "email",
         id="email",
+    ),
+    pytest.param(
+        ElementCapability,
+        ElementContract,
+        "symbol",
+        id="element",
+    ),
+    pytest.param(
+        CoordinatesCapability,
+        CoordinatesContract,
+        "decimal",
+        id="coordinates",
     ),
     pytest.param(
         BICCapability,
@@ -466,7 +482,7 @@ _FORMATTED_EXPECTATIONS = [
         PhoneContract,
         "+15551234567",
         PhoneNotation(shape="e164", value="15551234567"),
-        {"rfc3966": "tel:+15551234567", "national": "5551234567"},
+        {"rfc3966": "tel:+15551234567", "split": "+1 5551234567"},
         id="phone",
     ),
 ]

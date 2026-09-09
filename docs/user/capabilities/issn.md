@@ -19,7 +19,7 @@ Canonicalizes **one ISSN identifier** per call to its hyphenated canonical form 
 | Embedded in prose `see ISSN 0317-8471 (print)` | `1234 - 5679` (space-hyphen-space) → `MISSING` |
 | `urn:issn:0317-8471` incidentally as `issn:0317-8471` (span excludes `urn:`) | `123456789` (9 digits) → `MISSING` via `BoundarySpec.WORD` |
 
-> **Strict hyphen:** `-\?` at canonical position 4 only. Tolerant `1234 - 5679` (space around hyphen) and `1234 5679` are `MISSING` unless a `Pre` normalizer is added (memo §13#5, Oracle fix 3). **Hyphen-digit continuation** `0317-8471-2` is `MISSING` (trailing `(?![-]\d)` blocks prefix, WORD alone would have allowed it). **Label separator** is `[\s:-]*` with `glued allow` (vs IBAN `reject`); `ISSN03178471` matches, `IBANDE89...` is `MISSING` per ADR §9.7.
+> **Strict hyphen:** `-?` at canonical position 4 only. Tolerant `1234 - 5679` (space around hyphen) and `1234 5679` are `MISSING` unless a `Pre` normalizer is added (memo §13#5, Oracle fix 3). **Hyphen-digit continuation** `0317-8471-2` is `MISSING` (trailing `(?![-]\d)` blocks prefix, WORD alone would have allowed it). **Label separator** is `[\s:-]*` with `glued allow` (vs IBAN `reject`); `ISSN03178471` matches, `IBANDE89...` is `MISSING` per ADR §9.7.
 
 ---
 

@@ -41,6 +41,7 @@ discarded.
 | Rev.2 | 2026-08-24 | Sisyphus | **Review-driven corrections.** (1) Removed every citation of ephemeral working notes — measurements and mappings are now ADR-owned data with no external document dependencies. (2) Added the BREAKING CHANGE banner (Status) and the Compatibility subsection (Part VII): old→new behavior table, migration snippet, semver guidance (0.1.0 → 0.2.0), `recognition_revision` as the same-snapshot diff signal. (3) Demoted streaming and the suppression table from binding constraints to deferred, non-binding designs. (4) Specified `MatcherSpec.requires_features` omission semantics (matcher omitted at freeze; zero-active-matcher grammar → `MISSING`). (5) Specified the consuming-boundary span rule (anchors consumed for advance, never part of the emitted span — parity with `ipv6_token`). (6) Stated the offset-map invariant precisely (`offsets[i]` bounds subject char `i`'s source; span `[s,e)` → `[offsets[s], offsets[e])`). (7) Defined anchor primitives (`HAS_DIGIT` ≡ `re.search(r"\d", text)`). (8) Split Part IV into **Measured** (pre-kernel tree) vs **Projected** (kernel; confirmed per phase, never a gate). (9) Added the grammar-count enumeration footnote. (10) Clarified `Normalizer.provenance` as declaration-level metadata — `Resolution.provenance` stays rule-owned. (11) Corrected the `degree_word_sign` preset row (asymmetric guards). |
 | Rev.3 | 2026-08-24 | Sisyphus | **F1 parity exemption.** Clarified that `Country name_recognition` F1 migration is exempt from the byte-identical gate and is gated instead by the honest-behavior regression test (Part V abort criterion / Part VI Phase 1). |
 | Rev.4 | 2026-08-26 | Sisyphus | **Accepted + remediation amendments.** (a) Status Proposed→Accepted after post-landing evaluation (2026-08-26, findings R1–R12) and kernel remediation Part A (A1–A7): boundary O(1) checks (§10), per-matcher digest memoization (§13), emit-signature validation at construction (§13), two-array offset maps (§6 D3), single-pass CountryNameFold, ``view="country_normalized"`` alias removal, single recognition path via ``PipelineGrammar.recognize`` delegation; ADR-0008 already Obsolete. (b) D3 amendment (A4): offset-map invariant now two-array — ``[s,e)`` in view → ``[starts[s], ends[e-1])`` in original (was ``[offsets[s], offsets[e])``), length-preserving views stay ``offsets=None`` identity; general maps land with URL IDNA as first length-changing customer per D3 phasing. (c) §13 clarification: contract-dependent ``requires_features`` omission happens at match time (engine_loop compat shim) not at freeze — registry freezes without a contract; emit-signature validation moves to matcher construction (``_emit_validation``), engine loop keeps only ``callable(emit)`` guard. (d) Split-prefix deviation note: SIUnit ``_SPACED_SYMBOL_TOKENS`` (24×820=19,530) materialized as interim lexicon; target is combinator ``seq(prefix, ws, unit)`` per §9.4 — resolved by B2 (``CombinatorMatcher`` + 820-token base lexicon). (e) Suppression §16 deferred→shipped: common-word suppression table (``common_words.py``) ships off-by-default gated by ``suppress_common_words`` (B1) — ``scan()`` promotion gated on B1 landing. |
+| Rev.5 | 2026-09-03 | Sisyphus | **§16 amendment (#122): A0 whole-input exemption.** Suppressible word-bounded hits covering the trimmed whole input are never suppressed (``canonicalize("to", Country, suppress=True)`` → ``SUCCESS "TO"``); A1 (``x→0`` fallback) evaluated and rejected; ``ExecutionResult`` gains ``suppressed_count``/``suppressed_spans``; re-entry under suppression locked in the ADR-0010 property suite (#123 cross-link). |
 
 ## Contents
 
@@ -812,6 +813,33 @@ at hit positions (§10), and the measured trie/alternation auto-selection (§9.2
   `suppress_common_words` flag — **deferred and non-binding**; if it ever ships it is off by
   default, provenance-neutral (a suppressed recognition is simply not emitted; nothing
   validates to a wrong answer silently), and corpus-neutral.
+
+**Amendment (Rev.5, #122 — A0 whole-input exemption, adopted 2026-09-03).** Calling
+`canonicalize()` with a contract *asserts the kind* — "a canonical value is derivable
+from this input" — so suppressing the whole input contradicts the asserted intent
+(`MISSING` would be indistinguishable from `canonicalize("")`). The suppression guard
+therefore never fires when a suppressible word-bounded hit covers the entire trimmed
+input: the hit span (original-text coordinates, i.e. after `view.original_span` and
+stripped-char re-absorption) is compared against `text.strip()`, so `"  to  "` is exempt
+exactly like `"to"` and case plays no role. `canonicalize("to", Country,
+suppress_common_words=True)` → `SUCCESS "TO"`. Embedded mentions stay suppressed —
+`scan()` prose behaviour is unchanged, and `canonicalize("to and usa", Country,
+suppress=True)` still drops the embedded `to`/`and` hits (the α3 `usa` hit at `(7, 10)`
+is itself suppressed since `usa` ∈ `COMMON_WORDS`; the value survives via the
+non-suppressible `name_recognition` hit at the same span). This restores re-entry for
+every canonical value colliding with `COMMON_WORDS`: Country `TO`/`IN`/`CA`/`NO`/`US`/
+`ID`/`ST`, Language `en`/`ca`/`id`/`la`/`et`/`be`/`my`/`no`, Currency `ALL` (`cd` was
+never affected — no SIUnit matcher is `suppressible`). **A1 evaluated and rejected:**
+the `x→0` fallback (keep the unsuppressed set when suppression would leave zero
+mentions) is not implemented — for a synthetic code-list-with-suppress or English
+fragment such as `"to and is"`, suppression-to-`MISSING` is the desired noise reduction,
+now observable instead of silent. `ExecutionResult` gains `suppressed_count: int = 0`
+and `suppressed_spans: tuple[tuple[int, int], ...] = ()`, populated whenever suppression
+fires (on `MISSING` *and* `INVALID`, not just `MISSING`; `0`/`()` when the flag is off),
+so callers can distinguish "nothing recognized" from "recognized but suppressed". The
+fixed-point guarantee for these values under suppression is locked in the ADR-0010
+property suite (ADR-0010 Scope Decisions item 5, Suppression interaction; #123
+cross-link).
 
 **This is a deliberate, regression-locked behaviour change**: prose inputs that today
 silently resolve to a wrong `SUCCESS` (e.g. `"Ship to United States please"` → `"TO"`)

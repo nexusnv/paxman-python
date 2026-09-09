@@ -22,7 +22,7 @@ for c in result.candidates:
         # IETF  RFC 5322  2008  Section 3.4.1-addr-spec
 ```
 
-A `Provenance` object has six fields:
+A `Provenance` object has seven fields:
 
 | Field | Meaning | Example |
 |-------|---------|---------|
@@ -34,7 +34,7 @@ A `Provenance` object has six fields:
 | `lifecycle` | Publication lifecycle stage | `"active"`, `"deprecated"` |
 | `publication_year` | Year the cited section was published | `2008` |
 
-The seventh piece of information — **which section** of the spec — lives on the rule that produced the candidate as `validation_rule` (e.g. `"Section 3.4.1-addr-spec"`), not on provenance itself. Together they form a complete citation: *"this value was validated by IETF RFC 5322, Section 3.4.1, publication year 2008."*
+The other piece of information — **which section** of the spec — lives on the rule that produced the candidate as `validation_rule` (e.g. `"Section 3.4.1-addr-spec"`), not on provenance itself. Together they form a complete citation: *"this value was validated by IETF RFC 5322, Section 3.4.1, publication year 2008."*
 
 ```mermaid
 flowchart TB
@@ -78,6 +78,6 @@ for c in result.candidates:
 
 ## In plain language
 
-Provenance is the footnote on the answer. Instead of "Paxman says `Alemania` is `DE`," provenance lets you say "Paxman says `Alemania` is `DE` per Unicode CLDR, validated under the CLDR localized-name rule, publication year 2025" — a claim you can check, cite, and reproduce.
+Provenance is the footnote on the answer. Instead of "Paxman says `Alemania` is `DE`," provenance lets you say "Paxman says `Alemania` is `DE` per Unicode CLDR, validated under the CLDR localized-name rule, publication year 2024" — a claim you can check, cite, and reproduce.
 
 Next: [Candidates & Ambiguity →](candidates-and-ambiguity/) — when provenance disagrees and what to do about it.

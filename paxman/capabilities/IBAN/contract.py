@@ -17,6 +17,10 @@ class IBANContract(CapabilityContract):
     ``IBANCapability.format_value`` — the only presentation seam.
     No feature-gated grammars (single ``iban_recognition``), so
     ``active_grammars`` is the base ``None`` (all shipped).
+
+    Formats (ADR-0011 classes): ``paper`` — encoding (groups-of-four
+    spacing is presentation-only; MOD 97-10 validation runs on the
+    stripped form, so the rendering re-enters exactly).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "electronic"

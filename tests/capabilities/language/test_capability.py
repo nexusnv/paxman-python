@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from paxman.api.canonicalize import canonicalize
 from paxman.capabilities.Language.capability import LanguageCapability
 from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.notation import LanguageNotation
 from paxman.core.capability import Capability
-from paxman.core.domain import RuleStrategy
+from paxman.core.discovery import register_capability, reset_registry
+from paxman.core.domain import Resolution, RuleStrategy
 from paxman.core.errors import ContractError
 
 
@@ -304,11 +306,11 @@ class TestLanguageFormatValue:
 
     def test_alpha2_from_bcp47_tag(self) -> None:
         cap = LanguageCapability()
-        assert cap.format_value("en-US", "alpha2", _bcp47_notation("en-US")) == "en"
-        assert cap.format_value("fr-FR", "alpha2", _bcp47_notation("fr-FR")) == "fr"
+        assert cap.format_value("en-US", "alpha2", _bcp47_notation("en-US")) == "en-US"
+        assert cap.format_value("fr-FR", "alpha2", _bcp47_notation("fr-FR")) == "fr-FR"
         assert (
             cap.format_value("zh-Hans-CN", "alpha2", _bcp47_notation("zh-Hans-CN"))
-            == "zh"
+            == "zh-Hans-CN"
         )
         assert (
             cap.format_value("ger", "alpha2", _notation("ger", language="ger")) == "de"
@@ -422,3 +424,156 @@ class TestLanguageFormatValue:
             cap.format_value("ger", "name", _notation("ger", language="ger"))
             == "German"
         )
+
+
+class TestLanguageExtendedTagCarry:
+    """Extended-tag formats for alpha2 carry + alpha3/name waivers (ADR-0011 Phase 3).
+
+    ``alpha2`` maps the primary subtag and carries the remaining subtags
+    verbatim (an encoding: ``en-US`` and ``en-GB`` render distinctly and
+    re-enter exactly). ``alpha3`` / ``alpha3-bib`` / ``name`` render the
+    primary only for extended tags (waived projections — a mapped primary
+    plus carried rest emits tags the authority rejects: variant Prefix is
+    primary-relative, deprecated/macrolanguage resolution is
+    primary-relative). Bare codes are unaffected (nothing to carry).
+    """
+
+    def setup_method(self) -> None:
+        """Register the Language capability for each test."""
+        reset_registry()
+        register_capability(LanguageCapability())
+
+    def teardown_method(self) -> None:
+        """Reset the registry so other tests start clean."""
+        reset_registry()
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en-US", "alpha2", "en-US"),
+            # alpha3/alpha3-bib render the primary only (waived projection:
+            # "eng-US" re-enters, but prefix/deprecated-constrained rows like
+            # "deu-CH-1901"/"zho-Hant-TW" would be INVALID/AMBIGUOUS).
+            ("en-US", "alpha3", "eng"),
+            ("en-US", "alpha3-bib", "eng"),
+            ("zh-Hant-TW", "alpha2", "zh-Hant-TW"),
+            ("zh-Hant-TW", "alpha3", "zho"),
+            ("zh-Hant-TW", "alpha3-bib", "chi"),
+            ("de-CH-1901", "alpha2", "de-CH-1901"),
+            ("de-CH-1901", "alpha3", "deu"),
+            ("de-CH-1901", "alpha3-bib", "ger"),
+            ("x-foo", "alpha2", "x-foo"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+            # Extlang compacts canonicalize to themselves (no folding).
+            ("zh-cmn", "alpha2", "zh-cmn"),
+            ("zh-cmn", "alpha3", "zho"),
+            ("zh-cmn", "alpha3-bib", "chi"),
+        ],
+    )
+    def test_carry_rows(self, source: str, output_format: str, expected: str) -> None:
+        """alpha2 carries rest; alpha3/alpha3-bib render the primary only."""
+        contract = LanguageCapability.create_contract(output_format=output_format)
+        result = canonicalize(source, contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == expected
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("en-US", "en-US"),
+            ("zh-Hant-TW", "zh-Hant-TW"),
+            ("de-CH-1901", "de-CH-1901"),
+            ("x-foo", "x-foo"),
+            ("zh-cmn", "zh-cmn"),
+        ],
+    )
+    def test_alpha2_carry_reenters_param_free(self, source: str, expected: str) -> None:
+        """alpha2 carry rows re-enter exactly under the default contract (encodings)."""
+        rendered = canonicalize(
+            source, LanguageCapability.create_contract(output_format="alpha2")
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == expected
+        reentry = canonicalize(expected, LanguageCapability.create_contract())
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == expected
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en-US", "alpha3", "eng"),
+            ("en-US", "alpha3-bib", "eng"),
+            ("zh-Hant-TW", "alpha3", "zho"),
+            ("zh-Hant-TW", "alpha3-bib", "chi"),
+            ("de-CH-1901", "alpha3", "deu"),
+            ("de-CH-1901", "alpha3-bib", "ger"),
+            ("zh-cmn", "alpha3", "zho"),
+            ("zh-cmn", "alpha3-bib", "chi"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+        ],
+    )
+    def test_waived_projection_fixed_point(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """alpha3/alpha3-bib primary-only rows fixpoint under own contract.
+
+        Waived projections do not satisfy default-contract pre-image
+        (``canonicalize("eng", default)`` → ``"en"``) — that is what makes
+        them projections. They satisfy ADR-0010 same-contract re-entry:
+        ``canonicalize(W, C(fmt))`` renders ``W`` again. The carried-rest
+        variants (``deu-CH-1901`` / ``zho-Hant-TW``) would be
+        INVALID/AMBIGUOUS because variant Prefix and deprecated /
+        macrolanguage resolution are primary-relative, so they are never
+        emitted.
+        """
+        rendered = canonicalize(
+            source, LanguageCapability.create_contract(output_format=output_format)
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == expected
+        reentry = canonicalize(
+            expected,
+            LanguageCapability.create_contract(output_format=output_format),
+        )
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == expected
+
+    def test_carry_injective_en_us_en_gb(self) -> None:
+        """``en-US`` and ``en-GB`` render distinctly under alpha2."""
+        contract = LanguageCapability.create_contract(output_format="alpha2")
+        us = canonicalize("en-US", contract)
+        gb = canonicalize("en-GB", contract)
+        assert us.status == Resolution.SUCCESS
+        assert gb.status == Resolution.SUCCESS
+        assert us.canonicalized_value == "en-US"
+        assert gb.canonicalized_value == "en-GB"
+        assert us.canonicalized_value != gb.canonicalized_value
+
+    def test_name_waived_projection_locked(self) -> None:
+        """``name`` of ``en-US`` stays ``English`` (waived per ADR-0011)."""
+        contract = LanguageCapability.create_contract(output_format="name")
+        result = canonicalize("en-US", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "English"
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("en", "alpha2", "en"),
+            ("en", "alpha3", "eng"),
+            ("en", "alpha3-bib", "eng"),
+            ("deu", "alpha2", "de"),
+            ("deu", "alpha3", "deu"),
+            ("deu", "alpha3-bib", "ger"),
+        ],
+    )
+    def test_bare_codes_unchanged(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """Bare codes render exactly as before (nothing to carry)."""
+        contract = LanguageCapability.create_contract(output_format=output_format)
+        result = canonicalize(source, contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == expected

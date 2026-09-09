@@ -5,7 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.1] - 2026-09-08
+
+> **Docs-only patch — no contract or behavior changes.** Follows up the 0.4.0 release review (#141, issue #142).
+
+### Fixed
+
+- **Date docs — false spec citations:** capability and Candidates guides cited rule names that no longer exist (`Section 4.3.1-calendar-date`, `Section 1-date-format`, `Section 4-date-format`, CENELEC EN 50160). Real rules are `Section 5.2.1.1-calendar-date` (ISO 8601) and `Derived-US-date-format` / `Derived-European-date-format` (both authority `Derived convention`; the EN 50160 attribution was retracted in code). The Candidates pin example used a fictional rule (`Section 4.3.1-calendar-date-us`, would raise `ContractError`) — now `Derived-US-date-format`, verified `SUCCESS`.
+- **API reference:** `register_all_shipped()` returns `tuple[str, ...]` (names newly registered), not `None`; `canonicalize()` `CapabilityError` row trimmed to unknown-capability (duplicate-name/frozen causes belong to registration calls).
+- **Concepts:** `Provenance` has seven fields (was "six"); `VersionStamp` example includes `recognition_revision`; `suppress_common_words` added to the common-contract table; `MISSING` definition covers suppression (`suppressed_count > 0`); runnable blocks made self-contained.
+- **Snippets:** Email obfuscated-flag comment and provenance setup; ISSN `-?` notation; Currency wrong-length wording; extending freeze/opt-in imports and illustrative (non-ISO) DotDateRule provenance; getting-started fence language; glossary contract factory.
+- **Inventories:** capability chooser, concepts table, and API quick lookup now list all 18 shipped capabilities (were 10/18).
+
+## [0.4.0] - 2026-09-08
+
+### Added
+
+- **Element — Chemical elements:** new capability with one grammar (`element_recognition`) covering IUPAC symbols (case-exact — `fe` folds to `Fe` while `FE` stays unclaimed), case-insensitive English names (including the `aluminum`/`cesium` aliases), and labeled atomic numbers (`element 26`, `Z=26`, `atomic number 118` — bare `26` is unclaimed by design), and two lookup-table rules backed by IUPAC Red Book 2005 Ch. IR-3 (`Section IR-3.1-names-and-symbols`) and the IUPAC Periodic Table 04 May 2022 registry (`Section PTOE-element-registry`, Z 1–118). Canonical form is the proper-case IUPAC symbol (`Fe`); offered output format `name` (lowercase English name, e.g. `iron`) re-enters as a fixed point. Suppression is A0-correct: only the symbol matcher is `suppressible` (whole-input `In` stays `SUCCESS In` via the exemption while embedded `in` is suppressed; no element name intersects `COMMON_WORDS` so the name matcher stays non-suppressible as a rescue path). `atomic_number` is deliberately unoffered per ADR-0010 — a bare `"26"` rendering cannot re-enter (`MISSING`) — with forward path via community `extra_grammars` (new `shape` values route through the same seam).
+- **Coordinates — WGS 84 coordinates:** new capability with one grammar (`coordinates_recognition`) covering decimal pairs, hemisphere letters, DMS/DDM, Geo URI `geo:`, ISO 6709 string-expression, and GeoJSON lon-first pairs, and four parser rules backed by ISO 6709:2022 (`Section 6-coordinate-structure`, `Section Annex-h-string-expression`), RFC 5870 (`Section 3.3-geo-uri-validity`), and RFC 7946 (`Section 3.1.1-position`). Canonical form is lat-first signed decimal degrees quantized to 6dp round-half-even with `-0` folded to `0`; six output formats `decimal` (default), `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm`.
+- **Bootstrap — MacAddress registration activated:** `register_all_shipped()` / `paxman --list` now include the `mac_address` capability (18 shipped capabilities). The registration had been deliberately deferred on `dev`; it ships together with Coordinates in this release.
+- **Suppression signal — `suppressed_count` / `suppressed_spans` on `ExecutionResult` (#122, ADR-0009 Rev.5):** two defaulted frozen fields (`0` / `()`) populated whenever `suppress_common_words=True` suppression fires — on `MISSING` *and* `INVALID`, not just `MISSING` — so callers can distinguish "nothing recognized" (`MISSING` + `0`) from "recognized but suppressed" (`MISSING` + `1`, e.g. `canonicalize("in/", Country suppress on)` → spans `((0, 2),)`). `0`/`()` when the flag is off.
+
+### Breaking
+
+- **MacAddress — de-offer `bit_reversed` output format (#123, ADR-0010):** `MacAddressContract(output_format="bit_reversed")` now raises `ContractError` (was `SUCCESS` with per-octet bit-swap). The format is an involution (`f(f(x)) == x`) and therefore not a fixed point — `canonicalize(V, bit_reversed)` re-flips to `W != V`. Per ADR-0010 an offered format must re-enter as itself, so the view is no longer offered. The `Capability.format_value()` `bit_reversed` branch and `_bit_reverse_octet` helper have been removed (no dead code; off-contract direct use would previously have silently succeeded). Migrate: use the default `colon` form for storage and round-tripping; compute the Token-Ring display locally if needed.
+- **Phone — de-offer `national`, offer `split` (ADR-0011 Phase 2):** `PhoneContract(output_format="national")` now raises `ContractError` with a migration message naming `split` (was `SUCCESS` rendering the bare NSN for NANP values, E.164 otherwise). The format removed the country code recognition/validation depend on and could not re-enter under the default contract (param dependence; value-dependent shape; latent GB/MY collision). Migrate: `output_format="split"` renders `+1 2125551234` for `+12125551234` (uniform for all country codes, param-free re-entry); `e164`/`rfc3966` unchanged; `default_country` still supported for domestic **input** recognition.
+- **Phone — `national` now requires `default_country` (#123, ADR-0010):** `PhoneContract(output_format="national")` without a NANP `default_country` (currently `"US"`) now raises `ContractError` (was `SUCCESS` with a non-re-enterable bare NSN). Per ADR-0010 Scope decision 2 re-entry is unconditional for default contracts; a default (country-less) contract must never produce a non-re-enterable `national` V (`2125551234` → `INVALID` on re-entry without country). Callers needing `national` must supply `default_country="US"`; `PhoneContract(output_format="national", default_country="US")` re-enters as a fixed point and remains offered. Migrate: add `default_country="US"` where `national` is used, or use `e164`/`rfc3966` for country-less contracts. (superseded by the ADR-0011 Phase 2 entry above — `national` is now de-offered)
+
+### Changed
+
+- **Language — `alpha2` carries extended subtags; `alpha3`/`alpha3-bib`/`name` waived (ADR-0011):** `alpha2` now maps the primary subtag and carries the remaining subtags verbatim (`en-US` → `en-US`, was `en`) — the projection silently changed the entity (`en-US`/`en-GB` collided onto `en`). `alpha3`/`alpha3-bib` render the primary only for extended tags (`de-CH-1901` → `deu`/`ger`): carrying a mapped primary emits tags the authority rejects (variant Prefix is primary-relative, so `deu-CH-1901` is INVALID; deprecated/macrolanguage resolution makes `zho-Hant-TW` AMBIGUOUS), so both stay waived projections that re-enter as fixed points. `name` is unchanged (waived projection — `en-US` still renders `English`; revisit at the hard-mandate promotion). Bare-code rendering unchanged.
+- **Suppression — A0 whole-input exemption (#122, ADR-0009 Rev.5):** under `suppress_common_words=True`, a suppressible word-bounded hit covering the entire trimmed input is never suppressed. `canonicalize("to"/"TO"/"  to  ", Country suppress on)` → `SUCCESS "TO"` (was `MISSING`); same for Currency `ALL` and Language `en`. Embedded mentions stay suppressed (`scan()` prose behavior unchanged; `canonicalize("to and usa", …)` still `SUCCESS "US"` via the non-suppressible `name_recognition` rescue path). A1 (`x→0` fallback) evaluated and rejected — `"to and is"` stays `MISSING` with `suppressed_count == 3`. Flag-off results are byte-identical.
+
+### Fixed
+
+- **ORCID — fix re-entry for `compact` bare-digit output (#123, ADR-0010):** `ORCIDRecognitionGrammar` now accepts both hyphenated `0000-0002-1825-0097` and compact `0000000218250097` (and `https://orcid.org/0000000218250097`). Previously `format_value(..., "compact")` produced a bare 16-digit value that the grammar did not recognize (`MISSING` on re-entry). The grammar now has an alternation `(?ai:\d{4}-\d{4}-\d{4}-\d{3}[\dX]|\d{15}[\dX])` and normalizes compact to hyphenated `XXXX-XXXX-XXXX-XXXC` for validation. Re-entry is now a fixed point (`canonicalize(V, compact) == SUCCESS V`). No breaking change — `compact` remains offered, now re-enterable.
+- **Phone — fix re-entry fixture for `national` (#123, ADR-0010):** `tests/property/test_reentry_invariant.py` now uses a valid NANP fixture `+12125551234` (was fictional `+12125550123` in `555-01xx` reserved range, always `INVALID` even with country) and carries `default_country="US"` for the Phone row so the lossy `national` rendering (`2125551234`) can re-enter via the NANP rule. The format `national` is context-dependent (bare NSN discards the country code); its re-entry is contract-relative per ADR-0010 Scope decision 2. Contract now enforces the invariant — `national` without a NANP `default_country` is rejected at construction (see Breaking above); `national` remains offered when country is supplied, now verifiably re-enterable under its producing contract. For non-NANP E.164 (e.g. `+33`, `+44`) requested as `national` the capability now preserves the E.164 value instead of stripping to a bare non-NANP number that cannot re-enter (`142345678` → `MISSING`); two-pass `national` re-entry is now a fixed point for all E.164 countries (#127). (superseded by the ADR-0011 Phase 2 entry above — `national` is now de-offered)
+- **Coordinates — review hardening (oracle + adversarial audit):** recognition
+  never fabricates values: structural observations (sign/hemisphere contradiction,
+  hemisphere axis mismatch, DMS unit overflow, ISO 6709 digit width, missing
+  Annex H solidus, foreign CRS) are recorded on `CoordinatesNotation.defects`
+  and rejected by the rule layer. Whitespace-separated bare number runs
+  ("pages 12 40", phone numbers) are no longer recognized as coordinates
+  (whitespace pairs require hemisphere/sign affinity on both components); a
+  match can no longer start at the fractional tail of a dotted number
+  (`192.168.1.1, 10.0` → MISSING, was a wrong-value SUCCESS); `geo:`-prefixed
+  tails are never salvaged by the pair branch; a foreign CRS label in a Geo
+  URI or ISO 6709 string resolves INVALID (no silent datum transform) instead
+  of being silently accepted or dropped; `--48.5, 2.3` sign glue is MISSING;
+  `iso6709` output pads fractions to the 4-place Annex H presentation width.
+- **Coordinates — zero-hemisphere fold for `dms`/`dm` (Phase 0):** `dms`/`dm`
+  rendered negative sub-quantum components as `S`/`W` zero-magnitude and broke
+  re-entry (`0, -0.000001` rendered `0°0′0″W`, which re-entered `E`); the
+  post-quantization zero now folds to `N`/`E` (parity with the recognition
+  `-0` fold), locked by `test_dms_dm_zero_hemisphere_fold` + the quantization
+  property suite.
+
+### Docs
+
+- **ADR-0009 Rev.5 — §16 A0 amendment (#122):** whole-input exemption semantics, A1 rejection rationale, `suppressed_count`/`suppressed_spans` signal, ADR-0010/#123 cross-link. User surfaces synced: `README.md` contract table + scan prose, `CONTEXT.md` re-entry note + kernel notes, new `docs/user/migration.md` 0.4.0 section, `ExecutionResult` fields in `docs/user/api-reference.md` + new "Suppression signal" subsection in `docs/user/concepts/execution-result.md`.
 
 ## [0.3.2] - 2026-09-03
 

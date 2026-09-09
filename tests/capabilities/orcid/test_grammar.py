@@ -111,9 +111,23 @@ class TestORCIDRecognitionGrammar:
             assert len(results) == 1, f"failed for {text!r}"
             assert results[0].raw_text == "0000-0002-1825-0097"
 
-    def test_compact_digits_missing(self) -> None:
-        # v1 grammar is hyphen-only: contiguous digits are MISSING.
-        assert ORCIDRecognitionGrammar().recognize("0000000218250097") == []
+    def test_compact_digits_recognized(self) -> None:
+        # Compact bare 16-digit is now recognized for ADR-0010 re-entry
+        # (format_value compact strips hyphens, so V must re-enter).
+        results = ORCIDRecognitionGrammar().recognize("0000000218250097")
+        assert len(results) == 1
+        assert results[0].notation.compact == "0000000218250097"
+        assert results[0].notation.hyphenated == "0000-0002-1825-0097"
+        assert results[0].raw_text == "0000000218250097"
+
+    def test_compact_with_uri_prefix_recognized(self) -> None:
+        # Compact with orcid.org prefix should also re-enter (edge).
+        text = "https://orcid.org/0000000218250097"
+        results = ORCIDRecognitionGrammar().recognize(text)
+        assert len(results) == 1
+        assert results[0].notation.compact == "0000000218250097"
+        assert results[0].notation.hyphenated == "0000-0002-1825-0097"
+        assert results[0].notation.is_uri == "true"
 
     def test_spaced_isni_style_missing(self) -> None:
         assert ORCIDRecognitionGrammar().recognize("0000 0002 1825 0097") == []

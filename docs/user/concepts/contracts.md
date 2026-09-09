@@ -56,6 +56,7 @@ flowchart TB
 | `pinned_rules` | `tuple[str, ...] \| None` | `None` | If set, **only** these rules run (overrides `excluded_rules`). `()` pins to nothing. |
 | `year` | `int \| None` | `None` | Temporal filter — only rules published in or before this year run. |
 | `output_format` | `str \| None` | `None` → default | How the canonical value is rendered (see below). |
+| `suppress_common_words` | `bool` | `False` | Suppress word-bounded short-code hits in `COMMON_WORDS` (67). |
 | `extra_grammars` | `tuple[str, ...]` | `()` | Community grammar names to opt in (advanced — see extending docs in a later round). |
 
 **Precedence:** when `pinned_rules` is non-`None` it wins over `excluded_rules`; `year` is applied after either pinning or exclusion.
@@ -161,7 +162,7 @@ from paxman.capabilities import Phone, ISBN
 
 Phone.create_contract(output_format="rfc3966")  # tel:+15551234567
 ISBN.create_contract(output_format="hyphenated")  # 978-0-11-000222-4
-Phone.create_contract(output_format="national")  # national form
+Phone.create_contract(output_format="split")  # +1 5551234567
 ISBN.create_contract(output_format="isbn13")  # bare digits (default)
 # None / "default" also resolve to the default for any capability
 ```

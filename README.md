@@ -12,6 +12,18 @@ For a deeper understanding of the system, see [ARCHITECTURE.md](ARCHITECTURE.md)
 pip install paxman
 ```
 
+Latest development snapshot (unreleased `dev` branch, installable from GitHub instead of PyPI):
+
+```bash
+pip install --force-reinstall git+https://github.com/nexusnv/paxman-python.git@dev
+```
+
+or with `uv`:
+
+```bash
+uv add git+https://github.com/nexusnv/paxman-python.git@dev
+```
+
 ---
 
 ## Quick Start
@@ -54,14 +66,16 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent):
+Paxman ships with eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
 | **BIC** | Business identifier codes | 1 (bic) | 1 | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
+| **Coordinates** | WGS 84 coordinates | 1 (coordinates) | 4 | ISO 6709:2022, RFC 5870, RFC 7946 |
 | **Country** | Country codes/names | 4 (alpha2, alpha3, numeric, name) | 6 | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **Date** | Dates | 1 (date) | 3 | ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale) |
+| **Element** | Chemical elements | 1 (element) | 2 | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | 3 (standard, obfuscated, localhost) | 2 | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | 1 (iban) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
@@ -75,7 +89,7 @@ Paxman ships with sixteen built-in capabilities (16 in `paxman/capabilities/__in
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
 
-> **Note:** Table reflects `paxman/capabilities/__init__.py` exports (16); `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent. To regenerate the table from bootstrap, run `uv run python tools/generate_readme_table.py`.
+> **Note:** Table generated from `paxman/api/bootstrap.py:_SHIPPED` (alphabetical by registry name). To regenerate, run `uv run python tools/generate_readme_table.py`.
 
 ### Email Capability
 
@@ -468,7 +482,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | `pinned_rules` | `Sequence[str]` | Pin to specific rules (overrides `excluded_rules`) |
 | `year` | `int` | Temporal filter — only rules with `publication_year ≤ year` run |
 | `extra_grammars` | `tuple[str, ...]` | Community grammar names to opt in (appended after shipped grammars) |
-| `suppress_common_words` | `bool` | Suppress common-word noise on scan (e.g. `to` → Tonga); default `False` (ADR-0009 §16) |
+| `suppress_common_words` | `bool` | Suppress common-word noise on scan/prose (e.g. `to` → Tonga), except when the whole input is the word (A0 whole-input exemption, #122); default `False` (ADR-0009 §16) |
 
 ### Capability-Specific Parameters
 
@@ -490,7 +504,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | Money | `dollar_sign_currency` | `str` \| `None` | ISO 4217 alpha-3 code resolving bare/shared symbols (opt-in); `None` (default) makes bare symbols INVALID |
 | Money | `output_format` | `str` | Output format (`"code_amount"` default, `"compact"`) |
 | Phone | `default_country` | `str` | ISO 3166-1 alpha-2 country code to resolve national numbers (e.g., `"US"`) |
-| Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"national"`) |
+| Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"split"`) |
 | SIUnit | `allow_split_word_prefixes` | `bool` | Merge a word prefix split from its unit by whitespace (e.g. `"kilo gram"` → `"kg"`) when True; default False rejects the spoken form (→ INVALID) |
 | SIUnit | `allow_multi_solidus` | `bool` | Preserve the legacy accept-multi-solidus behavior (e.g. `"kg/m/s"`) when True; default False rejects more than one top-level solidus (→ INVALID) per ISO 80000-1 §6.6.2 |
 
@@ -662,7 +676,7 @@ For inputs with multiple mentions of the same capability, split the text first �
 
 For scan on prose, short-code noise (`to`→Tonga) can dominate: use the off-by-default
 `suppress_common_words` gate (ADR-0009 §16) — `Country.create_contract(suppress_common_words=True)` /
-`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency and bare `canonicalize("to")` stays `SUCCESS "TO"` when the flag is off. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note.
+`paxman scan --suppress-common-words "Ship to the United States of America, total 45.50 USD, weight 3.5 kg"` keeps the name mention while `USD` remains for currency. Bare `canonicalize("to")` stays `SUCCESS "TO"` with the flag off *and* with it on (A0 whole-input exemption, #122 — a suppressible hit covering the trimmed whole input is never suppressed), while `scan()` prose still drops embedded `to`. See [docs/user/migration.md](docs/user/migration.md) for the full 0.2.0 suppression note and the 0.4.0 exemption.
 
 ---
 

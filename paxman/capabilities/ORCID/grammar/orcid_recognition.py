@@ -16,12 +16,15 @@ from paxman.core.grammar.stages import RegexStage, StandardPre
 # orcid.org/, www.orcid.org/.
 # Payload is ASCII-only via inline (?ai:) — fullwidth digits never match;
 # the i flag folds lowercase x into [X] before .upper() normalization.
+# Compact (bare 16-char) is accepted alongside hyphenated for re-entry:
+# format_value(compact) strips hyphens, so the grammar must re-recognize the
+# bare digit form (ADR-0010 fixed-point). Hyphenated remains canonical.
 _ORCID_LABEL = r"(?:(?ai:ORCID|ISNI)[\s:-]+)?"
 _ORCID_HOST = r"(?:(?ai:(?:https?://)?(?:www\.)?orcid\.org)/)?"
 _ORCID_GLUED_GUARD = r"(?!(?ai:(?:ORCID|ISNI)[0-9]))"
 _ORCID_BODY = (
     rf"{_ORCID_LABEL}{_ORCID_HOST}{_ORCID_GLUED_GUARD}"
-    r"(?P<hyphenated>(?ai:\d{4}-\d{4}-\d{4}-\d{3}[\dX]))"
+    r"(?P<orcid>(?ai:\d{4}-\d{4}-\d{4}-\d{3}[\dX]|\d{15}[\dX]))"
 )
 # word_only guards block left glue X0000-... and right glue ...0097Y.
 # The negative lookahead blocks glued label without separator.
@@ -33,8 +36,13 @@ _ORCID_PATTERN = (
 
 
 def _orcid_notation(match: re.Match[str]) -> ORCIDNotation:
-    hyphenated = match.group("hyphenated").upper()
-    compact = hyphenated.replace("-", "")
+    raw = match.group("orcid").upper()
+    if "-" in raw:
+        hyphenated = raw
+        compact = hyphenated.replace("-", "")
+    else:
+        compact = raw
+        hyphenated = f"{compact[:4]}-{compact[4:8]}-{compact[8:12]}-{compact[12:]}"
     return ORCIDNotation(
         compact=compact,
         hyphenated=hyphenated,
@@ -45,7 +53,10 @@ def _orcid_notation(match: re.Match[str]) -> ORCIDNotation:
 
 
 class ORCIDRecognitionGrammar(PipelineGrammar[ORCIDNotation]):
-    """ORCID recognition — hyphenated 4-4-4-4 with optional label and URI host."""
+    """ORCID recognition — hyphenated 4-4-4-4 or compact bare 16,
+
+    with optional label and URI host.
+    """
 
     name = "orcid_recognition"
     semantics = "orcid_recognition"

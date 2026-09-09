@@ -12,7 +12,7 @@ Canonicalizes **one currency identifier** per call — a code, a symbol, or a di
 
 | Recognizes | Does not recognize |
 |------------|--------------------|
-| Lowercase or uppercase alpha-3 codes (`usd` → `USD`) | Codes with wrong length or unsupported casing (`US`, `USDD`) — not matched by the grammar, therefore `MISSING` |
+| Lowercase or uppercase alpha-3 codes (`usd` → `USD`) | Codes with wrong length (`US`, `USDD`) — not matched by the grammar, therefore `MISSING` |
 | CLDR display-name words (`euro` → `EUR`, `yen` → `JPY`) | Amount-glued tokens like `US$5` — not recognized at all |
 | CLDR currency symbols (`€` → `EUR`, `¥` → `JPY`) | Bare shared symbols like `"$"` without disambiguation — recognized but `INVALID` unless you opt in |
 | Shared bare symbols (`$`) — 29 codes share this CLDR symbol | A `default_currency` code that is not one of that symbol's own candidates — stays `INVALID` |

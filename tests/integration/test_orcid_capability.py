@@ -85,11 +85,13 @@ class TestORCIDResolutionMap:
         assert result.status == Resolution.MISSING
 
     @pytest.mark.integration
-    def test_compact_digits_missing_v1(self) -> None:
+    def test_compact_digits_success(self) -> None:
         register_capability(ORCIDCapability())
         result = paxman.canonicalize("0000000218250097", _contract())
 
-        assert result.status == Resolution.MISSING
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "0000-0002-1825-0097"
+        assert result.span == (0, 16)
 
     @pytest.mark.integration
     def test_two_distinct_mentions_raise(self) -> None:
