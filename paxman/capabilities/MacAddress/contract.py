@@ -24,6 +24,12 @@ class MacAddressContract(CapabilityContract):
     Per ADR-0010 an offered format must re-enter as itself, so the view is
     no longer offered. Use the default ``colon`` form for round-trippable
     storage.
+
+    Formats (ADR-0011 classes): ``hyphen`` / ``bare`` / ``cisco`` —
+    encodings (separator re-insertion / strip / hextet regroup; same hex
+    digits, presentation-only); ``eui64`` — same-entity expansion (inserts
+    ``FF:FE`` from an EUI-48, identity for an EUI-64; merge-and-fixpoint
+    fixtures in the preservation property suite).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "colon"

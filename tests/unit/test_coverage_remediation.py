@@ -801,10 +801,11 @@ def test_run_matchers_with_context_branches() -> None:
     class ContractSupp:
         suppress_common_words = True
 
-    # "to" is a common word, should be suppressed
+    # "to" is a common word, should be suppressed (embedded hit: A0 exempts
+    # only whole-input hits, so the input must contain more than the hit)
     assert (
         _run_matchers_with_context(
-            ScanContext.of("to"), [SuppGrammar()], ContractSupp()
+            ScanContext.of("to go"), [SuppGrammar()], ContractSupp()
         )
         == []
     )

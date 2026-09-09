@@ -30,6 +30,16 @@ from paxman.core.domain import Grammar, Rule
 __all__ = ["PhoneCapability", "PhoneContract", "PhoneNotation"]
 
 
+def _format_split(value: str) -> str:
+    """Render an E.164 canonical value as "+CC NSN" (single ASCII space)."""
+    digits = value[1:] if value.startswith("+") else value
+    country_code = split_country_code(digits)
+    if country_code is None:
+        # unreachable post-matches(); defensive best-effort
+        return value
+    return f"+{country_code} {digits[len(country_code) :]}"
+
+
 class PhoneCapability(Capability[PhoneNotation]):
     """Phone canonicalization capability.
 
@@ -87,15 +97,14 @@ class PhoneCapability(Capability[PhoneNotation]):
             year: Year for temporal filtering.
             output_format: Output format for canonical values. Optional;
                 None/"default"/"e164" resolve to "e164", or one of the
-                offered alternatives "rfc3966"/"national". For E.164, tel-URI,
-                and NANP inputs "national" works without default_country
-                (the country code is embedded in the value); for national-shaped
-                input it needs default_country to resolve the value.
+                offered alternatives "rfc3966"/"split". ``"national"`` was
+                removed per ADR-0011 (see the ``ContractError`` migration
+                message); ``default_country`` is input-only.
             extra_grammars: Community grammar names (opt-in) to run alongside
                 the shipped grammars, in order.
             default_country: ISO 3166-1 alpha-2 country code used to resolve
-                national-shaped numbers (e.g., "US"). Required for "national"
-                output from national-shaped input; optional otherwise.
+                national-shaped input (e.g., "US"). Input-only; it plays no
+                role in output rendering.
 
         Returns:
             Configured PhoneContract instance.
@@ -121,33 +130,37 @@ class PhoneCapability(Capability[PhoneNotation]):
         The default ``"e164"`` path is the identity: the rule-produced
         ``+CCNSN`` canonical value is returned unchanged. ``"rfc3966"``
         wraps the value in a ``tel:`` URI, appending ``;ext=<extension>``
-        only when the notation carries an RFC 3966 extension. ``"national"``
-        strips the assigned country-code prefix via ``split_country_code``
-        to yield the national significant number, passing the value through
-        unchanged when no assigned prefix can be split (a defensive
-        best-effort, unreachable after rule validation).
+        only when the notation carries an RFC 3966 extension. ``"split"``
+        renders ``"+" + CC + " " + NSN`` (single ASCII space, uniform for
+        every country code — e.g. ``+1 2125551234``, ``+44 12341234``);
+        ``notation.extension`` is ignored (the canonical value does not
+        carry it; ``rfc3966`` is the only extension-preserving format —
+        appending an extension would break re-entry since the E.164
+        grammar ends its span at the last digit).
+
+        Compliance: no field is removed (CC, NSN, and the ``+`` sigil all
+        survive; the space is presentation-only, stripped by
+        ``strip_separators`` on re-entry), so every ``split`` value
+        re-enters param-free under the default contract via the existing
+        E.164 grammar, and ``CC + space + NSN`` is a bijection over the
+        canonical space (entity-relative injectivity).
 
         Args:
             value: The default canonical value produced by ``Rule.normalize()``
                 (a leading-``+`` E.164 number).
             output_format: The contract's resolved output format (``"e164"``,
-                ``"rfc3966"``, or ``"national"``).
+                ``"rfc3966"``, or ``"split"``).
             notation: The original phone notation that produced the canonical
                 value; its ``extension`` is retained for RFC 3966 rendering.
 
         Returns:
             The number rendered in the requested format.
         """
-        if output_format != "rfc3966" and output_format != "national":
+        if output_format == "split":
+            return _format_split(value)
+        if output_format != "rfc3966":
             return value
-        if output_format == "rfc3966":
-            rendered = f"tel:{value}"
-            if notation.extension:
-                rendered = f"{rendered};ext={notation.extension}"
-            return rendered
-        digits = value[1:] if value.startswith("+") else value
-        country_code = split_country_code(digits)
-        if country_code is None:
-            # unreachable post-matches(); defensive best-effort
-            return value
-        return digits[len(country_code) :]
+        rendered = f"tel:{value}"
+        if notation.extension:
+            rendered = f"{rendered};ext={notation.extension}"
+        return rendered

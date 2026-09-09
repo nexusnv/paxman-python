@@ -49,21 +49,32 @@ class PhoneContract(CapabilityContract):
             national-shaped input (e.g., "US" for "(555) 234-5678"). When None,
             national-shaped input is recognized but never validated (status
             INVALID) — national-shaped numbers carry no country code in their
-            digits and so cannot be resolved without a default country. For
-            E.164, tel-URI, and NANP inputs the country code is embedded in the
-            value itself, so "national" output works without default_country.
+            digits and so cannot be resolved without a default country.
+            Input-only: it plays no role in output rendering.
         output_format: Canonical output format ("e164" default, "rfc3966",
-            or "national" for the national significant number). Optional —
+            or "split" rendering "+CC NSN", e.g. "+1 2125551234"). Optional —
             None/"default"/"e164" all resolve to "e164".
+            ``"national"`` was de-offered per ADR-0011 (it dropped the
+            country code and could not re-enter under the default contract);
+            requesting it raises ``ContractError`` with a migration message
+            naming ``"split"``. ``"split"`` preserves every field (CC, NSN,
+            "+" sigil; the space is presentation-only and stripped on
+            re-entry) and re-enters param-free via the existing E.164
+            grammar; ``CC + space + NSN`` is a bijection over the canonical
+            space (entity-relative injectivity).
         excluded_rules: Tuple of rule names to exclude.
         pinned_rules: Pin to specific rules (takes precedence over excluded_rules).
         year: Year for temporal filtering.
+
+    Formats (ADR-0011 classes): ``rfc3966`` — encoding (``tel:`` scheme
+    wrap; every digit preserved); ``split`` — encoding (``CC NSN``
+    bijection over the canonical space; param-free re-entry via the E.164
+    grammar). ``national`` is de-offered: it dropped the country code
+    recognition and validation depend on (see ``output_format`` above).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "e164"
-    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset(
-        {"rfc3966", "national"}
-    )
+    OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"rfc3966", "split"})
 
     capability_name: str = field(default="phone", init=False)
 
@@ -73,20 +84,36 @@ class PhoneContract(CapabilityContract):
     def __post_init__(self) -> None:
         """Validate contract configuration.
 
-        Calls the base resolution first, then enforces Phone-specific rules:
-        default_country must be an uppercase alpha-2 code when present.
+        Pre-checks removed ``national`` for a migration error, then calls
+        base resolution, then validates ``default_country``. This is the
+        sole intentional exception to the base's super-first ordering (all
+        other contracts call ``super().__post_init__()`` first).
 
-        ``output_format="national"`` is permitted with or without
-        ``default_country``. It is required only for *national-shaped* input,
-        which carries no country code in its digits — that requirement is
-        enforced by the NANP rules' ``matches()`` (they return False when
-        ``default_country`` is not a NANP country). For E.164, tel-URI, and
-        NANP inputs the country code is embedded in the value and is split out
-        by the rules, so ``"national"`` output works without default_country.
+        Two consequences of that ordering: the ``national`` pre-check is an
+        exact match on ``output_format == "national"`` — case variants
+        (e.g. ``"NATIONAL"``) fall through to the base resolution's generic
+        unsupported-format error instead of the migration message
+        (acceptable: it matches the base resolver's exactness) — and the
+        removed-format rejection precedes ``default_country`` validation,
+        so ``PhoneContract(output_format="national",
+        default_country="USA")`` reports the migration error, not the
+        alpha-2 error.
+
+        ``output_format="national"`` was de-offered per ADR-0011 and is
+        rejected here with a migration message naming ``"split"`` before
+        the base class raises its generic unsupported-format error.
 
         Raises:
-            ContractError: If output_format is unsupported or default_country is
-                present but not an uppercase alpha-2 code.
+            ContractError: If output_format is unsupported (including the
+                removed "national"), or default_country is present but not
+                an uppercase alpha-2 code.
         """
+        if self.output_format == "national":
+            raise ContractError(
+                "output_format 'national' was removed per ADR-0011 — it dropped "
+                "the country code and could not re-enter without default_country. "
+                "Use output_format='split' (renders '+1 2125551234') or the "
+                "default 'e164'."
+            )
         super().__post_init__()
         _validate_alpha2(self.default_country)

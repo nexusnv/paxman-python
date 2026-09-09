@@ -70,7 +70,7 @@ contract = Date.create_contract(
 | `2026-01-15` | defaults | `SUCCESS` | `"2026-01-15"` |
 | `2026/01/15` | defaults | `SUCCESS` | slash-ISO → `"2026-01-15"` |
 | `01/02/2026` | defaults | `AMBIGUOUS` | US → `2026-01-02` vs European → `2026-02-01` — same span, different values |
-| `01/02/2026` | `pinned_rules=["…calendar-date"]` (ISO only) | `SUCCESS` or `INVALID` | only the pinned spec's reading remains |
+| `01/02/2026` | `pinned_rules=["Section 5.2.1.1-calendar-date"]` (ISO only) | `SUCCESS` or `INVALID` | only the pinned spec's reading remains |
 | `2026-13-01` | any | `INVALID` | recognized but no calendar accepts month 13 |
 | `hello` | any | `MISSING` | no date pattern at all |
 | `2026-01-15, 2026-02-01` | any | raises `MultipleMentionsError` | two distinct dates — split first |
@@ -81,7 +81,7 @@ flowchart TB
     A --> G2[US grammar]
     A --> G3[European grammar]
     A --> G4[Slash-ISO grammar]
-    G1 & G2 & G3 & G4 --> R[Rules:<br>Section 4.3.1-calendar-date<br>Section 1-date-format<br>Section 4-date-format]
+    G1 & G2 & G3 & G4 --> R[Rules:<br>Section 5.2.1.1-calendar-date<br>Derived-US-date-format<br>Derived-European-date-format]
     R -->|one value| OK[SUCCESS]
     R -->|US vs EU| AMB[AMBIGUOUS]
     R -->|none| INV[INVALID]
@@ -120,9 +120,14 @@ for text in rows:
 
 ## Provenance
 
-Validated values cite the calendar spec whose rule accepted the notation — e.g. ISO 8601 (`Section 4.3.1-calendar-date`), US federal rules (`Section 1-date-format`), or CENELEC EN 50160 (`Section 4-date-format`), with section citation on `candidate.validation_rule` and `publication_year` on `candidate.provenance[0]`.
+Validated values cite the calendar spec whose rule accepted the notation — e.g. ISO 8601 (`Section 5.2.1.1-calendar-date`) or the derived US / European locale conventions (`Derived-US-date-format`, `Derived-European-date-format`), with section citation on `candidate.validation_rule` and `publication_year` on `candidate.provenance[0]`.
 
 ```python
+import paxman
+from paxman.capabilities import Date
+
+paxman.register_all_shipped()
+result = paxman.canonicalize("2026-01-15", Date.create_contract())
 for c in result.candidates:
     p = c.provenance[0]
     print(

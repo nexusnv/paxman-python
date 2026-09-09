@@ -77,15 +77,15 @@ class DotDateRule(Rule[DateNotation]):
     name = "dot_date_rule"
     strategy = RuleStrategy.PARSER
     provenance = Provenance(
-        authority="ISO",
-        specification_name="ISO 8601",
-        kind="specification",
-        reference_url="https://www.iso.org/standard/70907.html",
-        version="2019",
+        authority="Example",
+        specification_name="Dot-date convention (illustrative)",
+        kind="convention",
+        reference_url="",
+        version=None,
         lifecycle="active",
-        publication_year=2019,
+        publication_year=2026,
     )
-    citation = "Section 4.3.1 (calendar date)"
+    citation = "Illustrative only — not an ISO 8601 citation"
     target_semantics = frozenset({"dot_date_recognition"})
     requires_features = frozenset()  # no contract flag needed for this rule
 
@@ -104,6 +104,10 @@ class DotDateRule(Rule[DateNotation]):
 paxman.register_grammar("date", DotDateGrammar)
 paxman.register_rule("date", DotDateRule)
 
+# Note: the DotDateRule provenance above is illustrative — `YYYY.MM.DD` is an
+# application-specific convention, not an ISO 8601 form. Never attribute a
+# made-up format to a real authority; cite your own convention instead.
+
 # 5. Opt in — every community grammar/rule is opt-in via the contract
 contract = Date.create_contract(extra_grammars=("dot_date_recognition",))
 result = paxman.canonicalize("2024.01.01", contract)
@@ -119,6 +123,9 @@ That is the full lifecycle: **register before the first call** → **opt in via 
 ### Register before the first call — the registries freeze
 
 ```python
+import paxman
+from paxman.capabilities import Date
+
 paxman.register_capability(Date())
 paxman.register_grammar("date", DotDateGrammar)
 paxman.register_rule("date", DotDateRule)
@@ -139,6 +146,9 @@ A community grammar runs **only** when named in `contract.extra_grammars`. A com
 
 ```python
 import paxman
+from paxman.capabilities import Date
+
+paxman.register_all_shipped()
 
 # Dormant contract — dot dates not opted in, shipped behavior only
 paxman.canonicalize("2024-01-01", Date.create_contract()).canonicalized_value

@@ -155,6 +155,32 @@ def test_year_filter() -> None:
 
 
 @pytest.mark.integration
+def test_deprecated_three_letter_resolve_to_preferred() -> None:
+    _register()
+    for deprecated, preferred in (("scc", "sr"), ("scr", "hr"), ("mol", "ro")):
+        r = paxman.canonicalize(deprecated, LanguageCapability.create_contract())
+        assert r.status == Resolution.SUCCESS
+        assert r.canonicalized_value == preferred
+        reset_registry()
+        _register()
+
+
+@pytest.mark.integration
+def test_serbo_croatian_hyphenated_is_ambiguous_documented() -> None:
+    # Hyphenated display name collides with BCP47 well-formed variant path:
+    # serbo-croatian (language 5-8 + variant 5-8) vs sh (English name).
+    # Spaced form is the supported spelling.
+    _register()
+    r = paxman.canonicalize("Serbo-Croatian", LanguageCapability.create_contract())
+    assert r.status == Resolution.AMBIGUOUS
+    reset_registry()
+    _register()
+    r2 = paxman.canonicalize("Serbo Croatian", LanguageCapability.create_contract())
+    assert r2.status == Resolution.SUCCESS
+    assert r2.canonicalized_value == "sh"
+
+
+@pytest.mark.integration
 def test_two_distinct_raise() -> None:
     _register()
     with pytest.raises(MultipleMentionsError):

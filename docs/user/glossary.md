@@ -90,7 +90,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 ## H
 
-**Historical** — Opt-in temporal coverage (e.g. `Country(include_historical=True)` for ISO 3166-3 formerly-used names). Gated via `requires_features` or contract flags; `year` also filters by `publication_year`. See [Contracts](concepts/contracts/).
+**Historical** — Opt-in temporal coverage (e.g. `Country.create_contract(include_historical=True)` for ISO 3166-3 formerly-used names). Gated via `requires_features` or contract flags; `year` also filters by `publication_year`. See [Contracts](concepts/contracts/).
 
 ---
 
@@ -126,7 +126,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 ## M
 
-**MISSING** — A `Resolution` status. No grammar recognized the input (consider toggling an `include_*` flag). Distinct from `INVALID`. See [Execution Result](concepts/execution-result/).
+**MISSING** — A `Resolution` status. No grammar recognized the input, or a recognized match was suppressed (`suppressed_count > 0` tells the two apart). Consider toggling an `include_*` flag. Distinct from `INVALID`. See [Execution Result](concepts/execution-result/).
 
 **Money** — Paxman capability for amounts paired with currency identifiers (ISO 4217 + CLDR). See [Capabilities](capabilities/).
 
@@ -146,7 +146,7 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **ORCID** — Open Researcher and Contributor ID (ISO 27729:2024). Paxman capability. See [Citations](citations/).
 
-**Output format** — Presentation choice per capability (e.g. `Country` `alpha2`/`alpha3`/`numeric`/`name`, `ISBN` `isbn13`/`hyphenated`, `Phone` `e164`/`rfc3966`/`national`). Default via `DEFAULT_OUTPUT_FORMAT`; alternatives via `OFFERED_OUTPUT_FORMATS`; validation never reads it. See [Contracts](concepts/contracts/) and [API Reference](api-reference/).
+**Output format** — Presentation choice per capability (e.g. `Country` `alpha2`/`alpha3`/`numeric`/`name`, `ISBN` `isbn13`/`hyphenated`, `Phone` `e164`/`rfc3966`/`split`). Default via `DEFAULT_OUTPUT_FORMAT`; alternatives via `OFFERED_OUTPUT_FORMATS`; validation never reads it. See [Contracts](concepts/contracts/) and [API Reference](api-reference/).
 
 ---
 

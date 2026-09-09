@@ -9,6 +9,7 @@ A **canonicalization authority resolver** — a library that takes ambiguous hum
 - **No fabrication:** Never guess, never infer, never suggest
 - **Provenance-first:** Always cite authority-defined specifications, registries, policies
 - **Deterministic:** Given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline yields the same canonical output — no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, no network inference across recognition, validation, and canonicalization.
+- **Re-entry invariant (fixed-point):** A `SUCCESS` canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` may break this. Whole-input canonical values that collide with `COMMON_WORDS` (`TO`, `en`, `ALL`) re-enter under `suppress_common_words=True` via the A0 whole-input exemption (#122), enforced by the extended property suite; new capabilities must extend that suite (ADR-0010).
 
 ### Capability
 A domain module (e.g., Email) that:
@@ -38,6 +39,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Email:** `EmailNotation(local_part, domain_part)` → `["local_part", "domain_part"]`
 - **Date:** `DateNotation(N1, N2, N3)` → `["N1", "N2", "N3"]` (position-sensitive: grammar determines meaning)
 - **Country:** `CountryNotation(shape, value)` — `shape` discriminates `"alpha2"` / `"alpha3"` / `"numeric"` / `"name"`; `value` is the raw input (e.g., `"US"`, `"USA"`, `"840"`, `"United States"`)
+- **Coordinates:** `CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present). Grammar recognizes decimal pairs (signed or hemisphere-letter `N/S/E/W`, separators `[\s,;/]+`, optional `COORD`/`LAT` label), DMS/DDM with `°`/`D`/`*`, `′`/`'`/`m`, `″`/`"`/`s` and `''`→`″` fold, Geo URI `geo:lat,lon[,alt][;crs=wgs84][;u=...]`, ISO 6709 string-expression `±DD.DDD±DDD.DDD[/]` with optional altitude and `CRSWGS_84`, and GeoJSON lon-first bracketed pairs `[lon, lat[,alt]]`
 - **Currency:** `CurrencyNotation(text, shape)` — `shape` is `"code"` / `"qualified_symbol"` / `"symbol"` / `"word"`; codes are grammar-folded to uppercase, words to lowercase, symbols keep exact casing
 - **Money:** `MoneyNotation(currency_part, amount_part, currency_shape, amount_shape)` — verbatim currency + amount tokens with grammar-assigned shape discriminators
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
@@ -47,6 +49,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
 - **MacAddress:** `MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` discriminates `"eui48"` / `"eui64"`; grammar strips separators (colon/hyphen/tri-dot/bare) and uppercases, fused `MAC` label included in `raw_text`; rules own structure (no checksum, I/G + U/L informative), derived OUI = `compact[:6]`
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
+- **Element:** `ElementNotation(token, shape)` — `shape` discriminates `"symbol"` / `"name"` / `"atomic_number"`; `token` is the grammar-normalized designation (symbols in IUPAC case e.g. `Fe`, names lowercase e.g. `iron`, atomic numbers bare digits e.g. `26`); symbol matching is case-exact (`FE` unclaimed), names case-insensitive, atomic numbers label-required (`element 26` / `Z=26` — bare `26` unclaimed)
 - **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
@@ -66,20 +69,22 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships sixteen built-in capabilities (16 in `paxman/capabilities/__init__.py`; `paxman/api/bootstrap.py:_SHIPPED` still 15 — MacAddress deferred per plan, ISSN/IBAN/BIC precedent), each wired to an authoritative specification:
+Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
-| **Email** | Email addresses | RFC 5322, RFC 6761 |
-| **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **BIC** | Business identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
+| **Coordinates** | WGS 84 coordinates | ISO 6709:2022, RFC 5870, RFC 7946 |
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
+| **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **Element** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
+| **Email** | Email addresses | RFC 5322, RFC 6761 |
+| **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
-| **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
-| **BIC** | Bank identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
@@ -318,6 +323,49 @@ Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; leg
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
 
+### Coordinates
+
+The Coordinates capability has **1 grammar** and **4 validation rules**:
+
+#### Notation
+
+`CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6 dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present).
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `coordinates_recognition` | decimal pairs (signed or `N/S/E/W` hemisphere letters), DMS/DDM with `°`/`′`/`″`, Geo URI `geo:lat,lon[,alt]`, ISO 6709 string-expression, GeoJSON lon-first pairs | the pair is the unit of identity; structural facts (hemisphere/sign contradiction, DMS unit overflow, ISO digit width, foreign CRS label, hemisphere axis mismatch) are recorded as notation defects for the rules to reject — no silent datum transform |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 6-coordinate-structure` | ISO 6709:2022 Section 6 | `lat, lon[, alt]` decimal pair |
+| `Section Annex-h-string-expression` | ISO 6709:2022 Annex H | `lat, lon[, alt]` decimal pair |
+| `Section 3.3-geo-uri-validity` | RFC 5870 Section 3.3 | `lat, lon[, alt]` decimal pair |
+| `Section 3.1.1-position` | RFC 7946 Section 3.1.1 | `lat, lon[, alt]` decimal pair |
+
+#### Formats
+
+Default `decimal` (lat-first signed decimal pair, quantized 6 dp round-half-even, `-0` folded); offered `iso6709` (`+DD.DDDD+DDD.DDDD[/alt]/`), `geo_uri` (`geo:lat,lon[,alt]`), `geojson_pair` (`[lon, lat[, alt]]`, lon-first), `dms` (`51°30′27″N 0°7′40″W`), `dm` (`51°30.445′N 0°7.6′W`). `dms`/`dm` are documented quantizations: `dms` renders seconds as integers (render quantum 1″ ≈ 2.78e-4°), `dm` renders minutes to 0.001′ — sub-quantum digits are not recoverable; re-canonicalization is a fixed point and pre-image recovery drifts by at most half a render quantum (locked by `tests/property/test_coordinates_quantization.py`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
+### Phone
+
+The Phone capability has **4 grammars** (`e164_recognition`, `tel_uri_recognition`, `international_00_recognition`, `national_recognition`) and **5 validation rules** (ITU-T E.164 `Section 6.1-international-number` / `Section 6.2-country-code`, IETF RFC 3966 `Section 3-tel-uri`, NANPA `Section 1.1-nanp-structure` / `Section 1.2-service-npa`).
+
+#### Formats
+
+Default `e164` (`+CCNSN`, e.g. `+12125551234`); offered `rfc3966` (`tel:+CCNSN[;ext=]`, the only extension-preserving format) and `split` (`+CC NSN`, e.g. `+1 2125551234` — single ASCII space, uniform for every country code; the space is presentation-only and stripped on re-entry, so every `split` value re-enters param-free under the default contract via the existing E.164 grammar; extension carried only by `rfc3966`). `national` (bare NSN) was de-offered per ADR-0011: it dropped the country code recognition/validation depend on and could not re-enter under the default contract — `PhoneContract(output_format="national")` raises `ContractError` with a migration message naming `split`. `default_country` remains supported for domestic **input** recognition only. Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
+### Language
+
+The Language capability has **3 grammars** (`bcp47_tag_recognition`, `language_code_recognition`, `language_name_recognition`) and **10 validation rules** (ISO 639-1 `Section 4-alpha-2-code` / `Section-english-name-mapping`, ISO 639-2 `Section 4-alpha-3-code`, ISO 639-3 `Section 4-comprehensive-alpha-3` / `Section 4-private-alpha-3`, ISO 639-5 `Section 4-collective-code`, BCP 47 RFC 5646 `Section 2.1-syntax`, IANA Registry `Section-iana-registry` / `Section-iana-registry-private`, CLDR `Section-localized-names`).
+
+#### Formats
+
+Default `bcp47` (case-canonical tag, e.g. `en-US`); offered `alpha2` (maps the primary subtag through the ISO 639 tables, carries region/script/variant/extension/privateuse verbatim — `en-US` → `en-US`; an encoding per ADR-0011), `alpha3` / `alpha3-bib` (map the primary subtag only for extended tags — `de-CH-1901` → `deu` / `ger`; waived projections — a mapped primary plus carried rest emits tags the authority rejects) and `name` (English name of the primary subtag — `en-US` renders `English`; waived projection for extended tags per ADR-0011, revisit at the hard-mandate promotion). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+
 ### ORCID
 
 The ORCID capability has **1 grammar** and **2 validation rules**:
@@ -369,7 +417,7 @@ The I/G bit (0x01) and U/L bit (0x02) are informative predicates only — broadc
 
 #### Formats
 
-Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64), `bit_reversed` (RFC 2469 per-octet bit swap). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
+Default `colon` (uppercase colon-separated, identity via `normalize()`); offered `hyphen` (`XX-XX-XX-XX-XX-XX`), `bare` (12/16 hex no separators), `cisco` (tri-dot `XXXX.XXXX.XXXX` / `XXXX.XXXX.XXXX.XXXX` for EUI-64), `eui64` (FF:FE insertion from EUI-48, identity for EUI-64). `bit_reversed` (RFC 2469 per-octet bit swap) was offered through `v0.3.1` and removed in `v0.4.0` (ADR-0010: not a fixed point, `f(f(x))==x`). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Contract Rule Exclusion
 ```python
@@ -405,8 +453,8 @@ contract = Email.create_contract(
 Presentation is a single seam, not a rule concern:
 - `output_format` is always optional (`None` / `"default"` / the capability's `DEFAULT_OUTPUT_FORMAT` resolve to the default; offered formats resolve to themselves; anything else raises `ContractError`). Resolved once in `CapabilityContract.__post_init__`; contracts declare `DEFAULT_OUTPUT_FORMAT` / `OFFERED_OUTPUT_FORMATS` class vars.
 - `format_value()` on the capability is the **ONLY presentation seam** — `normalize()` always returns the default canonical form.
-- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract.
-- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"national"`).
+- Rules never reference `output_format` (CI-scanned purity); formatting adds no provenance; offered formats must preserve the capability's ambiguity contract. Per ADR-0011, every offered format is an encoding, a same-entity expansion, or a documented quantization (declared in the capability's contract docstring); projections are not offered.
+- Only capabilities with non-empty `OFFERED_OUTPUT_FORMATS` override `format_value()` — e.g., Date (`"ISO"`/`"US"`), ISBN (`"isbn13"`/`"hyphenated"`), Money (`"code_amount"`/`"compact"`), Phone (`"e164"`/`"rfc3966"`/`"split"`).
 
 ### Feature Gating — two loci, two statuses
 
@@ -743,7 +791,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (15 capabilities — MacAddress deferred, ISSN/IBAN/BIC precedent; paxman/capabilities/__init__.py exports 16), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (18 capabilities, alphabetical; paxman/capabilities/__init__.py exports 18), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -770,6 +818,20 @@ paxman/
     │   ├── notation.py            # BICNotation (bank_code, country_code, location_code, branch_code, compact)
     │   ├── grammar/               # bic_recognition
     │   └── rules/                 # iso_9362_ed2022 (structure + country lookup, 250 codes incl. XK)
+    ├── Coordinates/               # grammar/ (1) + rules/ (3) — ISO 6709:2022, RFC 5870, RFC 7946
+    │   ├── capability.py          # CoordinatesCapability
+    │   ├── contract.py            # CoordinatesContract
+    │   ├── notation.py            # CoordinatesNotation (latitude, longitude, altitude, coord_shape, compact)
+    │   ├── grammar/               # coordinates_recognition
+    │   └── rules/                 # iso_6709_ed2022, rfc_5870_ed2010, rfc_7946_ed2016
+    ├── Element/                     # grammar/ (1) + rules/ (2) + grammar/data/ + rules/data/ — IUPAC Red Book 2005, Periodic Table 04 May 2022
+    │   ├── capability.py          # ElementCapability
+    │   ├── contract.py            # ElementContract
+    │   ├── notation.py            # ElementNotation (token, shape)
+    │   ├── grammar/               # element_recognition
+    │   ├── grammar/data/          # element_keys
+    │   ├── rules/                 # iupac_red_book_2005, iupac_periodic_table_ed2022
+    │   └── rules/data/            # periodic_table_ed2022
     ├── Email/                     # grammar/ (3) + rules/ (2) — RFC 5322, RFC 6761
     │   ├── __init__.py
     │   ├── capability.py          # EmailCapability
@@ -890,7 +952,7 @@ paxman/
 | `paxman.api` | Public API entry points |
 
 ### Kernel notes (ADR-0009)
-- Common-word suppression: `COMMON_WORDS` 67 via `BoundarySpec` WORD guard (`suppressible`, contract `suppress_common_words` default off).
+- Common-word suppression: `COMMON_WORDS` 67 via `BoundarySpec` WORD guard (`suppressible`, contract `suppress_common_words` default off). A0 whole-input exemption (#122): a suppressible hit covering the trimmed whole input is never suppressed; suppressed hits are observable via `ExecutionResult.suppressed_count` / `suppressed_spans`.
 - Country `country_normalized` view — NFD-normalized view for lexicon scanning.
 - `BoundarySpec` frozensets O(1) word/anchor checks.
 - Normalizers two-array tuple `tuple[str, tuple[int,...]|None, tuple[int,...]|None]` (`starts`/`ends` parallel arrays).
