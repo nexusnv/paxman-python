@@ -187,6 +187,28 @@ def test_serbo_croatian_resolves_to_sh() -> None:
 
 
 @pytest.mark.integration
+def test_ghost_mention_does_not_raise() -> None:
+    # The single-value invariant runs on qualified candidates (ADR-0012):
+    # the disqualified ghost is not a mention and must not trip detection.
+    # Pre-fix this raised MultipleMentionsError naming 'serbo-croatian'.
+    _register()
+    r = paxman.canonicalize("Serbo-Croatian sr", LanguageCapability.create_contract())
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "sr"
+
+
+@pytest.mark.integration
+def test_multi_mention_error_names_no_ghosts() -> None:
+    # Genuine two-value raises must not list disqualified ghosts.
+    _register()
+    with pytest.raises(MultipleMentionsError) as excinfo:
+        paxman.canonicalize("xx-yyyyy sr de", LanguageCapability.create_contract())
+    message = str(excinfo.value)
+    assert "xx-yyyyy" not in message
+    assert "sr" in message and "de" in message
+
+
+@pytest.mark.integration
 def test_valid_tag_keeps_both_validations() -> None:
     _register()
     r = paxman.canonicalize("en-US", LanguageCapability.create_contract())

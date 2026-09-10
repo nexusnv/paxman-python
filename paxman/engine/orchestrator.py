@@ -131,7 +131,6 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
                     for cname in m.candidate_names:
                         single_value_by_grammar_name[cname] = g.single_value
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
-    _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
     strategy_by_rule: dict[str, RuleStrategy] = {r.name: r.strategy for r in rules}
     lookup_semantics: frozenset[str] = frozenset(
@@ -143,6 +142,9 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     qualified = _require_lookup_corroboration(
         collected, strategy_by_rule, semantics_by_name, lookup_semantics
     )
+    # Invariant runs on qualified candidates: disqualified ghosts are not
+    # canonical values and must not trip multi-mention detection (ADR-0012).
+    _enforce_single_value_invariant(qualified, single_value_by_grammar_name)
 
     candidates = _dedup_candidates(
         qualified,

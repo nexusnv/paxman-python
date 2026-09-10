@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Language — candidate qualification pilot (ADR-0012):** the BCP 47 syntax-only ghost `serbo-croatian` is disqualified, so `Serbo-Croatian` → `SUCCESS sh` (was `AMBIGUOUS`); lone well-formed-but-unregistered tags (`xx-yyyyy` and kin) → `INVALID` (were wrongly `SUCCESS` on syntax alone); `en-x-private` without `include_private` → `INVALID` per the two-locus model (was `SUCCESS` via syntax alone; with the flag it stays `SUCCESS`).
+- **Language — candidate qualification pilot (ADR-0012, default contract):** the BCP 47 syntax-only ghost `serbo-croatian` is disqualified, so `Serbo-Croatian` → `SUCCESS sh` (was `AMBIGUOUS`); lone well-formed-but-unregistered tags (`xx-yyyyy` and kin) → `INVALID` (were wrongly `SUCCESS` on syntax alone); `en-x-private` without `include_private` → `INVALID` per the two-locus model (was `SUCCESS` via syntax alone; with the flag it stays `SUCCESS`). Contracts without an active lookup authority (e.g. `year=2009`, which filters the IANA rule out) preserve parser candidates per the vacuity clause.
 
 ## [0.4.1] - 2026-09-08
 
