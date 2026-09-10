@@ -24,6 +24,7 @@ from paxman.core.domain import (
     RecognizedRep,
     Resolution,
     Rule,
+    RuleStrategy,
     ScanResult,
     VersionStamp,
 )
@@ -130,16 +131,25 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
                     for cname in m.candidate_names:
                         single_value_by_grammar_name[cname] = g.single_value
     collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
-    _enforce_single_value_invariant(collected, single_value_by_grammar_name)
 
-    keep_dup = False
-    if CandidatesMatcher is not None:
-        for g in all_grammars:
-            for m in getattr(g, "matchers", None) or ():
-                if isinstance(m, CandidatesMatcher) and m.strategy == "all":
-                    keep_dup = True
-                    break
-    candidates = _dedup_candidates(collected, keep_duplicate_spans=keep_dup)
+    strategy_by_rule: dict[str, RuleStrategy] = {r.name: r.strategy for r in rules}
+    lookup_semantics: frozenset[str] = frozenset(
+        s
+        for r in rules
+        if r.strategy is RuleStrategy.LOOKUP_TABLE
+        for s in r.target_semantics
+    )
+    qualified = _require_lookup_corroboration(
+        collected, strategy_by_rule, semantics_by_name, lookup_semantics
+    )
+    # Invariant runs on qualified candidates: disqualified ghosts are not
+    # canonical values and must not trip multi-mention detection (ADR-0012).
+    _enforce_single_value_invariant(qualified, single_value_by_grammar_name)
+
+    candidates = _dedup_candidates(
+        qualified,
+        keep_duplicate_spans_for=_keep_duplicate_span_grammars(all_grammars),
+    )
 
     status = _determine_status(candidates, had_recognitions)
     canonical_value = _extract_canonical_value(candidates, status)
@@ -728,16 +738,96 @@ def _recognitions_to_mentions(
     return tuple(mentions)
 
 
+def _require_lookup_corroboration(
+    collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
+    strategy_by_rule: dict[str, RuleStrategy],
+    semantics_by_name: dict[str, str],
+    lookup_semantics: frozenset[str],
+) -> list[tuple[Candidate, RecognizedRep[Any]]]:
+    """Drop PARSER candidates no LOOKUP_TABLE rule corroborates (ADR-0012).
+
+    A candidate whose validation rule has strategy PARSER is provisional: it
+    survives if and only if a LOOKUP_TABLE-strategy candidate was produced
+    from the same RecognizedRep. Recognition identity is object identity
+    (``id(rep)``) — never span overlap — so one semantics cannot vouch for
+    another. LOOKUP_TABLE and REGEX candidates always survive; unknown rule
+    names (absent from the strategy map) are kept fail-open so missing
+    metadata never silently drops a candidate.
+
+    Vacuity: the filter applies to a recognition only when at least one
+    active LOOKUP_TABLE rule targets its semantics. Where no authority is in
+    force — all-PARSER capabilities, or contracts that filter the lookup
+    authority out (pinned/excluded/year/requires_features gating) — there is
+    nothing that could corroborate, so PARSER pairs stand untouched.
+    Pure function of its inputs; preserves input order.
+    """
+    corroborated: set[int] = set()
+    for candidate, rep in collected:
+        if strategy_by_rule.get(candidate.validation_rule) is RuleStrategy.LOOKUP_TABLE:
+            corroborated.add(id(rep))
+    qualified: list[tuple[Candidate, RecognizedRep[Any]]] = []
+    for candidate, rep in collected:
+        strategy = strategy_by_rule.get(candidate.validation_rule)
+        if strategy is not RuleStrategy.PARSER:
+            qualified.append((candidate, rep))
+            continue
+        rep_semantics = semantics_by_name.get(rep.grammar.grammar_name)
+        if rep_semantics is None or rep_semantics not in lookup_semantics:
+            qualified.append((candidate, rep))
+            continue
+        if id(rep) in corroborated:
+            qualified.append((candidate, rep))
+    return qualified
+
+
+def _keep_duplicate_span_grammars(
+    all_grammars: Sequence[Grammar[Any]],
+) -> frozenset[str]:
+    """Names whose candidates skip span dedup (ADR-0012 corollary 3, issue #71).
+
+    A grammar opts in with a ``CandidatesMatcher(strategy="all")``. The set
+    holds the grammar name plus that matcher's ``candidate_names``: the
+    engine re-attributes recognitions to candidate names in ``_recognize``,
+    and ``_collect_candidates`` stores the attributed name on
+    ``Candidate.recognition_rule``, so the opt-in must cover both for the
+    per-candidate decision in ``_dedup_candidates`` to see it. Grammars
+    without an ``"all"`` matcher contribute nothing. Pure function.
+    """
+    keep: set[str] = set()
+    if CandidatesMatcher is not None:
+        for grammar in all_grammars:
+            for matcher in getattr(grammar, "matchers", None) or ():
+                if isinstance(matcher, CandidatesMatcher) and matcher.strategy == "all":
+                    keep.add(grammar.name)
+                    keep.update(matcher.candidate_names)
+    return frozenset(keep)
+
+
 def _dedup_candidates(
     collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
     *,
     keep_duplicate_spans: bool = False,
+    keep_duplicate_spans_for: frozenset[str] | None = None,
 ) -> list[Candidate]:
-    if keep_duplicate_spans:
-        return [c for c, _ in collected]
+    """Collapse duplicate candidates, sparing opted-in grammars (ADR-0012).
+
+    Per-grammar scoping (issue #71): a candidate whose ``recognition_rule``
+    names a grammar in ``keep_duplicate_spans_for`` survives unconditionally;
+    every other candidate dedups by
+    ``(value, recognition_rule, validation_rule)`` as before. ``None`` keeps
+    the legacy capability-wide ``keep_duplicate_spans`` path. Pure function
+    of its inputs; preserves input order.
+    """
+    if keep_duplicate_spans_for is None:
+        if keep_duplicate_spans:
+            return [c for c, _ in collected]
+        keep_duplicate_spans_for = frozenset()
     seen: set[tuple[str, str, str]] = set()
     deduped: list[Candidate] = []
     for candidate, _rep in collected:
+        if candidate.recognition_rule in keep_duplicate_spans_for:
+            deduped.append(candidate)
+            continue
         key = (
             candidate.value,
             candidate.recognition_rule,

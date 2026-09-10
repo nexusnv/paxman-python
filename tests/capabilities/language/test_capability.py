@@ -462,9 +462,6 @@ class TestLanguageExtendedTagCarry:
             ("de-CH-1901", "alpha2", "de-CH-1901"),
             ("de-CH-1901", "alpha3", "deu"),
             ("de-CH-1901", "alpha3-bib", "ger"),
-            ("x-foo", "alpha2", "x-foo"),
-            ("x-foo", "alpha3", "x-foo"),
-            ("x-foo", "alpha3-bib", "x-foo"),
             # Extlang compacts canonicalize to themselves (no folding).
             ("zh-cmn", "alpha2", "zh-cmn"),
             ("zh-cmn", "alpha3", "zho"),
@@ -484,7 +481,6 @@ class TestLanguageExtendedTagCarry:
             ("en-US", "en-US"),
             ("zh-Hant-TW", "zh-Hant-TW"),
             ("de-CH-1901", "de-CH-1901"),
-            ("x-foo", "x-foo"),
             ("zh-cmn", "zh-cmn"),
         ],
     )
@@ -510,8 +506,6 @@ class TestLanguageExtendedTagCarry:
             ("de-CH-1901", "alpha3-bib", "ger"),
             ("zh-cmn", "alpha3", "zho"),
             ("zh-cmn", "alpha3-bib", "chi"),
-            ("x-foo", "alpha3", "x-foo"),
-            ("x-foo", "alpha3-bib", "x-foo"),
         ],
     )
     def test_waived_projection_fixed_point(
@@ -536,6 +530,77 @@ class TestLanguageExtendedTagCarry:
         reentry = canonicalize(
             expected,
             LanguageCapability.create_contract(output_format=output_format),
+        )
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == expected
+
+    def test_x_foo_default_invalid(self) -> None:
+        """``x-foo`` without ``include_private`` is INVALID (ADR-0012)."""
+        # Two-locus precedent: like en-x-private, the gated-off private
+        # authority speaks by its absence (cf. qaa/aav/allemand without flags).
+        result = canonicalize("x-foo", LanguageCapability.create_contract())
+        assert result.status == Resolution.INVALID
+        assert result.candidates == ()
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("x-foo", "alpha2", "x-foo"),
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+        ],
+    )
+    def test_x_foo_private_carry_rows(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """``x-foo`` carry rows under ``include_private=True`` (ADR-0011)."""
+        contract = LanguageCapability.create_contract(
+            output_format=output_format, include_private=True
+        )
+        result = canonicalize(source, contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == expected
+
+    def test_x_foo_private_alpha2_reentry(self) -> None:
+        """``x-foo`` alpha2 carry re-enters under the private contract."""
+        rendered = canonicalize(
+            "x-foo",
+            LanguageCapability.create_contract(
+                output_format="alpha2", include_private=True
+            ),
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == "x-foo"
+        reentry = canonicalize(
+            "x-foo", LanguageCapability.create_contract(include_private=True)
+        )
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == "x-foo"
+
+    @pytest.mark.parametrize(
+        ("source", "output_format", "expected"),
+        [
+            ("x-foo", "alpha3", "x-foo"),
+            ("x-foo", "alpha3-bib", "x-foo"),
+        ],
+    )
+    def test_x_foo_private_waived_fixed_point(
+        self, source: str, output_format: str, expected: str
+    ) -> None:
+        """``x-foo`` alpha3/alpha3-bib fixpoint under the private contract."""
+        rendered = canonicalize(
+            source,
+            LanguageCapability.create_contract(
+                output_format=output_format, include_private=True
+            ),
+        )
+        assert rendered.status == Resolution.SUCCESS
+        assert rendered.canonicalized_value == expected
+        reentry = canonicalize(
+            expected,
+            LanguageCapability.create_contract(
+                output_format=output_format, include_private=True
+            ),
         )
         assert reentry.status == Resolution.SUCCESS
         assert reentry.canonicalized_value == expected

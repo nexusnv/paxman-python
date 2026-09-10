@@ -142,6 +142,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     _row(ISSN, "2049-3630", "2049-3630"),
     # Language: tests/capabilities/language/test_capability.py
     # ::test_bcp47_identity
+    # ADR-0012: the BCP 47 syntax-only ghost "serbo-croatian" is disqualified
+    # (Serbo-Croatian → SUCCESS "sh"), so it is never a canonical value and
+    # must never be used as a fixture here — Language rows stay
+    # registry-backed ("en", "en-US").
     _row(Language, "en", "en"),
     # Language extended-tag surface (ADR-0011 Phase 3): code formats carry
     # subtags, so "en-US" pins the extended path beside the bare row. The
