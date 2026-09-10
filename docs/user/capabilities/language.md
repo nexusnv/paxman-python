@@ -108,7 +108,9 @@ flowchart TB
     G --> R6{IANA registry + private}
     G --> R7{English name}
     G --> R8{CLDR localized if flag}
-    R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 --> D{Dedup values}
+    R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 --> Q{Corroboration<br>(PARSER needs same-rep LOOKUP)}
+    Q -->|uncorroborated PARSER| DROP[discarded ghost]
+    Q -->|corroborated| D{Dedup values}
     D -->|one value| OK[SUCCESS]
     D -->|none| INV[INVALID]
     D -->|distinct| AMB[AMBIGUOUS]
@@ -118,6 +120,7 @@ flowchart TB
     style INV fill:#fff5f5,stroke:#cc3333
     style MISS fill:#fff5f5,stroke:#cc3333
     style AMB fill:#fffbe6,stroke:#b38f00
+    style DROP fill:#f5f5f5,stroke:#999999
 ```
 
 ---
