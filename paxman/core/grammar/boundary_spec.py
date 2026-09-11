@@ -25,6 +25,38 @@ _D_RE: re.Pattern[str] = re.compile(r"\d")
 _S_RE: re.Pattern[str] = re.compile(r"\s")
 
 
+_HEX_DIGITS: frozenset[str] = frozenset("0123456789abcdefABCDEF")
+
+
+def _parse_bracket_escape(content: str, i: int) -> tuple[str, int]:
+    """Parse the fixed-width escape starting at content[i].
+
+    content[i] is the leading backslash and content[i + 1] one of u
+    (4 hex digits), x (2 hex digits), U (8 hex digits); the return is
+    (char, next_index). Anything malformed - short run, non-hex digit,
+    codepoint above 0x10FFFF, or a hyphen neighbor that could form a
+    character range - raises ValueError so the caller falls back to the
+    compiled regex path instead of silently diverging (#73 L1). The
+    regex path is always correct; the frozenset path is taken only when
+    exactly convertible.
+    """
+    nxt = content[i + 1]
+    width = {"u": 4, "x": 2, "U": 8}[nxt]
+    end = i + 2 + width
+    digits = content[i + 2 : end]
+    if (
+        len(digits) != width
+        or any(c not in _HEX_DIGITS for c in digits)
+        or (i > 0 and content[i - 1] == "-")
+        or (end < len(content) and content[end] == "-")
+    ):
+        raise ValueError(f"inexact bracket escape at {i}")
+    code = int(digits, 16)
+    if code > 0x10FFFF:
+        raise ValueError(f"bracket escape out of range at {i}")
+    return chr(code), end
+
+
 def _chars_from_bracket(content: str) -> frozenset[str]:
     res: set[str] = set()
     i = 0
@@ -43,6 +75,10 @@ def _chars_from_bracket(content: str) -> frozenset[str]:
             if nxt == "s":
                 res.update(_S_CHARS)
                 i += 2
+                continue
+            if nxt in ("u", "x", "U"):
+                glyph, i = _parse_bracket_escape(content, i)
+                res.add(glyph)
                 continue
             # escaped literal (\-, \., \+, \[, etc.)
             res.add(nxt)
@@ -71,6 +107,8 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
     positive bracket classes to their enumerated chars; negated bracket
     classes (``[^...]``) return ``None`` so the compiled regex path
     preserves their negated semantics (#67).
+    Fixed-width escapes lower exactly; inexact ones fall back to
+    ``None`` via ``ValueError`` (#73 L1).
     """
     if pat == r"\w":
         return _W_CHARS
@@ -91,7 +129,13 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
         # '[^...]' keeps its negated meaning against the 1-char window.
         if interior.startswith("^"):
             return None
-        return _chars_from_bracket(interior)
+        try:
+            return _chars_from_bracket(interior)
+        except ValueError:
+            # Inexact fixed-width escape (malformed, out of range, or
+            # range-adjacent): not exactly convertible, so take the
+            # compiled regex path, which is always correct (#73 L1).
+            return None
     return None
 
 
