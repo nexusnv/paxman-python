@@ -188,7 +188,15 @@ def _pattern_lowering(
     return chars, None
 
 
-def _estimate_width(pat: str) -> int:
+def _estimate_width(pat: str) -> int | None:
+    """Bounded width of a multi-char guard, or None (full remainder).
+
+    Quantifiers (``*+?{``), alternation and groups (``|``/``(``)
+    outside ``[...]`` spans make the width unbounded or ambiguous, so
+    the caller checks the full remainder instead of an underestimated
+    window (#73 L2). The anchored patterns are already correct against
+    a full remainder; the window is purely an optimization.
+    """
     i = 0
     cnt = 0
     while i < len(pat):
@@ -205,6 +213,8 @@ def _estimate_width(pat: str) -> int:
                 cnt += 1
                 i = j + 1
             continue
+        if pat[i] in "*+?{|(":
+            return None
         cnt += 1
         i += 1
     return max(1, cnt)
@@ -245,10 +255,10 @@ class BoundarySpec:
     mode: str = "zero_width"
     left_chars: frozenset[str] | None = field(default=None, init=False, repr=False)
     right_chars: frozenset[str] | None = field(default=None, init=False, repr=False)
-    left_multi: tuple[tuple[int, re.Pattern[str]], ...] = field(
+    left_multi: tuple[tuple[int | None, re.Pattern[str]], ...] = field(
         default=(), init=False, repr=False
     )
-    right_multi: tuple[tuple[int, re.Pattern[str]], ...] = field(
+    right_multi: tuple[tuple[int | None, re.Pattern[str]], ...] = field(
         default=(), init=False, repr=False
     )
     left_char_fallback: tuple[re.Pattern[str], ...] = field(
@@ -260,9 +270,9 @@ class BoundarySpec:
 
     def __post_init__(self) -> None:
         lc: set[str] = set()
-        lm: list[tuple[int, re.Pattern[str]]] = []
+        lm: list[tuple[int | None, re.Pattern[str]]] = []
         rc: set[str] = set()
-        rm: list[tuple[int, re.Pattern[str]]] = []
+        rm: list[tuple[int | None, re.Pattern[str]]] = []
         lfb: list[re.Pattern[str]] = []
         rfb: list[re.Pattern[str]] = []
         if self.left is not None:
@@ -344,9 +354,12 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
         ):
             return False
         for w, pat in spec.left_multi:
-            lo = start - w
-            if lo < 0:
+            if w is None:
                 lo = 0
+            else:
+                lo = start - w
+                if lo < 0:
+                    lo = 0
             if pat.search(subject[lo:start]) is not None:
                 return False
     if spec.right is not None and end < len(subject):
@@ -360,9 +373,12 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
         ):
             return False
         for w, pat in spec.right_multi:
-            hi = end + w
-            if hi > len(subject):
+            if w is None:
                 hi = len(subject)
+            else:
+                hi = end + w
+                if hi > len(subject):
+                    hi = len(subject)
             if pat.search(subject[end:hi]) is not None:
                 return False
     return True

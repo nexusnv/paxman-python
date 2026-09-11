@@ -1,6 +1,10 @@
 """BoundarySpec data — declarative, checked at hit positions."""
 
-from paxman.core.grammar.boundary_spec import BoundarySpec, _pattern_to_chars
+from paxman.core.grammar.boundary_spec import (
+    BoundarySpec,
+    _estimate_width,
+    _pattern_to_chars,
+)
 
 
 def test_word_spec_blocks_inside_token_via_hit_check() -> None:
@@ -52,3 +56,22 @@ def test_pattern_to_chars_malformed_escape_falls_back() -> None:
     assert _pattern_to_chars(r"[\u12]") is None
     assert _pattern_to_chars(r"[\xZZ]") is None
     assert _pattern_to_chars(r"[\U00110000]") is None
+
+
+def test_estimate_width_quantifier_returns_none() -> None:
+    assert _estimate_width(r"\w+") is None
+    assert _estimate_width(r"\d{2,3}") is None
+    assert _estimate_width("[ab]+") is None
+    assert _estimate_width("(ab)") is None
+    assert _estimate_width(r"\d[ -]") == 2
+    assert _estimate_width(r"\w") == 1
+
+
+def test_quantified_guard_catches_distant_violation() -> None:
+    from paxman.core.grammar.boundary_spec import check_boundary
+
+    spec = BoundarySpec(left=(r"\w{5}",), right=None)
+    # Five word chars directly left of the hit violate the guard; a
+    # 4-wide window ("2345") would miss it.
+    assert check_boundary("12345", 5, 5, spec) is False
+    assert check_boundary("1234", 4, 4, spec) is True
