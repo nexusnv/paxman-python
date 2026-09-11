@@ -1,5 +1,9 @@
 """BoundarySpec data — declarative, checked at hit positions."""
 
+import re
+
+import pytest
+
 from paxman.core.grammar.boundary_spec import (
     BoundarySpec,
     _estimate_width,
@@ -75,3 +79,9 @@ def test_quantified_guard_catches_distant_violation() -> None:
     # 4-wide window ("2345") would miss it.
     assert check_boundary("12345", 5, 5, spec) is False
     assert check_boundary("1234", 4, 4, spec) is True
+
+
+def test_malformed_escape_construction_fails_fast() -> None:
+    """Malformed escapes are invalid regex: fail fast, never silently lower."""
+    with pytest.raises(re.error):
+        BoundarySpec(left=(r"[\xZZ]",), right=None)

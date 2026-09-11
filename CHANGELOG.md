@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Kernel — bracket-escape parsing (#73 L1):** `[\w−]`-style presets with fixed-width escapes now lower exactly (`−` in the set, `[\x41]` → `{'A'}`); malformed, out-of-range, or range-adjacent escapes fall back to the compiled regex path instead of silently diverging. No shipped preset changes path (every `−` preset also contains `\+`).
+- **Kernel — bracket-escape parsing (#73 L1):** `[\w−]`-style presets with fixed-width escapes now lower exactly (`−` in the set, `[\x41]` → `{'A'}`); malformed, out-of-range, or range-adjacent escapes decline the frozenset path (well-formed ones take the compiled regex path; malformed ones fail fast at construction) instead of silently diverging. No shipped preset changes path (every `−` preset also contains `\+`).
 - **Kernel — quantifier-aware boundary width (#73 L2):** `_estimate_width` returns `None` for quantified/alternation guards (`\w+`, `\d{2,3}`) so `check_boundary` checks the full remainder instead of an underestimated window. All shipped presets are quantifier-free — no live-behavior change.
 - **Kernel — dead code (#73 L6):** removed the write-only `nfd_pos` accumulator in `CountryNameFold`. `View.offsets` and `check_boundary_compiled` are intentionally kept (test-pinned surface, documented kernel invariant).
 - **Engine — single ordering space (#71 item 2):** `_recognize` orders every match by its producing grammar's active-set index; candidate-attributed matches no longer sort by candidate position against other grammars' indices. Candidate attribution (`grammar_name`) is unchanged. Full suite green, Date `01/02/2026` vectors unchanged.

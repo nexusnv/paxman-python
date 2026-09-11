@@ -35,10 +35,13 @@ def _parse_bracket_escape(content: str, i: int) -> tuple[str, int]:
     (4 hex digits), x (2 hex digits), U (8 hex digits); the return is
     (char, next_index). Anything malformed - short run, non-hex digit,
     codepoint above 0x10FFFF, or a hyphen neighbor that could form a
-    character range - raises ValueError so the caller falls back to the
-    compiled regex path instead of silently diverging (#73 L1). The
-    regex path is always correct; the frozenset path is taken only when
-    exactly convertible.
+    character range - raises ValueError so _pattern_to_chars declines
+    the frozenset path (#73 L1). Well-formed-but-inexact escapes (e.g.
+    range-adjacent) then take the compiled regex path, which is always
+    correct; genuinely malformed escapes are invalid regex and fail
+    fast at BoundarySpec construction instead of silently lowering to
+    a wrong set. The frozenset path is taken only when exactly
+    convertible.
     """
     nxt = content[i + 1]
     width = {"u": 4, "x": 2, "U": 8}[nxt]
@@ -107,8 +110,9 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
     positive bracket classes to their enumerated chars; negated bracket
     classes (``[^...]``) return ``None`` so the compiled regex path
     preserves their negated semantics (#67).
-    Fixed-width escapes lower exactly; inexact ones fall back to
-    ``None`` via ``ValueError`` (#73 L1).
+    Fixed-width escapes lower exactly; inexact ones decline via
+    ``ValueError`` → ``None`` (#73 L1; malformed escapes fail fast
+    at construction).
     """
     if pat == r"\w":
         return _W_CHARS
@@ -133,8 +137,10 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
             return _chars_from_bracket(interior)
         except ValueError:
             # Inexact fixed-width escape (malformed, out of range, or
-            # range-adjacent): not exactly convertible, so take the
-            # compiled regex path, which is always correct (#73 L1).
+            # range-adjacent): not exactly convertible, so decline the
+            # frozenset path. Well-formed ones take the compiled regex
+            # path; malformed ones fail fast at construction as invalid
+            # regex (#73 L1).
             return None
     return None
 
