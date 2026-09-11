@@ -2,9 +2,9 @@
 title: "URL"
 ---
 
-Canonicalizes **one absolute URI / IRI** per call per the **WHATWG URL Standard** (plus UTS #46 IDNA for internationalized hosts), preserving percent-encoding byte-for-byte.
+Canonicalizes **one absolute URI / IRI** per call per the **WHATWG URL Standard** (plus UTS #46 IDNA for internationalized hosts), preserving percent-encoding byte-for-byte — except encoded dot segments (`%2e`, `%2e%2e`), which resolve like `.`/`..`.
 
-> **In plain language:** give it `"HTTPS://Example.COM:443/path/../other"` and it hands back `"https://example.com/other"` — scheme and host lowercased, default port removed, dot segments resolved. Opaque schemes like `mailto:` are left verbatim.
+> **In plain language:** give it `"HTTPS://Example.COM:443/path/../other"` and it hands back `"https://example.com/other"` — scheme and host lowercased, default port removed, dot segments resolved. Opaque schemes like `mailto:` pass through with ASCII bytes verbatim (non-ASCII is UTF-8 percent-encoded: `mailto:u@exämple.com` → `mailto:u@ex%C3%A4mple.com`).
 
 ---
 
@@ -26,8 +26,8 @@ Single format — the WHATWG URL serialization (identity formatter). Characteris
 - Default port removed (`https://example.com:443` → `https://example.com`).
 - Dot segments resolved (`/path/../other` → `/other`).
 - Internationalized hosts mapped via UTS #46 (`münchen.de` → `xn--mnchen-3ya.de`).
-- Percent-encoding preserved byte-for-byte.
-- Opaque schemes (`mailto:`, etc.) returned verbatim.
+- Percent-encoding preserved byte-for-byte, except encoded dot segments (`%2e`/`%2E` → `.`, `%2e%2e` → `..`), which are removed during dot-segment resolution (`/a/%2e/b` → `/a/b`).
+- Opaque schemes (`mailto:`, etc.) pass ASCII bytes through verbatim; non-ASCII is UTF-8 percent-encoded.
 
 | `output_format` | Renders |
 |-----------------|---------|

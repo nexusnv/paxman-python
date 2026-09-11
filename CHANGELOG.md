@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Kernel — bracket-escape parsing (#73 L1):** `[\w−]`-style presets with fixed-width escapes now lower exactly (`−` in the set, `[\x41]` → `{'A'}`); malformed, out-of-range, or range-adjacent escapes fall back to the compiled regex path instead of silently diverging. No shipped preset changes path (every `−` preset also contains `\+`).
+- **Kernel — quantifier-aware boundary width (#73 L2):** `_estimate_width` returns `None` for quantified/alternation guards (`\w+`, `\d{2,3}`) so `check_boundary` checks the full remainder instead of an underestimated window. All shipped presets are quantifier-free — no live-behavior change.
+- **Kernel — dead code (#73 L6):** removed the write-only `nfd_pos` accumulator in `CountryNameFold`. `View.offsets` and `check_boundary_compiled` are intentionally kept (test-pinned surface, documented kernel invariant).
+- **Engine — single ordering space (#71 item 2):** `_recognize` orders every match by its producing grammar's active-set index; candidate-attributed matches no longer sort by candidate position against other grammars' indices. Candidate attribution (`grammar_name`) is unchanged. Full suite green, Date `01/02/2026` vectors unchanged.
+- **Docs — MacAddress user guide (#149):** new `docs/user/capabilities/mac_address.md` (recognized forms, output formats incl. `bit_reversed` removal note, contract, statuses, notebook snippet, provenance) with the chooser row linked.
+- **Docs — URL preservation guarantee (#144):** encoded dot segments (`%2e`/`%2e%2e`) documented as resolving like `./..`; opaque paths documented as ASCII-verbatim with non-ASCII UTF-8 percent-encoded.
 - **Language — candidate qualification pilot (ADR-0012, default contract):** the BCP 47 syntax-only ghost `serbo-croatian` is disqualified, so `Serbo-Croatian` → `SUCCESS sh` (was `AMBIGUOUS`); lone well-formed-but-unregistered tags (`xx-yyyyy` and kin) → `INVALID` (were wrongly `SUCCESS` on syntax alone); `en-x-private` without `include_private` → `INVALID` per the two-locus model (was `SUCCESS` via syntax alone; with the flag it stays `SUCCESS`). Contracts without an active lookup authority (e.g. `year=2009`, which filters the IANA rule out) preserve parser candidates per the vacuity clause.
 
 ## [0.4.1] - 2026-09-08

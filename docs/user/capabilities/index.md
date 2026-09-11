@@ -39,7 +39,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `48.8566, 2.3522`, `geo:48.8566,2.3522` | [Coordinates](../api-reference/) — guide forthcoming |
 | `Fe`, `iron`, `element 26` | [Element](../api-reference/) — guide forthcoming |
 | `DE89370400440532013000` | [IBAN](../api-reference/) — guide forthcoming |
-| `00:1A:2B:3C:4D:5E` | [MacAddress](../api-reference/) — guide forthcoming |
+| `00:1A:2B:3C:4D:5E` | [MacAddress](mac_address/) |
 | `0000-0002-1825-0097` | [ORCID](../api-reference/) — guide forthcoming |
 
 > The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
