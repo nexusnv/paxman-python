@@ -403,19 +403,18 @@ def _recognize(
             span_to_indices: dict[tuple[int, int], deque[int]] = defaultdict(deque)
             for s, e, idx in flat:
                 span_to_indices[(s, e)].append(idx)
+            grammar_order = grammar_index[grammar.name]
             for match in deduped:
                 key = (match.start, match.end)
-                cand_idx = 0
                 cand_name = grammar.name
                 dq = span_to_indices.get(key)
                 if dq is not None and dq:
                     cand_idx = dq.popleft()
                     if cand_idx < len(cand_matcher.candidate_names):
                         cand_name = cand_matcher.candidate_names[cand_idx]
-                    else:
-                        cand_idx = 0
-                        cand_name = grammar.name
-                ordered.append((match.start, match.end, cand_idx, cand_name, match))
+                ordered.append(
+                    (match.start, match.end, grammar_order, cand_name, match)
+                )
         else:
             for match in deduped:
                 ordered.append(
