@@ -297,12 +297,10 @@ class CountryNameFold:
         # Map each NFD char back to its original index via cached per-char
         # decomposition lengths (avoids per-char normalize of the whole text).
         nfd_orig: list[int] = []
-        nfd_pos = 0
         for orig_idx, ch in enumerate(text):
             seg_len = len(_nfd_char(ch))
             for _ in range(seg_len):
                 nfd_orig.append(orig_idx)
-            nfd_pos += seg_len
         chars: list[str] = []
         offs: list[int] = []
         for c, orig_idx in zip(nfd, nfd_orig, strict=True):
