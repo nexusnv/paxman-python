@@ -25,6 +25,41 @@ _D_RE: re.Pattern[str] = re.compile(r"\d")
 _S_RE: re.Pattern[str] = re.compile(r"\s")
 
 
+_HEX_DIGITS: frozenset[str] = frozenset("0123456789abcdefABCDEF")
+
+
+def _parse_bracket_escape(content: str, i: int) -> tuple[str, int]:
+    """Parse the fixed-width escape starting at content[i].
+
+    content[i] is the leading backslash and content[i + 1] one of u
+    (4 hex digits), x (2 hex digits), U (8 hex digits); the return is
+    (char, next_index). Anything malformed - short run, non-hex digit,
+    codepoint above 0x10FFFF, or a hyphen neighbor that could form a
+    character range - raises ValueError so _pattern_to_chars declines
+    the frozenset path (#73 L1). Well-formed-but-inexact escapes (e.g.
+    range-adjacent) then take the compiled regex path, which is always
+    correct; genuinely malformed escapes are invalid regex and fail
+    fast at BoundarySpec construction instead of silently lowering to
+    a wrong set. The frozenset path is taken only when exactly
+    convertible.
+    """
+    nxt = content[i + 1]
+    width = {"u": 4, "x": 2, "U": 8}[nxt]
+    end = i + 2 + width
+    digits = content[i + 2 : end]
+    if (
+        len(digits) != width
+        or any(c not in _HEX_DIGITS for c in digits)
+        or (i > 0 and content[i - 1] == "-")
+        or (end < len(content) and content[end] == "-")
+    ):
+        raise ValueError(f"inexact bracket escape at {i}")
+    code = int(digits, 16)
+    if code > 0x10FFFF:
+        raise ValueError(f"bracket escape out of range at {i}")
+    return chr(code), end
+
+
 def _chars_from_bracket(content: str) -> frozenset[str]:
     res: set[str] = set()
     i = 0
@@ -43,6 +78,10 @@ def _chars_from_bracket(content: str) -> frozenset[str]:
             if nxt == "s":
                 res.update(_S_CHARS)
                 i += 2
+                continue
+            if nxt in ("u", "x", "U"):
+                glyph, i = _parse_bracket_escape(content, i)
+                res.add(glyph)
                 continue
             # escaped literal (\-, \., \+, \[, etc.)
             res.add(nxt)
@@ -71,6 +110,9 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
     positive bracket classes to their enumerated chars; negated bracket
     classes (``[^...]``) return ``None`` so the compiled regex path
     preserves their negated semantics (#67).
+    Fixed-width escapes lower exactly; inexact ones decline via
+    ``ValueError`` → ``None`` (#73 L1; malformed escapes fail fast
+    at construction).
     """
     if pat == r"\w":
         return _W_CHARS
@@ -91,7 +133,15 @@ def _pattern_to_chars(pat: str) -> frozenset[str] | None:
         # '[^...]' keeps its negated meaning against the 1-char window.
         if interior.startswith("^"):
             return None
-        return _chars_from_bracket(interior)
+        try:
+            return _chars_from_bracket(interior)
+        except ValueError:
+            # Inexact fixed-width escape (malformed, out of range, or
+            # range-adjacent): not exactly convertible, so decline the
+            # frozenset path. Well-formed ones take the compiled regex
+            # path; malformed ones fail fast at construction as invalid
+            # regex (#73 L1).
+            return None
     return None
 
 
@@ -144,7 +194,15 @@ def _pattern_lowering(
     return chars, None
 
 
-def _estimate_width(pat: str) -> int:
+def _estimate_width(pat: str) -> int | None:
+    """Bounded width of a multi-char guard, or None (full remainder).
+
+    Quantifiers (``*+?{``), alternation and groups (``|``/``(``)
+    outside ``[...]`` spans make the width unbounded or ambiguous, so
+    the caller checks the full remainder instead of an underestimated
+    window (#73 L2). The anchored patterns are already correct against
+    a full remainder; the window is purely an optimization.
+    """
     i = 0
     cnt = 0
     while i < len(pat):
@@ -161,6 +219,8 @@ def _estimate_width(pat: str) -> int:
                 cnt += 1
                 i = j + 1
             continue
+        if pat[i] in "*+?{|(":
+            return None
         cnt += 1
         i += 1
     return max(1, cnt)
@@ -201,10 +261,10 @@ class BoundarySpec:
     mode: str = "zero_width"
     left_chars: frozenset[str] | None = field(default=None, init=False, repr=False)
     right_chars: frozenset[str] | None = field(default=None, init=False, repr=False)
-    left_multi: tuple[tuple[int, re.Pattern[str]], ...] = field(
+    left_multi: tuple[tuple[int | None, re.Pattern[str]], ...] = field(
         default=(), init=False, repr=False
     )
-    right_multi: tuple[tuple[int, re.Pattern[str]], ...] = field(
+    right_multi: tuple[tuple[int | None, re.Pattern[str]], ...] = field(
         default=(), init=False, repr=False
     )
     left_char_fallback: tuple[re.Pattern[str], ...] = field(
@@ -216,9 +276,9 @@ class BoundarySpec:
 
     def __post_init__(self) -> None:
         lc: set[str] = set()
-        lm: list[tuple[int, re.Pattern[str]]] = []
+        lm: list[tuple[int | None, re.Pattern[str]]] = []
         rc: set[str] = set()
-        rm: list[tuple[int, re.Pattern[str]]] = []
+        rm: list[tuple[int | None, re.Pattern[str]]] = []
         lfb: list[re.Pattern[str]] = []
         rfb: list[re.Pattern[str]] = []
         if self.left is not None:
@@ -230,7 +290,7 @@ class BoundarySpec:
                         lfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
-                    lm.append((w, re.compile(pat + r"\Z")))
+                    lm.append((w, re.compile(r"(?:" + pat + r")\Z")))
         if self.right is not None:
             for pat in self.right:
                 chars, fallback = _pattern_lowering(pat)
@@ -240,7 +300,7 @@ class BoundarySpec:
                         rfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
-                    rm.append((w, re.compile(r"\A" + pat)))
+                    rm.append((w, re.compile(r"\A(?:" + pat + r")")))
         object.__setattr__(self, "left_chars", frozenset(lc) if lc else None)
         object.__setattr__(self, "right_chars", frozenset(rc) if rc else None)
         object.__setattr__(self, "left_multi", tuple(lm))
@@ -300,9 +360,12 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
         ):
             return False
         for w, pat in spec.left_multi:
-            lo = start - w
-            if lo < 0:
+            if w is None:
                 lo = 0
+            else:
+                lo = start - w
+                if lo < 0:
+                    lo = 0
             if pat.search(subject[lo:start]) is not None:
                 return False
     if spec.right is not None and end < len(subject):
@@ -316,9 +379,12 @@ def check_boundary(subject: str, start: int, end: int, spec: BoundarySpec) -> bo
         ):
             return False
         for w, pat in spec.right_multi:
-            hi = end + w
-            if hi > len(subject):
+            if w is None:
                 hi = len(subject)
+            else:
+                hi = end + w
+                if hi > len(subject):
+                    hi = len(subject)
             if pat.search(subject[end:hi]) is not None:
                 return False
     return True

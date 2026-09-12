@@ -30,6 +30,7 @@ from paxman.engine.orchestrator import (
     _dedup_candidates,
     _determine_status,
     _keep_duplicate_span_grammars,
+    _recognize,
     run_capability,
 )
 
@@ -172,3 +173,66 @@ def test_date_slash_ambiguous_parity() -> None:
             ),
         ]
     )
+
+
+_ALL_CANDIDATES = CandidatesMatcher(
+    candidates=(
+        RegexMatcher(
+            pattern=r"(ab)",
+            anchors=AnchorSet(),
+        ),
+    ),
+    strategy="all",
+    candidate_names=("aaa_cand",),
+    candidate_semantics=("aaa_sem",),
+)
+
+
+class _AllProbeGrammar(Grammar[str]):
+    """Minimal "all" grammar whose candidate name sorts before plain names."""
+
+    name = "cand_recognition"
+    semantics = "cand_semantics"
+
+    def __init__(self) -> None:
+        self.matchers: tuple[CandidatesMatcher, ...] = (_ALL_CANDIDATES,)
+
+    def recognize(self, text: str) -> list[RecognitionMatch[str]]:
+        return []
+
+
+class _ZzzPlainGrammar(Grammar[str]):
+    """Minimal lexicon grammar whose name sorts after the candidate name."""
+
+    name = "zzz_plain_recognition"
+    semantics = "zzz_plain_semantics"
+
+    def __init__(self) -> None:
+        from paxman.core.grammar.matchers.lexicon import LexiconMatcher
+
+        self.matchers: tuple[LexiconMatcher, ...] = (
+            LexiconMatcher(tokens=frozenset({"ab"})),
+        )
+
+    def recognize(self, text: str) -> list[RecognitionMatch[str]]:
+        return []
+
+
+def test_recognize_orders_by_active_set_index_not_candidate_position() -> None:
+    """Total order is (start, end, active-set index, grammar name) (#71).
+
+    The candidate match is attributed to ``aaa_cand`` but must sort by
+    its producing grammar's active-set index (1), after the plain
+    grammar's match (index 0) — not by its candidate position (0).
+    """
+    contract = DateCapability.create_contract()
+    reps = _recognize(
+        "ab",
+        [_ZzzPlainGrammar(), _AllProbeGrammar()],
+        ("zzz_plain_recognition", "cand_recognition"),
+        contract,
+    )
+    assert [(r.start, r.end, r.grammar.grammar_name) for r in reps] == [
+        (0, 2, "zzz_plain_recognition"),
+        (0, 2, "aaa_cand"),
+    ]
