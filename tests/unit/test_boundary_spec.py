@@ -85,3 +85,27 @@ def test_malformed_escape_construction_fails_fast() -> None:
     """Malformed escapes are invalid regex: fail fast, never silently lower."""
     with pytest.raises(re.error):
         BoundarySpec(left=(r"[\xZZ]",), right=None)
+
+
+def test_alternation_guard_grouped_at_left_edge() -> None:
+    from paxman.core.grammar.boundary_spec import check_boundary
+
+    spec = BoundarySpec(left=(r"a|bc",), right=None)
+    # "ax" ends with neither alternative: no violation. An ungrouped
+    # `a|bc\Z` would match the free "a" and wrongly violate.
+    assert check_boundary("ax", 2, 2, spec) is True
+    # Genuine violations still fire on the full remainder.
+    assert check_boundary("xxbc", 4, 4, spec) is False
+    assert check_boundary("xxa", 3, 3, spec) is False
+
+
+def test_alternation_guard_grouped_at_right_edge() -> None:
+    from paxman.core.grammar.boundary_spec import check_boundary
+
+    spec = BoundarySpec(left=None, right=(r"a|bc",))
+    # "xbc" starts with neither alternative: no violation. An ungrouped
+    # `\Aa|bc` would match the free "bc" and wrongly violate.
+    assert check_boundary("xbc", 0, 0, spec) is True
+    # Genuine violations still fire on the full remainder.
+    assert check_boundary("bcx", 0, 0, spec) is False
+    assert check_boundary("ax", 0, 0, spec) is False

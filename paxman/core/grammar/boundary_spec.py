@@ -290,7 +290,7 @@ class BoundarySpec:
                         lfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
-                    lm.append((w, re.compile(pat + r"\Z")))
+                    lm.append((w, re.compile(r"(?:" + pat + r")\Z")))
         if self.right is not None:
             for pat in self.right:
                 chars, fallback = _pattern_lowering(pat)
@@ -300,7 +300,7 @@ class BoundarySpec:
                         rfb.append(fallback)
                 else:
                     w = _estimate_width(pat)
-                    rm.append((w, re.compile(r"\A" + pat)))
+                    rm.append((w, re.compile(r"\A(?:" + pat + r")")))
         object.__setattr__(self, "left_chars", frozenset(lc) if lc else None)
         object.__setattr__(self, "right_chars", frozenset(rc) if rc else None)
         object.__setattr__(self, "left_multi", tuple(lm))
