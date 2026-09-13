@@ -219,3 +219,76 @@ def test_grouped_case_insensitive_and_with_label() -> None:
         and m[0].notation.compact == "BNPAFRPPXXX"
         and m[0].raw_text == "SWIFT: BNPA FR PP XXX"
     )
+
+
+def test_bare_english_trigram_end_of_text_is_missing() -> None:
+    """(#106) Bare and punctuated English trigrams must not recognize."""
+    assert GRAMMAR.recognize("call me at") == []
+    assert GRAMMAR.recognize("BIC call me at") == []
+    assert GRAMMAR.recognize("call me at.") == []
+
+
+def test_english_filter_guards() -> None:
+    """(#106) Valid grouped BICs unaffected; isupper gate kept (decision 5)."""
+    m = GRAMMAR.recognize("deut de ff today")
+    assert len(m) == 1 and m[0].notation.compact == "DEUTDEFF"
+    assert len(GRAMMAR.recognize("CALL ME AT")) == 1
+
+
+def test_english_trigram_before_parens_is_missing() -> None:
+    from paxman.capabilities.BIC.grammar.bic_recognition import BICRecognitionGrammar
+
+    grammar = BICRecognitionGrammar()
+    assert grammar.recognize("call me at)") == []
+    assert grammar.recognize("(call me at)") == []
+    assert grammar.recognize("call me at]") == []
+
+
+def test_english_trigram_before_punct_word_is_missing() -> None:
+    from paxman.capabilities.BIC.grammar.bic_recognition import BICRecognitionGrammar
+
+    grammar = BICRecognitionGrammar()
+    assert grammar.recognize("call me at, today") == []
+
+
+def test_common_short_words_match_legacy_set() -> None:
+    from paxman.capabilities.BIC.grammar.bic_recognition import _COMMON_SHORT_WORDS
+
+    assert (
+        frozenset(
+            {
+                "a",
+                "am",
+                "an",
+                "and",
+                "as",
+                "at",
+                "be",
+                "but",
+                "by",
+                "do",
+                "for",
+                "go",
+                "he",
+                "if",
+                "in",
+                "is",
+                "it",
+                "me",
+                "my",
+                "no",
+                "nor",
+                "of",
+                "on",
+                "or",
+                "so",
+                "the",
+                "to",
+                "up",
+                "us",
+                "we",
+                "yet",
+            }
+        )
+        == _COMMON_SHORT_WORDS
+    )

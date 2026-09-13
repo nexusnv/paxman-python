@@ -17,7 +17,7 @@ Canonicalizes **one money amount paired with a currency** per call to `CODE amou
 | `1.000,50 EUR` — European comma-decimal: last separator is the decimal point | Amount-glued tokens without a clean boundary — `MISSING` |
 | `$500` with `dollar_sign_currency="USD"` — opt-in for shared symbols | Bare `$` without `dollar_sign_currency` — `INVALID` |
 
-> Shared symbol handling mirrors Currency's `default_currency` idea but for amounts: Money uses `dollar_sign_currency` (same semantics, different name because it shapes amounts).
+> Shared symbol handling follows Currency's `default_currency` idea but for amounts — with one divergence (see [#15](https://github.com/nexusnv/paxman-python/issues/15)): Money's `dollar_sign_currency` accepts any ISO 4217 code with minor units (`$500` + `MYR` → `MYR 500.00`), while Currency's `default_currency` resolves only to one of the symbol's own CLDR candidates (`$` + `MYR` stays `INVALID`).
 
 ---
 

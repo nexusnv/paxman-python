@@ -489,3 +489,93 @@ class TestEnglishNameMapping:
     def test_unknown_invalid(self) -> None:
         n = _name_notation("Klingon")
         assert self.rule.matches(n, self.contract) is False
+
+
+def _desc_notation(
+    language: str, script: str = "", region: str = ""
+) -> LanguageNotation:
+    """Display-valued description notation (language_description semantics)."""
+    pieces = [language]
+    if script:
+        pieces.append(script)
+    if region:
+        pieces.append(region)
+    compact = "-".join(pieces)
+    return LanguageNotation(
+        language=language,
+        extlang="",
+        script=script,
+        region=region,
+        variant="",
+        extension="",
+        privateuse="",
+        grandfathered="",
+        compact=compact,
+        raw_value=compact.lower(),
+    )
+
+
+@pytest.mark.capability
+class TestIANARegistryDescription:
+    """IANA Registry description rule — display slots map to the canonical tag."""
+
+    def setup_method(self) -> None:
+        from paxman.capabilities.Language.rules import (
+            iana_language_subtag_registry_ed2026 as _iana_mod,
+        )
+
+        self.rule = _iana_mod.SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    def test_metadata(self) -> None:
+        assert self.rule.name == "Section-iana-registry-description"
+        assert self.rule.strategy is RuleStrategy.LOOKUP_TABLE
+        assert self.rule.target_semantics == frozenset({"language_description"})
+        assert self.rule.requires_features == frozenset()
+        assert self.rule.provenance.authority == "IANA"
+        assert (
+            self.rule.provenance.specification_name == "IANA Language Subtag Registry"
+        )
+        assert self.rule.provenance.kind == "registry"
+        assert self.rule.provenance.version == "Rolling File-Date 2026-08-08"
+        assert self.rule.provenance.publication_year == 2026
+
+    def test_full_phrase_maps_and_normalizes(self) -> None:
+        n = _desc_notation("chinese", script="traditional", region="singapore")
+        assert self.rule.matches(n, self.contract) is True
+        assert self.rule.normalize(n, self.contract) == "zh-Hant-SG"
+
+    def test_script_only_form(self) -> None:
+        n = _desc_notation("chinese", script="simplified")
+        assert self.rule.matches(n, self.contract) is True
+        assert self.rule.normalize(n, self.contract) == "zh-Hans"
+
+    def test_region_only_form(self) -> None:
+        n = _desc_notation("chinese", region="singapore")
+        assert self.rule.matches(n, self.contract) is True
+        assert self.rule.normalize(n, self.contract) == "zh-SG"
+
+    def test_slots_case_insensitive(self) -> None:
+        n = _desc_notation("Chinese", script="Traditional", region="Singapore")
+        assert self.rule.matches(n, self.contract) is True
+        assert self.rule.normalize(n, self.contract) == "zh-Hant-SG"
+
+    def test_unknown_language_rejected(self) -> None:
+        n = _desc_notation("klingon", region="singapore")
+        assert self.rule.matches(n, self.contract) is False
+
+    def test_unknown_script_rejected(self) -> None:
+        n = _desc_notation("chinese", script="latin")
+        assert self.rule.matches(n, self.contract) is False
+
+    def test_unknown_region_rejected(self) -> None:
+        n = _desc_notation("chinese", region="atlantis")
+        assert self.rule.matches(n, self.contract) is False
+
+    def test_empty_language_rejected(self) -> None:
+        n = _desc_notation("", region="singapore")
+        assert self.rule.matches(n, self.contract) is False
+
+    def test_bare_language_without_qualifier_rejected(self) -> None:
+        n = _desc_notation("chinese")
+        assert self.rule.matches(n, self.contract) is False

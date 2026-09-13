@@ -8,7 +8,13 @@ are validated by the engine-gated private rule
 
 from __future__ import annotations
 
-from paxman.capabilities.Language.notation import LanguageNotation
+from paxman.capabilities.Language.notation import LanguageNotation, normalize_name
+from paxman.capabilities.Language.rules.data.description_display_map import (
+    DESCRIPTION_DISPLAY_MAP,
+)
+from paxman.capabilities.Language.rules.data.english_language_map import (
+    NAME_TO_CANONICAL,
+)
 from paxman.capabilities.Language.rules.data.iana_deprecated_map import DEPRECATED_MAP
 from paxman.capabilities.Language.rules.data.iana_grandfathered import (
     GRANDFATHERED_PREFERRED,
@@ -39,6 +45,19 @@ PUBLICATION = Provenance(
     lifecycle="active",
     publication_year=2026,
 )
+
+# Normalized display-name views — keys normalized via the shared normalizer.
+# Language display meaning reuses the English-name authority map (the same
+# table backing SectionEnglishNameMapping; duplicating its 60 entries here
+# would create dual authority). Script/region display meaning comes from the
+# compositional authority map (single source of truth, shared with the
+# consistency test — never mirrored into grammar code).
+_NAME_TO_CANONICAL_NORMALIZED: dict[str, str] = {
+    normalize_name(k): v for k, v in NAME_TO_CANONICAL.items()
+}
+_DISPLAY_TO_SUBTAG_NORMALIZED: dict[str, str] = {
+    normalize_name(k): v for k, v in DESCRIPTION_DISPLAY_MAP.items()
+}
 
 # Lower normalized sets for case-insensitive lookup
 _LANGUAGE_SET = frozenset(s.lower() for s in IANA_LANGUAGE_SUBTAGS)
@@ -399,4 +418,117 @@ class SectionIANARegistryPrivate(Rule[LanguageNotation]):
             parts.extend(notation.privateuse.lower().split("-"))
         if not parts:
             return notation.compact
+        return "-".join(parts)
+
+
+class SectionIANARegistryDescription(Rule[LanguageNotation]):
+    """IANA Registry — compositional display descriptions (language_description).
+
+    Same publication as ``SectionIANARegistry`` (one file per publication):
+    maps the grammar's display-valued slots to canonical subtags — language
+    via the English-name authority map, script/region via
+    ``description_display_map`` — then validates the mapped codes against the
+    shipped IANA language/script/region sets and normalizes to the canonical
+    tag (``chinese`` + ``traditional`` + ``singapore`` → ``zh-Hant-SG``).
+    Unknown display slots yield no match (MISSING upstream when the grammar
+    emits nothing else for the span).
+    """
+
+    name = "Section-iana-registry-description"
+    strategy = RuleStrategy.LOOKUP_TABLE
+    provenance = PUBLICATION
+    citation = (
+        "IANA Registry Type language/script/region "
+        "via display-name mapping (English names + description_display_map)"
+    )
+    target_semantics = frozenset({"language_description"})
+    requires_features = frozenset()
+
+    def _resolve(self, notation: LanguageNotation) -> tuple[str, str, str] | None:
+        """Map display slots to canonical subtags, or ``None`` when unmapped."""
+        # Description semantics carry display slots only: any BCP 47 structural
+        # field (extlang/variant/extension/privateuse/grandfathered) means this
+        # notation is not a description.
+        if (
+            notation.extlang
+            or notation.variant
+            or notation.extension
+            or notation.privateuse
+            or notation.grandfathered
+        ):
+            return None
+        lang_key = normalize_name(notation.language) if notation.language else ""
+        lang = _NAME_TO_CANONICAL_NORMALIZED.get(lang_key)
+        if lang is None:
+            return None
+        script = ""
+        if notation.script:
+            mapped_script = _DISPLAY_TO_SUBTAG_NORMALIZED.get(
+                normalize_name(notation.script)
+            )
+            if mapped_script is None:
+                return None
+            script = mapped_script
+        region = ""
+        if notation.region:
+            mapped_region = _DISPLAY_TO_SUBTAG_NORMALIZED.get(
+                normalize_name(notation.region)
+            )
+            if mapped_region is None:
+                return None
+            region = mapped_region
+        # A bare language display without a script/region qualifier is the
+        # language_name grammar's domain, not a description.
+        if not script and not region:
+            return None
+        return (lang, script, region)
+
+    def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
+        """Validate mapped codes against the shipped IANA sets (non-private)."""
+        resolved = self._resolve(notation)
+        if resolved is None:
+            return False
+        lang, script, region = resolved
+        if _is_private_language(lang):
+            return False
+        resolved_lang = _resolve_deprecated(lang)
+        if (
+            lang not in DEPRECATED_MAP
+            and lang not in _LANGUAGE_SET
+            and resolved_lang not in _LANGUAGE_SET
+        ):
+            return False
+        if script:
+            if _is_private_script(script):
+                return False
+            if script.lower() not in _SCRIPT_SET:
+                return False
+        if region:
+            if _is_private_region(region):
+                return False
+            if region.lower() not in _REGION_SET and not (
+                region.isdigit() and region.lower() in _REGION_SET
+            ):
+                return False
+        return True
+
+    def normalize(self, notation: LanguageNotation, contract: Contract) -> str:
+        """Return the canonical tag assembled from the mapped subtags.
+
+        Unmapped input falls back to ``compact``; unreachable in-pipeline
+        (the engine normalizes only notations ``matches()`` accepted) —
+        defensive, since rules never raise.
+        """
+        resolved = self._resolve(notation)
+        if resolved is None:
+            return notation.compact
+        lang, script, region = resolved
+        parts: list[str] = [_resolve_deprecated(lang)]
+        if script:
+            parts.append(script[0].upper() + script[1:].lower() if script else "")
+        if region:
+            if region.isdigit():
+                parts.append(region)
+            else:
+                parts.append(region.upper())
         return "-".join(parts)

@@ -17,6 +17,9 @@ Canonicalizes **one language mention** per call — a bare code, a BCP 47 tag, o
 | English display names — 60-entry curatorial subset (`German`→`de`, `Serbo Croatian`→`sh`, `Norwegian Bokmal`→`nb`, `Cherokee`→`chr`) | Names outside the 60 (`Klingonish`) → `MISSING` (grammar emits no match, not `INVALID`) |
 | CLDR localized names — 24-entry subset (`allemand`→`de`, `deutsch`→`de`) — only when `include_localized=True` | Localized names when flag off — recognized but `INVALID` (no authority claims them) |
 | Grandfathered / deprecated Preferred-Value (`i-cherokee`→`chr`, `iw`→`he`, `scc`→`sr` historical) | Private subtags (`qaa`, `Qaaa`, `ZZ`) without `include_private` → `INVALID` |
+| Compositional descriptions — full-phrase spans only (`Singapore Chinese in traditional script`→`zh-Hant-SG`, `Chinese in simplified script`→`zh-Hans`, `Chinese in Singapore`→`zh-SG`) | Parenthesized forms (`Chinese (Hant, SG)`) — no compositional reading yet |
+
+> **Compositional contract note:** a compositional description is `AMBIGUOUS` under the default contract — the full-phrase reading (e.g. `zh-Hant-SG`) coexists with the bare-code `in`→`id` reading — and `SUCCESS` with `suppress_common_words=True` (the `in` claim is a suppressible common word).
 
 > **Subset disclaimer:** English 60 + localized 24 are hand-curated from `paxman/shared_data/language_snapshot.json` — not the full IANA Registry Description set (7,900+) or CLDR v46 root. Names outside are `MISSING`, not `INVALID`, so no false negative under current completeness. ISO 639 code tables are curated subsets of their authorities (alpha-2 184 comprehensive; alpha-3 T 420 + B 21; comprehensive 995; collective 84 — see `language_snapshot.json` _meta and per-rule data headers). Plan: generate full IANA Description + CLDR root via `tools/regenerate_language_data.py`.
 
