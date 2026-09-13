@@ -2,14 +2,30 @@
 
 import pytest
 
+from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.Language.grammar.bcp47_tag_recognition import (
     BCP47TagGrammar,
+)
+from paxman.capabilities.Language.grammar.data.english_names import (
+    ENGLISH_LANGUAGE_KEYS,
 )
 from paxman.capabilities.Language.grammar.language_code_recognition import (
     LanguageCodeGrammar,
 )
+from paxman.capabilities.Language.grammar.language_description_recognition import (
+    LanguageDescriptionGrammar,
+)
 from paxman.capabilities.Language.grammar.language_name_recognition import (
     LanguageNameGrammar,
+)
+from paxman.capabilities.Language.rules.data.description_display_map import (
+    DESCRIPTION_DISPLAY_MAP,
+)
+from paxman.capabilities.Language.rules.data.english_language_map import (
+    NAME_TO_CANONICAL,
+)
+from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (
+    SectionIANARegistryDescription,
 )
 
 pytestmark = [pytest.mark.capability]
@@ -291,3 +307,190 @@ class TestLanguageNameGrammar:
         for name in ("english", "french", "cherokee", "yiddish"):
             assert self.grammar.recognize(name) != []
             assert self.grammar.recognize(name.upper()) != []
+
+
+# ---------------------------------------------------------------------------
+# Language Description Recognition (compositional phrases)
+# ---------------------------------------------------------------------------
+
+
+class TestLanguageDescriptionGrammar:
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+
+    def test_semantics_and_name(self) -> None:
+        assert self.grammar.name == "language_description_recognition"
+        assert self.grammar.semantics == "language_description"
+
+    def test_single_value_true(self) -> None:
+        assert self.grammar.single_value is True
+
+    def test_region_language_script_form(self) -> None:
+        txt = "Singapore Chinese in traditional script"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == 39
+        assert m.raw_text == txt
+        assert m.notation.language == "chinese"
+        assert m.notation.script == "traditional"
+        assert m.notation.region == "singapore"
+        assert m.notation.compact == "chinese-traditional-singapore"
+        assert m.notation.raw_value == txt.lower()
+
+    def test_language_script_form(self) -> None:
+        txt = "Chinese in simplified script"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == 28
+        assert m.raw_text == txt
+        assert m.notation.language == "chinese"
+        assert m.notation.script == "simplified"
+        assert m.notation.region == ""
+        assert m.notation.compact == "chinese-simplified"
+        assert m.notation.raw_value == txt.lower()
+
+    def test_language_region_form(self) -> None:
+        txt = "Chinese in Singapore"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == 20
+        assert m.raw_text == txt
+        assert m.notation.language == "chinese"
+        assert m.notation.script == ""
+        assert m.notation.region == "singapore"
+        assert m.notation.compact == "chinese-singapore"
+        assert m.notation.raw_value == txt.lower()
+
+    def test_trailing_script_word_optional(self) -> None:
+        for txt, compact, script in (
+            ("Chinese in traditional", "chinese-traditional", "traditional"),
+            (
+                "Singapore Chinese in traditional",
+                "chinese-traditional-singapore",
+                "traditional",
+            ),
+        ):
+            results = self.grammar.recognize(txt)
+            assert len(results) == 1, txt
+            assert results[0].raw_text == txt
+            assert results[0].notation.script == script
+            assert results[0].notation.compact == compact
+
+    def test_case_insensitive(self) -> None:
+        results = self.grammar.recognize("CHINESE IN SINGAPORE")
+        assert len(results) == 1
+        assert results[0].raw_text == "CHINESE IN SINGAPORE"
+        assert results[0].notation.language == "chinese"
+        assert results[0].notation.region == "singapore"
+        assert results[0].notation.compact == "chinese-singapore"
+
+    def test_span_invariant_with_surrounding(self) -> None:
+        txt = "say Singapore Chinese in traditional script ok"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert txt[m.start : m.end] == m.raw_text
+        assert m.raw_text == "Singapore Chinese in traditional script"
+        assert m.start == txt.index("Singapore Chinese in traditional script")
+        assert m.end == m.start + len("Singapore Chinese in traditional script")
+
+    def test_negative_xenon_sentence(self) -> None:
+        assert self.grammar.recognize("Xenon is a gas") == []
+
+    def test_negative_bare_in(self) -> None:
+        assert self.grammar.recognize("in") == []
+
+    def test_negative_lone_language(self) -> None:
+        assert self.grammar.recognize("Chinese") == []
+
+    def test_negative_bare_display_words(self) -> None:
+        # Full-phrase spans only — never bare-word spans.
+        assert self.grammar.recognize("traditional") == []
+        assert self.grammar.recognize("Singapore") == []
+        assert self.grammar.recognize("script") == []
+
+    def test_negative_missing_slot(self) -> None:
+        assert self.grammar.recognize("Chinese in") == []
+        assert self.grammar.recognize("in Singapore") == []
+
+    def test_negative_glued_tokens(self) -> None:
+        # Phrase tokens must be whitespace-separated words.
+        assert self.grammar.recognize("Chinese2 in Singapore") == []
+        assert self.grammar.recognize("Chinese-in-Singapore") == []
+
+    def test_empty_and_whitespace(self) -> None:
+        assert self.grammar.recognize("") == []
+        assert self.grammar.recognize("   ") == []
+
+
+class TestDescriptionDisplayFields:
+    """Grammar emits display slots; the description rule maps them.
+
+    Test-only cross-import (the grammar itself never imports rule data):
+    display emission here must round-trip through
+    ``SectionIANARegistryDescription`` to the canonical tag.
+    """
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+        self.rule = SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+        self.english_keys = ENGLISH_LANGUAGE_KEYS
+        self.display_map = DESCRIPTION_DISPLAY_MAP
+        self.name_to_canonical = NAME_TO_CANONICAL
+
+    def test_every_english_key_composes_with_region(self) -> None:
+        for key in sorted(self.english_keys):
+            phrase = f"{key} in Singapore"
+            matches = self.grammar.recognize(phrase)
+            assert len(matches) == 1, phrase
+            assert matches[0].notation.language == key, phrase
+            assert matches[0].notation.region == "singapore", phrase
+            assert matches[0].notation.compact == f"{key}-singapore", phrase
+            expected = self.name_to_canonical[key]
+            assert (
+                self.rule.normalize(matches[0].notation, self.contract)
+                == f"{expected}-SG"
+            ), phrase
+
+    def test_script_slots_are_display_valued(self) -> None:
+        for phrase, display_key in (
+            ("Chinese in traditional script", "traditional"),
+            ("Chinese in simplified script", "simplified"),
+        ):
+            matches = self.grammar.recognize(phrase)
+            assert len(matches) == 1, phrase
+            assert matches[0].notation.script == display_key, phrase
+            assert (
+                self.rule.normalize(matches[0].notation, self.contract)
+                == f"zh-{self.display_map[display_key]}"
+            ), phrase
+
+
+class TestDescriptionTrailingNounGuard:
+    """Bare slots must not swallow a following content word (thermo HIGH-1)."""
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+
+    def test_bare_script_trailing_noun_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese in traditional dress") == []
+
+    def test_bare_region_trailing_noun_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese in Singapore restaurants") == []
+
+    def test_bare_script_connector_allowed(self) -> None:
+        results = self.grammar.recognize("Chinese in traditional and simplified")
+        assert len(results) == 1
+        assert results[0].notation.script == "traditional"
+
+    def test_closed_script_trailing_filler_allowed(self) -> None:
+        results = self.grammar.recognize("Chinese in traditional script daily")
+        assert len(results) == 1
+        assert results[0].raw_text == "Chinese in traditional script"

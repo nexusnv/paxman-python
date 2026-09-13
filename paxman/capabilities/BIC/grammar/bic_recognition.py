@@ -10,6 +10,7 @@ from paxman.capabilities.BIC.grammar.data.country_codes import (
 from paxman.capabilities.BIC.notation import BICNotation
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar.boundary import BoundaryGuard
+from paxman.core.grammar.data.common_words import COMMON_WORDS
 from paxman.core.grammar.pipeline import PipelineGrammar
 from paxman.core.grammar.stages import RegexStage, StandardPre
 
@@ -41,40 +42,81 @@ _COUNTRY_ALT = "|".join(sorted(_COUNTRY_CODES))
 _BIC_SUFFIX_RE = f"[A-Z]{{4}}(?:{_COUNTRY_ALT})[A-Z0-9]{{2}}(?:[A-Z0-9]{{3}})?"
 # Short English words that can trail a valid BIC as separate word
 # (e.g. "DEUT DE FF at" — "at" is English, not extra BIC chars).
-_COMMON_SHORT_WORDS = frozenset(
-    {
-        "a",
-        "an",
-        "at",
-        "in",
-        "on",
-        "is",
-        "as",
-        "it",
-        "to",
-        "of",
-        "by",
-        "up",
-        "so",
-        "no",
-        "my",
-        "we",
-        "be",
-        "he",
-        "if",
-        "or",
+# Derived from COMMON_WORDS (paxman.core.grammar.data.common_words, 67):
+# the 19 legacy words present there form the derived subset; the 12-word
+# remainder below holds legacy words absent from COMMON_WORDS (single letter
+# "a"; 2-letter "go"/"if"/"of"/"on"/"up"/"we" outside the Google-1000 ∩ ISO
+# intersection; longer "but"/"for"/"nor"/"the"/"yet") kept to preserve
+# behavior. The union is exactly the legacy 31-word set (zero delta — the
+# pin below plus the existing suites prove no behavior change beyond the
+# #106 end-of-text/punctuation arm).
+_COMMON_SHORT_FROM_COMMON_WORDS = frozenset(
+    w
+    for w in COMMON_WORDS
+    if w
+    in {
         "am",
-        "do",
-        "go",
-        "me",
-        "us",
+        "an",
         "and",
-        "but",
-        "the",
-        "for",
-        "nor",
-        "yet",
+        "as",
+        "at",
+        "be",
+        "by",
+        "do",
+        "he",
+        "in",
+        "is",
+        "it",
+        "me",
+        "my",
+        "no",
+        "or",
+        "so",
+        "to",
+        "us",
     }
+)
+_COMMON_SHORT_REMAINDER = frozenset(
+    {"a", "but", "for", "go", "if", "nor", "of", "on", "the", "up", "we", "yet"}
+)
+_COMMON_SHORT_WORDS = _COMMON_SHORT_FROM_COMMON_WORDS | _COMMON_SHORT_REMAINDER
+assert (
+    frozenset(
+        {
+            "a",
+            "am",
+            "an",
+            "and",
+            "as",
+            "at",
+            "be",
+            "but",
+            "by",
+            "do",
+            "for",
+            "go",
+            "he",
+            "if",
+            "in",
+            "is",
+            "it",
+            "me",
+            "my",
+            "no",
+            "nor",
+            "of",
+            "on",
+            "or",
+            "so",
+            "the",
+            "to",
+            "up",
+            "us",
+            "we",
+            "yet",
+        }
+    )
+    == _COMMON_SHORT_WORDS
 )
 
 # Words that can form false-positive BIC-like English phrases
@@ -171,8 +213,20 @@ class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
                 # English phrase false positive: "call me at" etc.
                 # Only drop if body looks like English (all words in
                 # English sets) and is not upper (BIC is typically upper
-                # but case-insensitive, so check lower)
+                # but case-insensitive, so check lower). The isupper gate
+                # stays per Slice B decision 5: CALL ME AT keeps status quo.
+                # Drop when followed by a word (#41) or when the phrase
+                # ends here: end of text, punctuation-only tail (#106),
+                # or any other non-alphanumeric lead — parentheses,
+                # brackets, dashes. The all-English membership gate above
+                # still protects real BICs.
                 words = body_raw.split()
+                after_stripped = after.lstrip()
+                phrase_ends_here = (
+                    (after.startswith(" ") and after_stripped[:1].isalnum())
+                    or after.strip(" .,:;!?\t\n\r") == ""
+                    or (after_stripped[:1] != "" and not after_stripped[:1].isalnum())
+                )
                 if (
                     not body_raw.isupper()
                     and all(
@@ -180,8 +234,7 @@ class BICRecognitionGrammar(PipelineGrammar[BICNotation]):
                         or w.lower() in _COMMON_SHORT_WORDS
                         for w in words
                     )
-                    and after.startswith(" ")
-                    and after.lstrip()[:1].isalnum()
+                    and phrase_ends_here
                 ):
                     continue
             filtered.append(m)

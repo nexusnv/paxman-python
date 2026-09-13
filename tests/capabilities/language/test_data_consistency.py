@@ -30,10 +30,26 @@ from paxman.capabilities.Language.grammar.data.english_names import (
 from paxman.capabilities.Language.grammar.data.localized_names import (
     LOCALIZED_LANGUAGE_KEYS,
 )
+from paxman.capabilities.Language.grammar.data.names import NAME_TOKENS
+from paxman.capabilities.Language.grammar.data.region_names import (
+    REGION_DISPLAY_KEYS,
+)
+from paxman.capabilities.Language.grammar.data.script_names import (
+    SCRIPT_DISPLAY_KEYS,
+)
 from paxman.capabilities.Language.notation import normalize_name
+from paxman.capabilities.Language.rules.data.description_display_map import (
+    DESCRIPTION_DISPLAY_MAP,
+)
 from paxman.capabilities.Language.rules.data.english_language_map import (
     LOCALIZED_NAME_TO_CANONICAL,
     NAME_TO_CANONICAL,
+)
+from paxman.capabilities.Language.rules.data.iana_region_subtags import (
+    IANA_REGION_SUBTAGS,
+)
+from paxman.capabilities.Language.rules.data.iana_script_subtags import (
+    IANA_SCRIPT_SUBTAGS,
 )
 
 pytestmark = [pytest.mark.capability]
@@ -79,6 +95,8 @@ class TestRecognitionKeysAreRuleDataCovered:
             "paxman/capabilities/Language/grammar/data/english_names.py",
             "paxman/capabilities/Language/grammar/data/localized_names.py",
             "paxman/capabilities/Language/grammar/data/grandfathered_tags.py",
+            "paxman/capabilities/Language/grammar/data/script_names.py",
+            "paxman/capabilities/Language/grammar/data/region_names.py",
         ]:
             src = Path(rel).read_text(encoding="utf-8")
             tree = ast.parse(src)
@@ -95,3 +113,39 @@ class TestRecognitionKeysAreRuleDataCovered:
                         assert "paxman.capabilities.Language.rules" not in alias.name, (
                             f"{rel} imports rules: {alias.name}"
                         )
+
+
+class TestDescriptionDisplayDataCovered:
+    """Compositional display-name keys must be backed by the display map."""
+
+    def test_every_display_key_has_mapping_entry(self) -> None:
+        recognized = SCRIPT_DISPLAY_KEYS | REGION_DISPLAY_KEYS
+        rule_data = _normalized_keys(DESCRIPTION_DISPLAY_MAP)
+        uncovered = sorted(recognized - rule_data)
+        assert not uncovered, _uncovered_report(uncovered)
+
+    def test_display_keys_are_normalized(self) -> None:
+        for key in SCRIPT_DISPLAY_KEYS | REGION_DISPLAY_KEYS:
+            assert normalize_name(key) == key, f"display key not normalized: {key!r}"
+
+    def test_every_script_mapping_value_is_shipped_iana_script(self) -> None:
+        script_set = {s.lower() for s in IANA_SCRIPT_SUBTAGS}
+        for key in sorted(SCRIPT_DISPLAY_KEYS):
+            value = DESCRIPTION_DISPLAY_MAP[normalize_name(key)]
+            assert value.lower() in script_set, (
+                f"script display key {key!r} maps to {value!r}, "
+                "not in shipped IANA script subtags"
+            )
+
+    def test_every_region_mapping_value_is_shipped_iana_region(self) -> None:
+        region_set = {s.lower() for s in IANA_REGION_SUBTAGS}
+        for key in sorted(REGION_DISPLAY_KEYS):
+            value = DESCRIPTION_DISPLAY_MAP[normalize_name(key)]
+            assert value.lower() in region_set, (
+                f"region display key {key!r} maps to {value!r}, "
+                "not in shipped IANA region subtags"
+            )
+
+    def test_display_keys_exclude_synthetic_fixtures(self) -> None:
+        leaked = sorted((SCRIPT_DISPLAY_KEYS | REGION_DISPLAY_KEYS) & NAME_TOKENS)
+        assert not leaked, f"display key sets leak names.py fixtures: {leaked}"

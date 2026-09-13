@@ -916,3 +916,90 @@ def test_numeric_region_and_script_private() -> None:
     )
     assert r3.status == Resolution.SUCCESS
     assert r3.canonicalized_value == "qaa"
+
+
+@pytest.mark.integration
+def test_compositional_sentence_ambiguous_by_default() -> None:
+    # Slice B #148 decision 1 (pinned): the engine preserves cross-grammar
+    # matches (no precedence layer) and the deprecated-map `id` reading of
+    # bare `in` still corroborates, so the compositional reading coexists
+    # with it instead of winning outright.
+    _register()
+    r = paxman.canonicalize(
+        "Singapore Chinese in traditional script",
+        LanguageCapability.create_contract(),
+    )
+    assert r.status == Resolution.AMBIGUOUS
+    assert r.canonicalized_value is None
+    assert {c.value for c in r.candidates} == {"zh-Hant-SG", "id"}
+
+
+@pytest.mark.integration
+def test_compositional_sentence_success_with_suppression() -> None:
+    # Same sentence with the sanctioned prose mechanism: `in` is a
+    # suppressible common word, so only the full-phrase reading survives.
+    _register()
+    r = paxman.canonicalize(
+        "Singapore Chinese in traditional script",
+        LanguageCapability.create_contract(suppress_common_words=True),
+    )
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "zh-Hant-SG"
+    assert r.span == (0, 39)
+
+
+@pytest.mark.integration
+def test_compositional_value_reenters_under_default_contract() -> None:
+    # The suppressed compositional result re-canonicalizes to itself.
+    _register()
+    r = paxman.canonicalize(
+        "Singapore Chinese in traditional script",
+        LanguageCapability.create_contract(suppress_common_words=True),
+    )
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "zh-Hant-SG"
+    reset_registry()
+    _register()
+    r2 = paxman.canonicalize("zh-Hant-SG", LanguageCapability.create_contract())
+    assert r2.status == Resolution.SUCCESS
+    assert r2.canonicalized_value == "zh-Hant-SG"
+
+
+@pytest.mark.integration
+def test_bare_display_name_chinese_unchanged() -> None:
+    # Guard: wiring the compositional grammar must not disturb the plain
+    # display-name path.
+    _register()
+    r = paxman.canonicalize("Chinese", LanguageCapability.create_contract())
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "zh"
+    assert r.span == (0, 7)
+
+
+@pytest.mark.integration
+def test_xenon_gas_suppressed_invalid_characterization() -> None:
+    # Characterization of observed base behavior (see blocker report): the
+    # bare-code matcher still claims `xenon` (5-letter branch) and `gas`
+    # (neither is in COMMON_WORDS, so suppression keeps both) while no rule
+    # validates either — hence INVALID with no candidates, not MISSING.
+    # Task 4 lists MISSING for this vector; `Xenon`-class bare-code narrowing
+    # itself is deferred to #147, so this pins current truth until ruled.
+    _register()
+    r = paxman.canonicalize(
+        "Xenon is a gas",
+        LanguageCapability.create_contract(suppress_common_words=True),
+    )
+    assert r.status == Resolution.INVALID
+    assert r.canonicalized_value is None
+    assert r.candidates == ()
+
+
+@pytest.mark.integration
+def test_compositional_trailing_noun_no_false_success() -> None:
+    """Bare-slot compounds never resolve (thermo HIGH-1)."""
+    _register()
+    contract = LanguageCapability.create_contract(suppress_common_words=True)
+    for text in ("Chinese in traditional dress", "Chinese in Singapore restaurants"):
+        result = paxman.canonicalize(text, contract)
+        assert result.status is Resolution.INVALID
+        assert result.canonicalized_value is None

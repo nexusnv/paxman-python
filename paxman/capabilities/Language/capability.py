@@ -11,6 +11,9 @@ from paxman.capabilities.Language.grammar.bcp47_tag_recognition import (
 from paxman.capabilities.Language.grammar.language_code_recognition import (
     LanguageCodeGrammar,
 )
+from paxman.capabilities.Language.grammar.language_description_recognition import (
+    LanguageDescriptionGrammar,
+)
 from paxman.capabilities.Language.grammar.language_name_recognition import (
     LanguageNameGrammar,
 )
@@ -31,6 +34,7 @@ from paxman.capabilities.Language.rules.data.iso_639_2 import (
 )
 from paxman.capabilities.Language.rules.iana_language_subtag_registry_ed2026 import (
     SectionIANARegistry,
+    SectionIANARegistryDescription,
     SectionIANARegistryPrivate,
 )
 from paxman.capabilities.Language.rules.iso_639_1_ed2002 import (
@@ -97,6 +101,7 @@ class LanguageCapability(Capability[LanguageNotation]):
             BCP47TagGrammar(),
             LanguageCodeGrammar(),
             LanguageNameGrammar(),
+            LanguageDescriptionGrammar(),
         ]
 
     def get_rules(self) -> list[Rule[LanguageNotation]]:
@@ -111,6 +116,7 @@ class LanguageCapability(Capability[LanguageNotation]):
             SectionBCP47Syntax(),
             SectionIANARegistry(),
             SectionIANARegistryPrivate(),
+            SectionIANARegistryDescription(),
             SectionLocalizedNames(),
         ]
 

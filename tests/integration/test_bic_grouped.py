@@ -29,3 +29,10 @@ def test_canonicalize_grouped_display() -> None:
     assert canonicalize("BNPA FR PP XXX", c).canonicalized_value == "BNPAFRPPXXX"
     assert canonicalize("DEUT  DE FF", c).status == Resolution.MISSING
     assert canonicalize("DEUT DE FF 5", c).status == Resolution.MISSING
+
+
+def test_english_phrase_stays_missing() -> None:
+    """(#106) 'please call me at noon' stays MISSING."""
+    register_capability(BICCapability())
+    c = BICCapability.create_contract()
+    assert canonicalize("please call me at noon", c).status == Resolution.MISSING

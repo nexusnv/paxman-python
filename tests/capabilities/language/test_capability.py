@@ -61,10 +61,10 @@ class TestLanguageCapabilityMetadata:
 
 
 class TestLanguageCapabilityGrammars:
-    """Grammars — exactly 3 with expected names/semantics."""
+    """Grammars — exactly 4 with expected names/semantics."""
 
     def test_get_grammars_len(self) -> None:
-        assert len(LanguageCapability().get_grammars()) == 3
+        assert len(LanguageCapability().get_grammars()) == 4
 
     def test_grammar_names(self) -> None:
         names = {g.name for g in LanguageCapability().get_grammars()}
@@ -72,17 +72,24 @@ class TestLanguageCapabilityGrammars:
             "bcp47_tag_recognition",
             "language_code_recognition",
             "language_name_recognition",
+            "language_description_recognition",
         }
 
     def test_grammar_semantics(self) -> None:
         sem = {g.semantics for g in LanguageCapability().get_grammars()}
-        assert sem == {"bcp47_tag", "language_code", "language_name"}
+        assert sem == {
+            "bcp47_tag",
+            "language_code",
+            "language_name",
+            "language_description",
+        }
 
     def test_grammar_semantics_per_name(self) -> None:
         gram = {g.name: g.semantics for g in LanguageCapability().get_grammars()}
         assert gram["bcp47_tag_recognition"] == "bcp47_tag"
         assert gram["language_code_recognition"] == "language_code"
         assert gram["language_name_recognition"] == "language_name"
+        assert gram["language_description_recognition"] == "language_description"
 
     def test_single_value_true(self) -> None:
         for g in LanguageCapability().get_grammars():
@@ -90,12 +97,12 @@ class TestLanguageCapabilityGrammars:
 
 
 class TestLanguageCapabilityRules:
-    """Rules - 10 with metadata."""  # noqa: E501
+    """Rules - 11 with metadata."""  # noqa: E501
 
     def test_get_rules_len(self) -> None:
-        # 10 rule classes: 2 in iso_639_1, 1 iso_639_2,
-        # 2 iso_639_3 (comprehensive + private), 1 iso_639_5, bcp47, 2 iana, cldr.
-        assert len(LanguageCapability().get_rules()) == 10
+        # 11 rule classes: 2 in iso_639_1, 1 iso_639_2,
+        # 2 iso_639_3 (comprehensive + private), 1 iso_639_5, bcp47, 3 iana, cldr.
+        assert len(LanguageCapability().get_rules()) == 11
 
     def test_rule_names(self) -> None:
         names = {r.name for r in LanguageCapability().get_rules()}
@@ -109,6 +116,7 @@ class TestLanguageCapabilityRules:
             "Section 2.1-syntax",
             "Section-iana-registry",
             "Section-iana-registry-private",
+            "Section-iana-registry-description",
             "Section-localized-names",
         }
 
@@ -138,6 +146,15 @@ class TestLanguageCapabilityRules:
             == "IANA Language Subtag Registry"
         )
         assert (
+            prov["Section-iana-registry-description"].specification_name
+            == "IANA Language Subtag Registry"
+        )
+        assert prov["Section-iana-registry-description"].kind == "registry"
+        assert (
+            prov["Section-iana-registry-description"].version
+            == "Rolling File-Date 2026-08-08"
+        )
+        assert (
             prov["Section-localized-names"].specification_name
             == "CLDR Language Display Names"
         )
@@ -155,6 +172,9 @@ class TestLanguageCapabilityRules:
         assert targets["Section 2.1-syntax"] == frozenset({"bcp47_tag"})
         assert targets["Section-iana-registry"] == frozenset({"bcp47_tag"})
         assert targets["Section-iana-registry-private"] == frozenset({"bcp47_tag"})
+        assert targets["Section-iana-registry-description"] == frozenset(
+            {"language_description"}
+        )
         assert targets["Section-localized-names"] == frozenset({"language_name"})
 
     def test_rule_requires_features(self) -> None:
@@ -168,6 +188,7 @@ class TestLanguageCapabilityRules:
         assert req["Section 2.1-syntax"] == frozenset()
         assert req["Section-iana-registry"] == frozenset()
         assert req["Section-iana-registry-private"] == frozenset({"include_private"})
+        assert req["Section-iana-registry-description"] == frozenset()
         assert req["Section-localized-names"] == frozenset({"include_localized"})
 
     def test_rule_strategies(self) -> None:
@@ -181,6 +202,7 @@ class TestLanguageCapabilityRules:
             "Section 4-collective-code",
             "Section-iana-registry",
             "Section-iana-registry-private",
+            "Section-iana-registry-description",
             "Section-localized-names",
             "Section-english-name-mapping",
         ):
