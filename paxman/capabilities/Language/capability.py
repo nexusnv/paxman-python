@@ -24,6 +24,9 @@ from paxman.capabilities.Language.rules.bcp47_rfc5646_ed2009 import (
 from paxman.capabilities.Language.rules.cldr_language_display_name_ed2025 import (
     SectionLocalizedNames,
 )
+from paxman.capabilities.Language.rules.data.english_display_names import (
+    ENGLISH_DISPLAY_NAMES,
+)
 from paxman.capabilities.Language.rules.data.english_language_map import (
     NAME_TO_CANONICAL,
 )
@@ -266,6 +269,17 @@ class LanguageCapability(Capability[LanguageNotation]):
             if raw is None:
                 raw = _CANONICAL_TO_ENGLISH.get(primary)
             if raw is not None:
+                # Companion display form first (preserves diacritics the
+                # normalized snapshot strips, e.g. nb → Norwegian Bokmål);
+                # title() fallback stays for unlisted codes.
+                display = ENGLISH_DISPLAY_NAMES.get(canonical)
+                if display is None:
+                    term_key = ISO6392_BIB_TO_TERM.get(primary, primary)
+                    display = ENGLISH_DISPLAY_NAMES.get(
+                        term_key
+                    ) or ENGLISH_DISPLAY_NAMES.get(primary)
+                if display is not None:
+                    return display
                 # raw is normalized lower with spaces; title-case each word
                 return raw.title()
             return value

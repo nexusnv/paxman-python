@@ -81,7 +81,7 @@ Paxman ships with eighteen built-in capabilities (18 in `paxman/capabilities/__i
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
-| **Language** | Language identifiers | 3 (bcp47_tag, language_code, language_name) | 10 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
+| **Language** | Language identifiers | 4 (bcp47_tag, language_code, language_name, language_description) | 11 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
 | **MacAddress** | MAC addresses | 1 (mac_address) | 1 | IEEE Std 802-2024 |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |

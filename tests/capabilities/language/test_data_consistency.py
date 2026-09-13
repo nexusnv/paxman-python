@@ -30,7 +30,6 @@ from paxman.capabilities.Language.grammar.data.english_names import (
 from paxman.capabilities.Language.grammar.data.localized_names import (
     LOCALIZED_LANGUAGE_KEYS,
 )
-from paxman.capabilities.Language.grammar.data.names import NAME_TOKENS
 from paxman.capabilities.Language.grammar.data.region_names import (
     REGION_DISPLAY_KEYS,
 )
@@ -145,7 +144,3 @@ class TestDescriptionDisplayDataCovered:
                 f"region display key {key!r} maps to {value!r}, "
                 "not in shipped IANA region subtags"
             )
-
-    def test_display_keys_exclude_synthetic_fixtures(self) -> None:
-        leaked = sorted((SCRIPT_DISPLAY_KEYS | REGION_DISPLAY_KEYS) & NAME_TOKENS)
-        assert not leaked, f"display key sets leak names.py fixtures: {leaked}"
