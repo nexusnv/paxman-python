@@ -62,7 +62,7 @@
 
 **Goal:** Every public function/method CodeRabbit flagged carries a docstring, pinned against regression; SC pin and BIC docs confirmed green without edits.
 
-- [ ] Failing test first: `test_docstring_presence.py` asserting non-empty `__doc__` for `UnicodePropertyStage.__post_init__`, `UnicodePropertyStage.run`, `ScannerMatcher.match`, and the five regen-tool functions (`_load_snapshot`, `_parse_ranges`, `_format_ranges`, `_render`, `main`). Run: `uv run pytest tests/unit/test_docstring_presence.py -q` → FAIL (7 missing).
+- [ ] Failing test first: `test_docstring_presence.py` asserting non-empty `__doc__` for `UnicodePropertyStage.__post_init__`, `UnicodePropertyStage.run`, `ScannerMatcher.match`, and the five regen-tool functions (`_load_snapshot`, `_parse_ranges`, `_format_ranges`, `_render`, `main`). Run: `uv run pytest tests/unit/test_docstring_presence.py -q` → FAIL (8 missing).
 - [ ] Implement: add prose docstrings only (contract/args/returns/invariants; scanner `match` documents the right-gap deferral + engine re-check). Verify: targeted → PASS; `uv run python tools/regenerate_unicode_property_data.py --check` green; `uv run pytest tests/unit/test_unicode_property_stage.py tests/capabilities/bic -q` → PASS (SC pin + BIC untouched); ruff/pyright clean on touched files.
 
 ### Task 2: #154 flake hunt — loop repro, fix iff hygiene cause
