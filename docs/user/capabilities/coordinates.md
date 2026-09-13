@@ -15,7 +15,7 @@ Canonicalizes **one WGS 84 coordinate mention** per call — a decimal pair, hem
 | Decimal pairs with `,`, `;`, `/`, or marked-whitespace separators (`48.8566, 2.3522`, `41.5;-81.0`, `+40.446 -79.982`, parenthesized `(41.5, -81.0)`) | Bare prose number runs (`pages 12 40`) and dotted quads (`192.168.1.1`) → `MISSING` |
 | Hemisphere letters, front or back, any case (`N 48.8566, E 2.3522`, `41.5 N 81.0 W`) | Contradictory sign plus hemisphere (`-41.5 N, -81.0 W`) → `INVALID` |
 | DMS (`40° 26′ 46″ N 79° 58′ 56″ W`, ASCII `23 26' 22" N 23 27' 30" E`) and DDM (`40° 26.767′ N 79° 58.933′ W`) | Unit overflow (`40° 70′ 0″ N …`, minutes ≥ 60) → `INVALID` |
-| `geo:` URIs with optional altitude (`geo:48.8577,2.295,350`) | Foreign CRS (`geo:48.8566,2.3522;crs=EPSG:4326`) → `INVALID` — no silent datum transform |
+| `geo:` URIs with optional altitude and explicit WGS 84 CRS (`geo:48.8577,2.295,350`, `geo:48.8566,2.3522;crs=wgs84`, `crs=WGS_84` also accepted) | Foreign CRS (`geo:48.8566,2.3522;crs=ed50`) → `INVALID` — no silent datum transform |
 | ISO 6709 strings, degree or DM/DMS widths, with optional altitude (`+48.8577+002.2950/`, `+48.8577+002.2950+350/`) | Missing Annex H solidus (`+48.8577+002.2950`) → `INVALID` |
 | GeoJSON lon-first pairs, inverted losslessly (`[2.295, 48.8577]`, `[2.295, 48.8577, 350]`) | Out-of-range envelopes (`91.0, 0.0`, `0.0, 181.0`) → `INVALID` |
 | Up to 7 fraction digits, quantized to the 6 dp canonical quantum | 8+-digit fractions (`48.85660005, 2.3522`) → `MISSING` |
@@ -83,7 +83,8 @@ contract = Coordinates.create_contract(
 | `91.0, 0.0` | any | `INVALID` | latitude outside [-90, 90] |
 | `-41.5 N, -81.0 W` | any | `INVALID` | sign/hemisphere conflict |
 | `40° 70′ 0″ N 79° 0′ 0″ W` | any | `INVALID` | minutes ≥ 60 |
-| `geo:48.8566,2.3522;crs=EPSG:4326` | any | `INVALID` | foreign CRS, never re-datumed |
+| `geo:48.8566,2.3522;crs=wgs84` | defaults | `SUCCESS` | `"48.8566, 2.3522"` (explicit WGS 84 CRS) |
+| `geo:48.8566,2.3522;crs=ed50` | any | `INVALID` | foreign CRS, never re-datumed |
 | `+48.8577+002.2950` | any | `INVALID` | Annex H solidus missing |
 | `48.8566, 2.3522` | `year=2010` | `INVALID` | Section 6 rule is 2022, dropped |
 | `geo:48.8566,2.3522` | `year=2010` | `SUCCESS` | RFC 5870 rule is 2010, kept |
