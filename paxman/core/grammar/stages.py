@@ -206,6 +206,13 @@ class UnicodePropertyStage(Generic[NotationT]):
     _compiled: re.Pattern[str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """Compile ``ranges`` into a single character-class regex.
+
+        Builds one ``[...]`` class from the ``(start, end)`` pairs
+        (singletons escaped bare, pairs as ``a-b`` ranges) and stores it on
+        ``_compiled`` via ``object.__setattr__`` (frozen dataclass).
+        Invariant: the compiled pattern matches exactly the given ranges.
+        """
         parts: list[str] = []
         for start, end in self.ranges:
             if start == end:
@@ -220,6 +227,17 @@ class UnicodePropertyStage(Generic[NotationT]):
         return len(ch) == 1 and bool(self._compiled.fullmatch(ch))
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Scan ``state.text`` for property chars, appending one match per hit.
+
+        Args:
+            state: Input pipeline state; ``text`` is never mutated.
+
+        Returns:
+            A new ``PipelineState`` with ``text`` unchanged, prior matches
+            preserved, one ``RecognitionMatch`` appended per ``finditer`` hit
+            (via ``notation_fn``), and ``scratch`` carried over. Returns
+            ``state`` unchanged when ``notation_fn`` is ``None``.
+        """
         if self.notation_fn is None:
             return state
         new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)
