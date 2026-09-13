@@ -996,10 +996,16 @@ def test_xenon_gas_suppressed_invalid_characterization() -> None:
 
 @pytest.mark.integration
 def test_compositional_trailing_noun_no_false_success() -> None:
-    """Bare-slot compounds never resolve (thermo HIGH-1)."""
+    """Bare-slot compounds never resolve (thermo HIGH-1, Slice B).
+
+    Post-B4a the trailing nouns are unclaimed entirely (no 5-8 branch),
+    so suppressed compounds are MISSING with zero recognitions — clean
+    abstention, not even INVALID.
+    """
     _register()
     contract = LanguageCapability.create_contract(suppress_common_words=True)
     for text in ("Chinese in traditional dress", "Chinese in Singapore restaurants"):
         result = paxman.canonicalize(text, contract)
-        assert result.status is Resolution.INVALID
+        assert result.status is Resolution.MISSING
         assert result.canonicalized_value is None
+        assert result.candidates == ()
