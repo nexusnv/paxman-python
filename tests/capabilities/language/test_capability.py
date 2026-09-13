@@ -447,6 +447,12 @@ class TestLanguageFormatValue:
             == "German"
         )
 
+    def test_name_orthography(self) -> None:
+        """Display fidelity: title() fallback must not strip diacritics (B6)."""
+        cap = LanguageCapability()
+        assert cap.format_value("de", "name", _notation("de")) == "German"
+        assert cap.format_value("nb", "name", _notation("nb")) == "Norwegian Bokmål"
+
 
 class TestLanguageExtendedTagCarry:
     """Extended-tag formats for alpha2 carry + alpha3/name waivers (ADR-0011 Phase 3).

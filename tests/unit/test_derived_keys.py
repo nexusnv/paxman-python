@@ -19,7 +19,29 @@ def test_bic_country_codes_derived() -> None:
 
 
 def test_language_name_keys_derived() -> None:
-    from paxman.capabilities.Language.grammar.data.names import NAME_TOKENS
+    from paxman.capabilities.Language.grammar.data.english_names import (
+        ENGLISH_LANGUAGE_KEYS,
+    )
+    from paxman.capabilities.Language.grammar.data.localized_names import (
+        LOCALIZED_LANGUAGE_KEYS,
+    )
+    from paxman.capabilities.Language.rules.data.english_language_map import (
+        LOCALIZED_NAME_TO_CANONICAL,
+        NAME_TO_CANONICAL,
+    )
 
-    assert len(NAME_TOKENS) > 77
-    assert "united states" not in NAME_TOKENS
+    assert frozenset(NAME_TO_CANONICAL) == ENGLISH_LANGUAGE_KEYS
+    assert frozenset(LOCALIZED_NAME_TO_CANONICAL) == LOCALIZED_LANGUAGE_KEYS
+    assert "united states" not in (ENGLISH_LANGUAGE_KEYS | LOCALIZED_LANGUAGE_KEYS)
+
+
+def test_language_grammar_data_has_no_synthetic_keys() -> None:
+    from pathlib import Path
+
+    data_dir = Path("paxman/capabilities/Language/grammar/data")
+    leaked = sorted(
+        path.name
+        for path in data_dir.glob("*.py")
+        if "synthetic" in path.read_text(encoding="utf-8").lower()
+    )
+    assert not leaked, f"synthetic keys in shipped grammar data: {leaked}"
