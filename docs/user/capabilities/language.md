@@ -12,12 +12,13 @@ Canonicalizes **one language mention** per call — a bare code, a BCP 47 tag, o
 
 | Recognizes (current release — growing) | Does not recognize |
 |----------------------------------------|--------------------|
-| Bare ISO 639 codes: alpha-2 (`en`, `de`), alpha-3 Term/Bib (`eng`/`ger`), comprehensive (`cmn`), collective (`aav` when `include_collective=True`), private `qaa` when `include_private=True` | Bare 4-letter codes (`abcd`) — 4 is script, not language; 1-letter (`x`) |
+| Bare ISO 639 codes: alpha-2 (`en`, `de`), alpha-3 Term/Bib (`eng`/`ger`), comprehensive (`cmn`), collective (`aav` when `include_collective=True`), private `qaa` when `include_private=True` | Bare 4-letter codes (`abcd`) — 4 is script, not language; 1-letter (`x`); bare 5–8 runs (`hello`, `Xenon`) → `MISSING` (no hyphenless 5–8 primary in the shipped set) |
 | BCP 47 tags (`en-US`, `zh-Hans-CN`, `es-419`, `sl-nedis`, `en-a-foo`, `x-private`, `art-lojban`→`jbo`, `en-GB-oed`→`en-GB-oxendict`) with `_`→`-` folding (`fr_FR`→`fr-FR`) | Inputs with no valid tag (`-en`, `--`, single `x`) → `MISSING`; overlong/double-hyphen inputs still yield `SUCCESS` via valid prefix (`en-US-123456789`→`en-US`) |
 | English display names — 60-entry curatorial subset (`German`→`de`, `Serbo Croatian`→`sh`, `Norwegian Bokmal`→`nb`, `Cherokee`→`chr`) | Names outside the 60 (`Klingonish`) → `MISSING` (grammar emits no match, not `INVALID`) |
 | CLDR localized names — 24-entry subset (`allemand`→`de`, `deutsch`→`de`) — only when `include_localized=True` | Localized names when flag off — recognized but `INVALID` (no authority claims them) |
 | Grandfathered / deprecated Preferred-Value (`i-cherokee`→`chr`, `iw`→`he`, `scc`→`sr` historical) | Private subtags (`qaa`, `Qaaa`, `ZZ`) without `include_private` → `INVALID` |
-| Compositional descriptions — full-phrase spans only (`Singapore Chinese in traditional script`→`zh-Hant-SG`, `Chinese in simplified script`→`zh-Hans`, `Chinese in Singapore`→`zh-SG`) | Parenthesized forms (`Chinese (Hant, SG)`) — no compositional reading yet |
+| Compositional descriptions — full-phrase spans only (`Singapore Chinese in traditional script`→`zh-Hant-SG`, `Chinese in simplified script`→`zh-Hans`, `Chinese in Singapore`→`zh-SG`) | Trailing content word (`Chinese in traditional dress` → `SUCCESS id` via bare `in` under default, `MISSING` when suppressed) |
+| Parenthesized descriptions — full-phrase spans only (`Chinese (Traditional, Singapore)`→`zh-Hant-SG`, `Chinese (Simplified)`→`zh-Hans`, `Chinese (Singapore)`→`zh-SG`) — `SUCCESS` under the default contract and with `suppress_common_words=True` (no `in`, so no bare-code competitor) | Unbalanced (`Chinese (Traditional`) or trailing noun inside (`Chinese (Traditional dress)`) → `MISSING` |
 
 > **Compositional contract note:** a compositional description is `AMBIGUOUS` under the default contract — the full-phrase reading (e.g. `zh-Hant-SG`) coexists with the bare-code `in`→`id` reading — and `SUCCESS` with `suppress_common_words=True` (the `in` claim is a suppressible common word).
 

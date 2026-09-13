@@ -102,6 +102,8 @@ def test_sc_snapshot_correctness():
     stage = UnicodePropertyStage(property_name="Sc", ranges=SC_RANGES)
     assert stage.matches(chr(0x058F)), "U+058F Armenian Dram Sign should be Sc"
     assert not stage.matches(chr(0x0594)), "U+0594 Hebrew Accent should not be Sc"
+    assert stage.matches(chr(0xFDFC)), "U+FDFC Rial Sign should be Sc"
+    assert not stage.matches(chr(0xFE0C)), "U+FE0C VS-13 should not be Sc"
 
 
 def test_han_completeness():

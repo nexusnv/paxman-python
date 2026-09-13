@@ -191,12 +191,9 @@ class TestLanguageCodeGrammar:
         assert results[0].notation.language == "eng"
         assert results[0].notation.compact == "eng"
 
-    def test_valid_5_8_letters(self) -> None:
-        for code in ("cherokee", "bihari"):
-            results = self.grammar.recognize(code)
-            assert len(results) == 1, code
-            assert results[0].notation.language == code
-            assert results[0].notation.compact == code
+    def test_bare_5_8_letters_unclaimed(self) -> None:
+        for code in ("Xenon", "hello", "script"):
+            assert self.grammar.recognize(code) == [], code
 
     def test_lowercase_folding(self) -> None:
         results = self.grammar.recognize("EN")
@@ -214,15 +211,15 @@ class TestLanguageCodeGrammar:
         assert self.grammar.recognize("abcd") == []
 
     def test_boundary_guard_word_only(self) -> None:
-        # glued inside longer token should not carve
-        results = self.grammar.recognize("Xenon")
-        # "Xenon" is 5 letters -> it IS 5-8, so grammar will match "Xenon" itself
-        # but "en" inside "Xenon" should not be separate
-        # we check that we don't get "en" as separate match inside Xenon
-        for r in results:
-            assert r.start == 0 and r.end == 5  # whole word only
-        # prefix glue
-        assert self.grammar.recognize("Xen") != []  # 3 letters isolated -> should match
+        # Bare 5-8 runs are unclaimed — "Xenon" must not match at all,
+        # so embedded "en" stays unclaimed inside the longer run.
+        assert self.grammar.recognize("Xenon") == []
+        # 2-3 host carve guard: "Xen" matches whole-word only,
+        # "en" inside "Xen" is not a separate match.
+        results = self.grammar.recognize("Xen")
+        assert len(results) == 1
+        assert results[0].start == 0 and results[0].end == 3
+        assert results[0].raw_text == "Xen"
         # but glued word "enUS" is 4 letters -> no match
         assert self.grammar.recognize("enUS") == []
 
@@ -513,3 +510,105 @@ class TestDescriptionOuterGlue:
     def test_spaced_digits_still_recognized(self) -> None:
         assert len(self.grammar.recognize("2 Chinese in Singapore")) == 1
         assert len(self.grammar.recognize("Chinese in Singapore 2")) == 1
+
+
+class TestLanguageDescriptionParenForms:
+    """Parenthesized descriptions: ``<Language> (<Script>[, <Region>])``."""
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+        self.rule = SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    def test_paren_script_region_form(self) -> None:
+        txt = "Chinese (Traditional, Singapore)"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == 32
+        assert m.raw_text == txt
+        assert m.notation.language == "chinese"
+        assert m.notation.script == "traditional"
+        assert m.notation.region == "singapore"
+        assert m.notation.compact == "chinese-traditional-singapore"
+        assert m.notation.raw_value == txt.lower()
+
+    def test_paren_script_only_form(self) -> None:
+        txt = "Chinese (Simplified)"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == len(txt)
+        assert m.raw_text == txt
+        assert m.notation.language == "chinese"
+        assert m.notation.script == "simplified"
+        assert m.notation.region == ""
+        assert m.notation.compact == "chinese-simplified"
+
+    def test_paren_region_only_form(self) -> None:
+        txt = "Chinese (Singapore)"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.start == 0
+        assert m.end == len(txt)
+        assert m.notation.language == "chinese"
+        assert m.notation.script == ""
+        assert m.notation.region == "singapore"
+        assert m.notation.compact == "chinese-singapore"
+
+    def test_paren_full_form_validates_to_canonical_tag(self) -> None:
+        matches = self.grammar.recognize("Chinese (Traditional, Singapore)")
+        assert len(matches) == 1
+        assert self.rule.matches(matches[0].notation, self.contract)
+        assert self.rule.normalize(matches[0].notation, self.contract) == "zh-Hant-SG"
+
+    def test_paren_unbalanced_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese (Traditional") == []
+
+    def test_paren_empty_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese ()") == []
+
+    def test_paren_trailing_noun_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese (Traditional dress)") == []
+
+    def test_paren_region_trailing_noun_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese (Singapore restaurants)") == []
+
+    def test_paren_region_prefix_excluded(self) -> None:
+        txt = "Singapore Chinese (Traditional)"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert m.raw_text == "Chinese (Traditional)"
+        assert m.start == txt.index("Chinese (Traditional)")
+        assert m.notation.language == "chinese"
+        assert m.notation.script == "traditional"
+        assert m.notation.region == ""
+
+    def test_paren_outer_glue_rejected(self) -> None:
+        assert self.grammar.recognize("2Chinese (Singapore)") == []
+        assert self.grammar.recognize("Chinese (Singapore)2") == []
+
+    def test_paren_span_invariant_with_surrounding(self) -> None:
+        txt = "say Chinese (Singapore) ok"
+        results = self.grammar.recognize(txt)
+        assert len(results) == 1
+        m = results[0]
+        assert txt[m.start : m.end] == m.raw_text
+        assert m.raw_text == "Chinese (Singapore)"
+
+    def test_paren_case_insensitive(self) -> None:
+        results = self.grammar.recognize("CHINESE (TRADITIONAL, SINGAPORE)")
+        assert len(results) == 1
+        assert results[0].notation.language == "chinese"
+        assert results[0].notation.script == "traditional"
+        assert results[0].notation.region == "singapore"
+
+    def test_paren_trailing_script_word(self) -> None:
+        results = self.grammar.recognize("Chinese (Traditional script)")
+        assert len(results) == 1
+        assert results[0].notation.script == "traditional"
+        assert results[0].notation.region == ""
