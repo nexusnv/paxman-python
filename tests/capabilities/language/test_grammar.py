@@ -494,3 +494,22 @@ class TestDescriptionTrailingNounGuard:
         results = self.grammar.recognize("Chinese in traditional script daily")
         assert len(results) == 1
         assert results[0].raw_text == "Chinese in traditional script"
+
+
+class TestDescriptionOuterGlue:
+    """Phrase edges must be word-bounded (coderabbit PR #153)."""
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+
+    def test_prefix_glue_rejected(self) -> None:
+        assert self.grammar.recognize("2Chinese in Singapore") == []
+        assert self.grammar.recognize("_Chinese in Singapore") == []
+
+    def test_suffix_glue_rejected(self) -> None:
+        assert self.grammar.recognize("Chinese in Singapore2") == []
+        assert self.grammar.recognize("Chinese in Singapore_") == []
+
+    def test_spaced_digits_still_recognized(self) -> None:
+        assert len(self.grammar.recognize("2 Chinese in Singapore")) == 1
+        assert len(self.grammar.recognize("Chinese in Singapore 2")) == 1

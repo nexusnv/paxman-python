@@ -21,7 +21,9 @@ yields the inner ``Chinese in Singapore`` span).
 
 Phrase tokens must be whitespace-separated words: punctuation or alnum glue
 between slots breaks the phrase (``Chinese-in-Singapore`` and ``Chinese2 in
-Singapore`` are MISSING, not misread). Needs no suppression machinery of its
+Singapore`` are MISSING, not misread), as does alnum/underscore glue at
+the outer edges (``2Chinese in Singapore``, ``Chinese in Singapore_``).
+Needs no suppression machinery of its
 own: full-phrase spans never collide with the A0 whole-input exemption.
 
 Separation: grammar tables stay key-only (``ENGLISH_LANGUAGE_KEYS``,
@@ -154,6 +156,13 @@ def _parse_at(
         return None
     start = spans[first_idx][0]
     end = spans[last_idx][1]
+    # Outer glue breaks the phrase: "2Chinese" / "Singapore2" / "_x" are
+    # not word-bounded mentions (sibling grammars enforce this via
+    # BoundarySpec/word_only guards).
+    if start > 0 and (text[start - 1].isalnum() or text[start - 1] == "_"):
+        return None
+    if end < len(text) and (text[end].isalnum() or text[end] == "_"):
+        return None
     language = lang_hit[0]
     pieces = [language]
     if script:
