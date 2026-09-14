@@ -88,3 +88,28 @@ def test_seq_opt_child_backtracks() -> None:
     rx = RegexMatcher(pattern=r"b", boundary=None, view=None, anchors=AnchorSet())
     comb = CombinatorMatcher(expr=("seq", [("opt", leaf), rx]), view_name=None)
     assert comb.match(_view("ab")) == [(0, 2)]
+
+
+def test_alt_is_ordered_choice() -> None:
+    """alt commits to the first branch with ends (ordered choice)."""
+
+    class _End2Leaf:
+        def match(self, view: View) -> list[tuple[int, int]]:
+            return [(0, 2)]
+
+    class _End1Leaf:
+        def match(self, view: View) -> list[tuple[int, int]]:
+            return [(0, 1)]
+
+    rx_b = RegexMatcher(pattern=r"b", boundary=None, view=None, anchors=AnchorSet())
+    # Branch 1 yields (0,2); 'b' is not at 2, so seq fails even though
+    # branch 2 offers (0,1) + 'b'. Concatenation would (wrongly) succeed.
+    comb = CombinatorMatcher(
+        expr=("seq", [("alt", [_End2Leaf(), _End1Leaf()]), rx_b]), view_name=None
+    )
+    assert comb.match(_view("ab")) == []
+    # Reversed order: branch 1 (0,1) + 'b' succeeds → (0,2).
+    comb2 = CombinatorMatcher(
+        expr=("seq", [("alt", [_End1Leaf(), _End2Leaf()]), rx_b]), view_name=None
+    )
+    assert comb2.match(_view("ab")) == [(0, 2)]

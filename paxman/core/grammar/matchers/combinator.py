@@ -72,7 +72,8 @@ def _eval_ends(
     Leaf alternatives branch (every end at ``pos`` is explored); ``seq``
     enumerates every child-end combination level by level and returns them
     longest-first, so a shorter leaf end can satisfy a later child when the
-    longest cannot (#73 L3). ``alt``/``opt``/``label`` propagate all ends
+    longest cannot (#73 L3). ``alt`` is ordered choice (first branch with any
+    end wins, all its ends retained); ``opt``/``label`` propagate all ends
     inward (``opt`` also offers skip-``pos``); ``rep`` keeps first-hit
     iteration and top-level ``match()`` takes the longest end, so legacy
     single-end preference is preserved. ``budget[0]`` bounds total
@@ -109,15 +110,20 @@ def _eval_ends(
                 # (top-level match, rep steps) keep legacy preference.
                 return sorted(pending, reverse=True)
             if kind == "alt":
+                # Ordered choice (PEG): the first branch yielding any end
+                # wins; later branches are not explored. All unique ends of
+                # the winning branch are retained for seq backtracking.
                 branches: Any = t[1] if len(t) > 1 else cast(list[Any], [])
                 if not isinstance(branches, (list, tuple)):
                     return []
-                out: list[int] = []
                 for branch in cast(Any, branches):
+                    out: list[int] = []
                     for end in _eval_ends(branch, view, pos, leaf_maps, budget):
                         if end not in out:
                             out.append(end)
-                return out
+                    if out:
+                        return out
+                return []
             if kind == "opt":
                 child = t[1] if len(t) > 1 else None
                 if child is None:
