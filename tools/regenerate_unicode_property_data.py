@@ -26,6 +26,7 @@ _GENERATED_HEADER = (
 
 
 def _load_snapshot() -> dict[str, object]:
+    """Load and validate the vendored Unicode snapshot JSON as a dict."""
     text = SNAPSHOT.read_text(encoding="utf-8")
     data = json.loads(text)
     if not isinstance(data, dict):
@@ -34,6 +35,16 @@ def _load_snapshot() -> dict[str, object]:
 
 
 def _parse_ranges(raw: object, key: str) -> list[tuple[int, int]]:
+    """Validate ``raw`` as a sorted non-overlapping ``[start, end]`` int list.
+
+    Args:
+        raw: Raw JSON value for ``key``; must be a list of int pairs.
+        key: Snapshot key, used in error messages.
+
+    Returns:
+        Sorted list of ``(start, end)`` tuples. Exits non-zero on any
+        shape, bound (0..0x10FFFF), or overlap violation.
+    """
     if not isinstance(raw, list):
         raise SystemExit(f"unicode_snapshot.json: {key} must be a list")
     ranges: list[tuple[int, int]] = []
@@ -67,6 +78,7 @@ def _parse_ranges(raw: object, key: str) -> list[tuple[int, int]]:
 
 
 def _format_ranges(ranges: list[tuple[int, int]]) -> str:
+    """Render ``ranges`` as an indented tuple literal of hex pairs."""
     if not ranges:
         return "()"
     lines = [f"    (0x{start:04X}, 0x{end:04X})," for start, end in ranges]
@@ -74,6 +86,7 @@ def _format_ranges(ranges: list[tuple[int, int]]) -> str:
 
 
 def _render() -> str:
+    """Render the full ``unicode_ranges.py`` module text from the snapshot."""
     data = _load_snapshot()
     unicode_version = data.get("unicode_version")
     source_url = data.get("source_url")
@@ -107,6 +120,7 @@ def _render() -> str:
 
 
 def main() -> None:
+    """Regenerate ``unicode_ranges.py``, or ``--check`` for drift (no write)."""
     parser = argparse.ArgumentParser(description="Regenerate Unicode property ranges.")
     parser.add_argument(
         "--check",

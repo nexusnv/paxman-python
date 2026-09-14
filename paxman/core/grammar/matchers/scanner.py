@@ -66,6 +66,21 @@ class ScannerMatcher:
         object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Scan ``view`` left-to-right, returning non-overlapping hit spans.
+
+        Tries ``scan`` at each position; on a hit advances to ``end``, on a
+        miss advances by one. Hits past ``max_window`` or failing the
+        view-level boundary check are treated as misses. When a stripped char
+        sits adjacent to the hit (left/right gap), the view-level boundary
+        check is deferred — the original-text neighbor is a stripped char, so
+        the engine's original-text re-check governs instead.
+
+        Args:
+            view: View carrying the subject plus source-offset maps.
+
+        Returns:
+            List of ``(pos, end)`` spans in scan order, non-overlapping.
+        """
         out: list[tuple[int, int]] = []
         s = view.subject
         pos = 0
