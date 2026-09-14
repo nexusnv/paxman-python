@@ -56,9 +56,10 @@ def _resolve_symbol_code(
     is decided purely by the mapping: a token with exactly one candidate
     resolves to it; a multi-candidate token (e.g. "$", the yen sign, or the
     letter-like "kr"/"L"/"Rs") resolves via the opt-in
-    ``contract.dollar_sign_currency`` (default None). A multi-candidate
-    symbol with ``dollar_sign_currency=None`` resolves to None, which makes
-    matches() return False (INVALID, never silently dropped).
+    ``contract.dollar_sign_currency`` (default None) when that code is one of
+    the token's own candidates. A multi-candidate symbol with
+    ``dollar_sign_currency=None`` (or a non-candidate code) resolves to None,
+    which makes matches() return False (INVALID, never silently dropped).
 
     Args:
         notation: Money notation to resolve.
@@ -72,7 +73,8 @@ def _resolve_symbol_code(
         return None
     if len(codes) == 1:
         return codes[0]
-    return contract.dollar_sign_currency
+    candidate = contract.dollar_sign_currency
+    return candidate if candidate in codes else None
 
 
 def _resolve_name_code(
@@ -86,7 +88,8 @@ def _resolve_name_code(
     ("Euro"). The lookup is therefore case-insensitive via the lower-case
     fallback map (mirrors Currency's D4 lower folding without touching
     generated data). Single-candidate remains definitive; multi-candidate
-    resolves via dollar_sign_currency.
+    resolves via dollar_sign_currency when that code is one of the token's
+    own candidates.
 
     Args:
         notation: Money notation to resolve.
@@ -102,7 +105,10 @@ def _resolve_name_code(
         return None
     if len(codes) == 1:
         return codes[0]
-    return contract.dollar_sign_currency
+    # All shipped names are single-candidate, so this branch is unreachable
+    # today; guarded for parity/future-proofing (mirrors Currency).
+    candidate = contract.dollar_sign_currency
+    return candidate if candidate in codes else None
 
 
 def _amount_matches(

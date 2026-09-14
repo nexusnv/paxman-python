@@ -316,14 +316,27 @@ class TestSectionSymbols:
         notation = _notation("$", "500", "symbol")
         assert self.rule.matches(notation, contract) is False
 
-    def test_bare_symbol_dollar_sign_currency_non_candidate_override(self) -> None:
-        """dollar_sign_currency overrides unconditionally: $ with EUR (not in
-        the $ candidate tuple) resolves to EUR (D3).
+    def test_bare_symbol_dollar_sign_currency_non_candidate_invalid(self) -> None:
+        """dollar_sign_currency resolves only to one of the symbol's own
+        candidates: $ with EUR (not in the $ candidate tuple) is INVALID (#15,
+        parity with Currency's default_currency guard).
         """
         contract = MoneyContract(dollar_sign_currency="EUR")
         notation = _notation("$", "500", "symbol")
+        assert self.rule.matches(notation, contract) is False
+
+    def test_bare_symbol_dollar_sign_currency_myr_invalid(self) -> None:
+        """$ with MYR (not in the $ candidate tuple) is INVALID (#15)."""
+        contract = MoneyContract(dollar_sign_currency="MYR")
+        notation = _notation("$", "500", "symbol")
+        assert self.rule.matches(notation, contract) is False
+
+    def test_qualified_symbol_rm_with_myr_contract(self) -> None:
+        """RM is definitive for MYR: RM500 resolves under an MYR contract (#15)."""
+        contract = MoneyContract(dollar_sign_currency="MYR")
+        notation = _notation("RM", "500", "qualified_symbol")
         assert self.rule.matches(notation, contract) is True
-        assert self.rule.normalize(notation, contract) == "EUR 500.00"
+        assert self.rule.normalize(notation, contract) == "MYR 500.00"
 
 
 class TestSectionNames:

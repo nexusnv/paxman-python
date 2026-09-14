@@ -93,10 +93,38 @@ class TestMoneyPipeline:
 
     @pytest.mark.integration
     def test_bare_symbol_opt_in_dollar_sign_currency(self) -> None:
-        """$500 with dollar_sign_currency=MYR resolves to MYR 500.00."""
+        """$500 with dollar_sign_currency=USD (a $ candidate) resolves to USD 500.00."""
+        register_capability(MoneyCapability())
+        contract = MoneyCapability.create_contract(dollar_sign_currency="USD")
+        result = run_capability("$500", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "USD 500.00"
+
+    @pytest.mark.integration
+    def test_bare_symbol_non_candidate_dollar_sign_currency_invalid(self) -> None:
+        """$500 with dollar_sign_currency=MYR (not a $ candidate) is INVALID (#15,
+        parity with Currency's default_currency guard)."""
         register_capability(MoneyCapability())
         contract = MoneyCapability.create_contract(dollar_sign_currency="MYR")
         result = run_capability("$500", contract)
+        assert result.status == Resolution.INVALID
+        assert result.canonicalized_value is None
+
+    @pytest.mark.integration
+    def test_qualified_symbol_rm_with_myr_contract(self) -> None:
+        """RM500 is definitive for MYR: resolves under an MYR contract (#15)."""
+        register_capability(MoneyCapability())
+        contract = MoneyCapability.create_contract(dollar_sign_currency="MYR")
+        result = run_capability("RM500", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "MYR 500.00"
+
+    @pytest.mark.integration
+    def test_qualified_code_form_reentry(self) -> None:
+        """MYR 500.00 (qualified code form) re-enters as SUCCESS (#15)."""
+        register_capability(MoneyCapability())
+        contract = MoneyCapability.create_contract()
+        result = run_capability("MYR 500.00", contract)
         assert result.status == Resolution.SUCCESS
         assert result.canonicalized_value == "MYR 500.00"
 

@@ -53,7 +53,9 @@ class MoneyContract(CapabilityContract):
             "truncate" (excess digits dropped), or "round" (half-to-even).
         dollar_sign_currency: ISO 4217 alpha-3 code (opt-in) used to resolve
             bare multi-candidate symbol input (e.g., "$500" with
-            dollar_sign_currency="MYR" → "MYR 500.00"). Defaults to None:
+            dollar_sign_currency="USD" → "USD 500.00"; the code must be one of
+            the symbol's own CLDR candidates, so "$500" with
+            dollar_sign_currency="MYR" stays INVALID). Defaults to None:
             bare "$" is then recognized but never resolved (status INVALID).
             Never remaps a definitive symbol (e.g. "€" → EUR) or a qualified
             symbol ("US$" → USD).

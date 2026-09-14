@@ -17,7 +17,7 @@ Canonicalizes **one money amount paired with a currency** per call to `CODE amou
 | `1.000,50 EUR` — European comma-decimal: last separator is the decimal point | Amount-glued tokens without a clean boundary — `MISSING` |
 | `$500` with `dollar_sign_currency="USD"` — opt-in for shared symbols | Bare `$` without `dollar_sign_currency` — `INVALID` |
 
-> Shared symbol handling follows Currency's `default_currency` idea but for amounts — with one divergence (see [#15](https://github.com/nexusnv/paxman-python/issues/15)): Money's `dollar_sign_currency` accepts any ISO 4217 code with minor units (`$500` + `MYR` → `MYR 500.00`), while Currency's `default_currency` resolves only to one of the symbol's own CLDR candidates (`$` + `MYR` stays `INVALID`).
+> Shared symbol handling follows Currency's `default_currency` idea but for amounts: Money's `dollar_sign_currency` resolves only to one of the symbol's own CLDR candidates (`$500` + `USD` → `USD 500.00`, while `$500` + `MYR` stays `INVALID` — `MYR` is not a `$` candidate), exactly like Currency's `default_currency`.
 
 ---
 
@@ -62,7 +62,7 @@ contract = Money.create_contract(
 )
 ```
 
-- **`dollar_sign_currency`**: when `None` (default), a multi-candidate bare symbol amount like `$500` is recognized but never resolved → `INVALID`. When set, bare `$`/`¥`/`£` resolve to that code (any ISO 4217 code with minor units; e.g. `MYR` or `EUR` both work). `€500` never needs this — `€` is definitive for `EUR` and ignores `dollar_sign_currency`; qualified symbols like `US$`/`CA$` are also definitive. An unknown code like `ZZZ` stays `INVALID` via the minor-unit guard.
+- **`dollar_sign_currency`**: when `None` (default), a multi-candidate bare symbol amount like `$500` is recognized but never resolved → `INVALID`. When set to one of the symbol's own CLDR candidates, bare `$`/`¥`/`£` resolve to that code (e.g. `$` + `USD` → `USD 500.00`; `$` + `MYR` stays `INVALID` since `MYR` is not a `$` candidate — same guard as Currency's `default_currency`). `€500` never needs this — `€` is definitive for `EUR` and ignores `dollar_sign_currency`; qualified symbols like `US$`/`CA$`/`RM` are also definitive. An unknown code like `ZZZ` stays `INVALID` via the minor-unit guard.
 - **`precision`**: how to treat more fractional digits than the currency's minor units allow — `strict` rejects → `INVALID`, `truncate` drops excess digits, `round` half-to-even.
 - `output_format` never affects validation — only the space.
 
@@ -71,10 +71,11 @@ paxman.canonicalize("$500", Money.create_contract()).status.value  # "invalid"
 paxman.canonicalize(
     "$500", Money.create_contract(dollar_sign_currency="USD")
 ).canonicalized_value  # "USD 500.00"
-# Bare "$" resolves to any requested code with minor units (loose, tested with MYR/EUR)
+# Bare "$" resolves only to one of its own CLDR candidates (parity with
+# Currency's default_currency; non-candidate MYR stays INVALID)
 paxman.canonicalize(
     "$500", Money.create_contract(dollar_sign_currency="MYR")
-).canonicalized_value  # "MYR 500.00"
+).status.value  # "invalid"
 # Unknown code never resolves — INVALID via MINOR_UNITS guard
 paxman.canonicalize(
     "$500", Money.create_contract(dollar_sign_currency="ZZZ")
@@ -96,7 +97,8 @@ paxman.canonicalize(
 | `USD500` | defaults | `SUCCESS` | → `USD 500.00` |
 | `€500` | defaults | `SUCCESS` | → `EUR 500.00` (definitive symbol) |
 | `$500` | defaults | `INVALID` | shared symbol, no `dollar_sign_currency` |
-| `$500` | `dollar_sign_currency="USD"` | `SUCCESS` | → `USD 500.00` |
+| `$500` | `dollar_sign_currency="USD"` | `SUCCESS` | → `USD 500.00` (`USD` is a `$` candidate) |
+| `$500` | `dollar_sign_currency="MYR"` | `INVALID` | `MYR` is not a `$` candidate |
 | `1.000,50 EUR` | defaults | `SUCCESS` | European comma-decimal → `EUR 1000.50` |
 | `USD 1.999` | `precision="strict"` | `INVALID` | over-precision → rejected |
 | `hello` | any | `MISSING` | no Money pattern |
