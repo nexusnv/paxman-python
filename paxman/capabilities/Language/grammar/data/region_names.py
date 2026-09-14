@@ -7,14 +7,18 @@ does not apply here.)
 Source: IANA Language Subtag Registry
 Reference: https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
 File-Date: 2026-08-08
-Subtags covered: SG (region).
+Subtags covered: SG ("Singapore"), DE ("Germany"), FR ("France"),
+  JP ("Japan"), CN ("China"), IN ("India"), BR ("Brazil"), CA ("Canada"),
+  AU ("Australia").
 Keys are normalize_name() output (lower, accent-stripped, space-collapsed).
 
-Completeness: curated subset (acceptance-required minimum for
-compositional descriptions such as "Chinese in Singapore").
-Region display names outside this subset are MISSING (grammar emits no
-match), not INVALID — no false negative under the current completeness
-contract. Broader region coverage is follow-up work on #148.
+Completeness: curated subset (acceptance-required minimum plus Wave-2
+major single-token regions for compositional descriptions such as
+"German in Germany"). Wave 2 (#148): germany, france, japan, china,
+india, brazil, canada, australia. Region display names outside this
+subset are MISSING (grammar emits no match), not INVALID — no false
+negative under the current completeness contract. Multi-token regions
+(e.g. united states) and broader coverage stay on #148.
 
 Extension rule: to support another region display name, add its
 normalize_name() key here AND its canonical-subtag entry in
@@ -29,5 +33,15 @@ from __future__ import annotations
 REGION_DISPLAY_KEYS: frozenset[str] = frozenset(
     {
         "singapore",
+        # Wave 2 (#148) — one contiguous block of single-token majors;
+        # multi-token regions (e.g. united states) stay out by design.
+        "germany",
+        "france",
+        "japan",
+        "china",
+        "india",
+        "brazil",
+        "canada",
+        "australia",
     }
 )

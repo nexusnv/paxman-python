@@ -612,3 +612,160 @@ class TestLanguageDescriptionParenForms:
         assert len(results) == 1
         assert results[0].notation.script == "traditional"
         assert results[0].notation.region == ""
+
+
+class TestWave2ScriptGrammar:
+    """Slice F Task 2 (#148 Wave-2 script table) — RED first, then GREEN.
+
+    Collision audit (2026-09-14, implementer-run) for the 7 candidate keys
+    ``latin/cyrillic/arabic/devanagari/greek/hebrew/armenian``:
+
+    (a) COMMON_WORDS (67): no hit — none of the 7 keys is a common word.
+    (b) ENGLISH_LANGUAGE_KEYS + LOCALIZED_LANGUAGE_KEYS: ``arabic`` (both
+        sets), ``greek`` (both), ``hebrew`` (both), ``armenian`` (english
+        only) collide with language names. Each gets a same-string
+        positional vector below (e.g. ``Arabic in Arabic script``: left
+        slot is the language, right slot is the script). ``latin``,
+        ``cyrillic``, ``devanagari`` are collision-free. All 7 languages
+        (german/russian/arabic/hindi/greek/hebrew/armenian) verified
+        present in ENGLISH_LANGUAGE_KEYS before use.
+    (c) Existing display keys (traditional/simplified/singapore): no hit —
+        no script/region overlap. (``georgian`` stays out: it IS an english
+        language key with no Wave-2 script entry — future overlap class.)
+    """
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+        self.rule = SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    @pytest.mark.parametrize(
+        ("phrase", "language", "script", "canonical"),
+        [
+            ("German in Latin script", "german", "latin", "de-Latn"),
+            ("Russian in Cyrillic script", "russian", "cyrillic", "ru-Cyrl"),
+            ("Arabic in Arabic script", "arabic", "arabic", "ar-Arab"),
+            ("Hindi in Devanagari script", "hindi", "devanagari", "hi-Deva"),
+            ("Greek in Greek script", "greek", "greek", "el-Grek"),
+            ("Hebrew in Hebrew script", "hebrew", "hebrew", "he-Hebr"),
+            ("Armenian in Armenian script", "armenian", "armenian", "hy-Armn"),
+        ],
+    )
+    def test_wave2_in_form_recognizes(
+        self, phrase: str, language: str, script: str, canonical: str
+    ) -> None:
+        results = self.grammar.recognize(phrase)
+        assert len(results) == 1, phrase
+        assert results[0].notation.language == language, phrase
+        assert results[0].notation.script == script, phrase
+        assert results[0].notation.region == "", phrase
+        assert self.rule.matches(results[0].notation, self.contract), phrase
+        assert self.rule.normalize(results[0].notation, self.contract) == canonical, (
+            phrase
+        )
+
+    def test_wave2_paren_script_form(self) -> None:
+        results = self.grammar.recognize("German (Latin)")
+        assert len(results) == 1
+        assert results[0].notation.language == "german"
+        assert results[0].notation.script == "latin"
+        assert results[0].notation.region == ""
+        assert self.rule.matches(results[0].notation, self.contract)
+        assert self.rule.normalize(results[0].notation, self.contract) == "de-Latn"
+
+    def test_armenian_same_string_slots_are_positional(self) -> None:
+        """The armenian collision pin: identical strings, distinct slots."""
+        results = self.grammar.recognize("Armenian in Armenian script")
+        assert len(results) == 1
+        m = results[0]
+        assert m.notation.language == "armenian"
+        assert m.notation.script == "armenian"
+        assert m.notation.compact == "armenian-armenian"
+        assert self.rule.normalize(m.notation, self.contract) == "hy-Armn"
+
+
+class TestWave2RegionGrammar:
+    """Slice F Task 3 (#148 Wave-2 single-token region table) — RED first.
+
+    Collision audit (2026-09-14, implementer-run) for the 8 candidate keys
+    ``germany/france/japan/china/india/brazil/canada/australia``:
+
+    (a) COMMON_WORDS (67): no hit — none of the 8 keys is a common word.
+    (b) ENGLISH_LANGUAGE_KEYS + LOCALIZED_LANGUAGE_KEYS: no hit — no key
+        collides with a language name (``china`` vs ``chinese`` and
+        ``india`` vs ``hindi`` are distinct strings, never confused;
+        slots are positional). All 7 in-form languages
+        (german/french/japanese/chinese/hindi/portuguese/english)
+        verified present in ENGLISH_LANGUAGE_KEYS before use.
+    (c) Existing display keys (traditional/simplified/singapore + the 7
+        Wave-2 script keys latin/cyrillic/arabic/devanagari/greek/hebrew/
+        armenian): no hit — no script/region overlap.
+    IANA Registry (File-Date 2026-08-08) Description verification, live
+    fetch 2026-09-14: DE→"Germany", FR→"France", JP→"Japan", CN→"China",
+    IN→"India", BR→"Brazil", CA→"Canada", AU→"Australia" (each record
+    carries a single Description). US→"United States" verified but
+    deferred (multi-token, see deferral pin below).
+    """
+
+    def setup_method(self) -> None:
+        self.grammar = LanguageDescriptionGrammar()
+        self.rule = SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    @pytest.mark.parametrize(
+        ("phrase", "language", "region", "canonical"),
+        [
+            ("German in Germany", "german", "germany", "de-DE"),
+            ("French in France", "french", "france", "fr-FR"),
+            ("Japanese in Japan", "japanese", "japan", "ja-JP"),
+            ("Chinese in China", "chinese", "china", "zh-CN"),
+            ("Hindi in India", "hindi", "india", "hi-IN"),
+            ("Portuguese in Brazil", "portuguese", "brazil", "pt-BR"),
+            ("English in Canada", "english", "canada", "en-CA"),
+            ("English in Australia", "english", "australia", "en-AU"),
+        ],
+    )
+    def test_wave2_in_form_recognizes(
+        self, phrase: str, language: str, region: str, canonical: str
+    ) -> None:
+        results = self.grammar.recognize(phrase)
+        assert len(results) == 1, phrase
+        assert results[0].notation.language == language, phrase
+        assert results[0].notation.script == "", phrase
+        assert results[0].notation.region == region, phrase
+        assert self.rule.matches(results[0].notation, self.contract), phrase
+        assert self.rule.normalize(results[0].notation, self.contract) == canonical, (
+            phrase
+        )
+
+    @pytest.mark.parametrize(
+        ("phrase", "language", "region", "canonical"),
+        [
+            ("Japanese (Japan)", "japanese", "japan", "ja-JP"),
+            ("German (Germany)", "german", "germany", "de-DE"),
+        ],
+    )
+    def test_wave2_paren_region_form(
+        self, phrase: str, language: str, region: str, canonical: str
+    ) -> None:
+        results = self.grammar.recognize(phrase)
+        assert len(results) == 1, phrase
+        assert results[0].notation.language == language, phrase
+        assert results[0].notation.script == "", phrase
+        assert results[0].notation.region == region, phrase
+        assert self.rule.matches(results[0].notation, self.contract), phrase
+        assert self.rule.normalize(results[0].notation, self.contract) == canonical, (
+            phrase
+        )
+
+    def test_united_states_multitoken_stays_missing(self) -> None:
+        """Multi-token regions deferred by design (#148): no description match.
+
+        Already green before Task 3 (grammar emits no match for the
+        2-token ``united states`` right side) — pinned as the design
+        boundary. End-to-end the engine still returns SUCCESS ``id`` via
+        the bare-``in``→``id`` capture shared by every in-form (the same
+        pre-existing competition that makes admitted in-forms AMBIGUOUS),
+        not a regression.
+        """
+        assert self.grammar.recognize("German in United States") == []

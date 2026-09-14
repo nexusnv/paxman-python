@@ -333,10 +333,11 @@ contract = Money.create_contract()
 result = paxman.canonicalize("$500", contract)
 # → Status: INVALID
 
-# Opt in: bare $ resolves via dollar_sign_currency
-contract = Money.create_contract(dollar_sign_currency="MYR")
+# Opt in: bare $ resolves via dollar_sign_currency (only to one of the
+# symbol's own CLDR candidates, like Currency's default_currency)
+contract = Money.create_contract(dollar_sign_currency="USD")
 result = paxman.canonicalize("$500", contract)
-# → "MYR 500.00"
+# → "USD 500.00"
 
 # European comma-decimal: last separator is the decimal point
 contract = Money.create_contract()
@@ -501,7 +502,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | ISBN | `include_range_validation` | `bool` | Enable ISBN Range Message registrant-range provenance |
 | ISBN | `output_format` | `str` | Output format (`"isbn13"` default, `"hyphenated"`) |
 | Money | `precision` | `str` | Over-precision amount handling: `"strict"` (reject), `"truncate"`, `"round"` (default: `"strict"`) |
-| Money | `dollar_sign_currency` | `str` \| `None` | ISO 4217 alpha-3 code resolving bare/shared symbols (opt-in); `None` (default) makes bare symbols INVALID |
+| Money | `dollar_sign_currency` | `str` \| `None` | ISO 4217 alpha-3 code resolving bare/shared symbols (opt-in), valid only when it is one of that symbol's own candidate codes; `None` (default) or a non-candidate code makes them INVALID |
 | Money | `output_format` | `str` | Output format (`"code_amount"` default, `"compact"`) |
 | Phone | `default_country` | `str` | ISO 3166-1 alpha-2 country code to resolve national numbers (e.g., `"US"`) |
 | Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"split"`) |

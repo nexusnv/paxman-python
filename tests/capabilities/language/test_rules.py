@@ -565,7 +565,7 @@ class TestIANARegistryDescription:
         assert self.rule.matches(n, self.contract) is False
 
     def test_unknown_script_rejected(self) -> None:
-        n = _desc_notation("chinese", script="latin")
+        n = _desc_notation("chinese", script="runic")
         assert self.rule.matches(n, self.contract) is False
 
     def test_unknown_region_rejected(self) -> None:
@@ -579,3 +579,112 @@ class TestIANARegistryDescription:
     def test_bare_language_without_qualifier_rejected(self) -> None:
         n = _desc_notation("chinese")
         assert self.rule.matches(n, self.contract) is False
+
+
+@pytest.mark.capability
+class TestWave2ScriptDescription:
+    """Slice F Task 2 (#148 Wave-2 script table) — rule-level vectors.
+
+    Collision audit: see TestWave2ScriptGrammar in test_grammar.py (same
+    session). Same-string keys (arabic/greek/hebrew/armenian) resolve
+    positionally: the language slot maps via the English-name authority,
+    the script slot via DESCRIPTION_DISPLAY_MAP — never confused.
+    IANA Registry (File-Date 2026-08-08) Description verification:
+    Latn→"Latin", Cyrl→"Cyrillic", Arab→"Arabic", Deva→"Devanagari"
+    (+ "Nagari" alias), Grek→"Greek", Hebr→"Hebrew", Armn→"Armenian".
+    """
+
+    def setup_method(self) -> None:
+        from paxman.capabilities.Language.rules import (
+            iana_language_subtag_registry_ed2026 as _iana_mod,
+        )
+
+        self.rule = _iana_mod.SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    @pytest.mark.parametrize(
+        ("language", "script", "canonical"),
+        [
+            ("german", "latin", "de-Latn"),
+            ("russian", "cyrillic", "ru-Cyrl"),
+            ("arabic", "arabic", "ar-Arab"),
+            ("hindi", "devanagari", "hi-Deva"),
+            ("greek", "greek", "el-Grek"),
+            ("hebrew", "hebrew", "he-Hebr"),
+            ("armenian", "armenian", "hy-Armn"),
+        ],
+    )
+    def test_wave2_script_maps_and_normalizes(
+        self, language: str, script: str, canonical: str
+    ) -> None:
+        n = _desc_notation(language, script=script)
+        assert self.rule.matches(n, self.contract) is True, canonical
+        assert self.rule.normalize(n, self.contract) == canonical, canonical
+
+    def test_wave2_paren_form_validates_to_canonical_tag(self) -> None:
+        from paxman.capabilities.Language.grammar import (
+            language_description_recognition as _desc_mod,
+        )
+
+        grammar = _desc_mod.LanguageDescriptionGrammar()
+        matches = grammar.recognize("German (Latin)")
+        assert len(matches) == 1
+        assert self.rule.matches(matches[0].notation, self.contract)
+        assert self.rule.normalize(matches[0].notation, self.contract) == "de-Latn"
+
+    def test_armenian_same_string_slots_are_positional(self) -> None:
+        """armenian→hy (language) and armenian→Armn (script) simultaneously."""
+        n = _desc_notation("armenian", script="armenian")
+        assert self.rule.matches(n, self.contract) is True
+        assert self.rule.normalize(n, self.contract) == "hy-Armn"
+
+
+@pytest.mark.capability
+class TestWave2RegionDescription:
+    """Slice F Task 3 (#148 Wave-2 single-token region table) — rule vectors.
+
+    Collision audit: see TestWave2RegionGrammar in test_grammar.py (same
+    session). IANA Registry (File-Date 2026-08-08) Description
+    verification, live fetch 2026-09-14: DE→"Germany", FR→"France",
+    JP→"Japan", CN→"China", IN→"India", BR→"Brazil", CA→"Canada",
+    AU→"Australia". Each mapped value pre-shipped in iana_region_subtags.
+    """
+
+    def setup_method(self) -> None:
+        from paxman.capabilities.Language.rules import (
+            iana_language_subtag_registry_ed2026 as _iana_mod,
+        )
+
+        self.rule = _iana_mod.SectionIANARegistryDescription()
+        self.contract = LanguageContract()
+
+    @pytest.mark.parametrize(
+        ("language", "region", "canonical"),
+        [
+            ("german", "germany", "de-DE"),
+            ("french", "france", "fr-FR"),
+            ("japanese", "japan", "ja-JP"),
+            ("chinese", "china", "zh-CN"),
+            ("hindi", "india", "hi-IN"),
+            ("portuguese", "brazil", "pt-BR"),
+            ("english", "canada", "en-CA"),
+            ("english", "australia", "en-AU"),
+        ],
+    )
+    def test_wave2_region_maps_and_normalizes(
+        self, language: str, region: str, canonical: str
+    ) -> None:
+        n = _desc_notation(language, region=region)
+        assert self.rule.matches(n, self.contract) is True, canonical
+        assert self.rule.normalize(n, self.contract) == canonical, canonical
+
+    def test_wave2_paren_form_validates_to_canonical_tag(self) -> None:
+        from paxman.capabilities.Language.grammar import (
+            language_description_recognition as _desc_mod,
+        )
+
+        grammar = _desc_mod.LanguageDescriptionGrammar()
+        matches = grammar.recognize("Japanese (Japan)")
+        assert len(matches) == 1
+        assert self.rule.matches(matches[0].notation, self.contract)
+        assert self.rule.normalize(matches[0].notation, self.contract) == "ja-JP"
