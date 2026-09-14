@@ -25,7 +25,7 @@ _HYP_SETTINGS = settings(
     deadline=None,
     phases=(Phase.generate, Phase.target, Phase.shrink),
     derandomize=False,
-    suppress_health_check=list(HealthCheck),
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large],
 )
 
 # Length-changing views
@@ -168,13 +168,28 @@ def test_all_length_changing_views_span_exact(text: str) -> None:
             src = ctx.text[s:e]
             subj_ch = view.subject[i]
             if name == "country_normalized":
-                nfd = unicodedata.normalize("NFD", src).lower()
-                stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
-                assert (
-                    subj_ch in stripped or subj_ch == stripped.strip() or subj_ch == " "
-                )
+                # Exact inverse (#71 item 3): mirror CountryNameFold's per-char
+                # mapping (NFD → drop Mn → '-/–' to space → any isspace to
+                # ' ', alnum lowered; normalizers.py CountryNameFold.normalize).
+                # 1:1 intervals assert equality; expansions (e.g. U+AC00 → two
+                # Jamo, all kept) and collapsed runs assert membership —
+                # still positional, far tighter than the old
+                # `in stripped or strip()` which also admitted '/'→' '.
+                kept: list[str] = []
+                for c in unicodedata.normalize("NFD", src):
+                    if unicodedata.category(c) == "Mn":
+                        continue
+                    if c in "-/–":
+                        c = " "
+                    if c.isspace():
+                        kept.append(" ")
+                    elif c.isalnum():
+                        kept.append(c.lower())
+                if len(kept) == 1:
+                    assert subj_ch == kept[0]
+                else:
+                    assert subj_ch in kept
             else:
-                # idna / compact preserve case, just check identity
-                assert subj_ch == src or (
-                    name == "compact" and src in " ().-" and subj_ch not in src
-                )
+                # idna / compact: exact identity (separators are dropped, never
+                # remapped — a subject char is always its source char).
+                assert subj_ch == src
