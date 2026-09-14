@@ -51,9 +51,13 @@ from paxman.capabilities.Phone.notation import PhoneNotation
 from paxman.capabilities.SIUnit.capability import SIUnitCapability
 from paxman.capabilities.SIUnit.contract import SIUnitContract
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
+from paxman.capabilities.Timezone.capability import TimezoneCapability
+from paxman.capabilities.Timezone.contract import TimezoneContract
 from paxman.capabilities.URL.capability import URLCapability
 from paxman.capabilities.URL.contract import URLCapabilityContract
 from paxman.capabilities.URL.notation import URLNotation
+from paxman.capabilities.UtcOffset.capability import UtcOffsetCapability
+from paxman.capabilities.UtcOffset.contract import UtcOffsetContract
 from paxman.core.capability import ContractFactory
 from paxman.core.capability_contract import CapabilityContract
 
@@ -173,6 +177,18 @@ _CAPABILITY_SURFACES = [
         URLCapabilityContract,
         "url",
         id="url",
+    ),
+    pytest.param(
+        TimezoneCapability,
+        TimezoneContract,
+        "iana",
+        id="timezone",
+    ),
+    pytest.param(
+        UtcOffsetCapability,
+        UtcOffsetContract,
+        "extended",
+        id="utc_offset",
     ),
 ]
 

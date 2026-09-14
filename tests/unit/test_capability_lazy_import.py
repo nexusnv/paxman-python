@@ -53,7 +53,7 @@ def test_import_email_does_not_import_url_data() -> None:
 
 
 def test_all_still_exported_via_all() -> None:
-    """`__all__` must still list all eighteen capabilities for star-import and docs."""
+    """`__all__` must still list all twenty capabilities for star-import and docs."""
     import paxman.capabilities as cap_mod
 
     assert set(cap_mod.__all__) == {
@@ -74,7 +74,9 @@ def test_all_still_exported_via_all() -> None:
         "ORCID",
         "Phone",
         "SIUnit",
+        "Timezone",
         "URL",
+        "UtcOffset",
     }
     # Access each via getattr still works
     for name in cap_mod.__all__:

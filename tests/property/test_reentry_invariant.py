@@ -67,6 +67,8 @@ from paxman.capabilities import (
     Money,
     Phone,
     SIUnit,
+    Timezone,
+    UtcOffset,
 )
 from paxman.core.capability import ContractFactory
 from paxman.core.discovery import reset_registry
@@ -172,6 +174,19 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # URL: WHATWG canonical form appends the path "/"; cf.
     # tests/e2e/test_canonicalize.py::TestURLCapabilityE2E (HTTPS://Example.COM:443)
     _row(URL, "https://example.com", "https://example.com/"),
+    # Timezone: tests/capabilities/timezone/test_capability.py
+    # ::TestTimezoneCapabilityPipeline::test_canonical_key_identity (iana)
+    _row(Timezone, "America/New_York", "America/New_York"),
+    # Timezone link-resolved surface: US/Eastern canonicalizes to
+    # America/New_York, which is its own fixed point (same suite,
+    # test_link_resolved_value_reenters). Folded mentions
+    # (america/new_york) ride the case_ws_variants below.
+    _row(Timezone, "US/Eastern", "America/New_York"),
+    # UtcOffset: tests/capabilities/utc_offset/test_capability.py
+    # ::test_basic_form_normalizes_to_extended — the basic-form input
+    # canonicalizes to extended +05:30; the offered "basic" rendering
+    # (+0530) re-enters under its own contract (test formats below).
+    _row(UtcOffset, "+0530", "+05:30"),
 )
 
 # ADR-0010, Consequences: a new capability cannot land without a re-entry row

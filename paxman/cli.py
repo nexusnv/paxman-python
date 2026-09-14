@@ -17,6 +17,8 @@ def _normalize_capability(raw: str) -> str:
     lowered = raw.strip().lower().replace("-", "_")
     if lowered == "siunit":
         return "si_unit"
+    if lowered == "utcoffset":
+        return "utc_offset"
     return lowered
 
 
@@ -37,7 +39,9 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             f"Capabilities: {shipped}\n"
-            "Aliases: si_unit accepts siunit, si-unit, si_unit (case-insensitive).\n"
+            "Aliases: si_unit accepts siunit, si-unit, si_unit; "
+            "utc_offset accepts utcoffset, utc-offset, utc_offset "
+            "(case-insensitive).\n"
             "Contract flags (e.g. --include-localized) require the Python API; "
             "see docs for create_contract() options."
         ),
@@ -200,10 +204,18 @@ def _create_contract(
         from paxman.capabilities import SIUnit
 
         return SIUnit.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "timezone":
+        from paxman.capabilities import Timezone
+
+        return Timezone.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "url":
         from paxman.capabilities import URL
 
         return URL.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "utc_offset":
+        from paxman.capabilities import UtcOffset
+
+        return UtcOffset.create_contract(suppress_common_words=suppress_common_words)
     # Should be unreachable after validation, but keep for type safety.
     raise ValueError(f"Unknown capability: {normalized!r}")
 

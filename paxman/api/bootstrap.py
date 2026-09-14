@@ -23,6 +23,8 @@ from paxman.capabilities import (
     Money,
     Phone,
     SIUnit,
+    Timezone,
+    UtcOffset,
 )
 from paxman.core.capability import Capability
 from paxman.core.discovery import get_capability, register_capability
@@ -48,7 +50,9 @@ _SHIPPED: tuple[type[Capability[Any]], ...] = (
     ORCID,
     Phone,
     SIUnit,
+    Timezone,
     URL,
+    UtcOffset,
 )
 
 

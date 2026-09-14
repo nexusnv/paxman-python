@@ -76,6 +76,7 @@ from paxman.capabilities import (
     MacAddress,
     Money,
     Phone,
+    UtcOffset,
 )
 from paxman.core.capability import ContractFactory
 from paxman.core.discovery import reset_registry
@@ -171,6 +172,11 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("money", "compact"): "encoding",
     ("phone", "rfc3966"): "encoding",
     ("phone", "split"): "encoding",
+    # -- UtcOffset -----------------------------------------------------------
+    # basic: colon-stripped re-encoding of the extended canonical; the
+    # rendering re-enters the default contract onto the extended value
+    # (measured: "+0530" -> "+05:30").
+    ("utc_offset", "basic"): "encoding",
 }
 
 _CLASS_VALUES: frozenset[str] = frozenset(
@@ -403,6 +409,9 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "",
     ),
     _InjectivityPair("money", Money, "compact", "45.50 USD", "10.00 EUR", ""),
+    _InjectivityPair(
+        "utc_offset", UtcOffset, "basic", "+05:30", "-08:00", "+0530 vs -0800"
+    ),
 )
 
 _INJECTIVITY_PARAMS: list[pytest.param] = [

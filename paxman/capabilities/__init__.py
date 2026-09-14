@@ -30,7 +30,9 @@ __all__ = [
     "ORCID",
     "Phone",
     "SIUnit",
+    "Timezone",
     "URL",
+    "UtcOffset",
 ]
 
 _LAZY: dict[str, tuple[str, str]] = {
@@ -54,7 +56,9 @@ _LAZY: dict[str, tuple[str, str]] = {
     "ORCID": ("paxman.capabilities.ORCID.capability", "ORCIDCapability"),
     "Phone": ("paxman.capabilities.Phone.capability", "PhoneCapability"),
     "SIUnit": ("paxman.capabilities.SIUnit.capability", "SIUnitCapability"),
+    "Timezone": ("paxman.capabilities.Timezone.capability", "TimezoneCapability"),
     "URL": ("paxman.capabilities.URL.capability", "URLCapability"),
+    "UtcOffset": ("paxman.capabilities.UtcOffset.capability", "UtcOffsetCapability"),
 }
 
 if TYPE_CHECKING:
@@ -79,7 +83,11 @@ if TYPE_CHECKING:
     from paxman.capabilities.ORCID.capability import ORCIDCapability as ORCID
     from paxman.capabilities.Phone.capability import PhoneCapability as Phone
     from paxman.capabilities.SIUnit.capability import SIUnitCapability as SIUnit
+    from paxman.capabilities.Timezone.capability import TimezoneCapability as Timezone
     from paxman.capabilities.URL.capability import URLCapability as URL
+    from paxman.capabilities.UtcOffset.capability import (
+        UtcOffsetCapability as UtcOffset,
+    )
 
 
 def __getattr__(name: str) -> Any:
