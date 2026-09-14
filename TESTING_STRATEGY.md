@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Paxman's test suite exists to protect one core promise: given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline always yields the same canonical output. Every test, from the lowest-level unit check to the full end-to-end run, reinforces that determinism — achieved by construction through no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, and no network inference across recognition, validation, and canonicalization. The suite is built on `pytest` and organized into four layers that mirror the architectural boundaries of the system itself.
+Paxman's test suite exists to protect one core promise: given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline always yields the same canonical output. Every test, from the lowest-level unit check to the full end-to-end run, reinforces that determinism — achieved by construction through no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, and no network inference across recognition, validation, and canonicalization. The suite is built on `pytest` and organized into five layers that mirror the architectural boundaries of the system itself.
 
 ---
 
@@ -68,6 +68,19 @@ Key scenarios:
 - **Ambiguity detection.** Two different emails in one input produce `Resolution.AMBIGUOUS` with `canonicalized_value` set to `None`, even though each individual email resolves cleanly.
 - **Temporal filtering.** Setting `year=2007` excludes RFC 5322 (published 2008) and RFC 6761 (published 2012), producing `Resolution.INVALID` for input that would otherwise resolve. Setting `year=2010` includes RFC 5322 but excludes RFC 6761, narrowing the set of valid candidates.
 
+### Property Tests
+
+**Marker:** `@pytest.mark.property`
+**Location:** `tests/property/`
+
+Property tests use `hypothesis` to lock invariants across generated inputs:
+grammar-stage parity, re-entry fixed points (`test_reentry_invariant.py` ROWS —
+every capability extends this suite per ADR-0010), output-format preservation
+(`test_output_format_preservation.py` CLASS_MAP — every offered format per
+ADR-0011), and per-capability robustness suites (e.g. Timezone/UtcOffset).
+Suites driving the full pipeline use a local `_fresh_registry` fixture; the
+rest drive grammars/rules/`format_value` directly and never touch the registry.
+
 ### End-to-End Tests
 
 **Marker:** `@pytest.mark.e2e`
@@ -110,6 +123,7 @@ uv run pytest
 uv run pytest -m unit
 uv run pytest -m capability
 uv run pytest -m integration
+uv run pytest -m property
 uv run pytest -m e2e
 
 # With coverage
@@ -120,7 +134,7 @@ uv run pytest --cov=paxman --cov-report=term-missing
 
 ## Design Principles
 
-**Tests mirror architecture.** The four test layers correspond to the four structural layers of the system. Unit tests cover the core domain. Capability tests cover capability implementations. Integration tests cover the engine. E2e tests cover the public API.
+**Tests mirror architecture.** The five test layers correspond to the structural layers of the system. Unit tests cover the core domain. Capability tests cover capability implementations. Integration tests cover the engine. Property tests lock cross-cutting invariants. E2e tests cover the public API.
 
 **Determinism is testable.** The determinism test in `test_pipeline.py` runs the same input through the same contract twice and asserts an identical candidate multiset and identical canonical values. This is the most important single test in the suite, because it proves the system keeps its central promise.
 

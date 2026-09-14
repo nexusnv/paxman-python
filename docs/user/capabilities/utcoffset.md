@@ -78,6 +78,7 @@ contract = UtcOffset.create_contract(
 | `-00:00` | any | `INVALID` | unknown-offset states ignorance — a different entity from zero |
 | `+14:30` / `-12:30` | any | `INVALID` | claimed shape past the signed total-minutes bound |
 | `+15:00` / `UTC+15:00` | any | `MISSING` | grammar range guard never claims them |
+| `+05:60` / `+05:6` / `UTC+5:60` | any | `MISSING` | malformed minutes never claimed — right edge forbids `:`/`+`/`-` continuations, so no truncated `+05:00` `SUCCESS` (#162) |
 | `Etc/GMT+5` | any | `MISSING` | slash-glued guard rejects mid-key extraction |
 | `Zulu` | any | `MISSING` | military prose, not the designator |
 | `+05:30 and -08:00` | any | raises `MultipleMentionsError` | two distinct offsets fail fast (`single_value=True`) |

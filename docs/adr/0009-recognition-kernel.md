@@ -76,6 +76,14 @@ URL 1. Reproduce: `grep -rE "class \w+\((Pipeline)?Grammar\[" paxman/capabilitie
 ADR-0008's "29 grammars" was correct for the 2026-08-20 tree (10 capabilities); the tree has
 since grown to 15.
 
+> **Note (2026-09-14, v0.5.0):** the 15-capability / 36-grammar enumeration above is
+> the historical record for the 2026-08-24 tree and is intentionally preserved.
+> The current tree ships 20 capabilities (adding Coordinates, Element, MacAddress
+> in 0.4.0 and Timezone + UtcOffset in 0.5.0, plus Language
+> `language_description_recognition`). For the live count see
+> `paxman/api/bootstrap.py:_SHIPPED` / `list_shipped_capabilities()` and
+> `uv run python tools/generate_readme_table.py`.
+
 The engine owns all cross-match policy (ARCHITECTURE.md, "Recognition Pipeline Contract"):
 
 - **Containment dedup (per grammar):** a match fully contained in a longer match from the

@@ -96,7 +96,9 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 ## I
 
-**IANA** — Internet Assigned Numbers Authority. Authority for the IANA Language Subtag Registry (Rolling File-Date 2026-08-08) cited by Language. See [Citations](citations/).
+**IANA** — Internet Assigned Numbers Authority. Authority for the IANA Language Subtag Registry (Rolling File-Date 2026-08-08) cited by Language and the IANA Time Zone Database 2026d cited by Timezone. See [Citations](citations/).
+
+**IANA Time Zone Database** — IANA registry of zone keys, Links, and fixed zones (release 2026d) cited by the Timezone capability. See [Citations](citations/).
 
 **IBAN** — International Bank Account Number (ISO 13616-1:2020). Paxman capability with one grammar + one rule. See [Citations](citations/).
 
@@ -202,6 +204,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Suppress common words** — `contract.suppress_common_words` (`bool`, default `False`) + `COMMON_WORDS` (`frozenset[str]`, 67) + `matcher.suppressible`. When `True`, word-bounded short-code hits whose lowercased span is in the table are suppressed at recognition (provenance-neutral). See [Migration](migration/) §16 and `paxman/core/grammar/`.
 
+**SystemV zones** — POSIX SystemV time zone names (`EST5EDT`, `CST6CDT`, `MST7MDT`, `PST8PDT`) in the IANA database, validated by the Timezone capability only with `include_systemv=True` (recognized but `INVALID` otherwise). See [Capabilities](capabilities/).
+
 ---
 
 ## T
@@ -210,11 +214,15 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Temporal filtering (`year`)** — Contract field `year: int | None` that keeps only rules with `publication_year <= year`. Use with a pinned `paxman` version and `version_stamp` for reproducibility. See [Contracts](concepts/contracts/) and [Migration](migration/).
 
+**Timezone** — Paxman capability for IANA time zone identifiers (IANA Time Zone Database 2026d). Canonical form is the case-exact IANA key (`US/Eastern` → `America/New_York`); bare abbreviations refuse → `INVALID`. See [Capabilities](capabilities/).
+
 ---
 
 ## U
 
 **URL** — Paxman capability for absolute URIs/IRIs (WHATWG URL Standard). See [Capabilities](capabilities/).
+
+**UtcOffset** — Paxman capability for UTC offset values (ISO 8601-1:2019, RFC 3339). Canonical form is extended `+HH:MM` (`UTC+5` → `+05:00`); `basic` `+HHMM` offered. See [Capabilities](capabilities/).
 
 **Unicode / Unicode CLDR** — For Paxman provenance, `"Unicode"` (Country CLDR v45) and `"Unicode CLDR"` (Currency/Money/CLDR Language Display Names) both denote the Unicode CLDR project. See [Citations](citations/).
 

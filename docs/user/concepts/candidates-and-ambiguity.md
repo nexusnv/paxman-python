@@ -65,8 +65,21 @@ Concrete examples:
 `AMBIGUOUS` is a **domain signal**, not a failure. The input is real; the specs genuinely conflict. Contrast with:
 
 - `MISSING` — no grammar matched, or a recognized match was suppressed (`suppressed_count > 0` tells the two apart — see [Execution Result](execution-result/)).
-- `INVALID` — a grammar matched but no spec accepted it (looks like the entity but is malformed).
+- `INVALID` — a grammar matched but no spec accepted it (looks like the entity but is malformed). This includes refused ghosts: a well-formed-but-unregistered tag (`xx-yyyyy`) or a bare abbreviation (`EST`) is recognized yet validates nowhere, so it is `INVALID`, not a silent pick.
 - `MultipleMentionsError` — two **separate** mentions with different values in one call (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md)). That raises an exception rather than returning a status, because it signals you need to split the input first.
+
+---
+
+## Qualification: syntax alone never validates (ADR-0012)
+
+A well-formedness check is not authority validation. After validation and before
+counting, a `PARSER`-strategy candidate survives only when a `LOOKUP_TABLE` rule
+validates the same recognition — e.g. `Serbo-Croatian` → `SUCCESS "sh"` (the
+BCP 47 syntax ghost `serbo-croatian` is disqualified, the English-name mapping
+stands); a lone ghost such as `xx-yyyyy` → `INVALID` (was wrongly `SUCCESS` on
+syntax alone); `en-x-private` without `include_private` → `INVALID` (with the
+flag it stays `SUCCESS`). Contracts filtering the lookup authority out preserve
+parser candidates per the vacuity clause.
 
 ---
 

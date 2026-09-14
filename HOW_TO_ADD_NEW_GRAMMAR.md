@@ -21,7 +21,7 @@ Before starting, understand these concepts (all defined in depth in HOW_TO_ADD_N
 - **`semantics`** — the grammar metadata declaring the *meaning* the grammar assigns to its recognized notations: an identity id by default, or a coalesced id shared with grammars that carry the same meaning (e.g. both the ISO and slash-ISO Date grammars declare `"iso8601_calendar_date"`).
 - **`target_semantics`** — the rule metadata declaring which grammar semantics a rule validates. A recognition only routes to rules whose `target_semantics` includes its producing grammar's `semantics`.
 
-**The one sentence that matters:** a new grammar changes behavior only when it is (1) returned by `get_grammars()`, and (2) its `semantics` is claimed by at least one rule via `target_semantics` — plus (3) named in `active_grammars`, but **only for the gated capabilities (Email, IP, ISBN) that implement it**. For the other six capabilities, the contract has no `active_grammars` and the engine runs every shipped grammar, so `get_grammars()` alone activates the new grammar. Miss condition (1) or (3) and the grammar never runs — input matching only it stays `MISSING`. Miss condition (2) and the grammar still runs, but its recognitions route to no rules, so input matching only it becomes `INVALID` (recognized, no authority rule validates) instead of resolving — never a candidate. Either way the resolved output is unchanged, which is why a shipped grammar ships with a test that proves the difference (Step 5).
+**The one sentence that matters:** a new grammar changes behavior only when it is (1) returned by `get_grammars()`, and (2) its `semantics` is claimed by at least one rule via `target_semantics` — plus (3) named in `active_grammars`, but **only for the gated capabilities (Email, IP, ISBN) that implement it**. For all other capabilities, the contract has no `active_grammars` and the engine runs every shipped grammar, so `get_grammars()` alone activates the new grammar. Miss condition (1) or (3) and the grammar never runs — input matching only it stays `MISSING`. Miss condition (2) and the grammar still runs, but its recognitions route to no rules, so input matching only it becomes `INVALID` (recognized, no authority rule validates) instead of resolving — never a candidate. Either way the resolved output is unchanged, which is why a shipped grammar ships with a test that proves the difference (Step 5).
 
 ---
 
@@ -152,7 +152,7 @@ def get_grammars(self) -> list[Grammar[DateNotation]]:
     ]
 ```
 
-2. **`active_grammars`** in `paxman/capabilities/<Cap>/contract.py` — **only for the gated capabilities** (Email, IP, ISBN) that implement it to select grammars behind feature flags. For Date — and Country, Currency, Money, Phone, and URL — there is no `active_grammars` to update: the base contract returns `None` and the engine falls back to running every shipped grammar in `get_grammars()` order. **No contract edit is needed for these six.**
+2. **`active_grammars`** in `paxman/capabilities/<Cap>/contract.py` — **only for the gated capabilities** (Email, IP, ISBN) that implement it to select grammars behind feature flags. For every other capability there is no `active_grammars` to update: the base contract returns `None` and the engine falls back to running every shipped grammar in `get_grammars()` order. **No contract edit is needed for those capabilities.**
 
 If the capability does implement `active_grammars`, append the new name **at the end** of the list (gated behind its `include_*` flag if the capability has one):
 
@@ -165,7 +165,7 @@ def active_grammars(self) -> list[str]:
     return grammars
 ```
 
-Recognition order (and the same-span tiebreak) follows the runnable set — `get_grammars()` order for the six all-active capabilities, the `active_grammars` list for the three gated ones — so appending at the end keeps every existing grammar's behavior identical (deterministic). Update the capability test asserting the grammar count (`test_get_grammars_returns_all`) and add one asserting the new name is wired.
+Recognition order (and the same-span tiebreak) follows the runnable set — `get_grammars()` order for the all-active capabilities, the `active_grammars` list for the three gated ones — so appending at the end keeps every existing grammar's behavior identical (deterministic). Update the capability test asserting the grammar count (`test_get_grammars_returns_all`) and add one asserting the new name is wired.
 
 > **The missing-half bug (gated capabilities only).** For Email, IP, and ISBN, the engine builds the runnable set from `contract.active_grammars`, not from `get_grammars()` — a grammar returned by `get_grammars()` but missing from `active_grammars` is dead code that will pass unit tests on the class and fail silently in the pipeline. The integration test in Step 5 is what catches this. The all-active capabilities have no such hole: the engine falls back to `get_grammars()` itself.
 
@@ -196,6 +196,10 @@ Same-meaning grammars **share** a semantics id (a *coalesced* id). The shipped D
 When the new format means something genuinely new, give the grammar its own identity `semantics` id and add a rule file whose `target_semantics` names it — one file per publication, one class per spec section (see HOW_TO_ADD_NEW_CAPABILITY.md Step 5 for the full rule template). `Rule.__init_subclass__` enforces the six metadata attributes (`name`, `strategy`, `provenance`, `citation`, `target_semantics`, `requires_features`) at class-definition time, and `target_semantics` must be a non-empty `frozenset[str]`.
 
 Whichever option you choose, the engine **fails fast** if you get it wrong: `_validate_affinity` raises `ContractError` when a rule's `target_semantics` names an id that no grammar claims in the composed set (shipped + opted-in community), so a dangling target can never silently disable a rule.
+
+> **ADR-0012 note:** with Option B, a `PARSER`-only rule on LOOKUP-backed
+> semantics yields disqualified ghosts — pair it with a `LOOKUP_TABLE` rule on
+> the same grammar (see HOW_TO_ADD_NEW_CAPABILITY.md rule-strategy warning).
 
 ---
 
@@ -247,8 +251,9 @@ Three assertions to always include:
 
 A shipped grammar is part of the capability's public surface. Update:
 
-- **`README.md`** — the capabilities table's **Grammars** count for the capability (e.g., `3 (ISO, US, European)` → `4 (ISO, US, European, slash-ISO)`) and the capability section's format list and examples.
+- **`README.md`** — the capabilities table's **Grammars** count for the capability (e.g., `3 (ISO, US, European)` → `4 (ISO, US, European, slash-ISO)`) and the capability section's format list and examples (regenerate via `uv run python tools/generate_readme_table.py`).
 - **`CONTEXT.md`** — the "Capability Details" grammar table (delimiter, component mapping, notes) for the affected capability.
+- **User guide** — `docs/user/capabilities/<cap>.md` Recognized-forms + Statuses rows for the new representation (plus the `capabilities/index.md` chooser link if the representation is a new row); citations/migration only when provenance or the output surface changes.
 
 ---
 

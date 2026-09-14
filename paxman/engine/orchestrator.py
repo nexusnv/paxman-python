@@ -81,7 +81,12 @@ class ExecutionResult:
 
 
 def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
-    """Run the full pipeline: recognition → validation → result."""
+    """Run the full pipeline: recognition → validation → qualification → result.
+
+    Qualification (ADR-0012) disqualifies uncorroborated ``PARSER`` candidates
+    before the single-value invariant, per-grammar dedup scoping, and status
+    determination run.
+    """
     freeze_registry()
     capability = get_capability(contract.capability_name)
 
@@ -568,7 +573,8 @@ def _collect_candidates(
     ``Candidate`` together with the ``RecognizedRep`` that produced it. The
     paired rep carries the recognition span used by
     ``_enforce_single_value_invariant`` to attribute candidates to their source
-    mention; dedup runs later in ``_dedup_candidates``.
+    mention; ADR-0012 qualification (``_require_lookup_corroboration``) runs
+    next on these pairs, and dedup runs later in ``_dedup_candidates``.
 
     The ``semantics_by_name[grammar_name]`` lookup cannot KeyError:
     recognitions are produced only by grammars in the composed ``all_grammars``
