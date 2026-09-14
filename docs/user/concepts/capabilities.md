@@ -85,7 +85,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **Language** | Language identifiers (BCP 47) | tags, codes, names | `bcp47` tag |
 | **MacAddress** | MAC addresses (IEEE 802) | colon/hyphen/dot groups | `colon` form |
 | **ORCID** | Researcher identifiers (ISO 27729) | hyphenated, compact, URIs | hyphenated `orcid` form |
-| **Timezone** | Time zone identifiers (IANA TZDB 2026d) | zone keys, legacy Links, fixed zones, SystemV names | IANA key (`"America/New_York"`) |
+| **Timezone** | Time zone identifiers (IANA TZDB 2026d) | zone keys, legacy Links, fixed zones, SystemV names | IANA key (`"America/New_York"`); opted-in SystemV names keep their fixed-rule key (`"EST5EDT"`) |
 | **UtcOffset** | UTC offset values (ISO 8601-1) | prefixed/bare offsets, `Z` | extended `+HH:MM` (`"+05:30"`) |
 
 > This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts/) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/).

@@ -23,7 +23,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
 | **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946 | Email, IP, Phone, Language, Coordinates | 8 |
 | **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
-| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/3/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset | 22 |
+| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset | 22 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |

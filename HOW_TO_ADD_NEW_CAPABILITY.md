@@ -359,8 +359,10 @@ Codebase examples: IP's IPv4 grammar is a loose regex (`\d{1,3}` octets) and `rf
 > object). A new `PARSER`-only meaning on LOOKUP-backed semantics resolves
 > `MISSING`/`INVALID`, not `SUCCESS` — pair it with a `LOOKUP_TABLE` rule
 > validating the same grammar, or give the grammar its own identity semantics.
-> Contracts filtering the lookup authority out preserve parser candidates per
-> the vacuity clause.
+> A disqualified parser recognition is `INVALID`, not `MISSING`:
+> `had_recognitions` stays true once a grammar claims the input (`MISSING`
+> means no grammar recognized anything). Contracts filtering the lookup
+> authority out preserve parser candidates per the vacuity clause.
 
 3. Set `provenance` to the `PUBLICATION` constant defined above
 4. Set `citation` to a human-readable citation (e.g., "Section 3.4.1 (addr-spec)")
@@ -892,10 +894,12 @@ Test through the public API (`paxman.api.canonicalize`):
 
 ### 10f: Data-consistency tests
 
-Create `tests/capabilities/yourdomain/test_data_consistency.py` covering every
-shipped recognition key against the rule-data mappings (the governance hard
-rule — grammars own keys, rules own authority mappings). See the Timezone /
-Language consistency suites for the pattern.
+Create `tests/capabilities/yourdomain/test_data_consistency.py` for lookup-backed
+grammars, covering each included recognition key against its rule-data
+authority mapping (the governance hard rule — grammars own keys, rules own
+authority mappings). Parser- and regex-only rules carry no key tables and are
+excluded unless an explicit expected mapping is defined for them. See the
+Timezone / Language consistency suites for the pattern.
 
 ### 10g: Property tests
 
