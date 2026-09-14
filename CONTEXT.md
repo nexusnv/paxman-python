@@ -934,14 +934,27 @@ paxman/
     │   ├── grammar/data/          # unit_symbol_tokens, unit_name_tokens, compound_tokens (+ GENERATED via tools/regenerate_si_prefix_data.py)
     │   ├── rules/                 # bipm_si_brochure_ed2019, iso_80000_ed2022, split_prefixes
     │   └── rules/data/            # si_base_units, si_derived_units, si_nonsi_units, si_prefixes, unit_names (+ GENERATED prefixed_units, prefixed_unit_names)
-    └── URL/                       # grammar/ (1) + rules/ (1) + rules/data/ — WHATWG URL Standard
-        ├── capability.py          # URLCapability
-        ├── contract.py            # URLContract
-        ├── notation.py            # URLNotation
-        ├── parsing.py             # WHATWG URL parsing helpers
-        ├── grammar/               # absolute_uri_recognition
-        ├── rules/                 # whatwg_url_standard
-        └── rules/data/            # idna_uts46_mapping
+    ├── Timezone/                  # grammar/ (2) + rules/ (2) + rules/data/ — IANA Time Zone Database 2026d
+    │   ├── capability.py          # TimezoneCapability
+    │   ├── contract.py            # TimezoneContract
+    │   ├── notation.py            # TimezoneNotation (key, family, compact)
+    │   ├── grammar/               # timezone_name_recognition, timezone_abbreviation_recognition
+    │   ├── rules/                 # iana_tzdb_ed2026, iana_tz_abbreviations_ed2026
+    │   └── rules/data/            # iana_zone_identifiers, iana_zone_links, iana_fixed_zones, abbreviation_map
+    ├── URL/                       # grammar/ (1) + rules/ (1) + rules/data/ — WHATWG URL Standard
+    │   ├── capability.py          # URLCapability
+    │   ├── contract.py            # URLContract
+    │   ├── notation.py            # URLNotation
+    │   ├── parsing.py             # WHATWG URL parsing helpers
+    │   ├── grammar/               # absolute_uri_recognition
+    │   ├── rules/                 # whatwg_url_standard
+    │   └── rules/data/            # idna_uts46_mapping
+    └── UtcOffset/                 # grammar/ (1) + rules/ (1) — ISO 8601-1:2019, RFC 3339
+        ├── capability.py          # UtcOffsetCapability
+        ├── contract.py            # UtcOffsetContract
+        ├── notation.py            # UtcOffsetNotation (compact)
+        ├── grammar/               # utc_offset_recognition
+        └── rules/                 # iso8601_offset_ed2019
 ```
 
 ### Package Responsibilities

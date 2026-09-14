@@ -4,19 +4,15 @@ Research acceptance corpus: ``docs/development/research/2026-09-14-timezone-
 canonicalization.md`` §8 edge table (timezone rows) + §9 resolution-state
 map + post-review semantic matrix. Every vector below was executed against
 the pipeline (``register_all_shipped`` + ``canonicalize``); statuses are
-observed, not assumed. Two deliberate divergences from the research table
-are pinned with rationale:
+observed, not assumed. One deliberate divergence from the research table
+is pinned with rationale:
 
 - unknown key (``America/Narnia``): the research §8 row 12 assumes a
   shape-claiming grammar (INVALID), but the shipped design is a lexicon
   over the curated subset — unlisted keys are unclaimable and therefore
   MISSING ("Unlisted keys are MISSING at the grammar, never INVALID",
   ``iana_zone_identifiers.py`` header; ``test_data_consistency.py``).
-  An INVALID outcome would need a shape-claiming matcher (Task 5 design
-  change, out of scope here).
-- bare ``GMT`` is claimed by the name grammar (fixed-zone token) but is
-  absent from the identifier set, so it is INVALID; it is not pinned
-  here (unpinned upstream behavior, future data fix may add it).
+  An INVALID outcome would need a shape-claiming matcher (out of scope).
 """
 
 from __future__ import annotations
