@@ -57,12 +57,29 @@ def _collect_leaves(expr: Any, out: list[Any]) -> None:
             out.append(expr)
 
 
-def _eval_expr(
+_SEQ_EVAL_BUDGET = 10000  # hard cap on seq-branch attempts per start (#73 L3)
+
+
+def _eval_ends(
     expr: Any,
     view: View,
     pos: int,
-    leaf_maps: dict[int, dict[int, int]],
-) -> int | None:
+    leaf_maps: dict[int, dict[int, list[int]]],
+    budget: list[int],
+) -> list[int]:
+    """All possible end positions of ``expr`` at ``pos``, longest-first.
+
+    Leaf alternatives branch (every end at ``pos`` is explored); ``seq``
+    enumerates every child-end combination level by level and returns them
+    longest-first, so a shorter leaf end can satisfy a later child when the
+    longest cannot (#73 L3). ``alt``/``opt``/``label`` propagate all ends
+    inward (``opt`` also offers skip-``pos``); ``rep`` keeps first-hit
+    iteration and top-level ``match()`` takes the longest end, so legacy
+    single-end preference is preserved. ``budget[0]`` bounds total
+    seq-branch attempts from one start; exhaustion yields empty (or, inside
+    ``rep``/``opt``/``alt``, the partial alternative), never raises, never
+    loops.
+    """
     if isinstance(expr, tuple):
         t = cast(tuple[Any, ...], expr)
         if (
@@ -73,36 +90,49 @@ def _eval_expr(
             kind = cast(str, t[0])
             if kind == "seq":
                 children: Any = t[1] if len(t) > 1 else cast(list[Any], [])
-                cur = pos
                 if not isinstance(children, (list, tuple)):
-                    return None
+                    return []
+                pending: list[int] = [pos]
                 for child in cast(Any, children):
-                    nxt = _eval_expr(child, view, cur, leaf_maps)
-                    if nxt is None:
-                        return None
-                    cur = nxt
-                return cur
+                    nxt_pending: list[int] = []
+                    for cur in pending:
+                        for end in _eval_ends(child, view, cur, leaf_maps, budget):
+                            if budget[0] <= 0:
+                                return []
+                            budget[0] -= 1
+                            if end not in nxt_pending:
+                                nxt_pending.append(end)
+                    pending = nxt_pending
+                    if not pending:
+                        return []
+                # Greedy order: longest end first, so first-hit consumers
+                # (top-level match, rep steps) keep legacy preference.
+                return sorted(pending, reverse=True)
             if kind == "alt":
                 branches: Any = t[1] if len(t) > 1 else cast(list[Any], [])
                 if not isinstance(branches, (list, tuple)):
-                    return None
+                    return []
+                out: list[int] = []
                 for branch in cast(Any, branches):
-                    nxt = _eval_expr(branch, view, pos, leaf_maps)
-                    if nxt is not None:
-                        return nxt
-                return None
+                    for end in _eval_ends(branch, view, pos, leaf_maps, budget):
+                        if end not in out:
+                            out.append(end)
+                return out
             if kind == "opt":
                 child = t[1] if len(t) > 1 else None
                 if child is None:
-                    return pos
-                nxt = _eval_expr(child, view, pos, leaf_maps)
-                if nxt is None:
-                    return pos
-                return nxt
+                    return [pos]
+                ends = _eval_ends(child, view, pos, leaf_maps, budget)
+                if pos not in ends:
+                    ends = [*ends, pos]
+                return ends
             if kind == "rep":
+                # First-hit iteration (legacy semantics unchanged): each step
+                # takes the first (longest-preferred) end, mirroring the old
+                # single-end evaluation exactly.
                 child = t[1] if len(t) > 1 else None
                 if child is None:
-                    return pos
+                    return [pos]
                 min_rep = 0
                 max_rep: int | None = None
                 if len(t) > 2:
@@ -120,51 +150,74 @@ def _eval_expr(
                 while True:
                     if max_rep is not None and count >= max_rep:
                         break
-                    nxt = _eval_expr(child, view, cur, leaf_maps)
-                    if nxt is None or nxt == cur:
+                    step = _eval_ends(child, view, cur, leaf_maps, budget)
+                    if not step or step[0] == cur:
                         break
-                    cur = nxt
+                    cur = step[0]
                     count += 1
                     if count > 10000:
                         break
                 if count < min_rep:
-                    return None
-                return cur
+                    return []
+                return [cur]
             if kind == "label":
                 child2: Any = t[2] if len(t) > 2 else (t[1] if len(t) > 1 else None)
                 if child2 is None:
-                    return pos
-                return _eval_expr(child2, view, pos, leaf_maps)
+                    return [pos]
+                return _eval_ends(child2, view, pos, leaf_maps, budget)
     if hasattr(cast(Any, expr), "match"):
         attr2 = getattr(cast(Any, expr), "match", None)
         if callable(attr2):
             mp = leaf_maps.get(id(cast(Any, expr)))
             if mp is None:
-                return None
-            return mp.get(pos)
+                return []
+            raw = mp.get(pos, [])
+            # Tolerate legacy single-end maps ({start: end}) from older
+            # callers: normalize to an end list; anything else is no-match
+            # (never raise on a malformed map) (#73 L3).
+            if isinstance(raw, int):
+                return [raw]
+            if isinstance(raw, list):
+                return [e for e in raw if isinstance(e, int)]
+            return []
     if isinstance(expr, str):
         subj = view.subject
         if subj.startswith(expr, pos):
-            return pos + len(expr)
-        return None
+            return [pos + len(expr)]
+        return []
     if isinstance(expr, tuple):
         t2 = cast(tuple[Any, ...], expr)
         if len(t2) == 2 and t2[0] == "lit" and isinstance(t2[1], str):
             lit = cast(str, t2[1])
             if view.subject.startswith(lit, pos):
-                return pos + len(lit)
-            return None
+                return [pos + len(lit)]
+            return []
         if len(t2) == 2 and t2[0] == "regex" and isinstance(t2[1], str):
             pat_str = cast(str, t2[1])
             try:
                 pat = re.compile(pat_str)
             except re.error:
-                return None
+                return []
             m = pat.match(view.subject, pos)
             if m is not None:
-                return m.end()
-            return None
-    return None
+                return [m.end()]
+            return []
+    return []
+
+
+def _eval_expr(
+    expr: Any,
+    view: View,
+    pos: int,
+    leaf_maps: dict[int, dict[int, list[int]]],
+) -> int | None:
+    """First-hit wrapper over :func:`_eval_ends` (legacy single-end semantics).
+
+    Kept for existing callers: returns the first (longest-preferred) end,
+    or ``None`` when the expression yields no end at ``pos``.
+    """
+    ends = _eval_ends(expr, view, pos, leaf_maps, [_SEQ_EVAL_BUDGET])
+    return ends[0] if ends else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,7 +271,7 @@ class CombinatorMatcher:
             if iid not in seen:
                 seen.add(iid)
                 uniq_leaves.append(lf)
-        leaf_maps: dict[int, dict[int, int]] = {}
+        leaf_maps: dict[int, dict[int, list[int]]] = {}
         for lf in uniq_leaves:
             spans: list[tuple[int, int]] = []
             try:
@@ -237,12 +290,15 @@ class CombinatorMatcher:
                 LookupError,
             ):
                 spans = []
-            mp: dict[int, int] = {}
+            mp: dict[int, list[int]] = {}
             for s, e in spans:
                 if not isinstance(s, int) or not isinstance(e, int):
                     continue
-                if s not in mp or e > mp[s]:
-                    mp[s] = e
+                ends = mp.setdefault(s, [])
+                if e not in ends:
+                    ends.append(e)
+            for ends in mp.values():
+                ends.sort(reverse=True)  # longest-first: legacy preference order
             leaf_maps[id(lf)] = mp
 
         subj = view.subject
