@@ -32,7 +32,7 @@ _HYP_SETTINGS = settings(
     deadline=None,
     phases=(Phase.generate, Phase.target, Phase.shrink),
     derandomize=False,
-    suppress_health_check=list(HealthCheck),
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large],
 )
 
 _COUNTRY_TOKENS: frozenset[str] = frozenset(

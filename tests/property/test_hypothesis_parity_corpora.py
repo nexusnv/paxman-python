@@ -72,7 +72,7 @@ _HYP_SETTINGS = settings(
     deadline=None,
     phases=(Phase.generate, Phase.target, Phase.shrink),
     derandomize=False,
-    suppress_health_check=list(HealthCheck),
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large],
 )
 
 # ---------------------------------------------------------------------------
@@ -177,8 +177,24 @@ def test_country_name_hypothesis_honest_behavior(text: str) -> None:
         assert normalize_name(m.notation.value) in _COUNTRY_TOKENS
 
 
+@st.composite
+def _country_legacy_domain_text(draw: st.DrawFn) -> str:
+    """On-domain generator for the legacy whole-input parity test (#71 item 4).
+
+    The test asserts byte parity only when the trimmed input is itself a
+    known name key, so generate on-domain inputs directly (sampled key +
+    casing + strippable padding) instead of filtering arbitrary text with
+    assume() — the old shape discarded ~96% of examples and tripped
+    filter_too_much once suppression was narrowed. A small random fraction
+    keeps off-domain exploration (assumed out, well under the threshold).
+    """
+    if draw(st.integers(min_value=0, max_value=5)) == 0:
+        return draw(_country_random).strip()
+    return _country_token_text(draw)
+
+
 @_HYP_SETTINGS
-@given(text=_country_hyp_text())
+@given(text=_country_legacy_domain_text())
 def test_country_name_hypothesis_parity_on_legacy_domain(text: str) -> None:
     """Byte parity holds on the legacy grammar's whole-input domain.
 
