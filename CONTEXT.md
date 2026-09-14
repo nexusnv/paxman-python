@@ -69,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty built-in capabilities (20 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -90,7 +90,9 @@ Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | BIPM SI Brochure, ISO 80000-1 |
+| **Timezone** | Timezone identifiers | IANA Time Zone Database |
 | **URL** | URLs | WHATWG URL Standard |
+| **UtcOffset** | UTC offsets | ISO 8601, RFC 3339 |
 
 Capability classes are exported from `paxman/capabilities/__init__.py` as acronym aliases (`EmailCapability as Email`, etc.); the export list is enforced by `tests/unit/test_capability_exports.py`.
 
@@ -791,7 +793,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (18 capabilities, alphabetical; paxman/capabilities/__init__.py exports 18), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (20 capabilities, alphabetical; paxman/capabilities/__init__.py exports 20), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py

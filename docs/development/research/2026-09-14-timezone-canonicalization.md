@@ -476,12 +476,12 @@ Shape `UTC|GMT[+-]H[:MM]` (documented *human* notation — NOT POSIX: POSIX `GMT
 | 9 | Carved abbreviation | `EST` → INVALID (Link to `America/Panama` exists, but bare short-caps reads as abbreviation, §10–11) | carve rule; seeker writes the canonical |
 | 10 | Ambiguous abbreviation | `IST` → INVALID (India/Ireland/Israel) | recognized, refused — no silent pick |
 | 11 | Unknown abbreviation | `XYZ` → MISSING | not in lexicon |
-| 12 | Unknown key | `America/Narnia` → INVALID | shape claimed, membership failed |
+| 12 | Unknown key | `America/Narnia` → MISSING | curated lexicon claims listed keys only; unlisted keys are never recognized (executed: integration-pinned) |
 | 13 | Windows name | `Eastern Standard Time` → MISSING | deferred entirely (no v1 grammar; territory-sensitive) |
 | 14 | Embedded in sentence | `arrive CET tomorrow` → INVALID (`CET` refused everywhere bare) / `visit US/Eastern tomorrow` → SUCCESS `America/New_York` span | WORD guards; carve rule vs path link |
 | 15 | Two distinct in one slice | `US/Eastern then America/Chicago` → AMBIGUOUS/MultipleMentionsError | `single_value=True` |
 | 16 | Glued runs + paths | `XUS/Eastern` → MISSING; `/usr/share/zoneinfo/America/New_York` → MISSING (path context; split first) | `/`-aware boundary: edges exclude alnum and `/` |
-| 17 | Out-of-range offset | `UTC+15:00` → INVALID | \|HH\| ≤ 14 |
+| 17 | Out-of-range offset | `UTC+15:00` → MISSING (grammar range guard never claims it); `+14:30` → INVALID (claimed shape, rule refuses range) | \|HH\| ≤ 14 enforced at both layers (executed: integration-pinned) |
 | 18 | `Zulu` word | `Zulu` → MISSING | not a tzdb key (verified raises) |
 
 ## 9. Resolution-State Map (ARCHITECTURE.md Resolution Semantics)
@@ -494,7 +494,7 @@ Shape `UTC|GMT[+-]H[:MM]` (documented *human* notation — NOT POSIX: POSIX `GMT
 | Case variants (`america/new_york`) | SUCCESS (same canonical) | fold safe by namespace construction (§4.7 class D) |
 | Short-caps Link spelled bare (`EST`) | INVALID | abbreviation-family refusal (§10–11 carve rule) |
 | Ambiguous abbreviation (`IST`) | INVALID | recognized, refused — genuine ambiguity without timestamp |
-| Unknown key (`America/Narnia`) | INVALID | structural failure, rule rejects |
+| Unknown key (`America/Narnia`) | MISSING | curated lexicon never claims unlisted keys (never INVALID) |
 | No tz shape (`hello world`) | MISSING | no grammar recognized |
 | Two distinct zones in one slice | AMBIGUOUS / MultipleMentionsError | single-slice ambiguity, use segmentation |
 | Gated-off form (`EST5EDT` default) | INVALID | rule dropped (`requires_features`), shape claimed |
@@ -515,7 +515,7 @@ Shape `UTC|GMT[+-]H[:MM]` (documented *human* notation — NOT POSIX: POSIX `GMT
 | `UTC+05:30` / `+0530` / `Z` | `UtcOffset` → `+05:30` / `+00:00` | fixed offset, human notation |
 | `-00:00` | INVALID | unknown-offset ≠ zero; no such entity in v1 |
 | `GMT+5` | `UtcOffset` → `+05:00` | documented human notation (not POSIX) |
-| `America/Narnia` / `Zulu` | INVALID / MISSING | unregistered / not an identifier |
+| `America/Narnia` / `Zulu` | MISSING / MISSING | unlisted key / not an identifier |
 
 ---
 ## 10. Scaffolding & Repo Integration
