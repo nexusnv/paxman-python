@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with twenty built-in capabilities (20 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -87,7 +87,9 @@ Paxman ships with eighteen built-in capabilities (18 in `paxman/capabilities/__i
 | **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
+| **Timezone** | Timezone identifiers | 2 (timezone_name, timezone_abbreviation) | 4 | IANA Time Zone Database |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
+| **UtcOffset** | UTC offsets | 1 (utc_offset) | 1 | ISO 8601-1:2019, RFC 3339 |
 
 > **Note:** Table generated from `paxman/api/bootstrap.py:_SHIPPED` (alphabetical by registry name). To regenerate, run `uv run python tools/generate_readme_table.py`.
 
@@ -508,6 +510,8 @@ Every capability provides a `create_contract()` factory method with common and c
 | Phone | `output_format` | `str` | Output format (`"e164"` default, `"rfc3966"`, `"split"`) |
 | SIUnit | `allow_split_word_prefixes` | `bool` | Merge a word prefix split from its unit by whitespace (e.g. `"kilo gram"` → `"kg"`) when True; default False rejects the spoken form (→ INVALID) |
 | SIUnit | `allow_multi_solidus` | `bool` | Preserve the legacy accept-multi-solidus behavior (e.g. `"kg/m/s"`) when True; default False rejects more than one top-level solidus (→ INVALID) per ISO 80000-1 §6.6.2 |
+| Timezone | `include_systemv` | `bool` | Enable SystemV zone validation (`EST5EDT` and kin; recognized but INVALID when off) |
+| UtcOffset | `output_format` | `str` | Output format (`"extended"` default, `"basic"`) |
 
 ### Rule Pinning and Exclusion
 

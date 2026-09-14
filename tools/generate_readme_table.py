@@ -54,7 +54,9 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "orcid": ("Researcher identifiers", "ISO 27729:2024, MOD 11-2"),
     "phone": ("Phone numbers", "ITU-T E.164, RFC 3966, NANP"),
     "si_unit": ("SI unit expressions", "BIPM SI Brochure, ISO 80000-1"),
+    "timezone": ("Timezone identifiers", "IANA Time Zone Database"),
     "url": ("URLs", "WHATWG URL Standard"),
+    "utc_offset": ("UTC offsets", "ISO 8601-1:2019, RFC 3339"),
 }
 
 _DISPLAY_NAMES: dict[str, str] = {
@@ -75,7 +77,9 @@ _DISPLAY_NAMES: dict[str, str] = {
     "orcid": "ORCID",
     "phone": "Phone",
     "si_unit": "SI Unit",
+    "timezone": "Timezone",
     "url": "URL",
+    "utc_offset": "UtcOffset",
 }
 
 

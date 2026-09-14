@@ -44,6 +44,8 @@ from paxman.capabilities import (
     Money,
     Phone,
     SIUnit,
+    Timezone,
+    UtcOffset,
 )
 
 pytestmark = pytest.mark.unit
@@ -68,7 +70,9 @@ _FACTORIES = {
     "phone": Phone,
     "element": Element,
     "si_unit": SIUnit,
+    "timezone": Timezone,
     "url": URL,
+    "utc_offset": UtcOffset,
 }
 
 _CLASS_TERMS: tuple[str, ...] = ("encoding", "expansion", "quantization", "projection")

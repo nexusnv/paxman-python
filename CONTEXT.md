@@ -69,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty built-in capabilities (20 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -90,7 +90,9 @@ Paxman ships eighteen built-in capabilities (18 in `paxman/capabilities/__init__
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | BIPM SI Brochure, ISO 80000-1 |
+| **Timezone** | Timezone identifiers | IANA Time Zone Database |
 | **URL** | URLs | WHATWG URL Standard |
+| **UtcOffset** | UTC offsets | ISO 8601, RFC 3339 |
 
 Capability classes are exported from `paxman/capabilities/__init__.py` as acronym aliases (`EmailCapability as Email`, etc.); the export list is enforced by `tests/unit/test_capability_exports.py`.
 
@@ -791,7 +793,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (18 capabilities, alphabetical; paxman/capabilities/__init__.py exports 18), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (20 capabilities, alphabetical; paxman/capabilities/__init__.py exports 20), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -932,14 +934,27 @@ paxman/
     │   ├── grammar/data/          # unit_symbol_tokens, unit_name_tokens, compound_tokens (+ GENERATED via tools/regenerate_si_prefix_data.py)
     │   ├── rules/                 # bipm_si_brochure_ed2019, iso_80000_ed2022, split_prefixes
     │   └── rules/data/            # si_base_units, si_derived_units, si_nonsi_units, si_prefixes, unit_names (+ GENERATED prefixed_units, prefixed_unit_names)
-    └── URL/                       # grammar/ (1) + rules/ (1) + rules/data/ — WHATWG URL Standard
-        ├── capability.py          # URLCapability
-        ├── contract.py            # URLContract
-        ├── notation.py            # URLNotation
-        ├── parsing.py             # WHATWG URL parsing helpers
-        ├── grammar/               # absolute_uri_recognition
-        ├── rules/                 # whatwg_url_standard
-        └── rules/data/            # idna_uts46_mapping
+    ├── Timezone/                  # grammar/ (2) + rules/ (2) + rules/data/ — IANA Time Zone Database 2026d
+    │   ├── capability.py          # TimezoneCapability
+    │   ├── contract.py            # TimezoneContract
+    │   ├── notation.py            # TimezoneNotation (key, family, compact)
+    │   ├── grammar/               # timezone_name_recognition, timezone_abbreviation_recognition
+    │   ├── rules/                 # iana_tzdb_ed2026, iana_tz_abbreviations_ed2026
+    │   └── rules/data/            # iana_zone_identifiers, iana_zone_links, iana_fixed_zones, abbreviation_map
+    ├── URL/                       # grammar/ (1) + rules/ (1) + rules/data/ — WHATWG URL Standard
+    │   ├── capability.py          # URLCapability
+    │   ├── contract.py            # URLContract
+    │   ├── notation.py            # URLNotation
+    │   ├── parsing.py             # WHATWG URL parsing helpers
+    │   ├── grammar/               # absolute_uri_recognition
+    │   ├── rules/                 # whatwg_url_standard
+    │   └── rules/data/            # idna_uts46_mapping
+    └── UtcOffset/                 # grammar/ (1) + rules/ (1) — ISO 8601-1:2019, RFC 3339
+        ├── capability.py          # UtcOffsetCapability
+        ├── contract.py            # UtcOffsetContract
+        ├── notation.py            # UtcOffsetNotation (compact)
+        ├── grammar/               # utc_offset_recognition
+        └── rules/                 # iso8601_offset_ed2019
 ```
 
 ### Package Responsibilities

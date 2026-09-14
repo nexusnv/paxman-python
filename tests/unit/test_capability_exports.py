@@ -21,7 +21,9 @@ from paxman.capabilities import (  # isort: skip
     ORCID,
     Phone,
     SIUnit,
+    Timezone,
     URL,
+    UtcOffset,
 )
 
 
@@ -217,6 +219,30 @@ class TestSIUnitCapabilityExports:
         assert SIUnit.name == "si_unit"
 
 
+class TestTimezoneCapabilityExports:
+    @pytest.mark.unit
+    def test_timezone_capability_importable(self) -> None:
+        """Timezone capability is importable from paxman.capabilities."""
+        assert Timezone is not None
+
+    @pytest.mark.unit
+    def test_timezone_capability_name(self) -> None:
+        """Timezone capability has correct name."""
+        assert Timezone.name == "timezone"
+
+
+class TestUtcOffsetCapabilityExports:
+    @pytest.mark.unit
+    def test_utc_offset_capability_importable(self) -> None:
+        """UtcOffset capability is importable from paxman.capabilities."""
+        assert UtcOffset is not None
+
+    @pytest.mark.unit
+    def test_utc_offset_capability_name(self) -> None:
+        """UtcOffset capability has correct name."""
+        assert UtcOffset.name == "utc_offset"
+
+
 class TestURLCapabilityExports:
     @pytest.mark.unit
     def test_url_capability_importable(self) -> None:
@@ -251,5 +277,7 @@ class TestURLCapabilityExports:
             "ORCID",
             "Phone",
             "SIUnit",
+            "Timezone",
             "URL",
+            "UtcOffset",
         }

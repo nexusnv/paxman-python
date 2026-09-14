@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Timezone — IANA timezone identifiers:** new capability with two grammars (`timezone_name_recognition` lexicon over the vendored identifier set — canonical Zones plus `backward` Links, `etcetera` fixed zones, and `UTC`; `timezone_abbreviation_recognition` over the curated abbreviation set) and four rules backed by the IANA Time Zone Database 2026d (`Section zone-key-membership`, `Section link-resolution`, `Section systemv-zones` gated on `include_systemv`, `Section abbreviation-refusal`). Canonical form is the case-sensitive IANA zone key (`US/Eastern` → `America/New_York`; `america/new_york` folds to canonical). Bare short-caps abbreviations (`EST`, `IST`) are recognized but refused → `INVALID`; unlisted keys (`America/Narnia`) are never claimed → `MISSING`. No offered output formats (default `iana` only).
+- **UtcOffset — UTC offset values:** new capability with one grammar (`utc_offset_recognition`: `UTC`/`GMT`-prefixed tokens, bare `±HH[:MM]`/`±HHMM`, `Z`) and one parser rule backed by ISO 8601-1:2019 plus RFC 3339 (`Section offset-structure`: total-minutes bound −720…+840 alongside the `|HH| ≤ 14`, `MM < 60` shape guards — `+14:30` refused though each shape guard passes; `-00:00` refused as unknown-offset). Canonical form is extended `+HH:MM` (`UTC+5` → `+05:00`, `Z` → `+00:00`); offered output format `basic` (`+HHMM`) re-enters as a fixed point. Out-of-range prefixed shapes (`UTC+15:00`) are never claimed → `MISSING`; claimed-but-impossible bare shapes (`+14:30`) → `INVALID`.
+
 ### Fixed
 
 - **Language — compositional description phrases (#148):** new `language_description_recognition` grammar parses `<Language> in <Script>`, `<Language> in <Region>`, and `<Region> <Language> in <Script>` into fielded notations validated by the new `Section-iana-registry-description` rule (same IANA publication; display→subtag mapping in rules/data, key sets in grammar/data). `Singapore Chinese in traditional script` → `AMBIGUOUS {zh-Hant-SG, id}` under the default contract (no false provenance; narrowing in #147), `SUCCESS zh-Hant-SG` with `suppress_common_words=True`. Bare slots reject a following content word (`Chinese in traditional dress` stays unrecognized); broader tables deferred in #148.
