@@ -70,6 +70,21 @@ class TestTimezoneNameRecognition:
         assert match.raw_text == "US/Eastern"
         assert match.notation.family == "name"
 
+    @pytest.mark.parametrize(
+        ("text", "span"),
+        [
+            ("Canada/Eastern", (0, 14)),
+            ("US/PACIFIC", (0, 10)),
+            ("Etc/GMT-8", (0, 9)),
+        ],
+    )
+    def test_wave2_link_span(self, text: str, span: tuple[int, int]) -> None:
+        """Wave-2 first cut (#170): new links/fixed zone claimed whole."""
+        (match,) = self.grammar.recognize(text)
+        assert (match.start, match.end) == span
+        assert match.raw_text == text
+        assert match.notation.family == "name"
+
     def test_lowercase_fold_claims_span(self) -> None:
         (match,) = self.grammar.recognize("america/new_york")
         assert (match.start, match.end) == (0, 16)
@@ -101,6 +116,7 @@ class TestTimezoneNameRecognition:
     def test_offset_continuation_no_prefix_fallback(self) -> None:
         """Etc/GMT+5X must not fall back to the Etc/GMT prefix (#162 family)."""
         assert self.grammar.recognize("Etc/GMT+5X") == []
+        assert self.grammar.recognize("Etc/GMT-8X") == []
 
     def test_embedded_link_sentence_span(self) -> None:
         (match,) = self.grammar.recognize("visit US/Eastern tomorrow")
