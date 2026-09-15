@@ -124,6 +124,13 @@ A few conventions that go beyond what the linters enforce:
 
 ---
 
+## Branching and release
+
+- `main` is the default branch and is always releasable. Merging into `main` means releasing.
+- `dev` is the integration branch for the next release. All feature, audit, and fix branches are created from `dev` and merged back into `dev`.
+- Release branches are cut from `dev` and merged back into `dev` via PR.
+- Promotion is a PR from `dev` into `main`. Tag `vX.Y.Z` on the `main` HEAD after that merge (never on `dev`), then publish to PyPI and create the GitHub Release. Non-release chores on `dev` (e.g. tooling config) ride along with the next promotion; they do not trigger a release on their own.
+
 ## Pull Request Process
 
 1. **Create a feature branch** from the `dev` branch.
