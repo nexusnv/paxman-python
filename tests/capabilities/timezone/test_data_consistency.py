@@ -78,6 +78,8 @@ class TestLinkTable:
         ("source", "target"),
         [
             ("us/eastern", "America/New_York"),
+            ("canada/eastern", "America/Toronto"),
+            ("us/pacific", "America/Los_Angeles"),
             ("asia/calcutta", "Asia/Kolkata"),
             ("australia/act", "Australia/Sydney"),
             ("cet", "Europe/Brussels"),
@@ -106,7 +108,7 @@ class TestLinkTable:
 class TestFixedZones:
     """Etcetera fixed zones plus bare UTC/GMT."""
 
-    @pytest.mark.parametrize("key", ["Etc/UTC", "Etc/GMT", "UTC", "GMT"])
+    @pytest.mark.parametrize("key", ["Etc/UTC", "Etc/GMT", "UTC", "GMT", "Etc/GMT-8"])
     def test_fixed_zone_present(self, key: str) -> None:
         assert key in IANA_FIXED_ZONES
 

@@ -31,6 +31,7 @@ IANA_FIXED_ZONES: frozenset[str] = frozenset(
     {
         "Etc/UTC",
         "Etc/GMT",
+        "Etc/GMT-8",
         "UTC",
         "GMT",
     }
