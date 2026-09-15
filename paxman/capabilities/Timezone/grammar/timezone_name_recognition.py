@@ -66,10 +66,13 @@ NAME_TOKENS: frozenset[str] = frozenset(
         # Legacy Link keys (lowered; short-caps Links carved out).
         "asia/calcutta",
         "australia/act",
+        "canada/eastern",
         "us/eastern",
+        "us/pacific",
         # Fixed zones (lowered).
         "etc/gmt",
         "etc/gmt+5",
+        "etc/gmt-8",
         "etc/utc",
         "gmt",
         "utc",
