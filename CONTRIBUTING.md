@@ -127,7 +127,7 @@ A few conventions that go beyond what the linters enforce:
 ## Pull Request Process
 
 1. **Create a feature branch** from the `dev` branch.
-2. **Write tests first** where applicable. The project follows TDD principles: write a failing test, make it pass, then refactor. New capabilities must extend `tests/property/test_reentry_invariant.py` (ADR-0010), the `test_output_format_preservation.py` matrix for every offered format (ADR-0011), and add a `test_data_consistency.py` covering every recognition key; note that a `PARSER` rule on LOOKUP-backed semantics needs a `LOOKUP_TABLE` companion or its candidates are disqualified (ADR-0012).
+2. **Write tests first** where applicable. The project follows TDD principles: write a failing test, make it pass, then refactor. New capabilities must extend `tests/property/test_reentry_invariant.py` (ADR-0010), the `test_output_format_preservation.py` matrix for every offered format (ADR-0011), and add a `test_data_consistency.py` covering lookup-backed grammars' recognition keys against rule-data authority mappings (parser-/regex-only rules excluded unless an explicit expected mapping is defined); note that a `PARSER` rule on LOOKUP-backed semantics needs a `LOOKUP_TABLE` companion or its candidates are disqualified (ADR-0012).
 3. **Run the full quality suite** before pushing:
    ```bash
    uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run import-linter lint && uv run pytest

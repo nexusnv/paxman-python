@@ -78,8 +78,17 @@ grammar-stage parity, re-entry fixed points (`test_reentry_invariant.py` ROWS �
 every capability extends this suite per ADR-0010), output-format preservation
 (`test_output_format_preservation.py` CLASS_MAP — every offered format per
 ADR-0011), and per-capability robustness suites (e.g. Timezone/UtcOffset).
-Suites driving the full pipeline use a local `_fresh_registry` fixture; the
-rest drive grammars/rules/`format_value` directly and never touch the registry.
+Eleven suites touch the registry — all full-pipeline with an isolated
+single-capability registry: `test_money_properties`, `test_reentry_invariant`,
+`test_coordinates_quantization`, `test_output_format_preservation`,
+`test_timezone_properties`, `test_issn_properties`, `test_orcid_property`, and
+`test_coordinates_properties` (local `_fresh_registry` autouse fixture);
+`test_element_properties` (mixed — direct grammar/rule key tests plus
+full-pipeline self-canonicalization under `_fresh_registry`);
+`test_mac_address_properties` (local `_clean_registry` autouse fixture); and
+`test_language_property` (manual `reset_registry()` in try/finally per test).
+The rest drive grammars/rules/`format_value` directly and never touch the
+registry.
 
 ### End-to-End Tests
 
