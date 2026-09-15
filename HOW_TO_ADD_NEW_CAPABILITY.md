@@ -59,7 +59,7 @@ After generating, the tool prints a checklist of what only a human can do:
 2. Rename `Section 1-overview` and implement `matches()`/`normalize()`.
 3. Shape the notation beyond the placeholder `value` field.
 4. Add `grammar/data/` and `rules/data/` when authority tables arrive.
-5. Register in your entry point; sweep README/CONTEXT/AGENTS docs.
+5. Register in `paxman/capabilities/__init__.py` + `paxman/api/bootstrap.py:_SHIPPED` + `paxman/cli.py` + `tools/generate_readme_table.py`; sweep shipped docs (new `docs/user/capabilities/<cap>.md` + `capabilities/index.md` chooser + `concepts/capabilities.md` + `api-reference.md` format/flag/lookup tables + `citations.md` + `glossary.md` + `migration.md` + README tables + CONTEXT table/Notation entries + AGENTS counts).
 6. Delete or extend the placeholder grammar/rule as needed.
 
 The generated code already satisfies every import-time enforcement and passes
@@ -353,6 +353,16 @@ Create a class that extends `Rule`:
 | Lexicon (vocabulary) | `LOOKUP_TABLE` | The rule maps the recognized token to its canonical value with provenance — the grammar's key set must never do that |
 
 Codebase examples: IP's IPv4 grammar is a loose regex (`\d{1,3}` octets) and `rfc_791_ed1981` is a `PARSER` rule enforcing the 0–255 range; ISBN's grammars strip separators and `iso_2108_ed2017` is a `PARSER` rule computing the check digit; Country's `name_recognition` (Lexicon) feeds the `LOOKUP_TABLE` ISO 3166 and CLDR rules that own token→country meaning.
+
+> **ADR-0012 warning:** a `PARSER` candidate survives only with `LOOKUP_TABLE`
+> corroboration on the same recognition (same grammar, span, and notation
+> object). A new `PARSER`-only meaning on LOOKUP-backed semantics resolves
+> `MISSING`/`INVALID`, not `SUCCESS` — pair it with a `LOOKUP_TABLE` rule
+> validating the same grammar, or give the grammar its own identity semantics.
+> A disqualified parser recognition is `INVALID`, not `MISSING`:
+> `had_recognitions` stays true once a grammar claims the input (`MISSING`
+> means no grammar recognized anything). Contracts filtering the lookup
+> authority out preserve parser candidates per the vacuity clause.
 
 3. Set `provenance` to the `PUBLICATION` constant defined above
 4. Set `citation` to a human-readable citation (e.g., "Section 3.4.1 (addr-spec)")
@@ -773,11 +783,20 @@ from paxman.capabilities import YourDomain
 paxman.register_capability(YourDomain())
 ```
 
+Shipped capabilities additionally wire `paxman/api/bootstrap.py:_SHIPPED`
+(alphabetical registry name), `paxman/cli.py` (CLI name + help), and
+`tools/generate_readme_table.py` (`_DESCRIPTIONS` + `_DISPLAY_NAMES`), and
+update `tests/unit/test_capability_exports.py` /
+`test_capability_surface.py` / `test_capability_lazy_import.py` /
+`test_bootstrap.py` plus the shipped docs checklist in Step 0 item 5
+(guide, chooser, concepts, api-reference, citations, glossary, migration,
+README/CONTEXT/AGENTS).
+
 ---
 
 ## Step 10: Write Tests
 
-Tests are organized into four layers. You must write tests for all layers.
+Tests are organized into five layers. You must write tests for all layers.
 
 ### 10a: Grammar Tests
 
@@ -872,6 +891,25 @@ Test through the public API (`paxman.api.canonicalize`):
 1. `test_canonicalize_success` — full happy path
 2. `test_canonicalize_missing` — no match
 3. `test_canonicalize_with_options` — contract configuration
+
+### 10f: Data-consistency tests
+
+Create `tests/capabilities/yourdomain/test_data_consistency.py` for lookup-backed
+grammars, covering each included recognition key against its rule-data
+authority mapping (the governance hard rule — grammars own keys, rules own
+authority mappings). Parser- and regex-only rules carry no key tables and are
+excluded unless an explicit expected mapping is defined for them. See the
+Timezone / Language consistency suites for the pattern.
+
+### 10g: Property tests
+
+Extend `tests/property/test_reentry_invariant.py` ROWS with your canonical
+fixtures (ADR-0010 — every offered format re-enters under the default
+contract), add a `(capability, format)` entry plus injectivity pair to
+`tests/property/test_output_format_preservation.py` `CLASS_MAP` for every
+offered format (ADR-0011), and add a `tests/property/test_<cap>_properties.py`
+fuzz-robustness suite with a local `_fresh_registry` fixture when the
+capability drives the full pipeline (Timezone pattern).
 
 ### Test Markers
 

@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 18 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 20 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -22,8 +22,8 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 |-----------|---------------|--------------|-------|
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
 | **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946 | Email, IP, Phone, Language, Coordinates | 8 |
-| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08) | Language | 2 |
-| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/3/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates | 21 |
+| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
+| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset | 22 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
@@ -79,12 +79,18 @@ Specification: **IANA Language Subtag Registry**, Rolling File-Date 2026-08-08 �
 |------------|------|----------|
 | Language | `Section-iana-registry` | IANA Registry Type language/script/region/variant Deprecated Preferred Prefix Suppress-Script |
 | Language | `Section-iana-registry-private` | IANA Registry private-use qaa-qtz/Qaaa-Qabx/QM-QZ/AA/XA-XZ/ZZ/x- |
+| Timezone | `Section zone-key-membership` | zone1970.tab col 3 + backward Links + etcetera (vendored File-Date 2026d) |
+| Timezone | `Section link-resolution` | backward Link TARGET LINK-NAME lines (vendored File-Date 2026d) |
+| Timezone | `Section systemv-zones` | backward SystemV Zones EST5EDT/CST6CDT/MST7MDT/PST8PDT (vendored File-Date 2026d) |
+| Timezone | `Section abbreviation-refusal` | theory.html abbreviation ambiguity (IST/CST/PST) + backward short-caps Links carve set (vendored File-Date 2026d) |
+
+Specification for the Timezone rows: **IANA Time Zone Database**, release 2026d — `https://www.iana.org/time-zones` (membership/link/systemv) and `https://data.iana.org/time-zones/theory.html` (abbreviation refusal) — `kind="registry"`, `lifecycle="active"`, `publication_year=2026`.
 
 ---
 
 ## ISO — International Organization for Standardization
 
-Across 11 ISO publications (21 rules):
+Across 12 ISO publications (22 rules):
 
 | Capability | Specification | Version | Rule | Citation | Year | Reference |
 |------------|---------------|---------|------|----------|------|-----------|
@@ -109,6 +115,7 @@ Across 11 ISO publications (21 rules):
 | Language | ISO 639-2:1998 | 1998 | `Section 4-alpha-3-code` | Section 4 (alpha-3 code, 487 entries T/B) | 1998 | https://www.iso.org/standard/4767.html |
 | Language | ISO 639-5:2008 | 2008 | `Section 4-collective-code` | Section 4 (collective code, 115 entries) | 2008 | https://www.iso.org/standard/39536.html |
 | SI Unit | ISO 80000-1:2022 Quantities and units — Part 1: General | 2022 | `Section 6.5-compounds` | ISO 80000-1:2022, §6.5 (unit symbols in products and quotients) | 2022 | https://www.iso.org/standard/76921.html |
+| UtcOffset | ISO 8601-1:2019 | 2019 | `Section offset-structure` | ISO 8601-1:2019 Section 3 (offset representations); RFC 3339 Section 5.6 (time-numoffset +-HH:MM, Z) | 2019 | https://www.iso.org/standard/70907.html |
 
 All ISO entries are `lifecycle="active"`. ISO 3166-1 entries are `kind="registry"`; ISO 3166-3, ISO 8601, ISO 2108, ISO 13616-1, ISO 639-* and ISO 80000-1 are `kind="specification"`; ISO 4217 is `kind="specification"` with `version=None` (the code list is maintained by the ISO 4217 Maintenance Agency — see citation).
 

@@ -51,21 +51,23 @@ Tests live in the `tests/` directory and are organized by scope:
 | `tests/unit/` | `@pytest.mark.unit` | Domain object immutability, protocol compliance, enums |
 | `tests/capabilities/` | `@pytest.mark.capability` | Grammar recognition and rule normalization per capability |
 | `tests/integration/` | `@pytest.mark.integration` | Full pipeline flow, ambiguity detection, temporal filtering |
+| `tests/property/` | `@pytest.mark.property` | Hypothesis property tests (grammar/rule/`format_value` inputs; Money, re-entry, preservation-matrix, quantization, and timezone suites drive the full pipeline via a local `_fresh_registry` fixture) |
 | `tests/e2e/` | `@pytest.mark.e2e` | End-to-end scenarios through the public `canonicalize()` API |
 
 Run all tests:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 Run a specific marker:
 
 ```bash
-pytest -m unit
-pytest -m capability
-pytest -m integration
-pytest -m e2e
+uv run pytest -m unit
+uv run pytest -m capability
+uv run pytest -m integration
+uv run pytest -m property
+uv run pytest -m e2e
 ```
 
 The project also uses [Hypothesis](https://hypothesis.readthedocs.io/) for property-based testing of domain object contracts like immutability, equality, and hashability.
@@ -79,8 +81,8 @@ Paxman enforces strict quality gates through three tools. All of them should pas
 ### Ruff (linting and formatting)
 
 ```bash
-ruff check .
-ruff format .
+uv run ruff check .
+uv run ruff format .
 ```
 
 Ruff is configured in `pyproject.toml` with rules for pycodestyle, pyflakes, isort, pep8-naming, pyupgrade, flake8-bugbear, and flake8-simplify. The line length is 88 characters.
@@ -88,7 +90,7 @@ Ruff is configured in `pyproject.toml` with rules for pycodestyle, pyflakes, iso
 ### Pyright (static type checking)
 
 ```bash
-pyright
+uv run pyright
 ```
 
 Pyright runs in **strict mode** with `pythonVersion = "3.11"`. It checks only the `paxman/` source directory (not tests or docs). All source code must pass strict type checking with no `# type: ignore` annotations.
@@ -96,7 +98,7 @@ Pyright runs in **strict mode** with `pythonVersion = "3.11"`. It checks only th
 ### Import Linter (architectural boundary enforcement)
 
 ```bash
-import-linter lint
+uv run import-linter lint
 ```
 
 Import-linter enforces the four-layer dependency structure described in ARCHITECTURE.md. Dependencies flow inward only:
@@ -124,13 +126,13 @@ A few conventions that go beyond what the linters enforce:
 
 ## Pull Request Process
 
-1. **Create a feature branch** from the main branch.
-2. **Write tests first** where applicable. The project follows TDD principles: write a failing test, make it pass, then refactor.
+1. **Create a feature branch** from the `dev` branch.
+2. **Write tests first** where applicable. The project follows TDD principles: write a failing test, make it pass, then refactor. New capabilities must extend `tests/property/test_reentry_invariant.py` (ADR-0010), the `test_output_format_preservation.py` matrix for every offered format (ADR-0011), and add a `test_data_consistency.py` covering lookup-backed grammars' recognition keys against rule-data authority mappings (parser-/regex-only rules excluded unless an explicit expected mapping is defined); note that a `PARSER` rule on LOOKUP-backed semantics needs a `LOOKUP_TABLE` companion or its candidates are disqualified (ADR-0012).
 3. **Run the full quality suite** before pushing:
    ```bash
-   ruff check . && ruff format --check . && pyright && import-linter lint && pytest
+   uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run import-linter lint && uv run pytest
    ```
-4. **Push your branch** and open a pull request.
+4. **Push your branch** and open a pull request against `dev`. New capabilities also update the shipped docs checklist: per-capability guide + `capabilities/index.md` chooser + `concepts/capabilities.md` + `api-reference.md` tables + `citations.md` + `glossary.md` + `migration.md` + README/CONTEXT tables + AGENTS counts (see HOW_TO_ADD_NEW_CAPABILITY.md).
 5. **Describe what changed and why.** Reference any related issues.
 6. **Respond to review feedback.** Push additional commits to address comments rather than force-pushing over reviewed code.
 

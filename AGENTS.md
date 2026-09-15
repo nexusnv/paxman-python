@@ -5,7 +5,7 @@
 **Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
-Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 18 capabilities (BIC, Coordinates, Country, Currency, Date, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, URL) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
+Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 20 capabilities (BIC, Coordinates, Country, Currency, Date, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
 
 ## STRUCTURE
 ```text
@@ -15,13 +15,13 @@ paxman/
 ├── __main__.py     # python -m paxman entry
 ├── engine/         # run_capability() pipeline orchestrator
 ├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop/matchers/anchors/boundary_spec/normalizers + legacy stages)
-├── capabilities/   # 18 self-contained capability packages
+├── capabilities/   # 20 self-contained capability packages
 ├── shared_data/    # cross-capability source snapshots (currency_snapshot.json → Currency + Money data)
 └── py.typed        # PEP 561 marker
 benchmarks/         # harness.py (CI-run), grammar_stage_parity.py, baseline.json
 tests/              # unit / capabilities/<cap> / integration / property / e2e
 tools/              # new_capability.py (scaffolder), generate_readme_table.py,
-                    # regenerate_{isbn_range,si_prefix,idna_uts46,currency}_data.py
+                    # regenerate_{isbn_range,si_prefix,idna_uts46,currency,bic,iban_registry,language,iana_language,unicode_property}_data.py
 docs/               # adr/, development/, recipes/, user/
 ```
 
@@ -38,7 +38,7 @@ docs/               # adr/, development/, recipes/, user/
 | Recognition (per cap) | `paxman/capabilities/<Name>/grammar/` |
 | Validation (per cap) | `paxman/capabilities/<Name>/rules/` |
 | Presentation seam | `paxman/capabilities/<Name>/capability.py` → `format_value()` |
-| Regenerate generated data | `tools/regenerate_isbn_range_data.py` (ISBN range), `tools/regenerate_si_prefix_data.py` (SIUnit prefixed units), `tools/regenerate_idna_uts46_data.py` (URL IDNA mapping), `tools/regenerate_currency_data.py` (Currency + Money from `paxman/shared_data/currency_snapshot.json`) |
+| Regenerate generated data | `tools/regenerate_isbn_range_data.py` (ISBN range), `tools/regenerate_si_prefix_data.py` (SIUnit prefixed units), `tools/regenerate_idna_uts46_data.py` (URL IDNA mapping), `tools/regenerate_currency_data.py` (Currency + Money from `paxman/shared_data/currency_snapshot.json`), `tools/regenerate_bic_data.py` (BIC), `tools/regenerate_iban_registry_data.py` (IBAN registry), `tools/regenerate_language_data.py` + `tools/regenerate_iana_language_data.py` (Language tables; the latter now guards removed generated modules), `tools/regenerate_unicode_property_data.py` (Unicode property ranges) |
 | CLI behavior | `paxman/cli.py` (`--list`, `--json`, stdin; contract flags are API-only) |
 | Common-word suppression | `paxman/core/grammar/boundary_spec.py` + `COMMON_WORDS` (67) + `paxman/core/grammar/data/common_words.py`; contract `suppress_common_words` (default off), CLI `--suppress-common-words` |
 | Merge-blocking commands | `.github/workflows/ci.yml` (authoritative) |
@@ -47,7 +47,7 @@ docs/               # adr/, development/, recipes/, user/
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
 | `canonicalize()` | function | `paxman/api/canonicalize.py` | Sole user entry point → `run_capability()` |
-| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 18 shipped capabilities; deterministic name list |
+| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 20 shipped capabilities; deterministic name list |
 | `list_registered_capabilities()` | function | `paxman/core/discovery.py` | Introspection of the live registry |
 | `register_capability()` | function | `paxman/core/discovery.py` | Registry add; freezes on first run |
 | `register_grammar()` / `register_rule()` | functions | `paxman/core/extensions.py` | Community extension seam (opt-in via contract `extra_grammars`) |
@@ -75,7 +75,7 @@ docs/               # adr/, development/, recipes/, user/
 ## ANTI-PATTERNS (THIS PROJECT)
 - **No `# type: ignore` / `# noqa` / `# pyright: ignore` in `paxman/` source** — fix root cause or use scoped ruff `per-file-ignores` (sanctioned pattern in pyproject). Tests may use `# type: ignore[misc]` for immutability checks.
 - Deterministic by construction: given the same input, the same contract, and the same library snapshot (fixed library version, registry contents, and rule-data tables), the pipeline always yields the same canonical output — no world-knowledge, no clock, no environment-dependent ordering, no fuzzy logic, no network inference across recognition, validation, and canonicalization.
-- Re-entry (fixed-point): a SUCCESS canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` that remove validation for a non-default format may break this, and with `suppress_common_words=True` whole-input common words (e.g. `TO` → `MISSING`) remain suppressed until the A0 whole-input exemption lands (#122); new capabilities must extend that suite (ADR-0010). Output-format information preservation (ADR-0011): every offered format is an encoding, same-entity expansion, or documented quantization — never a projection over recognition/validation information; injectivity is entity-relative and re-entry of a rendered format under the default contract recovers its pre-image exactly (bounded-drift for declared quantizations).
+- Re-entry (fixed-point): a SUCCESS canonical value `V` re-canonicalizes to `V` under the same **default** contract for any `output_format` — enforced by `tests/property/test_reentry_invariant.py`; custom `pinned_rules`/`excluded_rules`/`year` that remove validation for a non-default format may break this, and with `suppress_common_words=True` whole-input common words are exempt via the A0 whole-input exemption (landed 0.4.0, #122 — e.g. `TO` → `SUCCESS`, not `MISSING`); new capabilities must extend that suite (ADR-0010). Output-format information preservation (ADR-0011): every offered format is an encoding, same-entity expansion, or documented quantization — never a projection over recognition/validation information; injectivity is entity-relative and re-entry of a rendered format under the default contract recovers its pre-image exactly (bounded-drift for declared quantizations). Candidate qualification (ADR-0012): a `PARSER` candidate survives only with `LOOKUP_TABLE` corroboration on the same recognition; vacuity exception — it may survive uncorroborated when no lookup authority is available (filtered out via `pinned_rules`, `excluded_rules`, `year`, or `requires_features` gating).
 - No cross-capability imports; capabilities import only from `paxman.core`; `paxman.core` imports nothing from `paxman.*`.
 - Grammars must not map tokens to canonical values or import rule-layer data.
 - Rules never contain the token `output_format` (code, comments, or docstrings).
@@ -101,10 +101,10 @@ uv run python -m paxman email "user@example.com"      # CLI smoke test
 Full pre-PR gate: `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run import-linter lint && uv run pytest`
 
 ## NOTES
-- `paxman/capabilities/__init__.py` exports all eighteen shipped capabilities (BIC, Coordinates, Country, Currency, Date, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, URL); export completeness is enforced by `tests/unit/test_capability_exports.py`.
-- CONTEXT.md is the domain glossary for the full shipped set (eighteen capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
+- `paxman/capabilities/__init__.py` exports all twenty shipped capabilities (BIC, Coordinates, Country, Currency, Date, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset); export completeness is enforced by `tests/unit/test_capability_exports.py`.
+- CONTEXT.md is the domain glossary for the full shipped set (twenty capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
 - No `pyrightconfig.json` — pyright config is inline `[tool.pyright]` in pyproject.toml. No `.editorconfig`.
-- Data modules live under `rules/data/` and `grammar/data/` — plain module-level tables separating data from logic. Generated modules (edit via snapshot + regenerate, never by hand): ISBN range message (`tools/regenerate_isbn_range_data.py`), URL IDNA UTS #46 mapping (`tools/regenerate_idna_uts46_data.py`), SIUnit prefixed-unit and grammar token tables (`tools/regenerate_si_prefix_data.py`), and the Currency + Money data set (`tools/regenerate_currency_data.py`, from `paxman/shared_data/currency_snapshot.json`). Unmarked data files are edited directly.
-- Library + CLI: `[project.scripts] paxman = "paxman.cli:main"` and `python -m paxman`; CLI supports `--list`, `--json`, stdin input. Version 0.2.0.
+- Data modules live under `rules/data/` and `grammar/data/` — plain module-level tables separating data from logic. Generated modules (edit via snapshot + regenerate, never by hand): ISBN range message (`tools/regenerate_isbn_range_data.py`), URL IDNA UTS #46 mapping (`tools/regenerate_idna_uts46_data.py`), SIUnit prefixed-unit and grammar token tables (`tools/regenerate_si_prefix_data.py`), the Currency + Money data set (`tools/regenerate_currency_data.py`, from `paxman/shared_data/currency_snapshot.json`), BIC data (`tools/regenerate_bic_data.py`), IBAN registry data (`tools/regenerate_iban_registry_data.py`), Language tables (`tools/regenerate_language_data.py`; `tools/regenerate_iana_language_data.py` now guards removed generated modules), and Unicode property ranges (`tools/regenerate_unicode_property_data.py`). Unmarked data files are edited directly.
+- Library + CLI: `[project.scripts] paxman = "paxman.cli:main"` and `python -m paxman`; CLI supports `--list`, `--json`, stdin input. Version 0.4.1 (target 0.5.0).
 - Publishing: `.github/workflows/publish.yml` uses PyPI Trusted Publishing (OIDC) with a Git-tag ↔ `pyproject.toml` version safety check; `paxman/py.typed` ships PEP 561 conformance.
 - Coverage: global `fail_under = 95`; `paxman/cli.py` and `paxman/__main__.py` are omitted from coverage (smoke-tested via e2e).

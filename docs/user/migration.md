@@ -331,6 +331,84 @@ noise matters; keep bare-code `canonicalize()` contracts flag-off.
 
 ---
 
+## Unreleased — 0.5.0 behavior changes (minor)
+
+**Scope:** additive capabilities plus recognition/validation narrowings. No contract
+shape changes; existing contracts still validate. Result changes below are
+data-driven or spec-alignment fixes — re-run golden samples.
+
+### 0.4.1 — docs-only patch, no migration
+
+`0.4.0` → `0.4.1` changed user documentation only (no contract, grammar, rule,
+or data change). No migration required.
+
+### 0.5.0 — New capabilities: Timezone + UtcOffset (additive)
+
+`Timezone` (IANA key canonical, `iana` default, no offered formats,
+`include_systemv=False` gates `EST5EDT` and kin) and `UtcOffset` (extended
+`+HH:MM` canonical, `basic` `+HHMM` offered re-encoding) are registered by
+`register_all_shipped()` (now 20 shipped). No migration required — existing
+contracts are byte-identical. See per-capability guides under
+[Capabilities](capabilities/) and the [Citations](citations/) IANA/ISO rows.
+
+### 0.5.0 — Language compositional descriptions + bare-code narrowing (changed)
+
+- Bare 5–8 letter runs (`hello`, `Xenon`, `script`) → `MISSING` (were `INVALID`;
+  no hyphenless 5–8 primary exists in the shipped set).
+- Parenthesized descriptions (`Chinese (Traditional, Singapore)` →
+  `SUCCESS zh-Hant-SG`) resolve directly under the default contract.
+- Compositional `in`-forms (`Singapore Chinese in traditional script`) →
+  `AMBIGUOUS` under the default contract (full-phrase reading vs bare `in`→`id`),
+  `SUCCESS` with `suppress_common_words=True`; Wave-2 script/region displays
+  extended (7 scripts, 8 single-token regions; multi-token regions and `thai`
+  deferred).
+- `nb` renders `Norwegian Bokmål` (was `Norwegian Bokmal`) via the
+  display-name companion.
+
+Migrate: if you asserted bare 5–8 `INVALID`, update goldens to `MISSING`; if
+you depend on compositional inputs, pass the suppression contract or handle
+`AMBIGUOUS`.
+
+### 0.5.0 — Money `$` constrained to own candidates (changed)
+
+`dollar_sign_currency` now resolves only to one of the symbol's own CLDR
+candidates (`$500` + `USD` → `SUCCESS`; `$500` + `MYR` → `INVALID`, was
+`SUCCESS`; mirrors Currency `default_currency`). Single-candidate symbols
+(`€500`) and qualified symbols (`US$`, `CA$`) are unaffected.
+
+```python
+Money.create_contract(dollar_sign_currency="USD")  # $ → USD only when USD is a $ candidate
+```
+
+Migrate: if you passed a non-candidate code with a shared symbol, expect
+`INVALID` now; pass one of the symbol's own candidates instead.
+
+### 0.5.0 — BIC end-of-text English-phrase filter (changed)
+
+`call me at` at end-of-text, before punctuation/parentheses, or before a
+non-alphanumeric tail no longer recognizes as a BIC (was a false `SUCCESS`
+candidate). `CALL ME AT` (all-caps) still recognizes via the `isupper()` gate.
+
+Migrate: if you asserted the lowercase phrase claimed a BIC, update goldens to
+`MISSING`.
+
+### 0.5.0 — Candidate qualification, ADR-0012 (changed)
+
+A `PARSER` candidate survives only with `LOOKUP_TABLE` corroboration on the
+same recognition (plus per-grammar `keep_duplicate_spans` scoping):
+
+| Input | Contract | Before | After |
+|---|---|---|---|
+| `Serbo-Croatian` | Language defaults | `AMBIGUOUS` (`serbo-croatian` ghost + `sh`) | `SUCCESS "sh"` (ghost disqualified) |
+| `xx-yyyyy` | Language defaults | `SUCCESS` (syntax alone) | `INVALID` (no authority entry) |
+| `en-x-private` | Language defaults | `SUCCESS` (syntax alone) | `INVALID` (two-locus model; `SUCCESS` with `include_private=True`) |
+
+Contracts filtering the lookup authority out (`pinned_rules` / `excluded_rules` /
+`year` / `requires_features` gating) preserve parser candidates per the vacuity
+clause — no change there. Kernel Slice A/G/H fixes (boundary bracket-escapes,
+quantifier-aware widths, combinator backtracking, single ordering space) move no
+shipped vectors — no migration.
+
 ## What can appear in a minor release
 
 You do **not** need to change code for these — they are additive and backward compatible:

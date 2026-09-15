@@ -102,6 +102,16 @@ Paxman ships with capabilities that each cover one kind of identifier. The set i
 - **Phone** — international and national phone numbers (E.164, RFC 3966, NANP)
 - **SI Unit** — SI unit expressions and compounds (BIPM SI Brochure, ISO 80000-1)
 - **URL** — absolute URIs and IRIs (WHATWG URL Standard)
+- **BIC** — business identifier codes (ISO 9362)
+- **Coordinates** — WGS 84 coordinates (ISO 6709, RFC 5870, RFC 7946)
+- **Element** — chemical elements (IUPAC Red Book, Periodic Table)
+- **IBAN** — bank account numbers (ISO 13616-1, MOD 97-10)
+- **ISSN** — serial identifiers (ISO 3297)
+- **Language** — language tags, codes, and names (BCP 47, ISO 639, IANA Registry, CLDR)
+- **MacAddress** — MAC addresses (IEEE Std 802-2024)
+- **ORCID** — researcher identifiers (ISO 27729)
+- **Timezone** — IANA time zone identifiers (IANA Time Zone Database 2026d)
+- **UtcOffset** — UTC offset values (ISO 8601-1:2019, RFC 3339)
 
 You only load what you use — importing `paxman.capabilities.Email` does not load the others.
 

@@ -93,6 +93,7 @@ Beyond the common fields, each contract adds flags that make sense for its domai
 | SI Unit | `allow_split_word_prefixes` | `bool` | `False` | Merge `kilo gram` → `kg` |
 | SI Unit | `allow_multi_solidus` | `bool` | `False` | Preserve `kg/m/s` instead of rejecting it |
 | Date | `two_digit_base_year` | `int \| None` | `None` | Base year for 2-digit year expansion |
+| Timezone | `include_systemv` | `bool` | `False` | Validate SystemV zones (`EST5EDT` and kin; recognized but `INVALID` when off) |
 | Date / ISBN / Phone / … | `output_format` | `str` | capability default | See capability-specific offered formats |
 
 > This table reflects the **current release**. As new capabilities are added, each will document its own flags in the same way — the common fields above stay the same.

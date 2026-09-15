@@ -14,7 +14,7 @@ Canonicalizes **one IANA time zone mention** per call — a zone key (`America/N
 |------------|--------------------|
 | Canonical keys (`America/New_York`, case folds up: `america/new_york`, `AMERICA/NEW_YORK`) | Unknown keys (`America/Narnia`) → `MISSING` (lexicon over the curated subset claims nothing unlisted) |
 | Legacy Links (`US/Eastern`, `Asia/Calcutta`, `Australia/ACT` — resolve to canonical) | Windows names (`Eastern Standard Time`, territory-sensitive CLDR mapping, deferred) → `MISSING` |
-| Fixed zones (`UTC`, `Etc/UTC`, `Etc/GMT`, `Etc/GMT+5` — sign kept as authored, never reinterpreted) | Bare abbreviations, carved (`EST`, `MST`, `HST`, `CET`) → `INVALID` (refused, never resolved) |
+| Fixed zones (`UTC`, `GMT`, `Etc/UTC`, `Etc/GMT`, `Etc/GMT+5` — sign kept as authored, never reinterpreted) | Bare abbreviations, carved (`EST`, `MST`, `HST`, `CET`) → `INVALID` (refused, never resolved) |
 | POSIX SystemV names (`EST5EDT`, `CST6CDT`, `MST7MDT`, `PST8PDT` — claimed for shape; `INVALID` unless `include_systemv=True`) | Bare abbreviations, ambiguous (`IST`, `CST`, `PST`) → `INVALID` (refused, never a silent pick) |
 | Embedded mentions (`visit US/Eastern tomorrow` — span covers the key only) | Unlisted abbreviations and prose (`XYZ`, `JST`, `hello world`, `Zulu`) → `MISSING` |
 | | Glued runs and paths (`XUS/Eastern`, `US/EasternX`, `/usr/share/zoneinfo/America/New_York`) → `MISSING` (slash-aware boundary) |
@@ -73,6 +73,7 @@ contract = Timezone.create_contract(
 | `america/new_york` | defaults | `SUCCESS` | `"America/New_York"` (fold restores canonical case) |
 | `US/Eastern` | defaults | `SUCCESS` | `"America/New_York"` (Link resolution) |
 | `Asia/Calcutta` | defaults | `SUCCESS` | `"Asia/Kolkata"` (Link resolution) |
+| `UTC` / `GMT` | defaults | `SUCCESS` | `"UTC"` / `"GMT"` (fixed zones; bare `GMT` admitted per #161) |
 | `Etc/GMT+5` | defaults | `SUCCESS` | `"Etc/GMT+5"` (fixed zone; POSIX sign kept as authored, never flipped) |
 | `EST5EDT` | defaults | `INVALID` | claimed for shape, rule gated off |
 | `EST5EDT` | `include_systemv=True` | `SUCCESS` | `"EST5EDT"` (fixed-rule zone, valid key) |

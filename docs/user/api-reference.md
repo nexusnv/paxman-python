@@ -197,6 +197,8 @@ Current defaults and offered alternatives:
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
 | MacAddress | `colon` | `hyphen`, `bare`, `cisco`, `eui64` |
 | ORCID | `orcid` | `uri`, `compact` |
+| Timezone | `iana` | *(none — single format)* |
+| UtcOffset | `extended` | `basic` |
 
 > The set of capabilities — and their offered formats — grows over time. Treat this table as the current release, not a closed list.
 
@@ -218,6 +220,7 @@ Current defaults and offered alternatives:
 | SI Unit | `allow_split_word_prefixes` | `bool` | `False` | `kilo gram` → `kg` |
 | SI Unit | `allow_multi_solidus` | `bool` | `False` | `kg/m/s` preserved |
 | Date | `two_digit_base_year` | `int \| None` | `None` | Base for 2-digit year expansion |
+| Timezone | `include_systemv` | `bool` | `False` | Validate SystemV zones (`EST5EDT` and kin) |
 | common | `suppress_common_words` | `bool` | `False` | suppress word-bounded short-code hits in `COMMON_WORDS` (67) |
 
 Validation: `default_currency` / `dollar_sign_currency` must be uppercase alpha-3; `default_country` must be uppercase alpha-2; `precision` must be one of the three values — otherwise `ContractError` at construction time.
@@ -332,5 +335,7 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Language identifiers | Language | `Language.create_contract(...)` |
 | MAC addresses | MacAddress | `MacAddress.create_contract(...)` |
 | Researcher identifiers | ORCID | `ORCID.create_contract(...)` |
+| Time zone identifiers | Timezone | `Timezone.create_contract(...)` |
+| UTC offset values | UtcOffset | `UtcOffset.create_contract(...)` |
 
 New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

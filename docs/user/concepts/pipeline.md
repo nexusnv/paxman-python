@@ -100,7 +100,8 @@ flowchart TB
     style AMBIG fill:#fff8e1,stroke:#d4a017
 ```
 
-- **Deduplication** collapses identical `(value, recognition_rule, validation_rule)` triples. Different provenance that happens to produce the same string does not create ambiguity — one value, one status.
+- **Deduplication** collapses identical `(value, recognition_rule, validation_rule)` triples. Different provenance that happens to produce the same string does not create ambiguity — one value, one status. Dedup is per-grammar by default; a grammar opts out with a `CandidatesMatcher(strategy="all")`, in which case that grammar's candidates skip span dedup without affecting other grammars (ADR-0012 corollary, #71).
+- **Qualification (ADR-0012):** before counting, a `PARSER`-strategy candidate survives only with `LOOKUP_TABLE` corroboration on the same recognition (same grammar, span, and notation object — never span overlap). `LOOKUP_TABLE` and `REGEX` candidates always survive. Where no lookup authority is in force — all-`PARSER` capabilities, or contracts filtering the lookup out via `pinned_rules`/`excluded_rules`/`year`/`requires_features` — there is nothing that could corroborate, so parser candidates stand untouched (vacuity clause).
 - **Status decision** (see [Execution Result](execution-result/)):
   - `MISSING` vs `INVALID` depends precisely on whether recognition found *anything that survived suppression* — the pipeline remembers `had_recognitions` over unsuppressed matches (suppressed hits are reported via `suppressed_count`, not as recognitions).
   - `SUCCESS` means exactly one distinct canonical value survived.

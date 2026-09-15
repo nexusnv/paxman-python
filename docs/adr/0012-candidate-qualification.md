@@ -2,7 +2,11 @@
 
 ## Status
 
-**Proposed — 2026-09-09.** Tracked as issue #147 (B1 ghost candidates, with the
+**Accepted — 2026-09-10** (implemented in PR #151; proposed 2026-09-09).
+Implemented at `paxman/engine/orchestrator.py:_require_lookup_corroboration`
+(qualification) and `_keep_duplicate_span_grammars` (per-grammar dedup-scoping
+corollary, #71), piloted on Language (`Serbo-Croatian` → `SUCCESS "sh"`).
+Tracked as issue #147 (B1 ghost candidates, with the
 issue #71 dedup-scoping problem folded in). Joins the invariant family ADR-0004 began
 (Single-Value Invariant) and ADR-0010/ADR-0011 continued: a correctness property
 of the pipeline as a whole, held by construction and enforced by tests, never by

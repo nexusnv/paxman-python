@@ -200,7 +200,7 @@ The engine enforces metadata at import time — missing or mistyped fields raise
 **Rule** — subclass `Rule[NotationT]`:
 
 - `name` — e.g. `"Section 4.3.1-calendar-date"`, unique per capability.
-- `strategy` — `RuleStrategy.REGEX` / `LOOKUP_TABLE` / `PARSER`.
+- `strategy` — `RuleStrategy.REGEX` / `LOOKUP_TABLE` / `PARSER`. Qualification (ADR-0012): a `PARSER` candidate survives only with `LOOKUP_TABLE` corroboration on the same recognition — a community `PARSER` rule on LOOKUP-backed semantics needs a `LOOKUP_TABLE` companion validating the same grammar, or its candidates are disqualified.
 - `provenance` — `Provenance(...)` — the authority citation.
 - `citation` — e.g. `"Section 4.3.1 (calendar date)"`.
 - `target_semantics: frozenset[str]` — non-empty.
