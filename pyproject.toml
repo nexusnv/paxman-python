@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "paxman"
-version = "0.4.1"
+version = "0.5.0"
 description = "Canonicalization authority resolver"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -99,6 +99,11 @@ select = [
 "paxman/cli.py" = ["BLE001"]
 # Long docstring line trips E501 by design; inline `# noqa` prohibited.
 "paxman/capabilities/Language/rules/iana_language_subtag_registry_ed2026.py" = ["E501"]
+# Generator emitters must stay byte-identical to their generated modules
+# (the 89-char lines are emitted docstrings / drift-guard messages); rewrap
+# would create emitter↔generated drift, so a scoped exception is used instead.
+"tools/regenerate_isbn_range_data.py" = ["E501"]
+"tools/regenerate_idna_uts46_data.py" = ["E501"]
 
 [tool.pyright]
 pythonVersion = "3.11"
