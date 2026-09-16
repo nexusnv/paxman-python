@@ -44,6 +44,8 @@ from __future__ import annotations
 IANA_ZONE_LINKS: dict[str, str] = {
     # Legacy path Links (Link TARGET LINK-NAME, verified in-file).
     "us/eastern": "America/New_York",
+    "canada/eastern": "America/Toronto",
+    "us/pacific": "America/Los_Angeles",
     "asia/calcutta": "Asia/Kolkata",
     "australia/act": "Australia/Sydney",
     # Short-caps Links — declared here, consumed ONLY by the abbreviation

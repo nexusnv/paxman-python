@@ -70,6 +70,7 @@ IANA_ZONE_IDENTIFIERS: frozenset[str] = frozenset(
         # Fixed zones (also members of IANA_FIXED_ZONES; canonical keys).
         "Etc/UTC",
         "Etc/GMT",
+        "Etc/GMT-8",  # POSIX sign as authored (etcetera: UTC+8).
         "UTC",
         "GMT",
         # Link targets outside the well-known set above.

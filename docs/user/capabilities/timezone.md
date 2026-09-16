@@ -2,7 +2,7 @@
 title: "Timezone"
 ---
 
-Canonicalizes **one IANA time zone mention** per call — a zone key (`America/New_York`), a legacy Link (`US/Eastern`), a fixed zone (`UTC`, `Etc/GMT+5`), or a POSIX SystemV name (`EST5EDT`, gated) — to the case-exact IANA key.
+Canonicalizes **one IANA time zone mention** per call — a zone key (`America/New_York`), a legacy Link (`US/Eastern`, `Canada/Eastern`), a fixed zone (`UTC`, `Etc/GMT+5`, `Etc/GMT-8`), or a POSIX SystemV name (`EST5EDT`, gated) — to the case-exact IANA key.
 
 > **In plain language:** give it `America/New_York`, `US/Eastern`, `america/new_york`, or `Etc/GMT+5` and it hands back the canonical IANA key (`US/Eastern` → `America/New_York`) per the vendored IANA Time Zone Database 2026d snapshot. Bare abbreviations (`EST`, `IST`, `CST`) are recognized but refused — never silently resolved — because one abbreviation names many zones and no timestamp is available to disambiguate.
 
@@ -13,8 +13,8 @@ Canonicalizes **one IANA time zone mention** per call — a zone key (`America/N
 | Recognizes | Does not recognize |
 |------------|--------------------|
 | Canonical keys (`America/New_York`, case folds up: `america/new_york`, `AMERICA/NEW_YORK`) | Unknown keys (`America/Narnia`) → `MISSING` (lexicon over the curated subset claims nothing unlisted) |
-| Legacy Links (`US/Eastern`, `Asia/Calcutta`, `Australia/ACT` — resolve to canonical) | Windows names (`Eastern Standard Time`, territory-sensitive CLDR mapping, deferred) → `MISSING` |
-| Fixed zones (`UTC`, `GMT`, `Etc/UTC`, `Etc/GMT`, `Etc/GMT+5` — sign kept as authored, never reinterpreted) | Bare abbreviations, carved (`EST`, `MST`, `HST`, `CET`) → `INVALID` (refused, never resolved) |
+| Legacy Links (`US/Eastern`, `Canada/Eastern`, `US/PACIFIC`, `Asia/Calcutta`, `Australia/ACT` — resolve to canonical) | Windows names (`Eastern Standard Time`, territory-sensitive CLDR mapping, deferred) → `MISSING` |
+| Fixed zones (`UTC`, `GMT`, `Etc/UTC`, `Etc/GMT`, `Etc/GMT+5`, `Etc/GMT-8` — sign kept as authored, never reinterpreted) | Bare abbreviations, carved (`EST`, `MST`, `HST`, `CET`) → `INVALID` (refused, never resolved) |
 | POSIX SystemV names (`EST5EDT`, `CST6CDT`, `MST7MDT`, `PST8PDT` — claimed for shape; `INVALID` unless `include_systemv=True`) | Bare abbreviations, ambiguous (`IST`, `CST`, `PST`) → `INVALID` (refused, never a silent pick) |
 | Embedded mentions (`visit US/Eastern tomorrow` — span covers the key only) | Unlisted abbreviations and prose (`XYZ`, `JST`, `hello world`, `Zulu`) → `MISSING` |
 | | Glued runs and paths (`XUS/Eastern`, `US/EasternX`, `/usr/share/zoneinfo/America/New_York`) → `MISSING` (slash-aware boundary) |
@@ -72,9 +72,12 @@ contract = Timezone.create_contract(
 | `America/New_York` | defaults | `SUCCESS` | `"America/New_York"` |
 | `america/new_york` | defaults | `SUCCESS` | `"America/New_York"` (fold restores canonical case) |
 | `US/Eastern` | defaults | `SUCCESS` | `"America/New_York"` (Link resolution) |
+| `Canada/Eastern` | defaults | `SUCCESS` | `"America/Toronto"` (Link resolution, Wave-2) |
+| `US/PACIFIC` | defaults | `SUCCESS` | `"America/Los_Angeles"` (Link resolution, Wave-2) |
 | `Asia/Calcutta` | defaults | `SUCCESS` | `"Asia/Kolkata"` (Link resolution) |
 | `UTC` / `GMT` | defaults | `SUCCESS` | `"UTC"` / `"GMT"` (fixed zones; bare `GMT` admitted per #161) |
 | `Etc/GMT+5` | defaults | `SUCCESS` | `"Etc/GMT+5"` (fixed zone; POSIX sign kept as authored, never flipped) |
+| `Etc/GMT-8` | defaults | `SUCCESS` | `"Etc/GMT-8"` (fixed zone; POSIX sign kept as authored, Wave-2) |
 | `EST5EDT` | defaults | `INVALID` | claimed for shape, rule gated off |
 | `EST5EDT` | `include_systemv=True` | `SUCCESS` | `"EST5EDT"` (fixed-rule zone, valid key) |
 | `EST` / `MST` / `HST` / `CET` | any | `INVALID` | carved Links read as abbreviations, refused |
@@ -125,9 +128,12 @@ contract = Timezone.create_contract()
 rows = [
     "America/New_York",
     "US/Eastern",
+    "Canada/Eastern",
+    "US/PACIFIC",
     "america/new_york",
     "Asia/Calcutta",
     "Etc/GMT+5",
+    "Etc/GMT-8",
     "EST5EDT",
     "EST",
     "IST",

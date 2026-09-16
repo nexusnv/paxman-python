@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Timezone — Wave-2 first-cut table expansion (#170):** two legacy Links (`Canada/Eastern` → `America/Toronto`, `US/PACIFIC` → `America/Los_Angeles`, both live in tzdb `backward`) and one fixed zone (`Etc/GMT-8`, live in `etcetera`, POSIX sign kept as authored). Previously `MISSING`, now `SUCCESS` under the default contract. Data tables + guide rows only — no grammar-logic, contract, engine, or canonical-form change; the subset contract (unlisted keys → `MISSING`) and the short-caps carve rule are unchanged.
+
 ## [0.5.0] - 2026-09-15
 
 ### Added
