@@ -58,6 +58,8 @@ from paxman.capabilities.URL.contract import URLCapabilityContract
 from paxman.capabilities.URL.notation import URLNotation
 from paxman.capabilities.UtcOffset.capability import UtcOffsetCapability
 from paxman.capabilities.UtcOffset.contract import UtcOffsetContract
+from paxman.capabilities.UUID.capability import UUIDCapability
+from paxman.capabilities.UUID.contract import UUIDContract
 from paxman.core.capability import ContractFactory
 from paxman.core.capability_contract import CapabilityContract
 
@@ -189,6 +191,12 @@ _CAPABILITY_SURFACES = [
         UtcOffsetContract,
         "extended",
         id="utc_offset",
+    ),
+    pytest.param(
+        UUIDCapability,
+        UUIDContract,
+        "hyphenated",
+        id="uuid",
     ),
 ]
 

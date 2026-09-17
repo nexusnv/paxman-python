@@ -56,6 +56,7 @@ from paxman.capabilities import (
     ISSN,
     ORCID,
     URL,
+    UUID,
     Coordinates,
     Country,
     Currency,
@@ -187,6 +188,15 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # canonicalizes to extended +05:30; the offered "basic" rendering
     # (+0530) re-enters under its own contract (test formats below).
     _row(UtcOffset, "+0530", "+05:30"),
+    # UUID: tests/capabilities/uuid/test_capability.py
+    # ::TestUUIDCapabilityPipeline::test_format_value_round_trips — every
+    # offered carrier (compact/braced/urn) re-enters to the hyphenated
+    # canonical under the default contract.
+    _row(
+        UUID,
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    ),
 )
 
 # ADR-0010, Consequences: a new capability cannot land without a re-entry row

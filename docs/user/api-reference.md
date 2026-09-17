@@ -199,6 +199,7 @@ Current defaults and offered alternatives:
 | ORCID | `orcid` | `uri`, `compact` |
 | Timezone | `iana` | *(none — single format)* |
 | UtcOffset | `extended` | `basic` |
+| UUID | `hyphenated` | `compact`, `braced`, `urn` |
 
 > The set of capabilities — and their offered formats — grows over time. Treat this table as the current release, not a closed list.
 
@@ -337,5 +338,6 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Researcher identifiers | ORCID | `ORCID.create_contract(...)` |
 | Time zone identifiers | Timezone | `Timezone.create_contract(...)` |
 | UTC offset values | UtcOffset | `UtcOffset.create_contract(...)` |
+| UUIDs | UUID | `UUID.create_contract(...)` |
 
 New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

@@ -12,6 +12,7 @@ from paxman.capabilities import (
     ISSN,
     ORCID,
     URL,
+    UUID,
     Coordinates,
     Country,
     Currency,
@@ -53,6 +54,7 @@ _SHIPPED: tuple[type[Capability[Any]], ...] = (
     Timezone,
     URL,
     UtcOffset,
+    UUID,
 )
 
 

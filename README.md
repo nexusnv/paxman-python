@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twenty built-in capabilities (20 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with twenty-one built-in capabilities (21 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -90,6 +90,7 @@ Paxman ships with twenty built-in capabilities (20 in `paxman/capabilities/__ini
 | **Timezone** | Timezone identifiers | 2 (timezone_name, timezone_abbreviation) | 4 | IANA Time Zone Database |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
 | **UtcOffset** | UTC offsets | 1 (utc_offset) | 1 | ISO 8601-1:2019, RFC 3339 |
+| **UUID** | UUIDs | 1 (uuid) | 1 | IETF RFC 9562 |
 
 > **Note:** Table generated from `paxman/api/bootstrap.py:_SHIPPED` (alphabetical by registry name). To regenerate, run `uv run python tools/generate_readme_table.py`.
 
@@ -512,6 +513,7 @@ Every capability provides a `create_contract()` factory method with common and c
 | SIUnit | `allow_multi_solidus` | `bool` | Preserve the legacy accept-multi-solidus behavior (e.g. `"kg/m/s"`) when True; default False rejects more than one top-level solidus (→ INVALID) per ISO 80000-1 §6.6.2 |
 | Timezone | `include_systemv` | `bool` | Enable SystemV zone validation (`EST5EDT` and kin; recognized but INVALID when off) |
 | UtcOffset | `output_format` | `str` | Output format (`"extended"` default, `"basic"`) |
+| UUID | `output_format` | `str` | Output format (`"hyphenated"` default, `"compact"`, `"braced"`, `"urn"`) |
 
 ### Rule Pinning and Exclusion
 

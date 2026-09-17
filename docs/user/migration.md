@@ -342,6 +342,14 @@ data-driven or spec-alignment fixes — re-run golden samples.
 `0.4.0` → `0.4.1` changed user documentation only (no contract, grammar, rule,
 or data change). No migration required.
 
+### Unreleased — New capability: UUID (additive)
+
+`UUID` (lowercase hyphenated canonical, `compact`/`braced`/`urn` offered
+re-encodings, IETF RFC 9562, structure-only validation) is registered by
+`register_all_shipped()` (now 21 shipped). No migration required — existing
+contracts are byte-identical. See the [UUID guide](capabilities/uuid/) and
+the [Citations](citations/) IETF row.
+
 ### 0.5.0 — New capabilities: Timezone + UtcOffset (additive)
 
 `Timezone` (IANA key canonical, `iana` default, no offered formats,

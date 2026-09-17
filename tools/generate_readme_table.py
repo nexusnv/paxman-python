@@ -57,6 +57,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "timezone": ("Timezone identifiers", "IANA Time Zone Database"),
     "url": ("URLs", "WHATWG URL Standard"),
     "utc_offset": ("UTC offsets", "ISO 8601-1:2019, RFC 3339"),
+    "uuid": ("UUIDs", "IETF RFC 9562"),
 }
 
 _DISPLAY_NAMES: dict[str, str] = {
@@ -80,6 +81,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "timezone": "Timezone",
     "url": "URL",
     "utc_offset": "UtcOffset",
+    "uuid": "UUID",
 }
 
 
