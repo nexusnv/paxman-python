@@ -43,6 +43,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `0000-0002-1825-0097` | [ORCID](orcid/) |
 | `America/New_York`, `US/Eastern` | [Timezone](timezone/) |
 | `UTC+5`, `+05:30`, `Z` | [UtcOffset](utcoffset/) |
+| `6ba7b810-9dad-11d1-80b4-00c04fd430c8`, `{…}`, `urn:uuid:…` | [UUID](uuid/) |
 
 > The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
 

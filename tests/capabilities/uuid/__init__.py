@@ -1,0 +1,1 @@
+"""uuid capability tests (scaffold)."""

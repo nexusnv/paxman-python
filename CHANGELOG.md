@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Timezone — Wave-2 first-cut table expansion (#170):** two legacy Links (`Canada/Eastern` → `America/Toronto`, `US/PACIFIC` → `America/Los_Angeles`, both live in tzdb `backward`) and one fixed zone (`Etc/GMT-8`, live in `etcetera`, POSIX sign kept as authored). Previously `MISSING`, now `SUCCESS` under the default contract. Data tables + guide rows only — no grammar-logic, contract, engine, or canonical-form change; the subset contract (unlisted keys → `MISSING`) and the short-caps carve rule are unchanged.
 
+- **UUID — 128-bit identifiers:** new capability with one grammar (`uuid_recognition`: hyphenated/bare-32/braced/`urn:uuid:` carriers, case-folded) and one structure-only rule backed by IETF RFC 9562 (`Section 4-uuid-format` — no checksum, no registry; version/variant nibbles informative, Nil/Max valid). Canonical form is lowercase hyphenated `8-4-4-4-12`; offered output formats `compact`, `braced`, `urn` (all re-enter as fixed points).
+
 ## [0.5.0] - 2026-09-15
 
 ### Added

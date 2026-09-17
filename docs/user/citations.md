@@ -21,7 +21,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | Authority | Specifications | Capabilities | Rules |
 |-----------|---------------|--------------|-------|
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
-| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946 | Email, IP, Phone, Language, Coordinates | 8 |
+| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562 | Email, IP, Phone, Language, Coordinates, UUID | 9 |
 | **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
 | **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset | 22 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
@@ -66,6 +66,7 @@ Specification: **SI Brochure: The International System of Units (SI)**, 9th edit
 | Language | BCP 47 RFC 5646 | 2009-09 | `Section 2.1-syntax` | Section 2.1 (Language-Tag ABNF, well-formed only) | 2009 | https://www.rfc-editor.org/rfc/rfc5646.txt |
 | Coordinates | RFC 5870 | 2010 | `Section 3.3-geo-uri-validity` | Section 3.3 (Geo URI validity) | 2010 | https://www.rfc-editor.org/rfc/rfc5870.txt |
 | Coordinates | RFC 7946 | 2016 | `Section 3.1.1-position` | Section 3.1.1 (Position) | 2016 | https://www.rfc-editor.org/rfc/rfc7946.txt |
+| UUID | RFC 9562 | 2024 | `Section 4-uuid-format` | Section 4 (128-bit format; hex-and-dash ABNF, no checksum, no registry) | 2024 | https://www.rfc-editor.org/rfc/rfc9562 |
 
 All IETF entries are `kind="specification"`, `lifecycle="active"`.
 

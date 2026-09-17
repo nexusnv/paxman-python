@@ -69,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty built-in capabilities (20 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-one built-in capabilities (21 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -93,6 +93,7 @@ Paxman ships twenty built-in capabilities (20 in `paxman/capabilities/__init__.p
 | **Timezone** | Timezone identifiers | IANA Time Zone Database |
 | **URL** | URLs | WHATWG URL Standard |
 | **UtcOffset** | UTC offsets | ISO 8601, RFC 3339 |
+| **UUID** | UUIDs | IETF RFC 9562 |
 
 Capability classes are exported from `paxman/capabilities/__init__.py` as acronym aliases (`EmailCapability as Email`, etc.); the export list is enforced by `tests/unit/test_capability_exports.py`.
 
@@ -793,7 +794,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (20 capabilities, alphabetical; paxman/capabilities/__init__.py exports 20), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (21 capabilities, alphabetical; paxman/capabilities/__init__.py exports 21), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -949,12 +950,18 @@ paxman/
     │   ├── grammar/               # absolute_uri_recognition
     │   ├── rules/                 # whatwg_url_standard
     │   └── rules/data/            # idna_uts46_mapping
-    └── UtcOffset/                 # grammar/ (1) + rules/ (1) — ISO 8601-1:2019, RFC 3339
-        ├── capability.py          # UtcOffsetCapability
-        ├── contract.py            # UtcOffsetContract
-        ├── notation.py            # UtcOffsetNotation (compact)
-        ├── grammar/               # utc_offset_recognition
-        └── rules/                 # iso8601_offset_ed2019
+    ├── UtcOffset/                 # grammar/ (1) + rules/ (1) — ISO 8601-1:2019, RFC 3339
+    │   ├── capability.py          # UtcOffsetCapability
+    │   ├── contract.py            # UtcOffsetContract
+    │   ├── notation.py            # UtcOffsetNotation (compact)
+    │   ├── grammar/               # utc_offset_recognition
+    │   └── rules/                 # iso8601_offset_ed2019
+    └── UUID/                      # grammar/ (1) + rules/ (1) — IETF RFC 9562
+        ├── capability.py          # UUIDCapability
+        ├── contract.py            # UUIDContract
+        ├── notation.py            # UUIDNotation (compact, hyphenated, urn, version)
+        ├── grammar/               # uuid_recognition
+        └── rules/                 # rfc_9562_ed2024
 ```
 
 ### Package Responsibilities
@@ -990,7 +997,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (20 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (21 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

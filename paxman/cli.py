@@ -216,6 +216,10 @@ def _create_contract(
         from paxman.capabilities import UtcOffset
 
         return UtcOffset.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "uuid":
+        from paxman.capabilities import UUID
+
+        return UUID.create_contract(suppress_common_words=suppress_common_words)
     # Should be unreachable after validation, but keep for type safety.
     raise ValueError(f"Unknown capability: {normalized!r}")
 

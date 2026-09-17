@@ -32,6 +32,7 @@ __all__ = [
     "SIUnit",
     "Timezone",
     "URL",
+    "UUID",
     "UtcOffset",
 ]
 
@@ -58,6 +59,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "SIUnit": ("paxman.capabilities.SIUnit.capability", "SIUnitCapability"),
     "Timezone": ("paxman.capabilities.Timezone.capability", "TimezoneCapability"),
     "URL": ("paxman.capabilities.URL.capability", "URLCapability"),
+    "UUID": ("paxman.capabilities.UUID.capability", "UUIDCapability"),
     "UtcOffset": ("paxman.capabilities.UtcOffset.capability", "UtcOffsetCapability"),
 }
 
@@ -88,6 +90,7 @@ if TYPE_CHECKING:
     from paxman.capabilities.UtcOffset.capability import (
         UtcOffsetCapability as UtcOffset,
     )
+    from paxman.capabilities.UUID.capability import UUIDCapability as UUID
 
 
 def __getattr__(name: str) -> Any:

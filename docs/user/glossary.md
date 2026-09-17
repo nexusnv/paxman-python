@@ -224,6 +224,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **UtcOffset** — Paxman capability for UTC offset values (ISO 8601-1:2019, RFC 3339). Canonical form is extended `+HH:MM` (`UTC+5` → `+05:00`); `basic` `+HHMM` offered. See [Capabilities](capabilities/).
 
+**UUID** — Paxman capability for 128-bit identifiers (IETF RFC 9562). Canonical form is lowercase hyphenated `8-4-4-4-12`; `compact`, `braced`, `urn` offered. See [Capabilities](capabilities/).
+
 **Unicode / Unicode CLDR** — For Paxman provenance, `"Unicode"` (Country CLDR v45) and `"Unicode CLDR"` (Currency/Money/CLDR Language Display Names) both denote the Unicode CLDR project. See [Citations](citations/).
 
 ---

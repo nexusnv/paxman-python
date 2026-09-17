@@ -279,5 +279,6 @@ class TestURLCapabilityExports:
             "SIUnit",
             "Timezone",
             "URL",
+            "UUID",
             "UtcOffset",
         }

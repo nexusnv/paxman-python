@@ -68,6 +68,7 @@ from paxman.capabilities import (
     ISBN,
     ISSN,
     ORCID,
+    UUID,
     Coordinates,
     Country,
     Date,
@@ -177,6 +178,13 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     # rendering re-enters the default contract onto the extended value
     # (measured: "+0530" -> "+05:30").
     ("utc_offset", "basic"): "encoding",
+    # -- UUID ----------------------------------------------------------------
+    # compact/braced/urn: carrier-only re-encodings of the hyphenated
+    # canonical; each rendering re-enters the default contract onto the
+    # same value (measured in TestUUIDCapabilityPipeline).
+    ("uuid", "compact"): "encoding",
+    ("uuid", "braced"): "encoding",
+    ("uuid", "urn"): "encoding",
 }
 
 _CLASS_VALUES: frozenset[str] = frozenset(
@@ -411,6 +419,30 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
     _InjectivityPair("money", Money, "compact", "45.50 USD", "10.00 EUR", ""),
     _InjectivityPair(
         "utc_offset", UtcOffset, "basic", "+05:30", "-08:00", "+0530 vs -0800"
+    ),
+    _InjectivityPair(
+        "uuid",
+        UUID,
+        "compact",
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        "6fa459ea-ee8a-3ca4-894e-db77e160355e",
+        "",
+    ),
+    _InjectivityPair(
+        "uuid",
+        UUID,
+        "braced",
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        "6fa459ea-ee8a-3ca4-894e-db77e160355e",
+        "",
+    ),
+    _InjectivityPair(
+        "uuid",
+        UUID,
+        "urn",
+        "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        "6fa459ea-ee8a-3ca4-894e-db77e160355e",
+        "",
     ),
 )
 

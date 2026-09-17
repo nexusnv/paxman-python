@@ -47,6 +47,7 @@ def test_registers_all_shipped(_clean_registry) -> None:
         "timezone",
         "url",
         "utc_offset",
+        "uuid",
     )
     assert names == expected
     for name in expected:
@@ -65,7 +66,7 @@ def test_preserves_caller_registration(_clean_registry) -> None:
     register_capability(mine)
     names = paxman.register_all_shipped()
     assert "email" not in names
-    assert len(names) == 19
+    assert len(names) == 20
     assert get_capability("email") is mine
 
 

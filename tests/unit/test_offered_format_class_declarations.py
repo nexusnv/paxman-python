@@ -33,6 +33,7 @@ from paxman.capabilities import (
     ISSN,
     ORCID,
     URL,
+    UUID,
     Coordinates,
     Country,
     Currency,
@@ -73,6 +74,7 @@ _FACTORIES = {
     "timezone": Timezone,
     "url": URL,
     "utc_offset": UtcOffset,
+    "uuid": UUID,
 }
 
 _CLASS_TERMS: tuple[str, ...] = ("encoding", "expansion", "quantization", "projection")

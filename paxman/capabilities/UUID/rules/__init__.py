@@ -1,0 +1,1 @@
+"""UUID validation rules."""
