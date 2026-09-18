@@ -329,7 +329,7 @@ Registration via tools/new_capability.py (`DOI --name doi --authority "ISO" --sp
 ## 7. Validation — single structural level
 
 ### 7.1 Level 1 Generic structure (the only level)
-Algorithm: prefix matches `^10\.\d{4,9}(\.\d+)*$`, exactly one mandatory `/` separator (the suffix itself may contain further `/` characters — split on the first `/` after the prefix; DataCite describes the display form as split by the first two slashes only because the proxy adds one), suffix non-empty without whitespace or `"'&`. Formal core regex: `^10\.[0-9]{4,9}(?:\.[0-9]+)*/(?:(?![\"&'])\S)+$`. Worked: `10.1038/nature12345` → valid; `10.1038` (no slash) → grammar never claims; `20.500.1234/abc` → grammar never claims (`10.` gate); `10/gf2p3c` → never claims (registrant too short — doubles as shortDOI policy); `10.1234567890/x` → never claims (registrant too long — 10 digits exceeds the 4–9 bound).
+Algorithm: prefix matches `^10\.\d{4,9}(\.\d+)*$`, exactly one mandatory `/` separator (the suffix itself may contain further `/` characters — split on the first `/` after the prefix; DataCite describes the display form as split by the first two slashes only because the proxy adds one), suffix non-empty without whitespace or `"'&`, printable code points only (Graphic-type). Formal core regex: `^10\.[0-9]{4,9}(?:\.[0-9]+)*/(?:(?![\"&'])\S)+$` plus a `str.isprintable()` gate (rejects Cc/Cf such as NUL, U+200B). Worked: `10.1038/nature12345` → valid; `10.1038` (no slash) → grammar never claims; `20.500.1234/abc` → grammar never claims (`10.` gate); `10/gf2p3c` → never claims (registrant too short — doubles as shortDOI policy); `10.1234567890/x` → never claims (registrant too long — 10 digits exceeds the 4–9 bound).
 
 **Worked normalizations (grammar → rule → canonical):**
 

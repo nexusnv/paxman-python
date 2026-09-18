@@ -63,6 +63,19 @@ class TestSection4DOISyntax:
         for suffix in ('a"b', "a'b", "a&b", "a b", "a\tb"):
             assert rule.matches(_notation("10.1038", suffix), contract) is False
 
+    def test_nonprintable_suffix_rejects(self) -> None:
+        # Graphic-type only (Handbook §4.3.1): Cc/Cf controls rejected.
+        rule = Section4DOISyntax()
+        contract = DOIContract()
+        for suffix in ("a\x00b", "a\u200bb", "a\u200eb"):
+            assert rule.matches(_notation("10.1038", suffix), contract) is False
+
+    def test_printable_unicode_accepts(self) -> None:
+        rule = Section4DOISyntax()
+        contract = DOIContract()
+        for suffix in ("café", "日本語", "\U0001f600"):
+            assert rule.matches(_notation("10.1038", suffix), contract) is True
+
     def test_eidr_suffix_accepted_unvalidated(self) -> None:
         # Per-application checksums (Handbook §4.3.5, e.g. EIDR's
         # suffix-only check char) are accepted structurally and never

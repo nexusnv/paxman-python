@@ -51,6 +51,10 @@ class Section4DOISyntax(Rule[DOINotation]):
                 _PREFIX_RE.fullmatch(notation.prefix) is not None
                 and len(notation.suffix) > 0
                 and _FORBIDDEN_SUFFIX_RE.search(notation.suffix) is None
+                # Graphic-type only (Handbook §4.3.1): reject non-printable
+                # code points such as NUL (Cc) or U+200B (Cf) while keeping
+                # valid printable Unicode (é, CJK, emoji) accepted.
+                and notation.suffix.isprintable()
             )
         except (TypeError, AttributeError):
             return False

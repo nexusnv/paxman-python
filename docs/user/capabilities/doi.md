@@ -4,7 +4,7 @@ title: "DOI"
 
 Canonicalizes **one DOI mention** per call — bare (`10.1038/nature12345`), case variants, resolver URLs (`https://doi.org/…`), `doi:`/`DOI:` labels, or `urn:doi:`/`info:doi/` carriers — to the bare lowercase `10.registrant/suffix` name.
 
-> **In plain language:** give it any documented spelling of a Digital Object Identifier and it hands back the canonical bare name per ISO 26324:2025. There is no check digit and no registry: prefix shape + suffix presence is the whole validation. Case folds ASCII-only — non-Latin capitals (`Á` vs `á`) are distinct names.
+> **In plain language:** give it any documented spelling of a Digital Object Identifier and it hands back the canonical bare name per ISO 26324:2025. There is no check digit and no registry: validation requires a correctly shaped prefix plus a non-empty suffix containing none of whitespace, double quotes, ampersands, or apostrophes. Case folds ASCII-only — non-Latin capitals (`Á` vs `á`) are distinct names.
 
 ---
 

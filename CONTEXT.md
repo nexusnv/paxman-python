@@ -69,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-one built-in capabilities (21 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-two built-in capabilities (22 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -821,7 +821,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (21 capabilities, alphabetical; paxman/capabilities/__init__.py exports 21), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (22 capabilities, alphabetical; paxman/capabilities/__init__.py exports 22), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -884,6 +884,12 @@ paxman/
     │       ├── iso_8601_ed2019.py
     │       ├── us_federal_rules_ed2023.py
     │       └── en_50160_ed2010.py
+    ├── DOI/                       # grammar/ (1) + rules/ (1) — ISO 26324:2025, no checksum, no registry
+    │   ├── capability.py          # DOICapability
+    │   ├── contract.py            # DOIContract (doi/url output formats)
+    │   ├── notation.py            # DOINotation (prefix, suffix, canonical)
+    │   ├── grammar/               # doi_recognition
+    │   └── rules/                 # iso_26324_ed2025 (structure only)
     ├── Country/                   # grammar/ (4) + rules/ (3) + grammar/data/ + rules/data/
     │   ├── capability.py          # CountryCapability
     │   ├── contract.py            # CountryContract
@@ -1024,7 +1030,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (21 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (22 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy
