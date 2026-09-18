@@ -53,7 +53,7 @@ def test_import_email_does_not_import_url_data() -> None:
 
 
 def test_all_still_exported_via_all() -> None:
-    """`__all__` must still list all twenty-one capabilities for star-import."""
+    """`__all__` must still list all twenty-two capabilities for star-import."""
     import paxman.capabilities as cap_mod
 
     assert set(cap_mod.__all__) == {
@@ -62,6 +62,7 @@ def test_all_still_exported_via_all() -> None:
         "Country",
         "Currency",
         "Date",
+        "DOI",
         "Element",
         "Email",
         "IBAN",

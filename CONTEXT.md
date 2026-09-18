@@ -78,6 +78,7 @@ Paxman ships twenty-one built-in capabilities (21 in `paxman/capabilities/__init
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **DOI** | Digital object identifiers | ISO 26324:2025 |
 | **Element** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
@@ -325,6 +326,32 @@ Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; leg
 | EN 50160 | European EN 50160 | `YYYY-MM-DD` |
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
+
+### DOI
+
+The DOI capability has **1 grammar** and **1 validation rule**:
+
+#### Notation
+
+`DOINotation(prefix, suffix, canonical)` — all `str`. `prefix` is the `10.` directory indicator plus registrant code (4–9 digits with dotted sub-structure), ASCII-folded; `suffix` is the registrant-chosen opaque string, ASCII-folded with percent-escapes retained literally; `canonical` is `prefix + "/" + suffix`, the default-format value. Non-Latin case is preserved byte-identically and no Unicode normalization is performed (Handbook case-insensitivity is Basic-Latin-only).
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `doi_recognition` | bare `10.`-prefixed core plus optional `doi:`/`DOI:` label (`[\s:-]+`), optional `https?://(dx.\|www.)?doi.org/` host, optional `urn:doi:`/`info:doi/` carriers; quoteless `\S+` suffix with sentence-punctuation-excluding final char | `word_only` guards on both sides, inline `(?ai:)` ASCII flags on label/host, ASCII-only fold (never `str.lower()`); shortDOI/over-long registrants never claim; proxy URN-colon form deferred |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 4-doi-syntax` | ISO 26324:2025 Section 4 | `10.registrant/suffix` bare ASCII-folded |
+
+No checksum (Handbook: the DOI system itself makes no use of check digits; per-application EIDR-style suffix checks accepted structurally, never validated) and no registry — unallocated-but-shaped prefixes read SUCCESS (storable, UUID precedent).
+
+#### Formats
+
+Default `doi` (bare lowercase `10.registrant/suffix`); offered `url` (`https://doi.org/10.registrant/suffix`, re-enters under the default contract). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Coordinates
 

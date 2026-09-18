@@ -50,6 +50,7 @@ from paxman.api.bootstrap import (
 from paxman.api.canonicalize import canonicalize
 from paxman.capabilities import (
     BIC,
+    DOI,
     IBAN,
     IP,
     ISBN,
@@ -126,6 +127,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # Date: tests/capabilities/date/test_capability.py
     # ::test_default_format_is_identity (ISO)
     _row(Date, "2026-01-15", "2026-01-15"),
+    # DOI: tests/capabilities/doi/test_capability.py
+    # ::test_format_value_url_reenters — bare canonical; the offered url
+    # rendering re-enters via the resolver-host carrier group.
+    _row(DOI, "10.1038/nature12345", "10.1038/nature12345"),
     # Email: tests/e2e/test_bootstrap.py
     # ::test_bootstrap_then_canonicalize_round_trip
     _row(Email, "user@example.com", "user@example.com"),

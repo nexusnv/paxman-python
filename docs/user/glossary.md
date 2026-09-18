@@ -56,6 +56,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Deterministic** — Given the same input, the same contract, and the same installed library snapshot (version, rule tables, snapshot SHAs), the pipeline yields the same output. No randomness, clock, or network. See [Concepts — Pipeline](concepts/pipeline/) and [Migration](migration/).
 
+**DOI** — Paxman capability for Digital Object Identifiers (ISO 26324:2025). Canonical form is the bare lowercase `10.registrant/suffix` name; `url` offered. See [Capabilities](capabilities/).
+
 **Domain vocabulary** — The shared types defined in `paxman/core/domain.py` (`Rule`, `Grammar`, `Provenance`, `Candidate`, `RecognizedRep`, `Resolution`, `VersionStamp`, …). See `paxman/core` knowledge base.
 
 ---

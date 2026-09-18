@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **UUID — 128-bit identifiers:** new capability with one grammar (`uuid_recognition`: hyphenated/bare-32/braced/`urn:uuid:` carriers, case-folded) and one structure-only rule backed by IETF RFC 9562 (`Section 4-uuid-format` — no checksum, no registry; version/variant nibbles informative, Nil/Max valid). Canonical form is lowercase hyphenated `8-4-4-4-12`; offered output formats `compact`, `braced`, `urn` (all re-enter as fixed points).
 
+- **DOI — Digital Object Identifiers:** new capability with one grammar (`doi_recognition`: bare/case-variant/resolver-URL/`doi:`-label/`urn:doi:`/`info:doi/` carriers, ASCII-only fold, trailing-punctuation trim) and one structure-only rule backed by ISO 26324:2025 (`Section 4-doi-syntax` — no checksum, no registry; shortDOI rejected, proxy URN-colon form deferred). Canonical form is the bare lowercase `10.registrant/suffix` name; offered output format `url` (re-enters as a fixed point).
+
 ## [0.5.0] - 2026-09-15
 
 ### Added
