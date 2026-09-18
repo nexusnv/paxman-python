@@ -1,4 +1,4 @@
-"""Hypothesis property tests for the Element capability.
+"""Hypothesis property tests for the ChemicalElement capability.
 
 Each property locks a mathematical invariant using an independently derived
 expectation:
@@ -23,7 +23,7 @@ expectation:
 Registry posture: grammar/rule/``format_value`` properties drive those
 layers directly and never touch the registry. Full-pipeline properties
 (self-canonicalization, equivalence, fuzz, MILESTONE vectors) use a local
-``_fresh_registry`` fixture registering only Element — the documented
+``_fresh_registry`` fixture registering only ChemicalElement — the documented
 ``test_money_properties.py`` exception pattern (pipeline invariants cannot
 be observed off-pipeline).
 """
@@ -37,22 +37,22 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from paxman.capabilities.Element.capability import ElementCapability
-from paxman.capabilities.Element.contract import ElementContract
-from paxman.capabilities.Element.grammar.element_recognition import (
-    ElementRecognitionGrammar,
+from paxman.capabilities.ChemicalElement.capability import ChemicalElementCapability
+from paxman.capabilities.ChemicalElement.contract import ChemicalElementContract
+from paxman.capabilities.ChemicalElement.grammar.chemical_element_recognition import (
+    ChemicalElementRecognitionGrammar,
 )
-from paxman.capabilities.Element.notation import ElementNotation
-from paxman.capabilities.Element.rules.data.periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
+from paxman.capabilities.ChemicalElement.rules.data.periodic_table_ed2022 import (
     NAME_TO_SYMBOL,
     SYMBOL_TO_NAME,
     SYMBOLS,
     Z_TO_SYMBOL,
 )
-from paxman.capabilities.Element.rules.iupac_periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.rules.iupac_periodic_table_ed2022 import (
     SectionPtoeRegistry,
 )
-from paxman.capabilities.Element.rules.iupac_red_book_2005 import (
+from paxman.capabilities.ChemicalElement.rules.iupac_red_book_2005 import (
     SectionIR31NamesAndSymbols,
 )
 from paxman.core.discovery import register_capability, reset_registry
@@ -78,14 +78,14 @@ _MILESTONE_VECTORS: tuple[tuple[str, str], ...] = (
 
 @pytest.fixture(autouse=True)
 def _fresh_registry() -> None:
-    """Reset the registry and register Element before and after each test.
+    """Reset the registry and register ChemicalElement before and after each test.
 
     Registration happens once per test, before the hypothesis examples run;
     ``run_capability`` freezes the registry on the first example, which is
     fine because the capability is already present.
     """
     reset_registry()
-    register_capability(ElementCapability())
+    register_capability(ChemicalElementCapability())
     yield
     reset_registry()
 
@@ -93,43 +93,48 @@ def _fresh_registry() -> None:
 @given(s=st.sampled_from(sorted(SYMBOLS)))
 def test_symbol_key_recognized_and_validated(s: str) -> None:
     """Every registry symbol is recognized once and validates to itself."""
-    matches = ElementRecognitionGrammar().recognize(s)
+    matches = ChemicalElementRecognitionGrammar().recognize(s)
     assert len(matches) == 1
     assert matches[0].notation.shape == "symbol"
     assert matches[0].notation.token == s
     rule = SectionIR31NamesAndSymbols()
-    assert rule.matches(matches[0].notation, ElementContract()) is True
-    assert rule.normalize(matches[0].notation, ElementContract()) == s
+    assert rule.matches(matches[0].notation, ChemicalElementContract()) is True
+    assert rule.normalize(matches[0].notation, ChemicalElementContract()) == s
 
 
 @given(n=st.sampled_from(sorted(NAME_TO_SYMBOL)))
 def test_name_key_recognized_and_validated(n: str) -> None:
     """Every registry name is recognized once and validates to its symbol."""
-    matches = ElementRecognitionGrammar().recognize(n)
+    matches = ChemicalElementRecognitionGrammar().recognize(n)
     assert len(matches) == 1
     assert matches[0].notation.shape == "name"
     assert matches[0].notation.token == n
     rule = SectionIR31NamesAndSymbols()
-    assert rule.matches(matches[0].notation, ElementContract()) is True
-    assert rule.normalize(matches[0].notation, ElementContract()) == (NAME_TO_SYMBOL[n])
+    assert rule.matches(matches[0].notation, ChemicalElementContract()) is True
+    assert (
+        rule.normalize(matches[0].notation, ChemicalElementContract())
+        == (NAME_TO_SYMBOL[n])
+    )
 
 
 @given(z=st.integers(min_value=1, max_value=118))
 def test_z_label_recognized_and_validated(z: int) -> None:
     """Every atomic number is recognized once from its labeled form."""
-    matches = ElementRecognitionGrammar().recognize(f"element {z}")
+    matches = ChemicalElementRecognitionGrammar().recognize(f"element {z}")
     assert len(matches) == 1
     assert matches[0].notation.shape == "atomic_number"
     assert matches[0].notation.token == str(z)
     rule = SectionPtoeRegistry()
-    assert rule.matches(matches[0].notation, ElementContract()) is True
-    assert rule.normalize(matches[0].notation, ElementContract()) == Z_TO_SYMBOL[z]
+    assert rule.matches(matches[0].notation, ChemicalElementContract()) is True
+    assert (
+        rule.normalize(matches[0].notation, ChemicalElementContract()) == Z_TO_SYMBOL[z]
+    )
 
 
 @given(s=st.sampled_from(sorted(SYMBOLS)))
 def test_sampled_symbol_self_canonicalizes(s: str) -> None:
     """A canonical symbol re-canonicalizes to itself (fixed point)."""
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     result = run_capability(s, contract)
     assert result.status is Resolution.SUCCESS
     assert result.canonicalized_value == s
@@ -138,7 +143,7 @@ def test_sampled_symbol_self_canonicalizes(s: str) -> None:
 @given(n=st.sampled_from(sorted(NAME_TO_SYMBOL)))
 def test_sampled_name_self_canonicalizes(n: str) -> None:
     """A registry name canonicalizes to its symbol, which is a fixed point."""
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     result = run_capability(n, contract)
     assert result.status is Resolution.SUCCESS
     assert result.canonicalized_value == NAME_TO_SYMBOL[n]
@@ -150,7 +155,7 @@ def test_sampled_name_self_canonicalizes(n: str) -> None:
 @given(z=st.integers(min_value=1, max_value=118))
 def test_sampled_z_self_canonicalizes(z: int) -> None:
     """A labeled atomic number canonicalizes to its symbol (a fixed point)."""
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     result = run_capability(f"element {z}", contract)
     assert result.status is Resolution.SUCCESS
     assert result.canonicalized_value == Z_TO_SYMBOL[z]
@@ -161,7 +166,7 @@ def test_sampled_z_self_canonicalizes(z: int) -> None:
 
 def test_iron_family_equivalence() -> None:
     """Symbol, folded symbol, name, upper name, and label share one value."""
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     values = {
         run_capability(text, contract).canonicalized_value
         for text in ("fe", "Fe", "iron", "IRON", "element 26")
@@ -172,16 +177,16 @@ def test_iron_family_equivalence() -> None:
 @given(s=st.sampled_from(sorted(SYMBOLS)))
 def test_format_value_symbol_identity(s: str) -> None:
     """The ``symbol`` format renders the canonical value unchanged."""
-    capability = ElementCapability()
-    notation = ElementNotation(token=s, shape="symbol")
+    capability = ChemicalElementCapability()
+    notation = ChemicalElementNotation(token=s, shape="symbol")
     assert capability.format_value(s, "symbol", notation) == s
 
 
 @given(s=st.sampled_from(sorted(SYMBOLS)))
 def test_format_value_name_lookup(s: str) -> None:
     """The ``name`` format renders the IUPAC spelling (never an alias)."""
-    capability = ElementCapability()
-    notation = ElementNotation(token=s, shape="symbol")
+    capability = ChemicalElementCapability()
+    notation = ChemicalElementNotation(token=s, shape="symbol")
     assert capability.format_value(s, "name", notation) == SYMBOL_TO_NAME[s]
 
 
@@ -193,7 +198,7 @@ def test_random_ascii_status_well_formed(text: str) -> None:
     INVALID outcome proves the label branch claimed an out-of-range number
     alone — the label text must be present in the input.
     """
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     try:
         result = run_capability(text, contract)
     except MultipleMentionsError:
@@ -213,7 +218,7 @@ def test_random_ascii_status_well_formed(text: str) -> None:
 @pytest.mark.parametrize(("text", "expected"), _MILESTONE_VECTORS)
 def test_milestone_vectors(text: str, expected: str) -> None:
     """MILESTONE row-22 vectors hold verbatim through the pipeline."""
-    contract = ElementCapability.create_contract()
+    contract = ChemicalElementCapability.create_contract()
     result = run_capability(text, contract)
     assert result.status is Resolution.SUCCESS
     assert result.canonicalized_value == expected

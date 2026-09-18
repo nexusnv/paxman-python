@@ -358,6 +358,18 @@ registry) is registered by `register_all_shipped()` (now 22 shipped). No
 migration required — existing contracts are byte-identical. See the
 [DOI guide](capabilities/doi/) and the [Citations](citations/) ISO row.
 
+### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
+
+The `element` capability is renamed to `chemical_element` to reserve the
+bare `Element` name for future non-chemical element domains (e.g.
+`HtmlElement`). Migrate: `from paxman.capabilities import ChemicalElement`,
+`ChemicalElement.create_contract()`, registry `chemical_element`, CLI
+`paxman chemical_element` / `paxman scan -c chemical_element`, grammar
+`chemical_element_recognition`. Input syntax is unchanged (`Fe`, `iron`,
+`element 26` → `Fe`); rule names are unchanged
+(`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`).
+See the [ChemicalElement guide](capabilities/chemical_element/).
+
 ### 0.5.0 — New capabilities: Timezone + UtcOffset (additive)
 
 `Timezone` (IANA key canonical, `iana` default, no offered formats,

@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING, Any
 
 __all__ = [
     "BIC",
+    "ChemicalElement",
     "Coordinates",
     "Country",
     "Currency",
     "DOI",
     "Date",
-    "Element",
     "Email",
     "IBAN",
     "IP",
@@ -39,6 +39,10 @@ __all__ = [
 
 _LAZY: dict[str, tuple[str, str]] = {
     "BIC": ("paxman.capabilities.BIC.capability", "BICCapability"),
+    "ChemicalElement": (
+        "paxman.capabilities.ChemicalElement.capability",
+        "ChemicalElementCapability",
+    ),
     "Coordinates": (
         "paxman.capabilities.Coordinates.capability",
         "CoordinatesCapability",
@@ -47,7 +51,6 @@ _LAZY: dict[str, tuple[str, str]] = {
     "Currency": ("paxman.capabilities.Currency.capability", "CurrencyCapability"),
     "DOI": ("paxman.capabilities.DOI.capability", "DOICapability"),
     "Date": ("paxman.capabilities.Date.capability", "DateCapability"),
-    "Element": ("paxman.capabilities.Element.capability", "ElementCapability"),
     "Email": ("paxman.capabilities.Email.capability", "EmailCapability"),
     "IBAN": ("paxman.capabilities.IBAN.capability", "IBANCapability"),
     "IP": ("paxman.capabilities.IP.capability", "IPCapability"),
@@ -67,6 +70,9 @@ _LAZY: dict[str, tuple[str, str]] = {
 
 if TYPE_CHECKING:
     from paxman.capabilities.BIC.capability import BICCapability as BIC
+    from paxman.capabilities.ChemicalElement.capability import (
+        ChemicalElementCapability as ChemicalElement,
+    )
     from paxman.capabilities.Coordinates.capability import (
         CoordinatesCapability as Coordinates,
     )
@@ -74,7 +80,6 @@ if TYPE_CHECKING:
     from paxman.capabilities.Currency.capability import CurrencyCapability as Currency
     from paxman.capabilities.Date.capability import DateCapability as Date
     from paxman.capabilities.DOI.capability import DOICapability as DOI
-    from paxman.capabilities.Element.capability import ElementCapability as Element
     from paxman.capabilities.Email.capability import EmailCapability as Email
     from paxman.capabilities.IBAN.capability import IBANCapability as IBAN
     from paxman.capabilities.IP.capability import IPCapability as IP

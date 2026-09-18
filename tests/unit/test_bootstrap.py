@@ -28,12 +28,12 @@ def test_registers_all_shipped(_clean_registry) -> None:
     names = paxman.register_all_shipped()
     expected = (
         "bic",
+        "chemical_element",
         "coordinates",
         "country",
         "currency",
         "date",
         "doi",
-        "element",
         "email",
         "iban",
         "ip",

@@ -5,7 +5,7 @@
 **Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
-Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 21 capabilities (BIC, Coordinates, Country, Currency, Date, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
+Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 21 capabilities (BIC, ChemicalElement, Coordinates, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
 
 ## STRUCTURE
 ```text
@@ -101,7 +101,7 @@ uv run python -m paxman email "user@example.com"      # CLI smoke test
 Full pre-PR gate: `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run import-linter lint && uv run pytest`
 
 ## NOTES
-- `paxman/capabilities/__init__.py` exports all twenty-two shipped capabilities (BIC, Coordinates, Country, Currency, Date, DOI, Element, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID); export completeness is enforced by `tests/unit/test_capability_exports.py`.
+- `paxman/capabilities/__init__.py` exports all twenty-two shipped capabilities (BIC, ChemicalElement, Coordinates, Country, Currency, Date, DOI, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID); export completeness is enforced by `tests/unit/test_capability_exports.py`.
 - CONTEXT.md is the domain glossary for the full shipped set (twenty-two capabilities). It is kept in sync with the code; when adding a capability, update its Notation/table entries there too.
 - No `pyrightconfig.json` — pyright config is inline `[tool.pyright]` in pyproject.toml. No `.editorconfig`.
 - Data modules live under `rules/data/` and `grammar/data/` — plain module-level tables separating data from logic. Generated modules (edit via snapshot + regenerate, never by hand): ISBN range message (`tools/regenerate_isbn_range_data.py`), URL IDNA UTS #46 mapping (`tools/regenerate_idna_uts46_data.py`), SIUnit prefixed-unit and grammar token tables (`tools/regenerate_si_prefix_data.py`), the Currency + Money data set (`tools/regenerate_currency_data.py`, from `paxman/shared_data/currency_snapshot.json`), BIC data (`tools/regenerate_bic_data.py`), IBAN registry data (`tools/regenerate_iban_registry_data.py`), Language tables (`tools/regenerate_language_data.py`; `tools/regenerate_iana_language_data.py` now guards removed generated modules), and Unicode property ranges (`tools/regenerate_unicode_property_data.py`). Unmarked data files are edited directly.

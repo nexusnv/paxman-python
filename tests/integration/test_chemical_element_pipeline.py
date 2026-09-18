@@ -1,4 +1,4 @@
-"""Integration tests for the Element capability through the full pipeline."""
+"""Integration tests for the ChemicalElement capability through the full pipeline."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from collections.abc import Iterator
 
 import pytest
 
-from paxman.capabilities.Element.capability import ElementCapability
+from paxman.capabilities.ChemicalElement.capability import ChemicalElementCapability
 from paxman.core.discovery import register_capability, reset_registry
 from paxman.core.domain import Resolution
 from paxman.core.errors import MultipleMentionsError
@@ -24,8 +24,8 @@ def _clean_registry() -> Iterator[None]:
     reset_registry()
 
 
-class TestElementPipeline:
-    """End-to-end tests for Element canonicalization.
+class TestChemicalElementPipeline:
+    """End-to-end tests for ChemicalElement canonicalization.
 
     Locked semantics (plan §9 as amended by A0):
     - symbols are case-exact (``fe`` folds, ``FE`` stays unclaimed);
@@ -56,8 +56,8 @@ class TestElementPipeline:
         expected_span: tuple[int, int],
     ) -> None:
         """Symbol, name, and labeled-atomic-number inputs canonicalize."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability(text, contract)
 
         assert result.status == Resolution.SUCCESS
@@ -72,8 +72,8 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_unknown_symbol_is_missing(self) -> None:
         """Unclaimed symbol-like input is MISSING, not INVALID."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability("Xx", contract)
 
         assert result.status == Resolution.MISSING
@@ -84,8 +84,8 @@ class TestElementPipeline:
     @pytest.mark.parametrize("text", ["element 119", "Z = 300"])
     def test_out_of_range_atomic_number_is_invalid(self, text: str) -> None:
         """A labeled but out-of-range atomic number is INVALID."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability(text, contract)
 
         assert result.status == Resolution.INVALID
@@ -101,8 +101,8 @@ class TestElementPipeline:
         ``FE`` is all-caps (no all-caps keys); ``Fe-56`` is isotope-glued;
         ``ununtrium`` is a retired systematic name with no key.
         """
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability(text, contract)
 
         assert result.status == Resolution.MISSING
@@ -112,16 +112,16 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_two_distinct_elements_raise(self) -> None:
         """Two distinct values in one call fail fast, not AMBIGUOUS."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         with pytest.raises(MultipleMentionsError):
             run_capability("Fe and Cu", contract)
 
     @pytest.mark.integration
     def test_coreferent_symbol_and_name_coalesce(self) -> None:
         """``Iron (Fe)`` is one entity: both mentions resolve to ``Fe``."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability("Iron (Fe)", contract)
 
         assert result.status == Resolution.SUCCESS
@@ -135,8 +135,8 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_coreferent_label_and_name_coalesce(self) -> None:
         """``element 26 (iron)`` resolves through both rules to ``Fe``."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract()
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract()
         result = run_capability("element 26 (iron)", contract)
 
         assert result.status == Resolution.SUCCESS
@@ -151,8 +151,10 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_common_word_symbol_flag_off(self) -> None:
         """``in`` resolves to ``In`` when suppression is off."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract(suppress_common_words=False)
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract(
+            suppress_common_words=False
+        )
         result = run_capability("in", contract)
 
         assert result.status == Resolution.SUCCESS
@@ -164,8 +166,8 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_common_word_symbol_whole_input_exempt(self) -> None:
         """Whole-input ``in`` stays SUCCESS with the flag on (A0 exempt)."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract(suppress_common_words=True)
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract(suppress_common_words=True)
         result = run_capability("in", contract)
 
         assert result.status == Resolution.SUCCESS
@@ -176,8 +178,8 @@ class TestElementPipeline:
     @pytest.mark.integration
     def test_embedded_common_word_symbol_suppressed(self) -> None:
         """Embedded ``in`` is suppressed; ``Fe`` still resolves."""
-        register_capability(ElementCapability())
-        contract = ElementCapability.create_contract(suppress_common_words=True)
+        register_capability(ChemicalElementCapability())
+        contract = ChemicalElementCapability.create_contract(suppress_common_words=True)
         result = run_capability("Fe in water", contract)
 
         assert result.status == Resolution.SUCCESS

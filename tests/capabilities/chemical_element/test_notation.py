@@ -1,27 +1,27 @@
-"""Tests for ElementNotation."""
+"""Tests for ChemicalElementNotation."""
 
 from dataclasses import FrozenInstanceError
 
 import pytest
 
-from paxman.capabilities.Element.notation import ElementNotation
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
 
 pytestmark = [pytest.mark.capability]
 
 
 def test_frozen_slots_hash() -> None:
-    n = ElementNotation(token="Fe", shape="symbol")
+    n = ChemicalElementNotation(token="Fe", shape="symbol")
     with pytest.raises(FrozenInstanceError):
         n.token = "Cu"  # type: ignore[misc]
     with pytest.raises(FrozenInstanceError):
         n.shape = "name"  # type: ignore[misc]
-    assert hasattr(ElementNotation, "__slots__")
+    assert hasattr(ChemicalElementNotation, "__slots__")
     assert (
         len(
             {
-                ElementNotation(token="Fe", shape="symbol"),
-                ElementNotation(token="Fe", shape="symbol"),
-                ElementNotation(token="iron", shape="name"),
+                ChemicalElementNotation(token="Fe", shape="symbol"),
+                ChemicalElementNotation(token="Fe", shape="symbol"),
+                ChemicalElementNotation(token="iron", shape="name"),
             }
         )
         == 2
@@ -29,13 +29,13 @@ def test_frozen_slots_hash() -> None:
 
 
 def test_shape_token_conventions() -> None:
-    symbol = ElementNotation(token="Fe", shape="symbol")
+    symbol = ChemicalElementNotation(token="Fe", shape="symbol")
     assert symbol.token == "Fe"
     assert symbol.shape == "symbol"
-    name = ElementNotation(token="iron", shape="name")
+    name = ChemicalElementNotation(token="iron", shape="name")
     assert name.token == "iron"
     assert name.shape == "name"
-    atomic_number = ElementNotation(token="26", shape="atomic_number")
+    atomic_number = ChemicalElementNotation(token="26", shape="atomic_number")
     assert atomic_number.token == "26"
     assert atomic_number.shape == "atomic_number"
     assert symbol != name

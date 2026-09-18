@@ -1,42 +1,42 @@
-"""Element capability — wires grammars and rules together."""
+"""ChemicalElement capability — wires grammars and rules together."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-from paxman.capabilities.Element.contract import ElementContract
-from paxman.capabilities.Element.grammar.element_recognition import (
-    ElementRecognitionGrammar,
+from paxman.capabilities.ChemicalElement.contract import ChemicalElementContract
+from paxman.capabilities.ChemicalElement.grammar.chemical_element_recognition import (
+    ChemicalElementRecognitionGrammar,
 )
-from paxman.capabilities.Element.notation import ElementNotation
-from paxman.capabilities.Element.rules.data.periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
+from paxman.capabilities.ChemicalElement.rules.data.periodic_table_ed2022 import (
     SYMBOL_TO_NAME,
 )
-from paxman.capabilities.Element.rules.iupac_periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.rules.iupac_periodic_table_ed2022 import (
     SectionPtoeRegistry,
 )
-from paxman.capabilities.Element.rules.iupac_red_book_2005 import (
+from paxman.capabilities.ChemicalElement.rules.iupac_red_book_2005 import (
     SectionIR31NamesAndSymbols,
 )
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
 
-class ElementCapability(Capability[ElementNotation]):
-    """Element canonicalization capability.
+class ChemicalElementCapability(Capability[ChemicalElementNotation]):
+    """ChemicalElement canonicalization capability.
 
     Canonicalizes human element designations (IUPAC symbols, lowercase
     English names, labeled atomic numbers) to the proper-case IUPAC symbol
     with Red Book + Periodic Table provenance.
     """
 
-    name = "element"
+    name = "chemical_element"
 
-    def get_grammars(self) -> list[Grammar[ElementNotation]]:
+    def get_grammars(self) -> list[Grammar[ChemicalElementNotation]]:
         """Return the default grammar instances."""
-        return [ElementRecognitionGrammar()]
+        return [ChemicalElementRecognitionGrammar()]
 
-    def get_rules(self) -> list[Rule[ElementNotation]]:
+    def get_rules(self) -> list[Rule[ChemicalElementNotation]]:
         """Return the default validation rule instances."""
         return [SectionIR31NamesAndSymbols(), SectionPtoeRegistry()]
 
@@ -49,7 +49,7 @@ class ElementCapability(Capability[ElementNotation]):
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
         suppress_common_words: bool = False,
-    ) -> ElementContract:
+    ) -> ChemicalElementContract:
         """Factory method for creating contracts with proper defaults.
 
         Args:
@@ -65,9 +65,9 @@ class ElementCapability(Capability[ElementNotation]):
             suppress_common_words: Suppress common-word mentions.
 
         Returns:
-            Configured ElementContract instance.
+            Configured ChemicalElementContract instance.
         """
-        return ElementContract(
+        return ChemicalElementContract(
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),
             pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,
             year=year,
@@ -80,7 +80,7 @@ class ElementCapability(Capability[ElementNotation]):
         self,
         value: str,
         output_format: str | None,
-        notation: ElementNotation,
+        notation: ChemicalElementNotation,
     ) -> str:
         """Render a default symbol canonical value in the requested format.
 

@@ -32,7 +32,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **International ISBN Agency** | ISBN Users' Manual (2012), ISBN Range Message (2026-08-05) | ISBN | 2 |
 | **WHATWG** | URL Standard (Living Standard) | URL | 1 |
 | **IEEE** | IEEE Std 802-2024 | MacAddress | 1 |
-| **IUPAC** | IUPAC Periodic Table 04 May 2022, IUPAC Red Book 2005 Ch. IR-3 | Element | 2 |
+| **IUPAC** | IUPAC Periodic Table 04 May 2022, IUPAC Red Book 2005 Ch. IR-3 | ChemicalElement | 2 |
 | **Derived convention** | US locale — MM/DD/YYYY, European locale — DD/MM/YYYY | Date | 2 |
 
 > **Note on "Derived convention":** The two Date rules for `MM/DD/YYYY` and `DD/MM/YYYY` are locale conventions rather than an external standards publication. They are included here for completeness and carry `kind="convention"` with no `reference_url`.
@@ -212,8 +212,8 @@ All IEEE entries are `kind="specification"`, `lifecycle="active"`.
 
 | Capability | Specification | Version | Rule | Citation | Year | Reference |
 |------------|---------------|---------|------|----------|------|-----------|
-| Element | IUPAC Periodic Table of the Elements | 04 May 2022 | `Section PTOE-element-registry` | Table I names and symbols (118 elements, Z 1-118) | 2022 | https://iupac.org/wp-content/uploads/2022/07/IUPAC_Periodic_Table-04May22_CRA.pdf |
-| Element | IUPAC Red Book 2005, Ch. IR-3 (Nomenclature of Inorganic Chemistry) | 2005 | `Section IR-3.1-names-and-symbols` | Chapter IR-3, Table I (names and symbols) | 2005 | https://iupac.qmul.ac.uk/RedBook2005.pdf |
+| ChemicalElement | IUPAC Periodic Table of the Elements | 04 May 2022 | `Section PTOE-element-registry` | Table I names and symbols (118 elements, Z 1-118) | 2022 | https://iupac.org/wp-content/uploads/2022/07/IUPAC_Periodic_Table-04May22_CRA.pdf |
+| ChemicalElement | IUPAC Red Book 2005, Ch. IR-3 (Nomenclature of Inorganic Chemistry) | 2005 | `Section IR-3.1-names-and-symbols` | Chapter IR-3, Table I (names and symbols) | 2005 | https://iupac.qmul.ac.uk/RedBook2005.pdf |
 
 The registry entry is `kind="registry"`; the Red Book entry is `kind="specification"`; both are `lifecycle="active"`.
 

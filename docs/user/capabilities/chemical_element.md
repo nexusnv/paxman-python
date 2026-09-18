@@ -1,5 +1,5 @@
 ---
-title: "Element"
+title: "ChemicalElement"
 ---
 
 Canonicalizes **one element mention** per call — an IUPAC symbol (case-exact), an English element name (case-insensitive, including the `aluminum`/`cesium` aliases), or a labeled atomic number (`element 26`, `Z=26`) — to the proper-case IUPAC symbol.
@@ -35,15 +35,15 @@ Default `output_format` is `"symbol"` (identity — `normalize()` returns the pr
 `atomic_number` is deliberately not offered: rendering `Fe` as bare `"26"` cannot re-enter — bare integers are unclaimable by design, so `canonicalize("26")` is `MISSING` and the value would not be a fixed point. Store the `symbol` form for round-trippable output. Any other value raises `ContractError` — including `atomic_number`, `number`, `""`, and `"SYMBOL"` (case-sensitive).
 
 ```python
-from paxman.capabilities import Element
+from paxman.capabilities import ChemicalElement
 import paxman
 
 paxman.register_all_shipped()
-print(paxman.canonicalize("Fe", Element.create_contract()).canonicalized_value)
-print(paxman.canonicalize("iron", Element.create_contract()).canonicalized_value)
-print(paxman.canonicalize("element 26", Element.create_contract()).canonicalized_value)
-print(paxman.canonicalize("Fe", Element.create_contract(output_format="name")).canonicalized_value)
-print(paxman.canonicalize("element 26", Element.create_contract(output_format="name")).canonicalized_value)
+print(paxman.canonicalize("Fe", ChemicalElement.create_contract()).canonicalized_value)
+print(paxman.canonicalize("iron", ChemicalElement.create_contract()).canonicalized_value)
+print(paxman.canonicalize("element 26", ChemicalElement.create_contract()).canonicalized_value)
+print(paxman.canonicalize("Fe", ChemicalElement.create_contract(output_format="name")).canonicalized_value)
+print(paxman.canonicalize("element 26", ChemicalElement.create_contract(output_format="name")).canonicalized_value)
 ```
 
 ---
@@ -51,13 +51,13 @@ print(paxman.canonicalize("element 26", Element.create_contract(output_format="n
 ## Contract
 
 ```python
-contract = Element.create_contract(
+contract = ChemicalElement.create_contract(
     output_format=None,  # "symbol" (default), "name"
     # plus every common field: suppress_common_words / excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
 
-- No grammar toggles: one grammar (`element_recognition`), two rules (`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`).
+- No grammar toggles: one grammar (`chemical_element_recognition`), two rules (`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`).
 - `year` filters by `publication_year`; e.g., `year=2005` keeps the Red Book 2005 rule but drops the 2022 registry → `Fe` stays `SUCCESS` while `element 26` becomes `INVALID`.
 
 ---
@@ -86,7 +86,7 @@ contract = Element.create_contract(
 
 ```mermaid
 flowchart TB
-    A[Text] --> G[Grammar:<br>element_recognition]
+    A[Text] --> G[Grammar:<br>chemical_element_recognition]
     G --> R1{Section IR-3.1<br>names and symbols}
     G --> R2{Section PTOE<br>element registry}
     R1 & R2 --> D{Dedup values}
@@ -105,12 +105,12 @@ flowchart TB
 
 ```python
 import paxman
-from paxman.capabilities import Element
+from paxman.capabilities import ChemicalElement
 from paxman.core.domain import Resolution
 from paxman.core.errors import ContractError
 
 paxman.register_all_shipped()
-contract = Element.create_contract()
+contract = ChemicalElement.create_contract()
 
 rows = [
     "Fe",
@@ -132,7 +132,7 @@ for text in rows:
     print(f"{text!r:16} → {r.status.value:10} {val!r:8} ({rule})")
 
 try:
-    Element.create_contract(output_format="atomic_number")
+    ChemicalElement.create_contract(output_format="atomic_number")
 except ContractError as e:
     print(f"atomic_number → ContractError: {e}")
 ```

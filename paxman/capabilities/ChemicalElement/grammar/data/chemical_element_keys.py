@@ -1,4 +1,4 @@
-"""Element recognition keys.
+"""ChemicalElement recognition keys.
 
 Case-exact symbol keys (118 canonical proper-case symbols plus 118
 all-lowercase forms) for the case-sensitive symbol matcher, and 120
@@ -7,10 +7,10 @@ lowercase name keys (118 IUPAC names plus the Red Book alternatives
 
 Key-only tables mechanically derived from the IUPAC Periodic Table of the
 Elements (04 May 2022) authority snapshot in
-`paxman/capabilities/Element/rules/data/periodic_table_ed2022.py`.
+`paxman/capabilities/ChemicalElement/rules/data/periodic_table_ed2022.py`.
 No mappings live here — validation rules own every token-to-symbol
 decision (grammar/rule boundary). Consistency with the authority tables
-is asserted in `tests/capabilities/element/test_data_consistency.py`.
+is asserted in `tests/capabilities/chemical_element/test_data_consistency.py`.
 """
 
 from __future__ import annotations
