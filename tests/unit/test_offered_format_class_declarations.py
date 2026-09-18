@@ -27,6 +27,7 @@ import pytest
 from paxman.api.bootstrap import list_shipped_capabilities
 from paxman.capabilities import (
     BIC,
+    DOI,
     IBAN,
     IP,
     ISBN,
@@ -59,6 +60,7 @@ _FACTORIES = {
     "country": Country,
     "currency": Currency,
     "date": Date,
+    "doi": DOI,
     "email": Email,
     "iban": IBAN,
     "ip": IP,

@@ -156,6 +156,10 @@ def _create_contract(
         from paxman.capabilities import Date
 
         return Date.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "doi":
+        from paxman.capabilities import DOI
+
+        return DOI.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "element":
         from paxman.capabilities import Element
 

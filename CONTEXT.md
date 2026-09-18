@@ -69,7 +69,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-one built-in capabilities (21 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-two built-in capabilities (22 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -78,6 +78,7 @@ Paxman ships twenty-one built-in capabilities (21 in `paxman/capabilities/__init
 | **Country** | Country codes/names | ISO 3166, CLDR |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
+| **DOI** | Digital object identifiers | ISO 26324:2025 |
 | **Element** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | RFC 5322, RFC 6761 |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
@@ -325,6 +326,32 @@ Represented as `CandidatesMatcher` candidates inside a single `DateGrammar`; leg
 | EN 50160 | European EN 50160 | `YYYY-MM-DD` |
 
 All rules normalize to ISO 8601 format (`YYYY-MM-DD`) regardless of input grammar.
+
+### DOI
+
+The DOI capability has **1 grammar** and **1 validation rule**:
+
+#### Notation
+
+`DOINotation(prefix, suffix, canonical)` — all `str`. `prefix` is the `10.` directory indicator plus registrant code (4–9 digits with dotted sub-structure), ASCII-folded; `suffix` is the registrant-chosen opaque string, ASCII-folded with percent-escapes retained literally; `canonical` is `prefix + "/" + suffix`, the default-format value. Non-Latin case is preserved byte-identically and no Unicode normalization is performed (Handbook case-insensitivity is Basic-Latin-only).
+
+#### Grammar (Recognition)
+
+| Grammar | Pattern | Notes |
+|---------|---------|-------|
+| `doi_recognition` | bare `10.`-prefixed core plus optional `doi:`/`DOI:` label (`[\s:-]+`), optional `https?://(dx.\|www.)?doi.org/` host, optional `urn:doi:`/`info:doi/` carriers; quoteless `\S+` suffix with sentence-punctuation-excluding final char | `word_only` guards on both sides, inline `(?ai:)` ASCII flags on label/host, ASCII-only fold (never `str.lower()`); shortDOI/over-long registrants never claim; proxy URN-colon form deferred |
+
+#### Validation Rules
+
+| Rule | Standard | Canonical Output |
+|------|----------|------------------|
+| `Section 4-doi-syntax` | ISO 26324:2025 Section 4 | `10.registrant/suffix` bare ASCII-folded |
+
+No checksum (Handbook: the DOI system itself makes no use of check digits; per-application EIDR-style suffix checks accepted structurally, never validated) and no registry — unallocated-but-shaped prefixes read SUCCESS (storable, UUID precedent).
+
+#### Formats
+
+Default `doi` (bare lowercase `10.registrant/suffix`); offered `url` (`https://doi.org/10.registrant/suffix`, re-enters under the default contract). Presentation is via `Capability.format_value()` only; rules always normalize to the default.
 
 ### Coordinates
 
@@ -794,7 +821,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (21 capabilities, alphabetical; paxman/capabilities/__init__.py exports 21), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (22 capabilities, alphabetical; paxman/capabilities/__init__.py exports 22), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -857,6 +884,12 @@ paxman/
     │       ├── iso_8601_ed2019.py
     │       ├── us_federal_rules_ed2023.py
     │       └── en_50160_ed2010.py
+    ├── DOI/                       # grammar/ (1) + rules/ (1) — ISO 26324:2025, no checksum, no registry
+    │   ├── capability.py          # DOICapability
+    │   ├── contract.py            # DOIContract (doi/url output formats)
+    │   ├── notation.py            # DOINotation (prefix, suffix, canonical)
+    │   ├── grammar/               # doi_recognition
+    │   └── rules/                 # iso_26324_ed2025 (structure only)
     ├── Country/                   # grammar/ (4) + rules/ (3) + grammar/data/ + rules/data/
     │   ├── capability.py          # CountryCapability
     │   ├── contract.py            # CountryContract
@@ -997,7 +1030,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (21 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (22 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

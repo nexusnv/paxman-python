@@ -17,6 +17,7 @@ __all__ = [
     "Coordinates",
     "Country",
     "Currency",
+    "DOI",
     "Date",
     "Element",
     "Email",
@@ -44,6 +45,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     ),
     "Country": ("paxman.capabilities.Country.capability", "CountryCapability"),
     "Currency": ("paxman.capabilities.Currency.capability", "CurrencyCapability"),
+    "DOI": ("paxman.capabilities.DOI.capability", "DOICapability"),
     "Date": ("paxman.capabilities.Date.capability", "DateCapability"),
     "Element": ("paxman.capabilities.Element.capability", "ElementCapability"),
     "Email": ("paxman.capabilities.Email.capability", "EmailCapability"),
@@ -71,6 +73,7 @@ if TYPE_CHECKING:
     from paxman.capabilities.Country.capability import CountryCapability as Country
     from paxman.capabilities.Currency.capability import CurrencyCapability as Currency
     from paxman.capabilities.Date.capability import DateCapability as Date
+    from paxman.capabilities.DOI.capability import DOICapability as DOI
     from paxman.capabilities.Element.capability import ElementCapability as Element
     from paxman.capabilities.Email.capability import EmailCapability as Email
     from paxman.capabilities.IBAN.capability import IBANCapability as IBAN

@@ -182,6 +182,7 @@ Current defaults and offered alternatives:
 | Country | `alpha2` | `alpha3`, `numeric`, `name` |
 | Currency | `code` | *(none — single format)* |
 | Date | `ISO` | `US` |
+| DOI | `doi` | `url` |
 | Email | `email` | *(none)* |
 | IP | `ip` | *(none)* |
 | ISBN | `isbn13` | `hyphenated` |
@@ -339,5 +340,6 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Time zone identifiers | Timezone | `Timezone.create_contract(...)` |
 | UTC offset values | UtcOffset | `UtcOffset.create_contract(...)` |
 | UUIDs | UUID | `UUID.create_contract(...)` |
+| Digital object identifiers | DOI | `DOI.create_contract(...)` |
 
 New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

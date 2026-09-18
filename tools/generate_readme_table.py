@@ -36,6 +36,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "Dates",
         "ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale)",
     ),
+    "doi": ("Digital object identifiers", "ISO 26324:2025"),
     "email": ("Email addresses", "RFC 5322, RFC 6761"),
     "element": (
         "Chemical elements",
@@ -66,6 +67,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "country": "Country",
     "currency": "Currency",
     "date": "Date",
+    "doi": "DOI",
     "email": "Email",
     "element": "Element",
     "iban": "IBAN",

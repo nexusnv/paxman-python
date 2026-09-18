@@ -64,6 +64,7 @@ from paxman.api.bootstrap import register_all_shipped
 from paxman.api.canonicalize import canonicalize
 from paxman.capabilities import (
     BIC,
+    DOI,
     IBAN,
     ISBN,
     ISSN,
@@ -141,6 +142,11 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("country", "numeric"): "encoding",
     # -- Date ----------------------------------------------------------------
     ("date", "US"): "encoding",
+    # -- DOI -----------------------------------------------------------------
+    # url: resolver-link re-encoding of the bare canonical; the rendering
+    # re-enters the default contract onto the bare value via the host
+    # carrier group (measured in TestDOICapability).
+    ("doi", "url"): "encoding",
     # -- Element -------------------------------------------------------------
     # name: 1:1 symbol<->English-name map; the lowercase rendering re-enters
     # through the name path to the proper-case symbol.
@@ -442,6 +448,14 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "urn",
         "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
         "6fa459ea-ee8a-3ca4-894e-db77e160355e",
+        "",
+    ),
+    _InjectivityPair(
+        "doi",
+        DOI,
+        "url",
+        "10.1038/nature12345",
+        "10.1000/182",
         "",
     ),
 )

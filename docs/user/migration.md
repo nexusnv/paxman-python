@@ -350,6 +350,14 @@ re-encodings, IETF RFC 9562, structure-only validation) is registered by
 contracts are byte-identical. See the [UUID guide](capabilities/uuid/) and
 the [Citations](citations/) IETF row.
 
+### Unreleased — New capability: DOI (additive)
+
+`DOI` (bare lowercase `10.registrant/suffix` canonical, `url` offered
+re-encoding, ISO 26324:2025, structure-only validation, no checksum, no
+registry) is registered by `register_all_shipped()` (now 22 shipped). No
+migration required — existing contracts are byte-identical. See the
+[DOI guide](capabilities/doi/) and the [Citations](citations/) ISO row.
+
 ### 0.5.0 — New capabilities: Timezone + UtcOffset (additive)
 
 `Timezone` (IANA key canonical, `iana` default, no offered formats,

@@ -265,6 +265,7 @@ class TestURLCapabilityExports:
             "Country",
             "Currency",
             "Date",
+            "DOI",
             "Element",
             "Email",
             "IBAN",
