@@ -1,4 +1,4 @@
-"""User-facing contract for the Element capability."""
+"""User-facing contract for the ChemicalElement capability."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from paxman.core.contract import CapabilityContract
 
 
 @dataclass(frozen=True)
-class ElementContract(CapabilityContract):
-    """User-facing contract for the Element capability.
+class ChemicalElementContract(CapabilityContract):
+    """User-facing contract for the ChemicalElement capability.
 
     ``symbol`` (IUPAC proper case, e.g. ``Fe``) is the canonical default;
     ``name`` (lowercase English name, e.g. ``iron``) is the only offered
@@ -32,7 +32,7 @@ class ElementContract(CapabilityContract):
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "symbol"
     OFFERED_OUTPUT_FORMATS: ClassVar[frozenset[str]] = frozenset({"name"})
 
-    capability_name: str = field(default="element", init=False)
+    capability_name: str = field(default="chemical_element", init=False)
 
     def __post_init__(self) -> None:
         super().__post_init__()

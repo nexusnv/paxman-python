@@ -58,12 +58,12 @@ def test_all_still_exported_via_all() -> None:
 
     assert set(cap_mod.__all__) == {
         "BIC",
+        "ChemicalElement",
         "Coordinates",
         "Country",
         "Currency",
         "Date",
         "DOI",
-        "Element",
         "Email",
         "IBAN",
         "IP",

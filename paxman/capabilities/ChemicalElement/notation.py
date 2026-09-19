@@ -1,4 +1,4 @@
-"""Element notation — grammar-normalized token plus shape discriminator."""
+"""ChemicalElement notation — grammar-normalized token plus shape discriminator."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
-class ElementNotation:
-    """Element notation — token plus shape discriminator.
+class ChemicalElementNotation:
+    """ChemicalElement notation — token plus shape discriminator.
 
     ``token`` carries the grammar-normalized designation: ``symbol`` tokens
     use IUPAC case (``Fe``), ``name`` tokens are lowercase (``iron``), and

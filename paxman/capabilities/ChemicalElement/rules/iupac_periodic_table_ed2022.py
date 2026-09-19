@@ -7,8 +7,8 @@ snapshot in ``rules/data/periodic_table_ed2022.py``.
 
 from __future__ import annotations
 
-from paxman.capabilities.Element.notation import ElementNotation
-from paxman.capabilities.Element.rules.data.periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
+from paxman.capabilities.ChemicalElement.rules.data.periodic_table_ed2022 import (
     Z_TO_SYMBOL,
 )
 from paxman.core.contract import Contract
@@ -28,7 +28,7 @@ PUBLICATION = Provenance(
 )
 
 
-class SectionPtoeRegistry(Rule[ElementNotation]):
+class SectionPtoeRegistry(Rule[ChemicalElementNotation]):
     """Periodic Table registry — atomic numbers 1-118 to symbols."""
 
     name = "Section PTOE-element-registry"
@@ -40,7 +40,7 @@ class SectionPtoeRegistry(Rule[ElementNotation]):
         "the IUPAC recommendations for elements 112 (2010), 114/116 (2012), "
         "113/115/117/118 (2016)"
     )
-    target_semantics = frozenset({"element_recognition"})
+    target_semantics = frozenset({"chemical_element_recognition"})
     requires_features = frozenset()
 
     @staticmethod
@@ -61,7 +61,7 @@ class SectionPtoeRegistry(Rule[ElementNotation]):
             return z
         return None
 
-    def matches(self, notation: ElementNotation, contract: Contract) -> bool:
+    def matches(self, notation: ChemicalElementNotation, contract: Contract) -> bool:
         """Check if the notation is an in-range atomic number.
 
         Args:
@@ -76,7 +76,7 @@ class SectionPtoeRegistry(Rule[ElementNotation]):
             return False
         return self._parse_z(notation.token) is not None
 
-    def normalize(self, notation: ElementNotation, contract: Contract) -> str:
+    def normalize(self, notation: ChemicalElementNotation, contract: Contract) -> str:
         """Normalize to the canonical proper-case IUPAC symbol.
 
         Args:

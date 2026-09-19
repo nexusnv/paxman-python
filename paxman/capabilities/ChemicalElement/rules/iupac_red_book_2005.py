@@ -8,8 +8,8 @@ subsequently named elements, per the rule citation.
 
 from __future__ import annotations
 
-from paxman.capabilities.Element.notation import ElementNotation
-from paxman.capabilities.Element.rules.data.periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
+from paxman.capabilities.ChemicalElement.rules.data.periodic_table_ed2022 import (
     NAME_TO_SYMBOL,
     SYMBOLS,
 )
@@ -29,7 +29,7 @@ PUBLICATION = Provenance(
 )
 
 
-class SectionIR31NamesAndSymbols(Rule[ElementNotation]):
+class SectionIR31NamesAndSymbols(Rule[ChemicalElementNotation]):
     """Red Book Section IR-3.1 — names and symbols of the elements.
 
     Validates ``symbol`` shapes against the 118-symbol set and ``name``
@@ -46,10 +46,10 @@ class SectionIR31NamesAndSymbols(Rule[ElementNotation]):
         "recommendations for elements 112 (2010), 114/116 (2012), "
         "113/115/117/118 (2016)"
     )
-    target_semantics = frozenset({"element_recognition"})
+    target_semantics = frozenset({"chemical_element_recognition"})
     requires_features = frozenset()
 
-    def matches(self, notation: ElementNotation, contract: Contract) -> bool:
+    def matches(self, notation: ChemicalElementNotation, contract: Contract) -> bool:
         """Check if the notation is a known element symbol or name.
 
         Args:
@@ -66,7 +66,7 @@ class SectionIR31NamesAndSymbols(Rule[ElementNotation]):
             return notation.token in NAME_TO_SYMBOL
         return False
 
-    def normalize(self, notation: ElementNotation, contract: Contract) -> str:
+    def normalize(self, notation: ChemicalElementNotation, contract: Contract) -> str:
         """Normalize to the canonical proper-case IUPAC symbol.
 
         Args:

@@ -261,12 +261,12 @@ class TestURLCapabilityExports:
 
         assert set(capabilities.__all__) == {
             "BIC",
+            "ChemicalElement",
             "Coordinates",
             "Country",
             "Currency",
             "Date",
             "DOI",
-            "Element",
             "Email",
             "IBAN",
             "IP",

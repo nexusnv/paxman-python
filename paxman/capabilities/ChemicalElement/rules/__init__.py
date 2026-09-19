@@ -1,0 +1,1 @@
+"""ChemicalElement validation rules."""

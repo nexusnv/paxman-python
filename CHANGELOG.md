@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **DOI — Digital Object Identifiers:** new capability with one grammar (`doi_recognition`: bare/case-variant/resolver-URL/`doi:`-label/`urn:doi:`/`info:doi/` carriers, ASCII-only fold, trailing-punctuation trim) and one structure-only rule backed by ISO 26324:2025 (`Section 4-doi-syntax` — no checksum, no registry; shortDOI rejected, proxy URN-colon form deferred). Canonical form is the bare lowercase `10.registrant/suffix` name; offered output format `url` (re-enters as a fixed point).
 
+### Changed
+
+- **BREAKING — `Element` renamed to `ChemicalElement`:** package `paxman.capabilities.Element` → `paxman.capabilities.ChemicalElement`, classes `ElementCapability`/`ElementContract`/`ElementNotation`/`ElementRecognitionGrammar` → `ChemicalElement*`, registry name `element` → `chemical_element`, grammar `element_recognition` → `chemical_element_recognition` (semantics + `target_semantics`). User-visible input syntax is unchanged (`Fe`, `iron`, `element 26` still canonicalize to `Fe`); rule names (`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`) are unchanged. Migrate imports, `ChemicalElement.create_contract()`, and CLI `paxman chemical_element` / `paxman scan -c chemical_element`.
+
 ## [0.5.0] - 2026-09-15
 
 ### Added
