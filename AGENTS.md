@@ -5,7 +5,7 @@
 **Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
-Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 21 capabilities (BIC, ChemicalElement, Coordinates, Country, Currency, Date, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
+Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 22 capabilities (BIC, ChemicalElement, Coordinates, Country, Currency, Date, DOI, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
 
 ## STRUCTURE
 ```text
