@@ -1,51 +1,51 @@
-"""Tests for Element recognition grammar."""
+"""Tests for ChemicalElement recognition grammar."""
 
 import pytest
 
-from paxman.capabilities.Element.grammar.data.element_keys import (
+from paxman.capabilities.ChemicalElement.grammar.chemical_element_recognition import (
+    ChemicalElementRecognitionGrammar,
+)
+from paxman.capabilities.ChemicalElement.grammar.data.chemical_element_keys import (
     NAME_KEYS,
     SYMBOL_KEYS,
 )
-from paxman.capabilities.Element.grammar.element_recognition import (
-    ElementRecognitionGrammar,
-)
-from paxman.capabilities.Element.notation import ElementNotation
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
 from paxman.core.domain import RecognitionMatch
 from paxman.core.grammar import PipelineGrammar
 
 
-def _recognize(text: str) -> list[RecognitionMatch[ElementNotation]]:
-    return ElementRecognitionGrammar().recognize(text)
+def _recognize(text: str) -> list[RecognitionMatch[ChemicalElementNotation]]:
+    return ChemicalElementRecognitionGrammar().recognize(text)
 
 
-def _single(text: str) -> RecognitionMatch[ElementNotation]:
+def _single(text: str) -> RecognitionMatch[ChemicalElementNotation]:
     matches = _recognize(text)
     assert len(matches) == 1, f"{text!r} -> {matches!r}"
     return matches[0]
 
 
 @pytest.mark.capability
-class TestElementRecognitionIdentity:
+class TestChemicalElementRecognitionIdentity:
     """Grammar identity: name/semantics/single_value/matcher flags."""
 
     def test_name_and_semantics(self) -> None:
-        grammar = ElementRecognitionGrammar()
-        assert grammar.name == "element_recognition"
-        assert grammar.semantics == "element_recognition"
+        grammar = ChemicalElementRecognitionGrammar()
+        assert grammar.name == "chemical_element_recognition"
+        assert grammar.semantics == "chemical_element_recognition"
 
     def test_single_value_true(self) -> None:
-        assert ElementRecognitionGrammar().single_value is True
+        assert ChemicalElementRecognitionGrammar().single_value is True
 
     def test_is_pipeline_grammar(self) -> None:
-        assert isinstance(ElementRecognitionGrammar(), PipelineGrammar)
+        assert isinstance(ChemicalElementRecognitionGrammar(), PipelineGrammar)
 
     def test_empty_guard_pre(self) -> None:
-        pre = ElementRecognitionGrammar.pre
+        pre = ChemicalElementRecognitionGrammar.pre
         assert pre is not None
         assert pre.empty_guard is True
 
     def test_matcher_count_and_order(self) -> None:
-        matchers = ElementRecognitionGrammar.matchers
+        matchers = ChemicalElementRecognitionGrammar.matchers
         assert matchers is not None
         assert len(matchers) == 3
         assert matchers[0].kind == "regex"
@@ -53,7 +53,7 @@ class TestElementRecognitionIdentity:
         assert matchers[2].kind == "lexicon"
 
     def test_matcher_suppressible_flags(self) -> None:
-        matchers = ElementRecognitionGrammar.matchers
+        matchers = ChemicalElementRecognitionGrammar.matchers
         assert matchers is not None
         z_matcher, symbol_matcher, name_matcher = matchers
         assert z_matcher.suppressible is False
@@ -71,7 +71,7 @@ class TestSymbolRecognition:
     )
     def test_symbol_shapes(self, text: str, token: str) -> None:
         match = _single(text)
-        assert match.notation == ElementNotation(token=token, shape="symbol")
+        assert match.notation == ChemicalElementNotation(token=token, shape="symbol")
         assert (match.start, match.end) == (0, len(text))
         assert match.raw_text == text
 
@@ -94,7 +94,7 @@ class TestNameRecognition:
     )
     def test_name_shapes(self, text: str, token: str) -> None:
         match = _single(text)
-        assert match.notation == ElementNotation(token=token, shape="name")
+        assert match.notation == ChemicalElementNotation(token=token, shape="name")
         assert (match.start, match.end) == (0, len(text))
         assert match.raw_text == text
 
@@ -115,7 +115,9 @@ class TestAtomicNumberRecognition:
     )
     def test_z_shapes(self, text: str, token: str) -> None:
         match = _single(text)
-        assert match.notation == ElementNotation(token=token, shape="atomic_number")
+        assert match.notation == ChemicalElementNotation(
+            token=token, shape="atomic_number"
+        )
         assert (match.start, match.end) == (0, len(text))
         assert match.raw_text == text
 
@@ -175,7 +177,7 @@ class TestSpanInvariants:
 
 
 @pytest.mark.capability
-class TestElementKeys:
+class TestChemicalElementKeys:
     """Grammar key tables: sizes, no all-caps symbols, no retired keys."""
 
     def test_key_set_sizes(self) -> None:

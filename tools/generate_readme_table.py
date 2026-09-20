@@ -38,7 +38,7 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     ),
     "doi": ("Digital object identifiers", "ISO 26324:2025"),
     "email": ("Email addresses", "RFC 5322, RFC 6761"),
-    "element": (
+    "chemical_element": (
         "Chemical elements",
         "IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022",
     ),
@@ -69,7 +69,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "date": "Date",
     "doi": "DOI",
     "email": "Email",
-    "element": "Element",
+    "chemical_element": "ChemicalElement",
     "iban": "IBAN",
     "ip": "IP",
     "isbn": "ISBN",

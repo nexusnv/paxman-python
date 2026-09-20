@@ -1,4 +1,4 @@
-"""Authority-table consistency for the Element capability.
+"""Authority-table consistency for the ChemicalElement capability.
 
 The IUPAC Periodic Table of the Elements (04 May 2022) snapshot backs both
 validation rules: every recognized symbol, name, and atomic number must
@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import pytest
 
-from paxman.capabilities.Element.grammar.data import element_keys
-from paxman.capabilities.Element.grammar.data.element_keys import (
+from paxman.capabilities.ChemicalElement.grammar.data import chemical_element_keys
+from paxman.capabilities.ChemicalElement.grammar.data.chemical_element_keys import (
     NAME_KEYS,
     SYMBOL_KEYS,
 )
-from paxman.capabilities.Element.rules.data.periodic_table_ed2022 import (
+from paxman.capabilities.ChemicalElement.rules.data.periodic_table_ed2022 import (
     NAME_TO_SYMBOL,
     SYMBOL_TO_NAME,
     SYMBOLS,
@@ -102,7 +102,7 @@ class TestNoGrammarKeyMapsToCanonical:
         Boundary audit for the grammar/rule split — canonical decisions
         live in ``rules/data/`` alone.
         """
-        for name, value in vars(element_keys).items():
+        for name, value in vars(chemical_element_keys).items():
             if not name.isupper():
                 continue
             assert isinstance(value, frozenset), name

@@ -192,7 +192,7 @@ Current defaults and offered alternatives:
 | URL | `url` | *(none)* |
 | BIC | `bic` | `grouped`, `bic11` |
 | Coordinates | `decimal` | `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm` |
-| Element | `symbol` | `name` |
+| ChemicalElement | `symbol` | `name` |
 | IBAN | `electronic` | `paper` |
 | ISSN | `hyphenated` | `compact`, `urn` |
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
@@ -331,7 +331,7 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Absolute URLs / IRIs | URL | `URL.create_contract(...)` |
 | Business identifier codes | BIC | `BIC.create_contract(...)` |
 | WGS 84 coordinates | Coordinates | `Coordinates.create_contract(...)` |
-| Chemical elements | Element | `Element.create_contract(...)` |
+| Chemical elements | ChemicalElement | `ChemicalElement.create_contract(...)` |
 | Bank account numbers | IBAN | `IBAN.create_contract(...)` |
 | Serial identifiers | ISSN | `ISSN.create_contract(...)` |
 | Language identifiers | Language | `Language.create_contract(...)` |

@@ -1,4 +1,4 @@
-"""Element grammar recognition key sets.
+"""ChemicalElement grammar recognition key sets.
 
 Symbol keys are case-exact (canonical proper-case plus all-lowercase) for
 the case-sensitive symbol matcher; name keys are lowercase for the

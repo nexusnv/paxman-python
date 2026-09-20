@@ -1,4 +1,4 @@
-"""Element recognition grammar — one grammar, three kernel matchers.
+"""ChemicalElement recognition grammar — one grammar, three kernel matchers.
 
 Recognizes human element designations without assigning canonical meaning:
 
@@ -25,11 +25,11 @@ from __future__ import annotations
 
 import re as _re
 
-from paxman.capabilities.Element.grammar.data.element_keys import (
+from paxman.capabilities.ChemicalElement.grammar.data.chemical_element_keys import (
     NAME_KEYS,
     SYMBOL_KEYS,
 )
-from paxman.capabilities.Element.notation import ElementNotation
+from paxman.capabilities.ChemicalElement.notation import ChemicalElementNotation
 from paxman.core.grammar import (
     AnchorSet,
     BoundarySpec,
@@ -41,25 +41,27 @@ from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.scan_context import ScanContext
 
 
-def _emit_symbol(span: tuple[int, int], ctx: ScanContext) -> ElementNotation:
+def _emit_symbol(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
     s, e = span
     raw = ctx.text[s:e]
-    return ElementNotation(token=raw[0].upper() + raw[1:].lower(), shape="symbol")
+    return ChemicalElementNotation(
+        token=raw[0].upper() + raw[1:].lower(), shape="symbol"
+    )
 
 
-def _emit_name(span: tuple[int, int], ctx: ScanContext) -> ElementNotation:
+def _emit_name(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
     s, e = span
     raw = ctx.text[s:e]
-    return ElementNotation(token=raw.lower(), shape="name")
+    return ChemicalElementNotation(token=raw.lower(), shape="name")
 
 
-def _emit_z(span: tuple[int, int], ctx: ScanContext) -> ElementNotation:
+def _emit_z(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
     raw = ctx.text[span[0] : span[1]]
     # [0-9] matches ASCII digits only (unlike \d), so this re-search cannot
     # diverge from the (?a)-flagged pattern core into a Unicode digit run.
     found = _re.search(r"[0-9]{1,3}", raw)
     digits = found.group(0) if found is not None else raw
-    return ElementNotation(token=str(int(digits)), shape="atomic_number")
+    return ChemicalElementNotation(token=str(int(digits)), shape="atomic_number")
 
 
 _Z_PATTERN = r"(?ai:(?:element|atomic number|Z)[\s:=]+[0-9]{1,3})(?![0-9])"
@@ -94,12 +96,12 @@ _NAME_MATCHER = LexiconMatcher(
 )
 
 
-class ElementRecognitionGrammar(PipelineGrammar[ElementNotation]):
-    """Grammar: element_recognition — symbols, names, labeled atomic numbers."""
+class ChemicalElementRecognitionGrammar(PipelineGrammar[ChemicalElementNotation]):
+    """Grammar: chemical_element_recognition — symbols, names, labeled numbers."""
 
-    name = "element_recognition"
-    semantics = "element_recognition"
+    name = "chemical_element_recognition"
+    semantics = "chemical_element_recognition"
     single_value = True
 
-    pre = StandardPre[ElementNotation](empty_guard=True)
+    pre = StandardPre[ChemicalElementNotation](empty_guard=True)
     matchers = (_Z_MATCHER, _SYMBOL_MATCHER, _NAME_MATCHER)

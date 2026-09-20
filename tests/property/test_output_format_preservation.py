@@ -70,10 +70,10 @@ from paxman.capabilities import (
     ISSN,
     ORCID,
     UUID,
+    ChemicalElement,
     Coordinates,
     Country,
     Date,
-    Element,
     Language,
     MacAddress,
     Money,
@@ -147,10 +147,10 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     # re-enters the default contract onto the bare value via the host
     # carrier group (measured in TestDOICapability).
     ("doi", "url"): "encoding",
-    # -- Element -------------------------------------------------------------
+    # -- ChemicalElement -------------------------------------------------------
     # name: 1:1 symbol<->English-name map; the lowercase rendering re-enters
     # through the name path to the proper-case symbol.
-    ("element", "name"): "encoding",
+    ("chemical_element", "name"): "encoding",
     # -- IBAN / ISBN / ISSN / ORCID ------------------------------------------
     ("iban", "paper"): "encoding",
     ("isbn", "hyphenated"): "encoding",
@@ -361,7 +361,7 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
     ),
     _InjectivityPair("country", Country, "name", "United States", "United Kingdom", ""),
     _InjectivityPair("date", Date, "US", "2026-01-15", "2026-02-03", ""),
-    _InjectivityPair("element", Element, "name", "Fe", "Au", ""),
+    _InjectivityPair("chemical_element", ChemicalElement, "name", "Fe", "Au", ""),
     # BIC: different entities — NOT the DEUTDEFF/DEUTDEFFXXX merge pair
     # (that pair is same-entity by design and lives in the expansion fixture).
     _InjectivityPair("bic", BIC, "bic11", "DEUTDEFF", "BNPAFRPP", ""),
