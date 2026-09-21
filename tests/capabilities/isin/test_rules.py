@@ -133,6 +133,18 @@ class TestSection5CountryAndSpecialPrefix:
         )
         assert self.rule.matches(notation, self.contract) is False
 
+    def test_lookup_rejects_inconsistent_decomposition(self) -> None:
+        # Direct-call robustness: fields disagree with compact (valid compact,
+        # unrelated decomposition) — the PARSER rejects this via its
+        # consistency check, so the LOOKUP must too.
+        notation = ISINNotation(
+            country_code="US",
+            nsin="000000000",
+            check_digit="0",
+            compact="US0378331005",
+        )
+        assert self.rule.matches(notation, self.contract) is False
+
     def test_normalize_returns_compact(self) -> None:
         notation = _notation("GB0002634946")
         assert self.rule.normalize(notation, self.contract) == "GB0002634946"

@@ -75,9 +75,13 @@ class Section5CountryAndSpecialPrefix(Rule[ISINNotation]):
         # candidates always survive — so a prefix-only lookup would let a
         # checksum-broken input with a valid prefix through as SUCCESS via
         # this rule alone. Both provenances stay independently attributable.
+        compact = notation.compact
+        if compact != (notation.country_code + notation.nsin + notation.check_digit):
+            return False
+        if not compact.isascii() or not compact.isupper():
+            return False
         if notation.country_code not in _VALID_PREFIXES:
             return False
-        compact = notation.compact
         if len(compact) != 12 or not compact[:2].isalpha():
             return False
         if not compact[2:11].isalnum() or not compact[11].isdigit():
