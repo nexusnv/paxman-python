@@ -195,6 +195,7 @@ Current defaults and offered alternatives:
 | ChemicalElement | `symbol` | `name` |
 | IBAN | `electronic` | `paper` |
 | ISSN | `hyphenated` | `compact`, `urn` |
+| ISIN | `isin` | `grouped` |
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
 | MacAddress | `colon` | `hyphen`, `bare`, `cisco`, `eui64` |
 | ORCID | `orcid` | `uri`, `compact` |
@@ -334,6 +335,7 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Chemical elements | ChemicalElement | `ChemicalElement.create_contract(...)` |
 | Bank account numbers | IBAN | `IBAN.create_contract(...)` |
 | Serial identifiers | ISSN | `ISSN.create_contract(...)` |
+| Securities identification numbers | ISIN | `ISIN.create_contract(...)` |
 | Language identifiers | Language | `Language.create_contract(...)` |
 | MAC addresses | MacAddress | `MacAddress.create_contract(...)` |
 | Researcher identifiers | ORCID | `ORCID.create_contract(...)` |

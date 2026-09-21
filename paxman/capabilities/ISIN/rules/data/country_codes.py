@@ -1,0 +1,327 @@
+"""ISIN prefix data tables — ISO 3166-1 alpha-2 plus ANNA special prefixes.
+
+Authority split (plan Decision 3):
+- ``ISO_3166_1_ALPHA_2``: the 249 ISO-assigned alpha-2 codes. ``XK``
+  (Kosovo) is user-assigned, not ISO-assigned, so it lives in
+  ``SPECIAL_PREFIXES`` instead.
+- ``SPECIAL_PREFIXES``: the 12 v1 ISIN prefixes that are not ISO country
+  codes, each with a per-prefix provenance comment below.
+
+Strength split inside ``SPECIAL_PREFIXES``:
+- Guidelines-attested (ANNA ISIN Guidelines V25, Dec 2025):
+  ``EU`` ``XS`` ``XA`` ``XB`` ``XC`` ``XD`` ``XT``.
+- RA-attested (ISO TC68 briefing + ANNA identifiers page + DSB):
+  ``EZ``.
+- Validator/user-assigned (``XA``–``XZ`` and ``QM``–``QZ`` ranges,
+  corroborated by validator snapshots): ``XF`` ``XK`` ``QS`` ``QT``.
+
+Refresh procedure (run when any authority below publishes an update):
+1. ANNA ISIN Guidelines: diff V25 (Dec 2025, current v1 authority) against
+   V26 (Jun 2026, supersedes V25) and any later edition; adopt newly
+   attested prefixes, drop removed ones.
+2. DSB (Derivatives Service Bureau): check the DSB prefix/identifier
+   listings for RA-attested additions or removals (currently: ``EZ``).
+3. ISO 3166 OBP (Online Browsing Platform): reconcile
+   ``ISO_3166_1_ALPHA_2`` against the assigned alpha-2 list (249 entries;
+   add newly assigned codes, remove withdrawn ones such as ``CS``/``YU``).
+4. Validator snapshots: re-snapshot the reference ISIN validators for the
+   user-assigned ranges (``XA``–``XZ``, ``QM``–``QZ``) and reconcile
+   ``XF``/``XK``/``QS``/``QT`` membership.
+
+``ZZ`` provisional note: ``ZZ`` has nonevidence in any Registration
+Authority source (no Guidelines, briefing, DSB, or validator attestation),
+so it is EXCLUDED from ``SPECIAL_PREFIXES`` in v1 and the lookup rule
+rejects it (isolation vector ``ZZ0378331001`` → INVALID). To enable it
+later, add ``"ZZ"`` to ``SPECIAL_PREFIXES`` with a ``# PROVISIONAL``
+comment citing the new RA source, and update the Task 5 isolation test.
+``QW`` is excluded: it falls in no allocated range (``XA``–``XZ`` /
+``QM``–``QZ`` minus ``QW``). Retired codes ``CS``/``YU``/``SU`` are
+excluded: withdrawn from ISO 3166-1 and never valid ISIN prefixes.
+"""
+
+from __future__ import annotations
+
+ISO_3166_1_ALPHA_2: frozenset[str] = frozenset(
+    {
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW",
+    }
+)
+
+SPECIAL_PREFIXES: frozenset[str] = frozenset(
+    {
+        # ANNA ISIN Guidelines V25-attested: supranational / exchange / fund.
+        "EU",
+        # ANNA ISIN Guidelines V25-attested: international securities.
+        "XS",
+        # RA-attested: ISO TC68 briefing + ANNA identifiers page + DSB.
+        "EZ",
+        # ANNA ISIN Guidelines V25-attested: exchange-traded prefix block.
+        "XT",
+        # ANNA ISIN Guidelines V25-attested: user-assigned XA-XZ block.
+        "XA",
+        # ANNA ISIN Guidelines V25-attested: user-assigned XA-XZ block.
+        "XB",
+        # ANNA ISIN Guidelines V25-attested: user-assigned XA-XZ block.
+        "XC",
+        # ANNA ISIN Guidelines V25-attested: user-assigned XA-XZ block.
+        "XD",
+        # Validator-attested, user-assigned XA-XZ range.
+        "XF",
+        # Validator-attested, user-assigned (Kosovo); not ISO-assigned.
+        "XK",
+        # Validator-attested, user-assigned QM-QZ range.
+        "QS",
+        # Validator-attested, user-assigned QM-QZ range.
+        "QT",
+        # NOTE: "ZZ" provisionally EXCLUDED (no RA source; see module
+        # docstring). "QW" excluded (unallocated). "CS"/"YU"/"SU" retired.
+    }
+)

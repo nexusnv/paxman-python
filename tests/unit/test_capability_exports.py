@@ -14,6 +14,7 @@ from paxman.capabilities import (  # isort: skip
     IBAN,
     IP,
     ISBN,
+    ISIN,
     ISSN,
     Language,
     MacAddress,
@@ -109,6 +110,18 @@ class TestISBNCapabilityExports:
     def test_isbn_capability_name(self) -> None:
         """ISBN capability has correct name."""
         assert ISBN.name == "isbn"
+
+
+class TestISINCapabilityExports:
+    @pytest.mark.unit
+    def test_isin_capability_importable(self) -> None:
+        """ISIN capability is importable from paxman.capabilities."""
+        assert ISIN is not None
+
+    @pytest.mark.unit
+    def test_isin_capability_name(self) -> None:
+        """ISIN capability has correct name."""
+        assert ISIN.name == "isin"
 
 
 class TestISSNCapabilityExports:
@@ -271,6 +284,7 @@ class TestURLCapabilityExports:
             "IBAN",
             "IP",
             "ISBN",
+            "ISIN",
             "ISSN",
             "Language",
             "MacAddress",

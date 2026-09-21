@@ -358,6 +358,15 @@ registry) is registered by `register_all_shipped()` (now 22 shipped). No
 migration required — existing contracts are byte-identical. See the
 [DOI guide](capabilities/doi/) and the [Citations](citations/) ISO row.
 
+### Unreleased — New capability: ISIN (additive)
+
+`ISIN` (compact uppercase `CC+NSIN+C` canonical, `grouped` `CC NNNNNN NNN C`
+offered re-encoding, ISO 6166:2021 structure + modulus 10 Double-Add-Double
+check digit plus ANNA ISIN Guidelines V25 prefix allowlist) is registered by
+`register_all_shipped()` (now 23 shipped). No migration required — existing
+contracts are byte-identical. See the [ISIN guide](capabilities/isin/) and
+the [Citations](citations/) ISO/ANNA rows.
+
 ### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
 
 The `element` capability is renamed to `chemical_element` to reserve the
