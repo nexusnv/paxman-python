@@ -54,6 +54,7 @@ from paxman.capabilities import (
     IBAN,
     IP,
     ISBN,
+    ISIN,
     ISSN,
     ORCID,
     URL,
@@ -145,6 +146,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # ISBN: tests/capabilities/isbn/test_capability.py
     # ::test_format_value_identity (isbn13)
     _row(ISBN, "9780306406157", "9780306406157"),
+    # ISIN: tests/capabilities/isin/test_capability.py — compact canonical;
+    # the offered grouped rendering re-enters via the spaced-carrier group
+    # (measured: "US 037833 100 5" strips to compact, re-renders grouped).
+    _row(ISIN, "US0378331005", "US0378331005"),
     # ISSN: tests/capabilities/issn/test_capability.py
     # ::test_format_value_hyphenated_identity
     _row(ISSN, "2049-3630", "2049-3630"),

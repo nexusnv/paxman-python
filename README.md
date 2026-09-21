@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twenty-two built-in capabilities (22 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with twenty-three built-in capabilities (23 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -81,6 +81,7 @@ Paxman ships with twenty-two built-in capabilities (22 in `paxman/capabilities/_
 | **IBAN** | Bank account numbers | 1 (iban) | 1 | ISO 13616, SWIFT Registry, MOD 97-10 |
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
+| **ISIN** | International securities identification numbers | 1 (isin) | 2 | ISO 6166:2021, ANNA ISIN Guidelines |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
 | **Language** | Language identifiers | 4 (bcp47_tag, language_code, language_name, language_description) | 11 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
 | **MacAddress** | MAC addresses | 1 (mac_address) | 1 | IEEE Std 802-2024 |

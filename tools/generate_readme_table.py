@@ -45,6 +45,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "iban": ("Bank account numbers", "ISO 13616, SWIFT Registry, MOD 97-10"),
     "ip": ("IP addresses", "RFC 791, RFC 5952"),
     "isbn": ("ISBNs", "ISO 2108, ISBN Users' Manual, ISBN Range Message"),
+    "isin": (
+        "International securities identification numbers",
+        "ISO 6166:2021, ANNA ISIN Guidelines",
+    ),
     "issn": ("Serial identifiers", "ISO 3297:2022"),
     "language": (
         "Language identifiers",
@@ -73,6 +77,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "iban": "IBAN",
     "ip": "IP",
     "isbn": "ISBN",
+    "isin": "ISIN",
     "issn": "ISSN",
     "language": "Language",
     "mac_address": "MacAddress",

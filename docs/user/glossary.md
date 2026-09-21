@@ -108,6 +108,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **ISSN** — International Standard Serial Number (ISO 3297:2022). Paxman capability. See [Citations](citations/).
 
+**ISIN** — International Securities Identification Number (ISO 6166:2021, ANNA ISIN Guidelines). Paxman capability. See [Citations](citations/).
+
 **IETF** — Internet Engineering Task Force. Authority for RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646. See [Citations](citations/).
 
 **INVALID** — A `Resolution` status. Recognition found a match, but no rule validated it. Distinct from `MISSING` (nothing recognized). See [Execution Result](concepts/execution-result/) and [Pipeline](concepts/pipeline/).

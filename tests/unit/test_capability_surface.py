@@ -35,6 +35,8 @@ from paxman.capabilities.IP.notation import IPNotation
 from paxman.capabilities.ISBN.capability import ISBNCapability
 from paxman.capabilities.ISBN.contract import ISBNContract
 from paxman.capabilities.ISBN.notation import ISBNNotation
+from paxman.capabilities.ISIN.capability import ISINCapability
+from paxman.capabilities.ISIN.contract import ISINContract
 from paxman.capabilities.ISSN.capability import ISSNCapability
 from paxman.capabilities.ISSN.contract import ISSNContract
 from paxman.capabilities.ISSN.notation import ISSNNotation
@@ -145,6 +147,12 @@ _CAPABILITY_SURFACES = [
         MoneyContract,
         "code_amount",
         id="money",
+    ),
+    pytest.param(
+        ISINCapability,
+        ISINContract,
+        "isin",
+        id="isin",
     ),
     pytest.param(
         MacAddressCapability,

@@ -67,6 +67,7 @@ from paxman.capabilities import (
     DOI,
     IBAN,
     ISBN,
+    ISIN,
     ISSN,
     ORCID,
     UUID,
@@ -151,9 +152,10 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     # name: 1:1 symbol<->English-name map; the lowercase rendering re-enters
     # through the name path to the proper-case symbol.
     ("chemical_element", "name"): "encoding",
-    # -- IBAN / ISBN / ISSN / ORCID ------------------------------------------
+    # -- IBAN / ISBN / ISIN / ISSN / ORCID ----------------------------------
     ("iban", "paper"): "encoding",
     ("isbn", "hyphenated"): "encoding",
+    ("isin", "grouped"): "encoding",
     ("issn", "compact"): "encoding",
     ("issn", "urn"): "encoding",
     ("orcid", "compact"): "encoding",
@@ -404,6 +406,7 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "",
     ),
     _InjectivityPair("isbn", ISBN, "hyphenated", "9780306406157", "9781566199094", ""),
+    _InjectivityPair("isin", ISIN, "grouped", "US0378331005", "GB0002634946", ""),
     _InjectivityPair("issn", ISSN, "compact", "2049-3630", "1234-5679", ""),
     _InjectivityPair("issn", ISSN, "urn", "2049-3630", "1234-5679", ""),
     _InjectivityPair(

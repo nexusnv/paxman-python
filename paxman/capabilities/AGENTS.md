@@ -1,7 +1,7 @@
 # CAPABILITIES KNOWLEDGE BASE
 
 ## OVERVIEW
-The deepest directory in the repo (303 py files): 22 shipped capability packages (BIC, ChemicalElement, Coordinates, Country, Currency, Date, DOI, Email, IBAN, IP, ISBN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
+The deepest directory in the repo (303 py files): 23 shipped capability packages (BIC, ChemicalElement, Coordinates, Country, Currency, Date, DOI, Email, IBAN, IP, ISBN, ISIN, ISSN, Language, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
 
 **Authoritative spec:** the root `HOW_TO_ADD_NEW_CAPABILITY.md` (62KB — read it before touching this directory). This file is the compact governance reference: intended architecture, hard rules, and known legacy exceptions. Where the two differ, HOW_TO wins.
 
@@ -64,5 +64,5 @@ Every capability must conform to the same structural surface. `CapabilityContrac
 - When extending an existing capability, check whether the file you're touching is a flagged legacy exception before copying its style; new code follows the intended architecture.
 
 ## NOTES
-- `__init__.py` exports all twenty-two shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN, ISSN, and DOI are the minimal-surface members (1 grammar + 1 rule each).
+- `__init__.py` exports all twenty-three shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN, ISSN, ISIN, and DOI are the minimal-surface members (1 grammar + 1–2 rules each).
 - Root AGENTS.md is authoritative for pipeline flow, domain objects, and quality gates; this file adds capability-package structure and governance specifics.
