@@ -367,6 +367,15 @@ check digit plus ANNA ISIN Guidelines V25 prefix allowlist) is registered by
 contracts are byte-identical. See the [ISIN guide](capabilities/isin/) and
 the [Citations](citations/) ISO/ANNA rows.
 
+### Unreleased — New capability: LEI (additive)
+
+`LEI` (compact uppercase `LOU4+entity14+check2` canonical, `urn` `urn:lei:<compact>`
+offered re-encoding, ISO 17442-1:2020 structure + whole-string MOD 97-10
+check digits plus GLEIF LOU prefix-list membership) is registered by
+`register_all_shipped()` (now 24 shipped). No migration required — existing
+contracts are byte-identical. See the [LEI guide](capabilities/lei/) and
+the [Citations](citations/) ISO/GLEIF rows.
+
 ### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
 
 The `element` capability is renamed to `chemical_element` to reserve the

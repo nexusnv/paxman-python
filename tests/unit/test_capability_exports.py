@@ -286,6 +286,7 @@ class TestURLCapabilityExports:
             "ISBN",
             "ISIN",
             "ISSN",
+            "LEI",
             "Language",
             "MacAddress",
             "Money",

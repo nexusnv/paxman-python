@@ -56,6 +56,7 @@ from paxman.capabilities import (
     ISBN,
     ISIN,
     ISSN,
+    LEI,
     ORCID,
     URL,
     UUID,
@@ -150,6 +151,12 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # the offered grouped rendering re-enters via the spaced-carrier group
     # (measured: "US 037833 100 5" strips to compact, re-renders grouped).
     _row(ISIN, "US0378331005", "US0378331005"),
+    # LEI: tests/capabilities/lei/test_capability.py — compact canonical;
+    # the offered urn rendering re-enters via the urn:lei: carrier branch
+    # (measured: "urn:lei:5493000IBP32UQZ0KL24" strips to compact).
+    _row(LEI, "5493000IBP32UQZ0KL24", "5493000IBP32UQZ0KL24"),
+    # LEI non-00 pin: positions 5-6 carry "FZ", never rejected.
+    _row(LEI, "7LTWFZYICNSX8D621K86", "7LTWFZYICNSX8D621K86"),
     # ISSN: tests/capabilities/issn/test_capability.py
     # ::test_format_value_hyphenated_identity
     _row(ISSN, "2049-3630", "2049-3630"),

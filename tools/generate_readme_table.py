@@ -50,6 +50,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "ISO 6166:2021, ANNA ISIN Guidelines",
     ),
     "issn": ("Serial identifiers", "ISO 3297:2022"),
+    "lei": (
+        "Legal entity identifiers",
+        "ISO 17442-1:2020, GLEIF LOU prefix list",
+    ),
     "language": (
         "Language identifiers",
         "ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR",
@@ -79,6 +83,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "isbn": "ISBN",
     "isin": "ISIN",
     "issn": "ISSN",
+    "lei": "LEI",
     "language": "Language",
     "mac_address": "MacAddress",
     "money": "Money",

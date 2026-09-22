@@ -17,9 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **ISIN — International Securities Identification Numbers:** new capability with one grammar (`isin_recognition`: bare compact 12-char, single-space groupings, `ISIN`-labelled forms, case-folded) and two rules backed by ISO 6166:2021 (`Section 4-isin-structure-check-digit` — structure plus modulus 10 Double-Add-Double check digit, PARSER) and the ANNA ISIN Guidelines V25 Dec 2025 (`Section 5-country-and-special-prefix` — ISO 3166-1 alpha-2 plus 12 attested special prefixes with Guidelines/RA/validator strength split, LOOKUP_TABLE; `ZZ` provisional, excluded; V26 Jun 2026 supersedes V25). Canonical form is the compact uppercase 12-char string; offered output format `grouped` (`CC NNNNNN NNN C`, re-enters as a fixed point). Hyphen-separated forms → `MISSING` (hyphen tolerance deferred to a community `extra_grammars` extension); 11/13-char and letter-check-digit shapes → `MISSING` (rejected).
 
+- **LEI — Legal Entity Identifiers:** new capability with one grammar (`lei_recognition`: bare compact 20-char, single-space forms, `LEI`-labelled and `urn:lei:`-carried forms, case-folded) and two rules backed by ISO 17442-1:2020 (`Section 4-lei-structure-mod97-10` — structure plus whole-string MOD 97-10 check digits via ISO/IEC 7064:2003, PARSER) and the GLEIF LOU prefix list (`Section 1-lou-prefix-membership` — accredited-LOU directory plus concatenated-file census, append-only snapshot, LOOKUP_TABLE). Canonical form is the compact uppercase 20-char `LOU4+entity14+check2` string; offered output format `urn` (`urn:lei:<compact>`, re-enters as a fixed point). Positions 5–6 carry no enforceable constraint (`7LTWFZYICNSX8D621K86` valid). Hyphen-separated forms → `MISSING` (hyphen tolerance deferred to a community `extra_grammars` extension); 19/21-char shapes, glued labels, double-space/tab forms → `MISSING` (rejected). Issued/live membership deferred — liveness is not validity.
+
 ### Changed
 
 - **BREAKING — `Element` renamed to `ChemicalElement`:** package `paxman.capabilities.Element` → `paxman.capabilities.ChemicalElement`, classes `ElementCapability`/`ElementContract`/`ElementNotation`/`ElementRecognitionGrammar` → `ChemicalElement*`, registry name `element` → `chemical_element`, grammar `element_recognition` → `chemical_element_recognition` (semantics + `target_semantics`). User-visible input syntax is unchanged (`Fe`, `iron`, `element 26` still canonicalize to `Fe`); rule names (`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`) are unchanged. Migrate imports, `ChemicalElement.create_contract()`, and CLI `paxman chemical_element` / `paxman scan -c chemical_element`.
+
+### Fixed
+
+- **LEI — digit-only valid LEIs no longer resolve `INVALID`:** both rules gated on `str.isupper()`, which is `False` for cased-less all-digit strings that ISO 17442-1 `[A-Z0-9]` permits (e.g. `11280000000000000002`) — the guard is removed, `isascii()` kept and `_LEI_RE` remains the uppercase authority.
+
+### Docs
+
+- **LEI — URL-path-embedded clarification:** URL-path-embedded LEIs (e.g. `https://search.gleif.org/#/record/5493000IBP32UQZ0KL24`) are recognized via `word_only` boundaries (ISIN precedent) → `SUCCESS`; URL-level semantics remain the URL capability's ownership. Hyphen-grouped forms and issued/live membership stay deferred (tracked in #183 and #184).
 
 ## [0.5.0] - 2026-09-15
 
