@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 23 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 24 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -23,9 +23,10 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
 | **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562 | Email, IP, Phone, Language, Coordinates, UUID | 9 |
 | **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
-| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN | 25 |
+| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021, ISO 17442-1:2020 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN, LEI | 26 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ANNA** | ANNA ISIN Guidelines V25 (Dec 2025) | ISIN | 1 |
+| **GLEIF** | GLEIF LOU prefix list (accredited-LOU directory + concatenated-file census) | LEI | 1 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
 | **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 6 |
@@ -109,6 +110,7 @@ Across 14 ISO publications (25 rules):
 | Date | ISO 8601 | 2019 | `Section 5.2.1.1-calendar-date` | Section 5.2.1.1 (calendar date) | 2019 | https://www.iso.org/standard/70907.html |
 | DOI | ISO 26324:2025 | 2025 | `Section 4-doi-syntax` | Section 4 (DOI name syntax: prefix/suffix, no checksum, no registry) | 2025 | https://www.iso.org/standard/88862.html |
 | ISIN | ISO 6166:2021 | 2021 | `Section 4-isin-structure-check-digit` | Section 4 (ISIN structure + modulus 10 Double-Add-Double check digit) | 2021 | https://www.iso.org/standard/78502.html |
+| LEI | ISO 17442-1:2020 | 2020 | `Section 4-lei-structure-mod97-10` | Section 4 (LEI structure + whole-string MOD 97-10, via ISO/IEC 7064:2003) | 2020 | https://www.iso.org/standard/78829.html |
 | ISBN | ISO 2108:2017 | 2017 | `Section 5.3-isbn13-check-digit` | Section 5.3 (ISBN-13 check digit) | 2017 | https://www.iso.org/standard/65483.html |
 | ISBN | ISO 2108:2017 | 2017 | `Section 4.2-gs1-prefix` | Section 4.2 (GS1 prefix) | 2017 | https://www.iso.org/standard/65483.html |
 | IBAN | ISO 13616-1:2020 | 2020 | `Section 4-iban-structure-mod97` | Section 4-5 (structure + MOD 97-10, via ISO/IEC 7064:2003) | 2020 | https://www.iso.org/standard/81090.html |
@@ -144,6 +146,16 @@ Specification: **ANNA ISIN Guidelines**, V25 (Dec 2025) — `https://anna-web.or
 | ISIN | `Section 5-country-and-special-prefix` | Section 5 (country and special prefix: ISO 3166-1 alpha-2 plus Guidelines-attested `EU`/`XS`/`XA`–`XD`/`XT`, RA-attested `EZ`, validator/user-assigned `XF`/`XK`/`QS`/`QT`; `ZZ` provisional, excluded) |
 
 > **V26 note:** the ANNA ISIN Guidelines V26 (Jun 2026) supersedes V25. The ISIN capability pins V25 as its v1 authority; re-attest the prefix table against V26 before adopting it.
+
+---
+
+## GLEIF — Global Legal Entity Identifier Foundation
+
+Specification: **GLEIF LOU prefix list** — `https://www.gleif.org/en/lei-data/gleif-concatenated-file/download-the-concatenated-file` — `kind="registry"`, `version="Rolling"`, `lifecycle="active"`, `publication_year=2026`.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| LEI | `Section 1-lou-prefix-membership` | Section 1 (accredited-LOU prefix membership: 4-char issuer blocks from the accredited-LOU directory + concatenated-file census; append-only) |
 
 ---
 

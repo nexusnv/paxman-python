@@ -194,6 +194,10 @@ def _create_contract(
         from paxman.capabilities import Language
 
         return Language.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "lei":
+        from paxman.capabilities import LEI
+
+        return LEI.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "mac_address":
         from paxman.capabilities import MacAddress
 

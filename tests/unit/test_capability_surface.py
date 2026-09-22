@@ -42,6 +42,8 @@ from paxman.capabilities.ISSN.contract import ISSNContract
 from paxman.capabilities.ISSN.notation import ISSNNotation
 from paxman.capabilities.Language.capability import LanguageCapability
 from paxman.capabilities.Language.contract import LanguageContract
+from paxman.capabilities.LEI.capability import LEICapability
+from paxman.capabilities.LEI.contract import LEIContract
 from paxman.capabilities.MacAddress.capability import MacAddressCapability
 from paxman.capabilities.MacAddress.contract import MacAddressContract
 from paxman.capabilities.Money.capability import MoneyCapability
@@ -147,6 +149,12 @@ _CAPABILITY_SURFACES = [
         MoneyContract,
         "code_amount",
         id="money",
+    ),
+    pytest.param(
+        LEICapability,
+        LEIContract,
+        "lei",
+        id="lei",
     ),
     pytest.param(
         ISINCapability,

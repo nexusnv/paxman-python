@@ -45,6 +45,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
 - **ISSN:** `ISSNNotation(digits)` — `digits` is the 8-character hyphen/space-stripped, uppercased string (grammar folds `x`→`X`); single lexical shape, no discriminator
 - **ISIN:** `ISINNotation(country_code, nsin, check_digit, compact)` — `country_code` is the 2-letter prefix (ISO 3166-1 alpha-2 or an attested special prefix such as `XS`/`EU`/`EZ`/`XT`), `nsin` the 9-character alphanumeric national identifier, `check_digit` the single numeric position-12 character, `compact` the grammar-normalized candidate (≡ cc+nsin+check, uppercased with single-space groupings stripped; grammar never validates the check digit or prefix membership — rules own both)
+- **LEI:** `LEINotation(lou_prefix, entity_block, check_digits, compact)` — `lou_prefix` is the 4-character accredited-LOU issuer block, `entity_block` the 14-character entity-specific block (positions 5–6 carry no enforceable constraint), `check_digits` the 2-digit MOD 97-10 pair, `compact` the grammar-normalized candidate (≡ lou+entity+check, uppercased with single spaces stripped; grammar never validates the check digits or prefix membership — rules own both)
 - **Language:** `LanguageNotation(language, extlang, script, region, variant, extension, privateuse, grandfathered, compact, raw_value)` — `language` 2-8 lower, `extlang` 3-letter hyphen-joined (e.g. `cmn` for `zh-cmn`), `script` Title 4, `region` Upper 2|3-digit, `variant` lower prefix-constrained via `VARIANT_PREFIXES` dict (`sl-nedis` ok, `de-nedis` rejected), `grandfathered` lower (preferred via `GRANDFATHERED_PREFERRED`), `compact` BCP47 case-canonical tag or bare lower, `raw_value` trimmed lower for lexicon; grammar strips case/underscore via `StandardPre` (`_`→`-` in PipelineState, `raw_text` preserves original), rules own registry + Prefix + Deprecated chain + Suppress-Script (informative, never rejects)
 - **BIC:** `BICNotation(bank_code, country_code, location_code, branch_code, compact)` — `bank_code` 4-char A-Z0-9, `country_code` 2-letter ISO 3166-1 plus XK, `location_code` 2-char A-Z0-9, `branch_code` 3-char or empty when BIC8, `compact` full 8 or 11 equals bank+country+location+branch, grammar uppercases and strips label, location second char 0/1/2 informative only
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
@@ -70,7 +71,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-three built-in capabilities (23 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-four built-in capabilities (24 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -86,6 +87,7 @@ Paxman ships twenty-three built-in capabilities (23 in `paxman/capabilities/__in
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISIN** | International securities identification numbers | ISO 6166:2021 |
+| **LEI** | Legal entity identifiers | ISO 17442-1:2020 |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
@@ -823,7 +825,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (23 capabilities, alphabetical; paxman/capabilities/__init__.py exports 23), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (24 capabilities, alphabetical; paxman/capabilities/__init__.py exports 24), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1032,7 +1034,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (23 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (24 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

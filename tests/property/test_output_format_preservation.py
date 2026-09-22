@@ -69,6 +69,7 @@ from paxman.capabilities import (
     ISBN,
     ISIN,
     ISSN,
+    LEI,
     ORCID,
     UUID,
     ChemicalElement,
@@ -158,6 +159,10 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("isin", "grouped"): "encoding",
     ("issn", "compact"): "encoding",
     ("issn", "urn"): "encoding",
+    # lei urn: carrier-only re-encoding of the compact canonical; the
+    # rendering re-enters the default contract onto the compact value via
+    # the urn:lei: carrier branch (measured in TestLEICapability).
+    ("lei", "urn"): "encoding",
     ("orcid", "compact"): "encoding",
     ("orcid", "uri"): "encoding",
     # -- Language ------------------------------------------------------------
@@ -407,6 +412,9 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
     ),
     _InjectivityPair("isbn", ISBN, "hyphenated", "9780306406157", "9781566199094", ""),
     _InjectivityPair("isin", ISIN, "grouped", "US0378331005", "GB0002634946", ""),
+    _InjectivityPair(
+        "lei", LEI, "urn", "5493000IBP32UQZ0KL24", "213800KUD8LAJWSQ9D15", ""
+    ),
     _InjectivityPair("issn", ISSN, "compact", "2049-3630", "1234-5679", ""),
     _InjectivityPair("issn", ISSN, "urn", "2049-3630", "1234-5679", ""),
     _InjectivityPair(

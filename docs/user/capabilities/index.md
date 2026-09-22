@@ -31,6 +31,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `9780306406157`, `0306406152` | [ISBN](isbn/) |
 | `0317-8471`, `0378-5955` | [ISSN](issn/) |
 | `US0378331005`, `GB0002634946` | [ISIN](isin/) |
+| `5493000IBP32UQZ0KL24`, `LEI: 213800KUD8LAJWSQ9D15` | [LEI](lei/) |
 | `en`, `en-US`, `zh-Hans-CN`, `German` | [Language](language/) |
 | `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money/) |
 | `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone/) |
