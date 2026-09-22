@@ -77,6 +77,18 @@ def test_parser_generation_vector() -> None:
     assert rule.matches(_notation(GENERATION), CONTRACT) is True
 
 
+def test_parser_digit_only_lei_accepted() -> None:
+    # Review finding 1: digit-only LEIs carry no cased characters, so
+    # str.isupper() is False even though [A-Z0-9] permits them.
+    from paxman.capabilities.LEI.rules.iso_17442_1_ed2020 import (
+        _mod97_10_valid as _parser_mod97,
+    )
+
+    compact = "1128" + "0" * 14 + "02"
+    assert _parser_mod97(compact) is True
+    assert Section4LEIStructureMOD9710().matches(_notation(compact), CONTRACT) is True
+
+
 def test_lookup_valid_prefixes() -> None:
     rule = Section1LOUPrefixMembership()
     for v in VALID:
@@ -93,6 +105,18 @@ def test_lookup_rejects_unknown_prefix() -> None:
 def test_lookup_rejects_bad_checksum_valid_prefix() -> None:
     rule = Section1LOUPrefixMembership()
     assert rule.matches(_notation(BAD_CHECKSUM), CONTRACT) is False
+
+
+def test_lookup_digit_only_lei_accepted() -> None:
+    # Review finding 1: digit-only LEIs carry no cased characters, so
+    # str.isupper() is False even though [A-Z0-9] permits them.
+    from paxman.capabilities.LEI.rules.gleif_lou_prefix_list_ed2026 import (
+        _mod97_10_valid as _lookup_mod97,
+    )
+
+    compact = "1128" + "0" * 14 + "02"
+    assert _lookup_mod97(compact) is True
+    assert Section1LOUPrefixMembership().matches(_notation(compact), CONTRACT) is True
 
 
 def test_normalize_agreement() -> None:

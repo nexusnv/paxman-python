@@ -80,7 +80,8 @@ class Section1LOUPrefixMembership(Rule[LEINotation]):
             return False
         if _LEI_RE.match(compact) is None:
             return False
-        if not compact.isascii() or not compact.isupper():
+        # isascii only — isupper() rejects digit-only LEIs (finding 1)
+        if not compact.isascii():
             return False
         if len(notation.lou_prefix) != 4 or len(notation.entity_block) != 14:
             return False

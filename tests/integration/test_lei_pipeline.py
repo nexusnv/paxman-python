@@ -105,6 +105,29 @@ class TestLEIPipelineSuccess:
         assert result.canonicalized_value == f"urn:lei:{OTHER}"
         assert {c.value for c in result.candidates} == {f"urn:lei:{OTHER}"}
 
+    def test_digit_only_lei_success(self) -> None:
+        # Review finding 1: all-digit LEIs carry no cased characters, so the
+        # old isupper() guard rejected them as INVALID.
+        _register_lei()
+        contract = LEICapability.create_contract()
+        result = paxman.canonicalize("11280000000000000002", contract)
+
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "11280000000000000002"
+
+    def test_gleif_url_embedded_success(self) -> None:
+        # Review finding 2 (locked): URL-path-embedded LEIs are recognized
+        # via word_only boundaries (ISIN precedent); URL-level semantics
+        # belong to the URL capability.
+        _register_lei()
+        contract = LEICapability.create_contract()
+        text = "https://search.gleif.org/#/record/5493000IBP32UQZ0KL24"
+        result = paxman.canonicalize(text, contract)
+
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "5493000IBP32UQZ0KL24"
+        assert result.span == (34, 54)
+
 
 class TestLEIPipelineInvalid:
     """Recognized shape, failed validation: no claim survives."""
@@ -142,7 +165,8 @@ class TestLEIPipelineMissing:
             "5493\t000IBP32UQZ0KL24",  # tab
             "213800KUD8LAJWSQ9D1\uff15",  # fullwidth digit homoglyph
             "\uff15493000IBP32UQZ0KL24",  # fullwidth letter homoglyph
-            "https://www.gleif.org/lei-data213800KUD8LAJWSQ9D15",  # glued URL
+            # glued label in a URL — MISSING (glued-label guard, not URL context)
+            "https://www.gleif.org/lei-data213800KUD8LAJWSQ9D15",
         ],
     )
     def test_missing_rows(self, text: str) -> None:
