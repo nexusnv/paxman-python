@@ -47,7 +47,7 @@ From the Phase 1C survey (ISO catalogue pages, GLEIF namespace/API/search/concat
 | Hyphen separated | `5493-000I-BP32-UQZ0-KL24` | stdnum `clean` strips `-` (single validator) | rare | DEFER | community `extra_grammars` candidate |
 | Labeled prose | `LEI: 5493000IBP32UQZ0KL24`, `LEI 213800KUD8LAJWSQ9D15`, `lei-7LTWFZYICNSX8D621K86` | prose convention (`LEI:` + code, cf. GLEIF's own `(LEI): 506700GE1G29325QX363` display); IBAN/ORCID label precedent | common | RECOGNIZE | fused label `[\s:-]+`, glued reject |
 | URN carrier | `urn:lei:7LTWFZYICNSX8D621K86` | IANA formal `lei` namespace (`urn-formal/lei`, GLEIF); GLEIF namespace page format + worked example | official, rare in prose | RECOGNIZE | optional carrier branch, case-insensitive |
-| GLEIF-URL embedded | `https://search.gleif.org/#/record/5493000IBP32UQZ0KL24` | resolver links on the web (LEI search tool) | occasional | DEFER | URL-embedded extraction overlaps URL capability; v1 scope cut |
+| GLEIF-URL embedded | `https://search.gleif.org/#/record/5493000IBP32UQZ0KL24` | resolver links on the web (LEI search tool) | occasional | RECOGNIZED | URL-path-embedded LEI → SUCCESS (34, 54) via word_only boundaries (ISIN precedent); URL-level semantics remain the URL capability's ownership — amended per oracle review 2026-09-22 |
 | vLEI credential strings | (distinct credential format) | vLEI governance framework (separate family) | out of scope | REJECT | different spec; documented negative |
 | Truncated / over-long | 19-char / 21-char runs | length guard (McZen: exactly 20) | invalid | REJECT | never 19/21 (`MISSING`) |
 | Lapsed-renewal LEIs | structurally valid, registry-stale | Wikipedia validity (code unchanged on renewal/transfer) | valid input | RECOGNIZE | status is not checked (liveness ≠ validity) |
@@ -104,7 +104,7 @@ compact = re.sub(r"[ \-]", "", raw).strip().upper()  # spaces + hyphens only
 - BICs (`DEUTDEFF`, 8/11) and ISINs (`US0378331005`, 12) — fixed lengths disjoint from 20; no whole-string checksum confusion.
 - UUIDs (32/36), ORCIDs (16/19 with hyphens), DOIs (`10.` prefix) — disjoint shapes; ORCID compact 16 never reaches 20.
 - Short alphanumeric runs, bare LOU prefixes (`5493`), 19/21-char runs — `MISSING` vs `INVALID` boundary (see §9).
-- GLEIF URLs as URLs — owned by the URL capability; the LEI capability in v1 does not carve codes out of them.
+- GLEIF URLs as URLs — URL-path-embedded LEIs are recognized via word_only boundaries (ISIN precedent); URL-level semantics remain the URL capability's ownership.
 
 ### 2.4 Single-mention vs multi-mention input
 Paxman resolves **one mention per `canonicalize()` call** (ARCHITECTURE.md, segmentation recipe; `docs/recipes/segmentation.md` ADR-0004). Two distinct LEIs (counterparty pair) → `AMBIGUOUS` or `MultipleMentionsError` with `single_value=True`; identical values coalesce to `SUCCESS`.
@@ -560,7 +560,7 @@ Like ISIN valid vs prefix-attested, ISSN valid vs issued, IBAN valid vs country-
 | 15 | Sibling confusion (20-char IBAN-shaped) | per-capability resolution | positional + algorithm discrimination (§14) |
 | 16 | Leading/trailing glue (`X…`, `…Y`) | MISSING | `(?<!\w)` / `(?!\w)` |
 | 17 | Quoted/bracketed/CSV-wrapped | SUCCESS | inside punctuation |
-| 18 | GLEIF-URL embedded | MISSING (LEI capability, v1) | deferred — URL capability owns the URL |
+| 18 | GLEIF-URL embedded | SUCCESS (LEI capability, v1) | recognized via word_only boundary — URL-path-embedded LEI carved at the `/`/`#` boundary (34, 54); URL capability composes on top — amended per oracle review 2026-09-22 |
 
 ---
 ## 9. Resolution-State Map (ARCHITECTURE.md Resolution Semantics)
@@ -660,9 +660,9 @@ LOU snapshot seeding (plan-agent task, not this report): derive the seed set fro
 | 6 | Positions 5–6 content | Informative only, never reject | `FZ` in GLEIF-attested valid LEI; enforcement would fabricate a constraint |
 | 7 | Single PUBLICATION vs split | Fuse MOD-97-10 citation into the ISO 17442-1 file (IBAN precedent); LOU registry always separate | fused keeps `get_rules` small; registry/specification kinds must not share a file |
 | 8 | `single_value` for batch | True initially, segmentation for multi; offer `extra_grammars` variant with False | consistent with ISIN/IBAN/ORCID precedent |
-| 9 | Hyphen tolerance | DEFER to community extension | single-validator evidence (stdnum strip), no official grouping attested; shipping it risks text absorption |
+| 9 | Hyphen tolerance | DEFER to community extension (tracked in https://github.com/nexusnv/paxman-python/issues/183) | single-validator evidence (stdnum strip), no official grouping attested; shipping it risks text absorption |
 | 10 | Label/carrier span inclusion | Include label/carrier in `raw_text` span (fused regex), notation compact-only | mirrors ISIN/ORCID/IBAN label handling |
-| 11 | Which alternative written forms does v1 recognize (GLEIF-URL-embedded, hyphen-grouped)? | RECOGNIZE every form attested by the spec/schema or ≥2 validators (compact/spaced/labeled/URN/lowercase); DEFER URL-embedded + hyphen via `extra_grammars`, citing §2.1 | unhandled common forms are permanent MISSING blind spots; URL-embedded extraction is URL-capability composition, hyphen lacks a grouping convention |
+| 11 | Which alternative written forms does v1 recognize (GLEIF-URL-embedded, hyphen-grouped)? | RECOGNIZE every form attested by the spec/schema or ≥2 validators (compact/spaced/labeled/URN/lowercase) plus URL-path-embedded (word_only, ISIN precedent); DEFER hyphen via `extra_grammars`, citing §2.1. URL-embedded half resolved 2026-09-22 — RECOGNIZED (oracle review finding 2); hyphen half remains DEFER per row 9 (https://github.com/nexusnv/paxman-python/issues/183); liveness tracked in https://github.com/nexusnv/paxman-python/issues/184 | unhandled common forms are permanent MISSING blind spots; URL-embedded extraction is URL-capability composition, hyphen lacks a grouping convention |
 
 ---
 ## 14. Ambiguity Analysis (Paxman-specific)

@@ -84,7 +84,7 @@ Depends on: Tasks 1–3, 5.
 
 **Files:** `tests/integration/test_lei_pipeline.py`
 
-- [ ] Failing tests: SUCCESS rows (all §2 RECOGNIZE variants coalesce to compact, incl. label/URN spans), INVALID rows (bad checksum, unknown-prefix with valid checksum), MISSING rows (no runs, hyphenated, glued label, 19/21, double-space/tab, homoglyphs, GLEIF-URL-embedded), AMBIGUOUS/`MultipleMentionsError` (two distinct LEIs; identical coalesce), `test_excluded_lou_rule_false_success`, `test_pinned_year_filter` (`year=2019` filters the 2020 ISO rule → ADR-0012 vacuity), span integrity, candidate dedup, determinism/VersionStamp → FAIL, then pass via Tasks 3/5/6 code (autouse `_clean_registry`). Verify: `uv run pytest tests/integration/test_lei_pipeline.py -q` → PASS.
+- [ ] Failing tests: SUCCESS rows (all §2 RECOGNIZE variants coalesce to compact, incl. label/URN spans; URL-path-embedded LEI → SUCCESS (word_only decision 2; ISIN precedent) — amended per oracle review 2026-09-22), INVALID rows (bad checksum, unknown-prefix with valid checksum), MISSING rows (no runs, hyphenated, glued label, 19/21, double-space/tab, homoglyphs), AMBIGUOUS/`MultipleMentionsError` (two distinct LEIs; identical coalesce), `test_excluded_lou_rule_false_success`, `test_pinned_year_filter` (`year=2019` filters the 2020 ISO rule → ADR-0012 vacuity), span integrity, candidate dedup, determinism/VersionStamp → FAIL, then pass via Tasks 3/5/6 code (autouse `_clean_registry`). Verify: `uv run pytest tests/integration/test_lei_pipeline.py -q` → PASS.
 
 ### Task 8: Property + re-entry + preservation
 

@@ -87,9 +87,9 @@ Paxman ships twenty-four built-in capabilities (24 in `paxman/capabilities/__ini
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISIN** | International securities identification numbers | ISO 6166:2021 |
-| **LEI** | Legal entity identifiers | ISO 17442-1:2020 |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
+| **LEI** | Legal entity identifiers | ISO 17442-1:2020 |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |

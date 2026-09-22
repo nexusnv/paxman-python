@@ -18,6 +18,7 @@ Canonicalizes **one LEI mention** per call — a bare 20-character code, a singl
 | `urn:lei:` carrier (`urn:lei:213800KUD8LAJWSQ9D15`, `URN:LEI:5493000IBP32UQZ0KL24` — case-insensitive) | Wrong lengths (19 / 21 chars) → `MISSING` (rejected — not LEI shapes) |
 | Non-`00` entity content (`7LTWFZYICNSX8D621K86` carries `FZ` at positions 5–6) | Fullwidth homoglyphs (`213800KUD8LAJWSQ9D1\uff15`) → `MISSING` (ASCII only) |
 | Embedded in prose (`see LEI 213800KUD8LAJWSQ9D15 (London)`) | Glued surroundings (`X213800KUD8LAJWSQ9D15`, `213800KUD8LAJWSQ9D15Y`) → `MISSING` |
+| URL-path-embedded (`https://search.gleif.org/#/record/5493000IBP32UQZ0KL24` — carved at the `/`/`#` boundary; URL-level semantics belong to the URL capability) | |
 | | Prose without an LEI shape (`not an lei`) → `MISSING` |
 
 ---
@@ -94,12 +95,13 @@ contract = LEI.create_contract(
 | `213800WSGIIZCXF1P572` / `506700GE1G29325QX363` | defaults | `SUCCESS` | further accredited-LOU LEIs, check digits hold |
 | `7LTWFZYICNSX8D621K86` | defaults | `SUCCESS` | non-`00` entity content never rejects |
 | `5493000IBP32UQZ0KL24` | `output_format="urn"` | `SUCCESS` | `"urn:lei:5493000IBP32UQZ0KL24"` |
+| `https://search.gleif.org/#/record/5493000IBP32UQZ0KL24` | defaults | `SUCCESS` | `"5493000IBP32UQZ0KL24"` (carved at the `/`/`#` boundary — URL-level semantics belong to the URL capability) |
 | `213800KUD8LAJWSQ9D15` | `pinned_rules=("Section 4-lei-structure-mod97-10",)` | `SUCCESS` | ISO rule alone corroborates (vacuity clause) |
 | `213800KUD8LXJWSQ9D15` | any | `INVALID` | recognized shape, check digit fails (remainder 55, not 1) |
 | `ZZZZ0000000000000016` | any | `INVALID` | recognized shape with valid check digits, prefix has no accredited-LOU attestation |
 | `213800KUD8LAJWSQ9D15` | `year=2019` | `INVALID` | both rules are newer, dropped |
 | `213800KUD8LAJWSQ9D15` | `excluded_rules=(both,)` | `INVALID` | no rule validates |
-| `5493-000I-BP32-UQZ0-KL24` | any | `MISSING` | **DEFER** — hyphen tolerance is not recognized in v1; a community grammar via `extra_grammars` is the extension path |
+| `5493-000I-BP32-UQZ0-KL24` | any | `MISSING` | **DEFER** — hyphen tolerance is not recognized in v1; a community grammar via `extra_grammars` is the extension path (tracked in https://github.com/nexusnv/paxman-python/issues/183) |
 | 19- / 21-char forms | any | `MISSING` | **REJECT** — short/long forms are not LEI shapes |
 | `LEI5493000IBP32UQZ0KL24` | any | `MISSING` | glued label needs a separator |
 | `5493  000IBP32UQZ0KL24` | any | `MISSING` | double spaces are not a grouping separator |
@@ -172,7 +174,7 @@ except ContractError as e:
 - **ISO 17442-1:2020** §4 LEI structure plus check digits (20 chars `LOU4+entity14+check2`, charset `[A-Z0-9]{18}[0-9]{2}`; whole-string ISO/IEC 7064:2003 MOD 97-10, `A=10 … Z=35`, remainder 1, no rearrangement) — `Section 4-lei-structure-mod97-10` (`PARSER`). Catalogue at `https://www.iso.org/standard/78829.html`.
 - **GLEIF LOU prefix list** §1 accredited-LOU prefix membership (4-char issuer blocks observed in the accredited-LOU directory and on real records in the GLEIF concatenated file; append-only snapshot — codes survive LOU retirement and transfer) — `Section 1-lou-prefix-membership` (`LOOKUP_TABLE`). Download at `https://www.gleif.org/en/lei-data/gleif-concatenated-file/download-the-concatenated-file`.
 
-Issued/live membership is deferred in v1: liveness is not validity — an LEI with valid structure, check digits, and an accredited prefix is `SUCCESS` whether or not it is currently issued.
+Issued/live membership is deferred in v1: liveness is not validity — an LEI with valid structure, check digits, and an accredited prefix is `SUCCESS` whether or not it is currently issued (tracked in https://github.com/nexusnv/paxman-python/issues/184).
 
 Each candidate's `validation_rule` carries the section, and `candidate.provenance[0].publication_year` the year.
 

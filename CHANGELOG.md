@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING — `Element` renamed to `ChemicalElement`:** package `paxman.capabilities.Element` → `paxman.capabilities.ChemicalElement`, classes `ElementCapability`/`ElementContract`/`ElementNotation`/`ElementRecognitionGrammar` → `ChemicalElement*`, registry name `element` → `chemical_element`, grammar `element_recognition` → `chemical_element_recognition` (semantics + `target_semantics`). User-visible input syntax is unchanged (`Fe`, `iron`, `element 26` still canonicalize to `Fe`); rule names (`Section IR-3.1-names-and-symbols`, `Section PTOE-element-registry`) are unchanged. Migrate imports, `ChemicalElement.create_contract()`, and CLI `paxman chemical_element` / `paxman scan -c chemical_element`.
 
+### Fixed
+
+- **LEI — digit-only valid LEIs no longer resolve `INVALID`:** both rules gated on `str.isupper()`, which is `False` for cased-less all-digit strings that ISO 17442-1 `[A-Z0-9]` permits (e.g. `11280000000000000002`) — the guard is removed, `isascii()` kept and `_LEI_RE` remains the uppercase authority.
+
+### Docs
+
+- **LEI — URL-path-embedded clarification:** URL-path-embedded LEIs (e.g. `https://search.gleif.org/#/record/5493000IBP32UQZ0KL24`) are recognized via `word_only` boundaries (ISIN precedent) → `SUCCESS`; URL-level semantics remain the URL capability's ownership. Hyphen-grouped forms and issued/live membership stay deferred (tracked in #183 and #184).
+
 ## [0.5.0] - 2026-09-15
 
 ### Added
