@@ -85,7 +85,9 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
 
     Qualification (ADR-0012) disqualifies uncorroborated ``PARSER`` candidates
     before the single-value invariant, per-grammar dedup scoping, and status
-    determination run.
+    determination run. All identity decisions read canonical, pre-format
+    values; ``Capability.format_value()`` applies once at result assembly,
+    so ``output_format`` never affects identity or provenance (ADR-0011).
     """
     freeze_registry()
     capability = get_capability(contract.capability_name)
@@ -135,7 +137,7 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
                 if isinstance(m, CandidatesMatcher) and m.candidate_names:
                     for cname in m.candidate_names:
                         single_value_by_grammar_name[cname] = g.single_value
-    collected = _collect_candidates(capability, recognitions, rules, semantics_by_name)
+    collected = _collect_candidates(recognitions, rules, semantics_by_name)
 
     strategy_by_rule: dict[str, RuleStrategy] = {r.name: r.strategy for r in rules}
     lookup_semantics: frozenset[str] = frozenset(
@@ -151,12 +153,16 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
     # canonical values and must not trip multi-mention detection (ADR-0012).
     _enforce_single_value_invariant(qualified, single_value_by_grammar_name)
 
-    candidates = _dedup_candidates(
+    deduped = _dedup_candidates(
         qualified,
         keep_duplicate_spans_for=_keep_duplicate_span_grammars(all_grammars),
     )
+    # Identity (status and the single-value span) reads canonical,
+    # pre-format values; presentation applies only afterwards.
+    canonical_candidates = [candidate for candidate, _rep in deduped]
 
-    status = _determine_status(candidates, had_recognitions)
+    status = _determine_status(canonical_candidates, had_recognitions)
+    candidates = _format_candidates(deduped, capability, contract)
     canonical_value = _extract_canonical_value(candidates, status)
     version_stamp = VersionStamp(
         paxman_version=PAXMAN_VERSION, recognition_revision=get_recognition_revision()
@@ -170,8 +176,9 @@ def run_capability(text: str, contract: CapabilityContract) -> ExecutionResult:
         contract=contract,
         version_stamp=version_stamp,
         span=(
-            candidates[0].span
-            if candidates and len({c.value for c in candidates}) == 1
+            canonical_candidates[0].span
+            if canonical_candidates
+            and len({c.value for c in canonical_candidates}) == 1
             else None
         ),
         suppressed_count=len(suppressed_unique),
@@ -560,7 +567,6 @@ def _validate_affinity(
 
 
 def _collect_candidates(
-    capability: Capability[Any],
     recognitions: list[RecognizedRep[Any]],
     rules: list[Rule[Any]],
     semantics_by_name: dict[str, str],
@@ -568,13 +574,16 @@ def _collect_candidates(
     """Match recognitions against rules and collect (candidate, source) pairs.
 
     Routes each recognition only to rules whose ``target_semantics`` includes
-    the producing grammar's semantics, formats each validated value through
-    the capability's ``format_value()`` seam, then returns each
-    ``Candidate`` together with the ``RecognizedRep`` that produced it. The
-    paired rep carries the recognition span used by
-    ``_enforce_single_value_invariant`` to attribute candidates to their source
-    mention; ADR-0012 qualification (``_require_lookup_corroboration``) runs
-    next on these pairs, and dedup runs later in ``_dedup_candidates``.
+    the producing grammar's semantics, then stores each validated
+    ``rule.normalize()`` value on the candidate as its canonical value —
+    pre-format, so every downstream identity decision (ADR-0012
+    qualification, the single-value invariant, dedup, status) sees entity
+    identity rather than an ``output_format`` rendering. The presentation
+    seam (``Capability.format_value()``) runs once at result assembly in
+    ``_format_candidates``. The paired rep carries the recognition span used
+    by ``_enforce_single_value_invariant`` to attribute candidates to their
+    source mention; ADR-0012 qualification (``_require_lookup_corroboration``)
+    runs next on these pairs, and dedup runs later in ``_dedup_candidates``.
 
     The ``semantics_by_name[grammar_name]`` lookup cannot KeyError:
     recognitions are produced only by grammars in the composed ``all_grammars``
@@ -592,15 +601,10 @@ def _collect_candidates(
                     canonical = rule.normalize(
                         recognition.notation, recognition.contract
                     )
-                    value = capability.format_value(
-                        canonical,
-                        recognition.contract.output_format,
-                        recognition.notation,
-                    )
                     collected.append(
                         (
                             Candidate(
-                                value=value,
+                                value=canonical,
                                 recognition_rule=grammar_name,
                                 validation_rule=rule.name,
                                 provenance=(rule.provenance,),
@@ -813,25 +817,28 @@ def _dedup_candidates(
     *,
     keep_duplicate_spans: bool = False,
     keep_duplicate_spans_for: frozenset[str] | None = None,
-) -> list[Candidate]:
-    """Collapse duplicate candidates, sparing opted-in grammars (ADR-0012).
+) -> list[tuple[Candidate, RecognizedRep[Any]]]:
+    """Collapse duplicate candidate/source pairs, sparing opted-in grammars (ADR-0012).
 
     Per-grammar scoping (issue #71): a candidate whose ``recognition_rule``
     names a grammar in ``keep_duplicate_spans_for`` survives unconditionally;
     every other candidate dedups by
     ``(value, recognition_rule, validation_rule)`` as before. ``None`` keeps
-    the legacy capability-wide ``keep_duplicate_spans`` path. Pure function
-    of its inputs; preserves input order.
+    the legacy capability-wide ``keep_duplicate_spans`` path. The key reads
+    the candidate's canonical (pre-format) value, and the source rep rides
+    along so the presentation seam can render each survivor at result
+    assembly — ``output_format`` never affects dedup identity (ADR-0011).
+    Pure function of its inputs; preserves input order.
     """
     if keep_duplicate_spans_for is None:
         if keep_duplicate_spans:
-            return [c for c, _ in collected]
+            return list(collected)
         keep_duplicate_spans_for = frozenset()
     seen: set[tuple[str, str, str]] = set()
-    deduped: list[Candidate] = []
-    for candidate, _rep in collected:
+    deduped: list[tuple[Candidate, RecognizedRep[Any]]] = []
+    for candidate, rep in collected:
         if candidate.recognition_rule in keep_duplicate_spans_for:
-            deduped.append(candidate)
+            deduped.append((candidate, rep))
             continue
         key = (
             candidate.value,
@@ -840,8 +847,36 @@ def _dedup_candidates(
         )
         if key not in seen:
             seen.add(key)
-            deduped.append(candidate)
+            deduped.append((candidate, rep))
     return deduped
+
+
+def _format_candidates(
+    collected: Sequence[tuple[Candidate, RecognizedRep[Any]]],
+    capability: Capability[Any],
+    contract: CapabilityContract,
+) -> list[Candidate]:
+    """Apply the presentation seam to deduped candidates (ADR-0011).
+
+    Runs once at result assembly — after qualification, the single-value
+    invariant, dedup, and status — so ``output_format`` can re-render each
+    surviving candidate's canonical value but never influence candidate
+    identity, provenance, or spans. Each survivor is rebuilt with the same
+    rule names, provenance, and span, its value rendered through
+    ``Capability.format_value()`` with the source recognition's notation.
+    """
+    return [
+        Candidate(
+            value=capability.format_value(
+                candidate.value, contract.output_format, rep.notation
+            ),
+            recognition_rule=candidate.recognition_rule,
+            validation_rule=candidate.validation_rule,
+            provenance=candidate.provenance,
+            span=candidate.span,
+        )
+        for candidate, rep in collected
+    ]
 
 
 def _determine_status(

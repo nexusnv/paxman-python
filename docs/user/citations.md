@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 24 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 25 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -27,6 +27,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ANNA** | ANNA ISIN Guidelines V25 (Dec 2025) | ISIN | 1 |
 | **GLEIF** | GLEIF LOU prefix list (accredited-LOU directory + concatenated-file census) | LEI | 1 |
+| **GS1** | GS1 General Specifications 26.0, GS1 Prefix allocation, Verified by GS1 | GTIN | 3 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
 | **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 6 |
@@ -156,6 +157,22 @@ Specification: **GLEIF LOU prefix list** — `https://www.gleif.org/en/lei-data/
 | Capability | Rule | Citation |
 |------------|------|----------|
 | LEI | `Section 1-lou-prefix-membership` | Section 1 (accredited-LOU prefix membership: 4-char issuer blocks from the accredited-LOU directory + concatenated-file census; append-only) |
+
+---
+
+## GS1
+
+Specifications: **GS1 General Specifications** — `https://ref.gs1.org/standards/genspecs/` — `kind="specification"`, `version="26.0"`, `lifecycle="active"`, `publication_year=2026`.
+
+**GS1 Prefix allocation** — `https://www.gs1.org/standards/id-keys/company-prefix` — `kind="registry"`, `version="Rolling 2026"`, `lifecycle="active"`, `publication_year=2026`.
+
+**Verified by GS1** — `https://www.gs1.org/services/verified-by-gs1` — `kind="registry"`, `version="Rolling"`, `lifecycle="active"`, `publication_year=2019`.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| GTIN | `Section 1-gtin-structure-check-digit` | Section 1 (GTIN structure + Mod-10 check digit) |
+| GTIN | `Section 2-gs1-prefix` | Section 2 (GS1 prefix allocation) |
+| GTIN | `Section 3-verified-liveness` | Section 3 (Verified by GS1 liveness) |
 
 ---
 

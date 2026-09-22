@@ -1,11 +1,13 @@
 """Integration tests proving the engine routes formatting through the capability.
 
-The engine must invoke ``Capability.format_value()`` on each rule-normalized
-canonical value, before candidate deduplication and status.
-This test-only capability rewrites the canonical value so the seam is
-observable end to end, and records the arguments it received so the test can
-prove the engine passes the original notation and the contract's resolved
-output format.
+The engine must invoke ``Capability.format_value()`` on each surviving
+rule-normalized canonical value exactly once, at result assembly — after
+qualification, the single-value invariant, dedup, and status, so
+``output_format`` never affects candidate identity (ADR-0011). These
+test-only capabilities rewrite the canonical value so the seam is
+observable end to end, and record the arguments they receive so the tests
+can prove the engine passes the original notation and the contract's
+resolved output format.
 """
 
 from __future__ import annotations
@@ -317,21 +319,24 @@ class TestFormatValueSeam:
         assert call.notation == _TokenNotation(token="token")
 
     @pytest.mark.integration
-    def test_formatting_runs_before_dedup_and_status(self) -> None:
-        """Formatting is applied per candidate before dedup and status.
+    def test_formatting_runs_after_dedup_and_status(self) -> None:
+        """Identity decisions read canonical values; formatting comes last.
 
         Two grammars each recognize one token; both rules normalize to the
-        same default value. If the engine deduplicated or decided status
-        before formatting, the two candidates would be indistinguishable and
-        the result would be SUCCESS. Because the formatter runs first and
-        renders token-specific values (keyed on the notation), the two
-        distinct formatted candidates survive and the status is AMBIGUOUS.
+        same default value, so the two candidates are one entity: dedup keys
+        and status read the canonical (pre-format) values and the result is
+        SUCCESS. The formatter still runs once per surviving candidate at
+        result assembly, rendering token-specific values (keyed on the
+        notation) — presentation only, never identity. The surfaced span
+        follows the identity basis: candidates[0]'s span, matching the
+        first candidate that supplies ``canonicalized_value``.
 
-        Using two grammars (rather than one grammar emitting two spans) keeps the
-        test within the span-bearing seam contract: each grammar owns exactly one
-        span, so the candidates are surfaced as AMBIGUOUS rather than deduped into
-        one. The single-value invariant (ADR-0004) is opt-in and these fixtures do
-        not enable it, so the engine does not fail fast here.
+        Using two grammars (rather than one grammar emitting two spans) keeps
+        the test within the span-bearing seam contract: each grammar owns
+        exactly one span, so both candidates survive dedup (distinct
+        recognition rules) and both are rendered. The single-value invariant
+        (ADR-0004) is opt-in and these fixtures do not enable it, so the
+        engine does not fail fast here.
         """
         _DualFormattingCapability.last_calls = []
         register_capability(_DualFormattingCapability())
@@ -340,8 +345,11 @@ class TestFormatValueSeam:
         # The two grammars hardcode spans for "alphabeta": (0, 5) and (5, 9).
         result = run_capability("alphabeta", contract)
 
-        assert result.status == Resolution.AMBIGUOUS
-        assert result.canonicalized_value is None
+        # One canonical value coalesces to SUCCESS regardless of how the
+        # formatter renders each survivor's notation.
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "formatted-alpha"
+        assert result.span == (0, 5)
         assert {c.value for c in result.candidates} == {
             "formatted-alpha",
             "formatted-beta",

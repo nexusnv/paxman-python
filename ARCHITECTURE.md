@@ -90,9 +90,9 @@ The engine is the orchestration layer that coordinates the full pipeline. It:
 2. Looks up the requested capability by name
 3. Runs the recognition phase — iterating over active grammars to extract span-bearing recognition matches
 4. Runs the validation phase — testing each notation against active rules, which normalize to each capability's default canonical form and never inspect `output_format`
-5. Formats each validated value through the capability's `format_value()` seam — immediately after normalization and before deduplication and status determination
-6. Deduplicates identical candidates
-7. Determines the resolution status based on candidate outcomes
+5. Deduplicates identical candidates — qualification, the single-value invariant, dedup, and status all read the canonical, pre-format values, so identity never depends on presentation
+6. Determines the resolution status based on candidate outcomes — on the same canonical values
+7. Formats each surviving candidate through the capability's `format_value()` seam — once, at result assembly, so `output_format` re-renders presentation but never affects candidate identity or provenance
 8. Assembles the final execution result
 
 The engine is capability-agnostic. It does not know what a "grammar" or "rule" does — it only knows that grammars produce span-bearing recognition matches and rules produce candidates.
@@ -139,9 +139,9 @@ These parameters are passed through the contract to rule methods (`matches()` an
 
 ### The Formatting Seam
 
-Validation and presentation are separated at the pipeline level. Rules own validation and default normalization only: `matches()` never consults `output_format`, and `normalize()` always returns the capability's default canonical form (e.g., `YYYY-MM-DD` for Date, E.164 `+CCNSN` for Phone, alpha-2 for Country). The engine then renders each validated value through the capability's `format_value(value, output_format, notation)` method — called immediately after `normalize()` and before candidate deduplication and status determination:
+Validation and presentation are separated at the pipeline level. Rules own validation and default normalization only: `matches()` never consults `output_format`, and `normalize()` always returns the capability's default canonical form (e.g., `YYYY-MM-DD` for Date, E.164 `+CCNSN` for Phone, alpha-2 for Country). The engine then renders each surviving candidate through the capability's `format_value(value, output_format, notation)` method — called once at result assembly, after candidate deduplication and status determination, which read the canonical, pre-format values:
 
-**recognition → validation → default normalization → capability formatting → candidate deduplication → status → result**
+**recognition → validation → default normalization → candidate deduplication → status → capability formatting → result**
 
 Formatting adds no provenance: `Candidate.provenance`, `recognition_rule`, and `validation_rule` are set from the rule that validated the notation, and the formatter only transforms the value. Date, Phone, and Country implement conversions; Email and IP inherit the identity implementation because they offer no alternative formats.
 

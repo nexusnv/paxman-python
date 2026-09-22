@@ -65,6 +65,7 @@ from paxman.api.canonicalize import canonicalize
 from paxman.capabilities import (
     BIC,
     DOI,
+    GTIN,
     IBAN,
     ISBN,
     ISIN,
@@ -149,6 +150,16 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     # re-enters the default contract onto the bare value via the host
     # carrier group (measured in TestDOICapability).
     ("doi", "url"): "encoding",
+    # -- GTIN ----------------------------------------------------------------
+    # native: encoding — zero-strip/zero-pad is reversible without side
+    # input (canonicalize(W, default) re-pads string-exactly to V for every
+    # spelling; identity for a true GTIN-14). Not an expansion: GTIN has a
+    # unique 14-digit canonical per entity, so no two distinct canonicals
+    # exist for a format-level merge — the pad-strip merge happens at
+    # input -> canonical time, before any format applies (ADR-0011
+    # Definitions: expansions are deliberately NOT string-injective; this
+    # format is).
+    ("gtin", "native"): "encoding",
     # -- ChemicalElement -------------------------------------------------------
     # name: 1:1 symbol<->English-name map; the lowercase rendering re-enters
     # through the name path to the proper-case symbol.
@@ -411,6 +422,11 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "",
     ),
     _InjectivityPair("isbn", ISBN, "hyphenated", "9780306406157", "9781566199094", ""),
+    # GTIN: distinct entities under the native slice — a 12-char UPC-A
+    # spelling and a 13-char EAN-13 spelling.
+    _InjectivityPair(
+        "gtin", GTIN, "native", "614141999996", "5012345670003", "UPC-A vs EAN-13"
+    ),
     _InjectivityPair("isin", ISIN, "grouped", "US0378331005", "GB0002634946", ""),
     _InjectivityPair(
         "lei", LEI, "urn", "5493000IBP32UQZ0KL24", "213800KUD8LAJWSQ9D15", ""

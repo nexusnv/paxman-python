@@ -48,6 +48,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **LEI:** `LEINotation(lou_prefix, entity_block, check_digits, compact)` — `lou_prefix` is the 4-character accredited-LOU issuer block, `entity_block` the 14-character entity-specific block (positions 5–6 carry no enforceable constraint), `check_digits` the 2-digit MOD 97-10 pair, `compact` the grammar-normalized candidate (≡ lou+entity+check, uppercased with single spaces stripped; grammar never validates the check digits or prefix membership — rules own both)
 - **Language:** `LanguageNotation(language, extlang, script, region, variant, extension, privateuse, grandfathered, compact, raw_value)` — `language` 2-8 lower, `extlang` 3-letter hyphen-joined (e.g. `cmn` for `zh-cmn`), `script` Title 4, `region` Upper 2|3-digit, `variant` lower prefix-constrained via `VARIANT_PREFIXES` dict (`sl-nedis` ok, `de-nedis` rejected), `grandfathered` lower (preferred via `GRANDFATHERED_PREFERRED`), `compact` BCP47 case-canonical tag or bare lower, `raw_value` trimmed lower for lexicon; grammar strips case/underscore via `StandardPre` (`_`→`-` in PipelineState, `raw_text` preserves original), rules own registry + Prefix + Deprecated chain + Suppress-Script (informative, never rejects)
 - **BIC:** `BICNotation(bank_code, country_code, location_code, branch_code, compact)` — `bank_code` 4-char A-Z0-9, `country_code` 2-letter ISO 3166-1 plus XK, `location_code` 2-char A-Z0-9, `branch_code` 3-char or empty when BIC8, `compact` full 8 or 11 equals bank+country+location+branch, grammar uppercases and strips label, location second char 0/1/2 informative only
+- **GTIN:** `GTINNotation(digits, native_length, has_ai)` — `digits` is the spelled digit string with separators, labels, and AI markers stripped (length 8/12/13/14, ASCII digits only), `native_length` the spelled length (`== len(digits)`, retained as the `native` format facet), `has_ai` records an `(01)`/`AI 01` marker (trace-only, never affects validity; a bare leading `01` is never an AI marker — grammar never validates the check digit or prefix membership — rules own both)
 - **IBAN:** `IBANNotation(country_code, check_digits, bban, compact)` — `country_code` is the 2-letter ISO 3166-1 alpha-2 prefix, `check_digits` the 2-digit MOD 97-10 pair, `bban` the 1-30 alphanum remainder, `compact` the grammar-normalized candidate (≡ cc+dd+bban, uppercased with paper spaces stripped; may be shorter or longer, while the validation rule enforces the final 15–34-character ISO bound)
 - **MacAddress:** `MacAddressNotation(compact, shape)` — `compact` is the uppercase hex collapse (12 hex EUI-48 or 16 hex EUI-64) and `shape` discriminates `"eui48"` / `"eui64"`; grammar strips separators (colon/hyphen/tri-dot/bare) and uppercases, fused `MAC` label included in `raw_text`; rules own structure (no checksum, I/G + U/L informative), derived OUI = `compact[:6]`
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
@@ -71,7 +72,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-four built-in capabilities (24 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-five built-in capabilities (25 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -83,6 +84,7 @@ Paxman ships twenty-four built-in capabilities (24 in `paxman/capabilities/__ini
 | **DOI** | Digital object identifiers | ISO 26324:2025 |
 | **ChemicalElement** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | RFC 5322, RFC 6761 |
+| **GTIN** | Trade item identifiers | GS1 General Specifications 26.0 |
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
@@ -825,7 +827,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (24 capabilities, alphabetical; paxman/capabilities/__init__.py exports 24), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (25 capabilities, alphabetical; paxman/capabilities/__init__.py exports 25), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1034,7 +1036,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (24 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (25 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

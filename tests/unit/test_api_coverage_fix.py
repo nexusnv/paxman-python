@@ -26,7 +26,8 @@ def test_list_shipped_and_registered():
         assert "issn" in shipped
         assert "language" in shipped
         assert "lei" in shipped
-        assert len(shipped) == 24
+        assert "gtin" in shipped
+        assert len(shipped) == 25
         registered = paxman.list_registered_capabilities()
         assert isinstance(registered, tuple)
         # after register, registered should equal shipped

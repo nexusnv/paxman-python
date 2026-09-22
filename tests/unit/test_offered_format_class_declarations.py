@@ -28,6 +28,7 @@ from paxman.api.bootstrap import list_shipped_capabilities
 from paxman.capabilities import (
     BIC,
     DOI,
+    GTIN,
     IBAN,
     IP,
     ISBN,
@@ -64,6 +65,7 @@ _FACTORIES = {
     "date": Date,
     "doi": DOI,
     "email": Email,
+    "gtin": GTIN,
     "iban": IBAN,
     "ip": IP,
     "isbn": ISBN,

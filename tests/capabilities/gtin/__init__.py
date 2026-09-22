@@ -1,0 +1,1 @@
+"""gtin capability tests (scaffold)."""

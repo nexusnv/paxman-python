@@ -102,6 +102,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **IANA Time Zone Database** — IANA registry of zone keys, Links, and fixed zones (release 2026d) cited by the Timezone capability. See [Citations](citations/).
 
+**GTIN** — Global Trade Item Number (GS1 General Specifications 26.0, GS1 Prefix allocation). Paxman capability with one grammar + three rules. See [Citations](citations/).
+
 **IBAN** — International Bank Account Number (ISO 13616-1:2020). Paxman capability with one grammar + one rule. See [Citations](citations/).
 
 **ISBN** — International Standard Book Number (ISO 2108:2017, plus ISBN Users' Manual and Range Message). Paxman capability. See [Citations](citations/).

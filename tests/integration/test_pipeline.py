@@ -458,26 +458,26 @@ class TestGrammarRuleAffinity:
 
     @pytest.mark.integration
     @pytest.mark.parametrize("output_format", [None, "ISO", "US"])
-    def test_date_ambiguity_holds_after_formatting_before_status(
+    def test_date_ambiguity_holds_for_every_output_format(
         self, output_format: str | None
     ) -> None:
         """01/02/2026 is recognized by both US and EU grammars; both rules
         validate both notations, yielding two distinct canonical dates.
 
-        The engine formats each canonical value (to the requested format, or
-        ISO by default) before deduplication and status, so the formatted
-        candidate values remain two distinct values and the result is
-        AMBIGUOUS for every requested format.
+        Status reads the canonical, pre-format values: two distinct
+        canonical dates make the result AMBIGUOUS for every requested
+        format, and the surfaced candidates remain two distinct formatted
+        values under each.
         """
         register_capability(DateCapability())
         contract = DateCapability.create_contract(output_format=output_format)
         result = run_capability("01/02/2026", contract)
 
-        # Formatting precedes status: the two distinct canonical dates render
-        # as two distinct formatted values, so the status must be AMBIGUOUS.
+        # Identity reads canonical values: two distinct canonical dates ->
+        # AMBIGUOUS regardless of how each is rendered.
         assert result.status == Resolution.AMBIGUOUS
         assert len(result.candidates) == 4
-        # Two genuinely distinct formatted values -> AMBIGUOUS (not SUCCESS).
+        # Two genuinely distinct values -> AMBIGUOUS (not SUCCESS).
         assert len({c.value for c in result.candidates}) == 2
 
     @pytest.mark.integration
@@ -494,10 +494,10 @@ class TestGrammarRuleAffinity:
     def test_date_ambiguity_formatted_values_remain_two_distinct(self) -> None:
         """The two canonical dates stay distinct after formatting.
 
-        Formatting converts each canonical value before deduplication and
-        status: the default ISO and requested US formats each render the two
-        distinct canonical dates as two distinct formatted values, so the
-        result is AMBIGUOUS in both cases.
+        Status reads the canonical values, so the result is AMBIGUOUS in
+        both cases; the default ISO and requested US formats each render
+        the two distinct canonical dates as two distinct formatted values,
+        so the surfaced candidate values stay two distinct across formats.
         """
         register_capability(DateCapability())
         base = run_capability("01/02/2026", DateCapability.create_contract())
@@ -605,21 +605,31 @@ class TestCanonicalDeterminismAndCandidateOrder:
         assert isinstance(second.version_stamp.paxman_version, str)
 
     @pytest.mark.integration
-    def test_phone_formatting_precedes_dedup_two_extensions(self) -> None:
-        """Two tel URIs in one input fail fast (single-value invariant).
+    def test_phone_extension_pair_status_is_format_invariant(self) -> None:
+        """Two tel URIs sharing one canonical E.164 coalesce under any format.
 
-        The formatting-before-dedup property this previously exercised (two
-        ;ext= values that share a pre-format E.164 value) is now covered by
-        test_formatting_runs_before_dedup_and_status in
-        test_format_value_seam.py. Two tel URIs are un-segmented multi-entity
-        input, so the engine raises MultipleMentionsError.
+        Status reads canonical, pre-format values, so the offered rfc3966
+        format cannot flip the outcome relative to the default contract:
+        both resolve the extension pair to SUCCESS (one entity — the
+        canonical does not carry ``;ext=``), each rendering its own
+        presentation of the first mention. Before formatting moved to result
+        assembly, rfc3966 raised MultipleMentionsError here while the
+        default contract succeeded. Genuine multi-number input still fails
+        fast — see tests/integration/test_phone_pipeline.py.
         """
         register_capability(PhoneCapability())
-        contract = PhoneCapability.create_contract(output_format="rfc3966")
-        with pytest.raises(MultipleMentionsError):
-            run_capability(
-                "tel:+15551234567;ext=890 and tel:+15551234567;ext=891", contract
-            )
+        text = "tel:+15551234567;ext=890 and tel:+15551234567;ext=891"
+
+        rfc3966 = run_capability(
+            text, PhoneCapability.create_contract(output_format="rfc3966")
+        )
+        default = run_capability(text, PhoneCapability.create_contract())
+
+        assert rfc3966.status is Resolution.SUCCESS
+        assert default.status is Resolution.SUCCESS
+        assert rfc3966.canonicalized_value == "tel:+15551234567;ext=890"
+        assert default.canonicalized_value == "+15551234567"
+        assert rfc3966.version_stamp == default.version_stamp
 
 
 class TestISBNPipeline:

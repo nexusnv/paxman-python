@@ -51,6 +51,7 @@ from paxman.api.canonicalize import canonicalize
 from paxman.capabilities import (
     BIC,
     DOI,
+    GTIN,
     IBAN,
     IP,
     ISBN,
@@ -139,6 +140,13 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # ChemicalElement: tests/capabilities/chemical_element/test_capability.py
     # (symbol "Fe"; offered "name" renders lowercase "iron" which re-enters)
     _row(ChemicalElement, "Iron", "Fe"),
+    # GTIN: tests/capabilities/gtin/test_capability.py — 14-digit canonical;
+    # the offered native rendering re-enters via the spelled-length slice
+    # (identity for a true GTIN-14).
+    _row(GTIN, "00614141999996", "00614141999996"),
+    # GTIN indicator-1 variant: prefix 061 read at view[1:4] (the GTIN-14
+    # prefix sits after the indicator digit); check digit hand-verified.
+    _row(GTIN, "10614141999993", "10614141999993"),
     # IBAN: tests/capabilities/iban/test_capability.py
     # ::test_format_value_paper_roundtrip (electronic)
     _row(IBAN, "GB29NWBK60161331926819", "GB29NWBK60161331926819"),

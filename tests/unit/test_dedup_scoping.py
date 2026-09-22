@@ -4,7 +4,9 @@ The ``keep_dup`` escape hatch used to be capability-wide: any grammar with a
 ``CandidatesMatcher(strategy="all")`` disabled span dedup for every
 candidate. It is now per-grammar: only candidates whose source grammar opted
 in skip dedup; every other grammar still dedups by
-``(value, recognition_rule, validation_rule)``.
+``(value, recognition_rule, validation_rule)`` over the candidate's
+canonical (pre-format) value, and the deduped result keeps each
+candidate's source rep paired for the presentation seam.
 """
 
 from __future__ import annotations
@@ -111,19 +113,19 @@ def test_duplicates_survive_only_for_opted_in_grammar() -> None:
     deduped = _dedup_candidates(
         collected, keep_duplicate_spans_for=frozenset({"us_recognition"})
     )
-    assert [(c.value, c.recognition_rule) for c in deduped] == [
+    assert [(c.value, c.recognition_rule) for c, _rep in deduped] == [
         ("2026-01-02", "us_recognition"),
         ("2026-01-02", "us_recognition"),
         ("X", "first_probe_a"),
     ]
-    assert _determine_status(deduped, True) is Resolution.AMBIGUOUS
+    assert _determine_status([c for c, _rep in deduped], True) is Resolution.AMBIGUOUS
 
 
 def test_empty_opt_in_set_dedups_everything() -> None:
     """No opt-in behaves like the legacy dedup-everything path."""
     collected = _two_grammar_collection()
     deduped = _dedup_candidates(collected, keep_duplicate_spans_for=frozenset())
-    assert [(c.value, c.recognition_rule) for c in deduped] == [
+    assert [(c.value, c.recognition_rule) for c, _rep in deduped] == [
         ("2026-01-02", "us_recognition"),
         ("X", "first_probe_a"),
     ]

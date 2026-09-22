@@ -1,0 +1,1 @@
+"""GTIN recognition grammars."""

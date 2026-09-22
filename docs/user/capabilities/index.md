@@ -38,6 +38,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit/) |
 | `https://example.com`, `http://münchen.de` | [URL](url/) |
 | `DEUTDEFF`, `DEUTDEFF500` | [BIC](bic/) |
+| `00614141999996`, `GTIN: 00196618007309`, `6 14141 99999 6` | [GTIN](gtin/) |
 | `48.8566, 2.3522`, `geo:48.8566,2.3522` | [Coordinates](coordinates/) |
 | `Fe`, `iron`, `element 26` | [ChemicalElement](chemical_element/) |
 | `DE89370400440532013000` | [IBAN](iban/) |

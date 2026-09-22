@@ -210,8 +210,8 @@ round-trip exactly.
   `VersionStamp.recognition_revision` (§13), and the suppression machinery
   (`COMMON_WORDS` + `suppress_common_words`) whose interaction is recorded here.
 - `paxman/engine/orchestrator.py` — `run_capability()`, `ExecutionResult`,
-  `_determine_status()`, `_collect_candidates()` (the `format_value()` call site), and the
-  `VersionStamp` construction (lines 136-138).
+  `_determine_status()`, `_collect_candidates()` (canonical values, pre-format), and the
+  `VersionStamp` construction.
 - `paxman/core/capability_contract.py` — `DEFAULT_OUTPUT_FORMAT`, `OFFERED_OUTPUT_FORMATS`,
   `output_format` resolution, `active_grammars`, `pinned_rules`/`excluded_rules`/`year`,
   `suppress_common_words`.

@@ -197,6 +197,7 @@ Current defaults and offered alternatives:
 | ISSN | `hyphenated` | `compact`, `urn` |
 | ISIN | `isin` | `grouped` |
 | LEI | `lei` | `urn` |
+| GTIN | `gtin14` | `native` |
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
 | MacAddress | `colon` | `hyphen`, `bare`, `cisco`, `eui64` |
 | ORCID | `orcid` | `uri`, `compact` |
@@ -218,6 +219,7 @@ Current defaults and offered alternatives:
 | IP | `include_ipv6` | `bool` | `True` | IPv6 |
 | ISBN | `include_isbn10` | `bool` | `True` | Legacy ISBN-10 |
 | ISBN | `include_range_validation` | `bool` | `False` | Registrant-range provenance |
+| GTIN | `include_verified` | `bool` | `False` | Verified-by-GS1 liveness lookup |
 | Money | `dollar_sign_currency` | `str \| None` | `None` | Resolve bare `$` amount to this alpha-3 code |
 | Money | `precision` | `str` | `"strict"` | `strict` / `truncate` / `round` for over-precision amounts |
 | Phone | `default_country` | `str \| None` | `None` | Interpret national numbers as if in this alpha-2 country |
@@ -338,6 +340,7 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Serial identifiers | ISSN | `ISSN.create_contract(...)` |
 | Securities identification numbers | ISIN | `ISIN.create_contract(...)` |
 | Legal entity identifiers | LEI | `LEI.create_contract(...)` |
+| Trade item identifiers | GTIN | `GTIN.create_contract(...)` |
 | Language identifiers | Language | `Language.create_contract(...)` |
 | MAC addresses | MacAddress | `MacAddress.create_contract(...)` |
 | Researcher identifiers | ORCID | `ORCID.create_contract(...)` |

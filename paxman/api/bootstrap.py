@@ -7,6 +7,7 @@ from typing import Any
 from paxman.capabilities import (
     BIC,
     DOI,
+    GTIN,
     IBAN,
     IP,
     ISBN,
@@ -45,6 +46,7 @@ _SHIPPED: tuple[type[Capability[Any]], ...] = (
     Date,
     DOI,
     Email,
+    GTIN,
     IBAN,
     IP,
     ISBN,

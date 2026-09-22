@@ -1,0 +1,1 @@
+"""GTIN rules data package."""

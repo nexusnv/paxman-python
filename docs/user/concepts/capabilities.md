@@ -91,6 +91,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **DOI** | Digital object identifiers (ISO 26324) | bare names, resolver URLs, `doi:` labels, `urn:doi:`/`info:doi/` carriers | bare lowercase `10.` name (`"10.1038/nature12345"`) |
 | **ISIN** | Securities identification numbers (ISO 6166) | compact 12-char codes, single-space groupings, `ISIN` labels | compact uppercase (`"US0378331005"`) |
 | **LEI** | Legal entity identifiers (ISO 17442) | compact 20-char codes, single-space forms, `LEI` labels, `urn:lei:` carriers | compact uppercase (`"5493000IBP32UQZ0KL24"`) |
+| **GTIN** | Trade item identifiers (GS1) | compact 8/12/13/14 runs, zero-padded 14-digit fields, space/hyphen groupings, `GTIN`/`UPC`/`EAN` labels, `(01)`/`AI 01` markers | 14-digit zero-padded (`"00614141999996"`); `native` offers the spelled length |
 
 > This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts/) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/).
 

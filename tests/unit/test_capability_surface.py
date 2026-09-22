@@ -27,6 +27,8 @@ from paxman.capabilities.DOI.contract import DOIContract
 from paxman.capabilities.Email.capability import EmailCapability
 from paxman.capabilities.Email.contract import EmailContract
 from paxman.capabilities.Email.notation import EmailNotation
+from paxman.capabilities.GTIN.capability import GTINCapability
+from paxman.capabilities.GTIN.contract import GTINContract
 from paxman.capabilities.IBAN.capability import IBANCapability
 from paxman.capabilities.IBAN.contract import IBANContract
 from paxman.capabilities.IP.capability import IPCapability
@@ -131,6 +133,12 @@ _CAPABILITY_SURFACES = [
         IPContract,
         "ip",
         id="ip",
+    ),
+    pytest.param(
+        GTINCapability,
+        GTINContract,
+        "gtin14",
+        id="gtin",
     ),
     pytest.param(
         IBANCapability,
