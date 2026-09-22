@@ -52,7 +52,7 @@ From the Phase 1C survey (ISO catalogue pages, GLEIF namespace/API/search/concat
 | Truncated / over-long | 19-char / 21-char runs | length guard (McZen: exactly 20) | invalid | REJECT | never 19/21 (`MISSING`) |
 | Lapsed-renewal LEIs | structurally valid, registry-stale | Wikipedia validity (code unchanged on renewal/transfer) | valid input | RECOGNIZE | status is not checked (liveness ≠ validity) |
 
-A v1 that does NOT recognize hyphen-grouped or URL-embedded forms states that explicitly here AND raises it as an Open Decision (§13 rows 9/11) so downstream planners see the deliberate scope cut.
+A v1 that does NOT recognize hyphen-grouped forms states that explicitly here AND raises it as an Open Decision (§13 row 9) so downstream planners see the deliberate scope cut. URL-path-embedded forms ARE recognized via word_only boundaries (§13 row 11 resolution note).
 
 ### 2.2 Wild variants — adversarial mutations of each inventoried form
 
@@ -77,7 +77,7 @@ Enumerated from GLEIF pages, concatenated-file dumps, and real validators; stres
 | 15 | Transposed pair | adjacent-swap of a valid LEI | MOD 97-10 detects nearly all single transpositions → `INVALID` |
 | 16 | Unknown LOU prefix, checksum valid | fabricated `ZZZZ…` + valid check | grammar claims, LOU rule rejects |
 | 17 | Retired-LOU prefix, checksum valid | old issuer block, valid check | SUCCESS (snapshot never removes) |
-| 18 | GLEIF-URL embedded | `…/record/5493000IBP32UQZ0KL24` | v1 `MISSING` for the LEI capability (deferred) |
+| 18 | GLEIF-URL embedded | `…/record/5493000IBP32UQZ0KL24` | SUCCESS — carved at the `/`/`#` boundary via word_only (ISIN precedent); URL-level semantics remain the URL capability's ownership |
 
 **Real-world regex / validation snippets (ecosystem evidence):**
 
