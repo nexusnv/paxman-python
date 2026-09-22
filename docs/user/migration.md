@@ -381,7 +381,7 @@ the [Citations](citations/) ISO/GLEIF rows.
 `GTIN` (14-digit zero-padded canonical, `native` `spelled-length` offered
 encoding, GS1 General Specifications 26.0 structure + Mod-10 check digit
 plus GS1 Prefix allocation membership, optional Verified-by-GS1 snapshot
-lookup behind `include_verified=False`) is registered by
+lookup enabled by `include_verified=True` (default `False`, disabled)) is registered by
 `register_all_shipped()` (now 25 shipped). No migration required — existing
 contracts are byte-identical. See the [GTIN guide](capabilities/gtin/) and
 the [Citations](citations/) GS1 rows.

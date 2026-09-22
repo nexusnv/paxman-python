@@ -187,7 +187,7 @@ except MultipleMentionsError:
 
 - **GS1 General Specifications (GenSpecs) 26.0** §1 GTIN structure — lengths 8/12/13/14, ASCII digits, and the Mod-10 check digit (weights 3/1 rightmost-anchored, `(10 - sum % 10) % 10`) — `Section 1-gtin-structure-check-digit` (`PARSER`). Specification at `https://ref.gs1.org/standards/genspecs/`.
 - **GS1 Prefix allocation** — leading-digit membership over the published MO ranges plus the 4-character GTIN-8 exception blocks; native digits are tested (never the zero padding) — `Section 2-gs1-prefix` (`LOOKUP_TABLE`, always active, so every `SUCCESS` is corroborated by both the structure and the prefix authority). Reference at `https://www.gs1.org/standards/id-keys/company-prefix`.
-- **Verified by GS1** — issued/live registration in the Verified snapshot (add-only, shipped empty) — `Section 3-verified-liveness` (`LOOKUP_TABLE`, gated behind `include_verified=False`). Service at `https://www.gs1.org/services/verified-by-gs1`.
+- **Verified by GS1** — issued/live registration in the Verified snapshot (add-only, shipped empty) — `Section 3-verified-liveness` (`LOOKUP_TABLE`, enabled by `include_verified=True`; default `False`, disabled). Service at `https://www.gs1.org/services/verified-by-gs1`.
 
 Each candidate's `validation_rule` carries the section, and `candidate.provenance[0].publication_year` the year.
 

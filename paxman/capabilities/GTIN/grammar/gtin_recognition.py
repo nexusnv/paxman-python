@@ -43,6 +43,8 @@ _GTIN_AI_RE = re.compile(
 
 # Exact-length alternation, longest-first: 14/13/12/8 digits with
 # space/hyphen tolerance. 6/7/9/10/11/15+ are unmatchable by construction.
+# The (01)/AI 01 prefix nests only in the 14-digit branch (GS1 AI 01
+# carries a 14-digit field); 13/12/8-digit branches are unprefixed.
 # Trailing (?![-]\d) blocks hyphen-digit continuation (ISBN-13 precedent).
 # Trailing (?!\w) mirrors the WORD boundary's right guard inside the
 # regex (ASCII input; fullwidth/non-ASCII runs are rejected upstream):
@@ -53,8 +55,8 @@ _GTIN_AI_RE = re.compile(
 # start, losing the first mention entirely ("5012345670003 614141999996"
 # would recognize only the second GTIN).
 _GTIN_BODY = (
-    r"(?:\(01\)[\s:-]*|AI\s+01[\s:-]+)?"
-    r"(?:(?:\d[ \-]?){13}\d|(?:\d[ \-]?){12}\d|(?:\d[ \-]?){11}\d|(?:\d[ \-]?){7}\d)"
+    r"(?:(?:\(01\)[\s:-]*|AI\s+01[\s:-]+)?(?:\d[ \-]?){13}\d"
+    r"|(?:\d[ \-]?){12}\d|(?:\d[ \-]?){11}\d|(?:\d[ \-]?){7}\d)"
     r"(?!\w)(?![-]\d)"
 )
 
@@ -63,9 +65,11 @@ def _gtin_emit(span: tuple[int, int], ctx: ScanContext) -> GTINNotation:
     raw = ctx.text[span[0] : span[1]]
     rest = _GTIN_LABEL_RE.sub("", raw, count=1)
     ai_match = _GTIN_AI_RE.match(rest)
-    has_ai = ai_match is not None
-    if has_ai:
-        rest = rest[ai_match.end() :]  # type: ignore[index]
+    if ai_match is not None:
+        has_ai = True
+        rest = rest[ai_match.end() :]
+    else:
+        has_ai = False
     digits = "".join(ch for ch in rest if ch in "0123456789")
     return GTINNotation(digits=digits, native_length=len(digits), has_ai=has_ai)
 
