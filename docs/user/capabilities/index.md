@@ -26,6 +26,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `user@example.com`, `user at example dot com` | [Email](email/) |
 | `2026-01-15`, `01/02/2026`, `2026/01/15` | [Date](date/) |
 | `US`, `United States`, `Alemania` | [Country](country/) |
+| `4111 1111 1111 1111`, `3782 822463 10005`, `PAN: 4716-2210-5188-5662` | [CreditCard](credit_card/) |
 | `USD`, `$`, `euro`, `¥` (identifiers without amounts) | [Currency](currency/) |
 | `192.168.1.1`, `2001:db8::1` | [IP](ip/) |
 | `9780306406157`, `0306406152` | [ISBN](isbn/) |

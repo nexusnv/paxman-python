@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 25 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 26 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -23,11 +23,12 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
 | **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562 | Email, IP, Phone, Language, Coordinates, UUID | 9 |
 | **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
-| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021, ISO 17442-1:2020 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN, LEI | 26 |
+| **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021, ISO 17442-1:2020, ISO/IEC 7812-1:2017 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN, LEI, CreditCard | 26 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ANNA** | ANNA ISIN Guidelines V25 (Dec 2025) | ISIN | 1 |
 | **GLEIF** | GLEIF LOU prefix list (accredited-LOU directory + concatenated-file census) | LEI | 1 |
 | **GS1** | GS1 General Specifications 26.0, GS1 Prefix allocation, Verified by GS1 | GTIN | 3 |
+| **Brand networks** | Brand IIN/length tables (secondary) | CreditCard | 1 |
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
 | **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 6 |
@@ -94,7 +95,7 @@ Specification for the Timezone rows: **IANA Time Zone Database**, release 2026d 
 
 ## ISO — International Organization for Standardization
 
-Across 14 ISO publications (25 rules):
+Across 15 ISO publications (26 rules):
 
 | Capability | Specification | Version | Rule | Citation | Year | Reference |
 |------------|---------------|---------|------|----------|------|-----------|
@@ -123,6 +124,7 @@ Across 14 ISO publications (25 rules):
 | Language | ISO 639-5:2008 | 2008 | `Section 4-collective-code` | Section 4 (collective code, 115 entries) | 2008 | https://www.iso.org/standard/39536.html |
 | SI Unit | ISO 80000-1:2022 Quantities and units — Part 1: General | 2022 | `Section 6.5-compounds` | ISO 80000-1:2022, §6.5 (unit symbols in products and quotients) | 2022 | https://www.iso.org/standard/76921.html |
 | UtcOffset | ISO 8601-1:2019 | 2019 | `Section offset-structure` | ISO 8601-1:2019 Section 3 (offset representations); RFC 3339 Section 5.6 (time-numoffset +-HH:MM, Z) | 2019 | https://www.iso.org/standard/70907.html |
+| CreditCard | ISO/IEC 7812-1:2017 | 2017 | `Section 5-pan-structure-luhn` | ISO/IEC 7812-1:2017 Section 5 (structure) + Annex B (Luhn MOD-10) | 2017 | https://www.iso.org/standard/70484.html |
 
 All ISO entries are `lifecycle="active"`. ISO 3166-1 entries are `kind="registry"`; ISO 3166-3, ISO 8601, ISO 2108, ISO 13616-1, ISO 639-* and ISO 80000-1 are `kind="specification"`; ISO 4217 is `kind="specification"` with `version=None` (the code list is maintained by the ISO 4217 Maintenance Agency — see citation).
 
@@ -173,6 +175,16 @@ Specifications: **GS1 General Specifications** — `https://ref.gs1.org/standard
 | GTIN | `Section 1-gtin-structure-check-digit` | Section 1 (GTIN structure + Mod-10 check digit) |
 | GTIN | `Section 2-gs1-prefix` | Section 2 (GS1 prefix allocation) |
 | GTIN | `Section 3-verified-liveness` | Section 3 (Verified by GS1 liveness) |
+
+---
+
+## Brand networks
+
+Specification: **Brand IIN/length tables (secondary)** — `https://en.wikipedia.org/wiki/Payment_card_number` — `kind="registry"`, `version="Rolling 2026"`, `lifecycle="active"`, `publication_year=2026`.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| CreditCard | `Section 1-brand-prefix-membership` | Brand IIN/length tables (secondary) |
 
 ---
 

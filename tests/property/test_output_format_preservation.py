@@ -76,6 +76,7 @@ from paxman.capabilities import (
     ChemicalElement,
     Coordinates,
     Country,
+    CreditCard,
     Date,
     Language,
     MacAddress,
@@ -143,6 +144,12 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("country", "alpha3"): "encoding",
     ("country", "name"): "encoding",
     ("country", "numeric"): "encoding",
+    # -- CreditCard ----------------------------------------------------------
+    # grouped: groups-of-4 re-chunk of the compact digits — separator-only
+    # re-encoding, no information change (measured: canonicalize(W,
+    # default) lands string-exact on the compact for every row; the 15/14
+    # digit canonicals re-chunk 4-4-4-3 / 4-4-4-2, never brand 4-6-5).
+    ("credit_card", "grouped"): "encoding",
     # -- Date ----------------------------------------------------------------
     ("date", "US"): "encoding",
     # -- DOI -----------------------------------------------------------------
@@ -378,6 +385,14 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "country", Country, "numeric", "United States", "United Kingdom", ""
     ),
     _InjectivityPair("country", Country, "name", "United States", "United Kingdom", ""),
+    _InjectivityPair(
+        "credit_card",
+        CreditCard,
+        "grouped",
+        "4111111111111111",
+        "378282246310005",
+        "distinct 16- vs 15-digit renderings",
+    ),
     _InjectivityPair("date", Date, "US", "2026-01-15", "2026-02-03", ""),
     _InjectivityPair("chemical_element", ChemicalElement, "name", "Fe", "Au", ""),
     # BIC: different entities — NOT the DEUTDEFF/DEUTDEFFXXX merge pair

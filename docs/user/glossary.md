@@ -44,6 +44,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Country** — Paxman capability for ISO 3166 country codes/names, with optional CLDR localized and historical coverage. See per-capability guide under [Capabilities](capabilities/).
 
+**CreditCard** — Paxman capability for payment card numbers (ISO/IEC 7812-1:2017 structure + Luhn MOD-10), with opt-in brand IIN/length validation. See [Capabilities](capabilities/) and [Citations](citations/).
+
 **Currency** — Paxman capability for ISO 4217 currency identifiers (no amounts). See [Capabilities](capabilities/) and [Citations](citations/).
 
 ---

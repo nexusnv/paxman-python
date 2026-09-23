@@ -277,6 +277,7 @@ class TestURLCapabilityExports:
             "ChemicalElement",
             "Coordinates",
             "Country",
+            "CreditCard",
             "Currency",
             "Date",
             "DOI",

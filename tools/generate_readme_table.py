@@ -31,6 +31,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     ),
     "coordinates": ("WGS 84 coordinates", "ISO 6709:2022, RFC 5870, RFC 7946"),
     "country": ("Country codes/names", "ISO 3166, CLDR"),
+    "credit_card": (
+        "Payment card numbers",
+        "ISO/IEC 7812-1:2017, brand IIN/length tables",
+    ),
     "currency": ("Currency identifiers", "ISO 4217, CLDR"),
     "date": (
         "Dates",
@@ -74,6 +78,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "bic": "BIC",
     "coordinates": "Coordinates",
     "country": "Country",
+    "credit_card": "CreditCard",
     "currency": "Currency",
     "date": "Date",
     "doi": "DOI",
