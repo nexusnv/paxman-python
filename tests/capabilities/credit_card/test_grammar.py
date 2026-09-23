@@ -187,6 +187,36 @@ def test_homoglyph_fullwidth_missing(grammar: Grammar) -> None:
     assert grammar.recognize(fullwidth + "4111111111111111") == []
 
 
+def test_unicode_digit_never_fabricated(grammar: Grammar) -> None:
+    # ASCII-only recognition: a non-ASCII digit (Arabic-Indic, full-width)
+    # inside or beside a run must never be silently dropped to fabricate a
+    # PAN that was not written. Before the [0-9] body fix, Unicode \d matched
+    # these digits and _pan_emit filtered them out, yielding a Luhn-valid
+    # value (e.g. "3٠78282246310005" -> "378282246310005") from input that
+    # never contained it — a fabrication that violated the no-fabrication
+    # invariant and the documented ASCII-only contract.
+    assert grammar.recognize("3٠78282246310005") == []  # Arabic-Indic zero
+    assert grammar.recognize("PAN: ４111111111111111") == []  # full-width 4
+    assert grammar.recognize("411111111111111٣") == []  # Arabic-Indic three
+
+
+def test_left_soft_run_caps_at_twelve() -> None:
+    # Perf regression guard: the backward walk caps at 12 because the caller
+    # only distinguishes 0 / 1-11 / >=12 (frag >= 12 is a separate mention,
+    # never blocked). Without the cap, a long digit run was rescanned in full
+    # at every scan position — O(n^2): 20k digits took ~40s through
+    # canonicalize(). The cap keeps recognition linear; the guard decision is
+    # unchanged because 12 and any larger count both fall outside 1..11.
+    from paxman.capabilities.CreditCard.grammar.pan_recognition import (
+        _left_soft_run_digits,
+    )
+
+    assert _left_soft_run_digits("1" * 5000, 5000) == 12  # capped, not 5000
+    assert _left_soft_run_digits("1" * 11, 11) == 11  # under cap: exact
+    assert _left_soft_run_digits("1 2 3", 5) == 3  # separators counted out
+    assert _left_soft_run_digits("", 0) == 0  # empty: no run
+
+
 def test_span_invariants(grammar: Grammar) -> None:
     texts = [
         "4111111111111111",

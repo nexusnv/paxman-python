@@ -1,10 +1,11 @@
-"""PAN recognition — 12-19 digits, space/hyphen grouped, optional label.
+r"""PAN recognition — 12-19 digits, space/hyphen grouped, optional label.
 
 Kernel ScannerMatcher with the four-guard set: word guards (in-pattern
 lookarounds + BoundarySpec.WORD), trailing date guard, joined-run orphan
 guard, and the scan-side left joined-run guard (Python re forbids
-variable-width lookbehind). ASCII-digit filtering lives only in
-``_pan_scan``/``_pan_emit`` — the engine discards the scan payload.
+variable-width lookbehind). The body/guards use ASCII [0-9] (never
+Unicode \d) and ``_pan_emit`` keeps only ASCII digits — the engine
+discards the scan payload.
 """
 
 from __future__ import annotations
@@ -37,12 +38,18 @@ _PAN_LABEL_RE = re.compile(
 #                    the same space/tab/hyphen run (a sub-floor fragment);
 #                    a >=12 continuation is a separate mention and is left
 #                    for the next scan position (two matches).
-_DATE_GUARD = r"(?!\s\d+/)"
-_ORPHAN_GUARD = r"(?!(?:[ \t\-]?\d){1,11}(?![0-9/]))"
+# Digit classes are [0-9], never Unicode \d: Python re \d matches every
+# Unicode decimal digit, but _pan_emit only keeps ASCII digits, so a \d in
+# the body would let a non-ASCII digit be silently dropped and fabricate a
+# PAN that was never written (ASCII-only contract, no-fabrication invariant).
+_DATE_GUARD = r"(?!\s[0-9]+/)"
+_ORPHAN_GUARD = r"(?!(?:[ \t\-]?[0-9]){1,11}(?![0-9/]))"
 _PAN_BODY_RE = re.compile(
     BoundaryGuard.word_only().lookbehind
     + "(?:"
-    + "|".join(rf"(?:\d{_DATE_GUARD}[ \-]?){{{n - 1}}}\d" for n in range(19, 11, -1))
+    + "|".join(
+        rf"(?:[0-9]{_DATE_GUARD}[ \-]?){{{n - 1}}}[0-9]" for n in range(19, 11, -1)
+    )
     + ")"
     + BoundaryGuard.word_only().lookahead
     + _ORPHAN_GUARD
@@ -52,11 +59,24 @@ _SOFT_RUN = frozenset("0123456789 \t-")
 
 
 def _left_soft_run_digits(subject: str, body_start: int) -> int:
-    """Digits in the space/tab/hyphen run ending just before ``body_start``."""
+    """Digits in the soft run ending just before ``body_start``, capped at 12.
+
+    The caller only distinguishes 0 / 1-11 / >=12, so once 12 digits are
+    counted the exact total is irrelevant. The cap bounds each call to O(12)
+    work instead of rescanning the entire preceding run, keeping recognition
+    linear on long digit runs (the uncapped walk was O(n^2): 20k digits took
+    ~40s through canonicalize()). The guard decision is unchanged — 12 and
+    any larger count both fall outside 1..11, so neither blocks the claim.
+    """
+    count = 0
     i = body_start
     while i > 0 and subject[i - 1] in _SOFT_RUN:
         i -= 1
-    return sum(1 for ch in subject[i:body_start] if "0" <= ch <= "9")
+        if "0" <= subject[i] <= "9":
+            count += 1
+            if count >= 12:
+                break
+    return count
 
 
 def _pan_scan(view: View, pos: int) -> tuple[int, str] | None:
