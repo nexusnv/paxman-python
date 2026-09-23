@@ -170,6 +170,10 @@ def _create_contract(
         from paxman.capabilities import Email
 
         return Email.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "gtin":
+        from paxman.capabilities import GTIN
+
+        return GTIN.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "iban":
         from paxman.capabilities import IBAN
 

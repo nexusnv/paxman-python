@@ -1,0 +1,1 @@
+"""GTIN validation rules."""

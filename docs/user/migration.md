@@ -376,6 +376,16 @@ check digits plus GLEIF LOU prefix-list membership) is registered by
 contracts are byte-identical. See the [LEI guide](capabilities/lei/) and
 the [Citations](citations/) ISO/GLEIF rows.
 
+### Unreleased — New capability: GTIN (additive)
+
+`GTIN` (14-digit zero-padded canonical, `native` `spelled-length` offered
+encoding, GS1 General Specifications 26.0 structure + Mod-10 check digit
+plus GS1 Prefix allocation membership, optional Verified-by-GS1 snapshot
+lookup enabled by `include_verified=True` (default `False`, disabled)) is registered by
+`register_all_shipped()` (now 25 shipped). No migration required — existing
+contracts are byte-identical. See the [GTIN guide](capabilities/gtin/) and
+the [Citations](citations/) GS1 rows.
+
 ### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
 
 The `element` capability is renamed to `chemical_element` to reserve the

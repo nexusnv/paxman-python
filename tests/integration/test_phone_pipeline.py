@@ -143,21 +143,32 @@ class TestPhonePipeline:
         assert len(result.candidates) == 1
 
     @pytest.mark.integration
-    def test_two_tel_uris_differing_only_by_extension_ambiguous(self) -> None:
-        """Two tel URIs in one input fail fast (single-value invariant).
+    def test_two_tel_uris_differing_only_by_extension_coalesce(self) -> None:
+        """Extension pairs share one canonical E.164: one entity, not two.
 
-        The formatting-before-dedup property this previously exercised (two
-        ;ext= values that share a pre-format E.164 value) is now covered by
-        test_formatting_runs_before_dedup_and_status in
-        test_format_value_seam.py. Two tel URIs are un-segmented multi-entity
-        input, so the engine raises MultipleMentionsError.
+        The canonical value does not carry ``;ext=`` — ``rfc3966`` is the
+        only extension-preserving format, re-appending it from the
+        notation — so two tel URIs differing only by extension resolve to
+        the SAME canonical value. Identity reads canonical values, so the
+        pair coalesces to SUCCESS under every offered format, rendered as
+        the first mention's rfc3966 URI; the default contract agrees
+        (SUCCESS, bare E.164). Previously rfc3966 raised
+        MultipleMentionsError while the default format succeeded —
+        ``output_format`` had leaked into candidate identity.
+        Genuinely distinct numbers still fail fast (see
+        ``test_multi_number_ambiguous`` above).
         """
         register_capability(PhoneCapability())
-        contract = PhoneCapability.create_contract(output_format="rfc3966")
-        with pytest.raises(MultipleMentionsError):
-            run_capability(
-                "tel:+15551234567;ext=890 and tel:+15551234567;ext=891", contract
-            )
+        text = "tel:+15551234567;ext=890 and tel:+15551234567;ext=891"
+        rfc3966 = run_capability(
+            text, PhoneCapability.create_contract(output_format="rfc3966")
+        )
+        default = run_capability(text, PhoneCapability.create_contract())
+
+        assert rfc3966.status is Resolution.SUCCESS
+        assert rfc3966.canonicalized_value == "tel:+15551234567;ext=890"
+        assert default.status is Resolution.SUCCESS
+        assert default.canonicalized_value == "+15551234567"
 
     @pytest.mark.integration
     def test_pinned_rules_only(self) -> None:

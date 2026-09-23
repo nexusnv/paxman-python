@@ -21,6 +21,7 @@ __all__ = [
     "DOI",
     "Date",
     "Email",
+    "GTIN",
     "IBAN",
     "IP",
     "ISBN",
@@ -54,6 +55,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DOI": ("paxman.capabilities.DOI.capability", "DOICapability"),
     "Date": ("paxman.capabilities.Date.capability", "DateCapability"),
     "Email": ("paxman.capabilities.Email.capability", "EmailCapability"),
+    "GTIN": ("paxman.capabilities.GTIN.capability", "GTINCapability"),
     "IBAN": ("paxman.capabilities.IBAN.capability", "IBANCapability"),
     "IP": ("paxman.capabilities.IP.capability", "IPCapability"),
     "ISBN": ("paxman.capabilities.ISBN.capability", "ISBNCapability"),
@@ -85,6 +87,7 @@ if TYPE_CHECKING:
     from paxman.capabilities.Date.capability import DateCapability as Date
     from paxman.capabilities.DOI.capability import DOICapability as DOI
     from paxman.capabilities.Email.capability import EmailCapability as Email
+    from paxman.capabilities.GTIN.capability import GTINCapability as GTIN
     from paxman.capabilities.IBAN.capability import IBANCapability as IBAN
     from paxman.capabilities.IP.capability import IPCapability as IP
     from paxman.capabilities.ISBN.capability import ISBNCapability as ISBN
