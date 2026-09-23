@@ -40,6 +40,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Date:** `DateNotation(N1, N2, N3)` → `["N1", "N2", "N3"]` (position-sensitive: grammar determines meaning)
 - **Country:** `CountryNotation(shape, value)` — `shape` discriminates `"alpha2"` / `"alpha3"` / `"numeric"` / `"name"`; `value` is the raw input (e.g., `"US"`, `"USA"`, `"840"`, `"United States"`)
 - **Coordinates:** `CoordinatesNotation(latitude, longitude, altitude, coord_shape, compact)` — `latitude`/`longitude` are sign-normalized decimal-degree strings (minus only, no trailing zeros, `-0` folded to `0`, quantized to 6dp round-half-even), lat-first regardless of input order; `altitude` is metres as decimal string or `None`; `coord_shape` discriminates `"dd"` / `"ddm"` / `"dms"` / `"iso6709"` / `"geo_uri"` / `"geojson"`; `compact` is `f"{lat}, {lon}"` (+ `", {alt}"` when present). Grammar recognizes decimal pairs (signed or hemisphere-letter `N/S/E/W`, separators `[\s,;/]+`, optional `COORD`/`LAT` label), DMS/DDM with `°`/`D`/`*`, `′`/`'`/`m`, `″`/`"`/`s` and `''`→`″` fold, Geo URI `geo:lat,lon[,alt][;crs=wgs84][;u=...]`, ISO 6709 string-expression `±DD.DDD±DDD.DDD[/]` with optional altitude and `CRSWGS_84`, and GeoJSON lon-first bracketed pairs `[lon, lat[,alt]]`
+- **CreditCard:** `PANNotation(digits, compact)` — `digits` is the PAN as contiguous ASCII digits (12–19), the canonical input shape; `compact` is the separator-free copy of `digits` and always equals it. Grammar recognizes compact runs, space/hyphen groupings (4-4-4-4, Amex 4-6-5, 14-digit), mixed separators, and `PAN:`/`card number:`/`credit card`/`cc` labels
 - **Currency:** `CurrencyNotation(text, shape)` — `shape` is `"code"` / `"qualified_symbol"` / `"symbol"` / `"word"`; codes are grammar-folded to uppercase, words to lowercase, symbols keep exact casing
 - **Money:** `MoneyNotation(currency_part, amount_part, currency_shape, amount_shape)` — verbatim currency + amount tokens with grammar-assigned shape discriminators
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
@@ -72,13 +73,14 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-five built-in capabilities (25 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-six built-in capabilities (26 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
 | **BIC** | Business identifier codes | ISO 9362:2022, ISO 3166-1 (country codes plus XK) |
 | **Coordinates** | WGS 84 coordinates | ISO 6709:2022, RFC 5870, RFC 7946 |
 | **Country** | Country codes/names | ISO 3166, CLDR |
+| **CreditCard** | Payment card numbers | ISO/IEC 7812-1:2017, brand IIN/length tables |
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
 | **DOI** | Digital object identifiers | ISO 26324:2025 |
@@ -827,7 +829,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (25 capabilities, alphabetical; paxman/capabilities/__init__.py exports 25), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (26 capabilities, alphabetical; paxman/capabilities/__init__.py exports 26), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1036,7 +1038,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (25 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (26 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

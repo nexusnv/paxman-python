@@ -386,6 +386,16 @@ lookup enabled by `include_verified=True` (default `False`, disabled)) is regist
 contracts are byte-identical. See the [GTIN guide](capabilities/gtin/) and
 the [Citations](citations/) GS1 rows.
 
+### Unreleased — New capability: CreditCard (additive)
+
+`CreditCard` (compact contiguous 12–19-digit canonical, `pan` default /
+`grouped` offered groups-of-four encoding, ISO/IEC 7812-1:2017 structure +
+Luhn MOD-10 plus brand IIN/length membership enabled by
+`include_brand_validation=True` (default `False`, disabled)) is registered by
+`register_all_shipped()` (now 26 shipped). No migration required — existing
+contracts are byte-identical. See the [CreditCard guide](capabilities/credit_card/)
+and the [Citations](citations/) ISO and Brand networks rows.
+
 ### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
 
 The `element` capability is renamed to `chemical_element` to reserve the

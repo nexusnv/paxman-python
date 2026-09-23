@@ -17,6 +17,7 @@ __all__ = [
     "ChemicalElement",
     "Coordinates",
     "Country",
+    "CreditCard",
     "Currency",
     "DOI",
     "Date",
@@ -51,6 +52,7 @@ _LAZY: dict[str, tuple[str, str]] = {
         "CoordinatesCapability",
     ),
     "Country": ("paxman.capabilities.Country.capability", "CountryCapability"),
+    "CreditCard": ("paxman.capabilities.CreditCard.capability", "CreditCardCapability"),
     "Currency": ("paxman.capabilities.Currency.capability", "CurrencyCapability"),
     "DOI": ("paxman.capabilities.DOI.capability", "DOICapability"),
     "Date": ("paxman.capabilities.Date.capability", "DateCapability"),
@@ -83,6 +85,9 @@ if TYPE_CHECKING:
         CoordinatesCapability as Coordinates,
     )
     from paxman.capabilities.Country.capability import CountryCapability as Country
+    from paxman.capabilities.CreditCard.capability import (
+        CreditCardCapability as CreditCard,
+    )
     from paxman.capabilities.Currency.capability import CurrencyCapability as Currency
     from paxman.capabilities.Date.capability import DateCapability as Date
     from paxman.capabilities.DOI.capability import DOICapability as DOI

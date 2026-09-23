@@ -64,6 +64,7 @@ from paxman.capabilities import (
     ChemicalElement,
     Coordinates,
     Country,
+    CreditCard,
     Currency,
     Date,
     Email,
@@ -124,6 +125,14 @@ ROWS: tuple[_ReEntryRow, ...] = (
     _row(Coordinates, "51.5074, -0.1278", "51.5074, -0.1278"),
     # Country: tests/capabilities/country/test_capability.py (alpha2 canonical)
     _row(Country, "United States", "US"),
+    # CreditCard: tests/capabilities/credit_card/test_capability.py
+    # ::test_format_value_grouped_rechunk — spaced input collapses to the
+    # compact canonical; the offered grouped rendering re-enters via the
+    # separator-interleave branch (the 15-digit row pins the Amex re-chunk:
+    # renders "3782 8224 6310 005" — groups of 4, never brand 4-6-5 — and
+    # re-enters string-exact).
+    _row(CreditCard, "4111 1111 1111 1111", "4111111111111111"),
+    _row(CreditCard, "378282246310005", "378282246310005"),
     # Currency: tests/capabilities/currency/test_capability.py
     # ::test_code_is_identity
     _row(Currency, "USD", "USD"),

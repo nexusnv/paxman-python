@@ -148,6 +148,10 @@ def _create_contract(
         from paxman.capabilities import Country
 
         return Country.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "credit_card":
+        from paxman.capabilities import CreditCard
+
+        return CreditCard.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "currency":
         from paxman.capabilities import Currency
 

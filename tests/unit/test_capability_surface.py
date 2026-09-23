@@ -16,6 +16,8 @@ from paxman.capabilities.Coordinates.contract import CoordinatesContract
 from paxman.capabilities.Country.capability import CountryCapability
 from paxman.capabilities.Country.contract import CountryContract
 from paxman.capabilities.Country.notation import CountryNotation
+from paxman.capabilities.CreditCard.capability import CreditCardCapability
+from paxman.capabilities.CreditCard.contract import CreditCardContract
 from paxman.capabilities.Currency.capability import CurrencyCapability
 from paxman.capabilities.Currency.contract import CurrencyContract
 from paxman.capabilities.Currency.notation import CurrencyNotation
@@ -85,6 +87,12 @@ _CAPABILITY_SURFACES = [
         EmailContract,
         "email",
         id="email",
+    ),
+    pytest.param(
+        CreditCardCapability,
+        CreditCardContract,
+        "pan",
+        id="credit_card",
     ),
     pytest.param(
         DOICapability,
