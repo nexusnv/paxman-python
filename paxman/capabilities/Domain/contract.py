@@ -38,10 +38,9 @@ class DomainContract(CapabilityContract):
     # Non-default knobs, each DECLARED as requires_features on the rules
     # that would read them (none shipped in v1 — comments only):
     #   allow_single_label: bool = False     # "localhost"/intranet scope
-    #   allow_underscore:   bool = False     # DNS-legal vs STD3-illegal selectors
-    #   transitional:       bool = False     # PINNED False: True changes canonicals
-    #                                         #      (ß -> ss would break re-entry fixtures)
-    # suppress_common_words: inherited       # A0 whole-input exemption applies to bare words
+    #   allow_underscore:   bool = False     # DNS vs STD3 selector labels
+    #   transitional:       bool = False     # PINNED False (ss would break W7)
+    # suppress_common_words: inherited       # A0 exemption applies to words
 
     def __post_init__(self) -> None:
         super().__post_init__()

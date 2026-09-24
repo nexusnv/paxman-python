@@ -16,13 +16,14 @@ class TestDomainContract:
         assert DomainContract().output_format == "ascii"
 
     def test_offered_output_formats_is_unicode(self) -> None:
-        assert DomainContract.OFFERED_OUTPUT_FORMATS == frozenset({"unicode"})
+        assert frozenset({"unicode"}) == DomainContract.OFFERED_OUTPUT_FORMATS
 
     def test_output_format_resolution_variants(self) -> None:
         from paxman.capabilities.Domain.capability import DomainCapability
 
         assert DomainCapability.create_contract().output_format == "ascii"
-        assert DomainCapability.create_contract(output_format=None).output_format == "ascii"
+        none_format = DomainCapability.create_contract(output_format=None).output_format
+        assert none_format == "ascii"
         assert (
             DomainCapability.create_contract(output_format="default").output_format
             == "ascii"
@@ -63,10 +64,5 @@ class TestDomainContract:
         import inspect
 
         paragraphs = (inspect.getdoc(DomainContract) or "").split("\n\n")
-        assert (
-            sum(
-                "unicode" in para and "encoding" in para for para in paragraphs
-            )
-            == 1
-        )
+        assert sum("unicode" in para and "encoding" in para for para in paragraphs) == 1
         assert all("projection" not in para for para in paragraphs)

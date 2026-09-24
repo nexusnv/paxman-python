@@ -279,7 +279,7 @@ The shipped UTS #46 table (15.1.0) lives at
     `_MAPPED_STATUSES` :23; argparse `--check` :137-147 exits 1 on drift) and writes
     `grammar/data/idna_mapping.py` exporting `IDNA_VERSION: str`, `MAPPING: dict[int, str]`
     (mapped rows expanded — 5,698 rows → 5,935 codepoints, measured), `STATUSES: dict[str, str]`
-    (3,314 range keys — full int expansion would be ~10⁶ entries, infeasible: **documented
+    (9,012 range keys — full int expansion would be ~10⁶ entries, infeasible: **documented
     refinement**; `idna_processing` resolves range keys via a sorted-interval bisect built at
     import). `tools/regenerate_root_zone_tld_data.py` — **required** `--snapshot-version` (no
     clock; `--check` runs offline from the committed snapshot), fetches
