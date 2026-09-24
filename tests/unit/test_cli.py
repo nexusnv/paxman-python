@@ -12,3 +12,12 @@ def test_cli_creates_orcid_contract() -> None:
     contract = _create_contract("orcid")
     assert contract.capability_name == "orcid"
     assert contract.output_format == "orcid"
+
+
+@pytest.mark.unit
+def test_cli_domain_dispatch() -> None:
+    from paxman.cli import _create_contract
+
+    contract = _create_contract("domain")
+    assert contract.capability_name == "domain"
+    assert contract.output_format == "ascii"

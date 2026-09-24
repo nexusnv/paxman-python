@@ -67,6 +67,7 @@ from paxman.capabilities import (
     CreditCard,
     Currency,
     Date,
+    Domain,
     Email,
     Language,
     MacAddress,
@@ -143,6 +144,11 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # ::test_format_value_url_reenters — bare canonical; the offered url
     # rendering re-enters via the resolver-host carrier group.
     _row(DOI, "10.1038/nature12345", "10.1038/nature12345"),
+    # Domain: tests/capabilities/domain/test_capability_wild_variants.py
+    # (W1/W3-style inputs → A-label canonicals, all covered by the corpus).
+    _row(Domain, "example.com", "example.com"),
+    _row(Domain, "EXAMPLE.COM.", "example.com"),
+    _row(Domain, "münchen.de", "xn--mnchen-3ya.de"),
     # Email: tests/e2e/test_bootstrap.py
     # ::test_bootstrap_then_canonicalize_round_trip
     _row(Email, "user@example.com", "user@example.com"),
@@ -416,3 +422,15 @@ def test_reentry_under_suppression_padded_variants(
     second = canonicalize(value, contract)
     assert second.status is Resolution.SUCCESS
     assert second.canonicalized_value == value
+
+
+def test_a0_whole_input_common_word_domain() -> None:
+    """A0 whole-input exemption keeps bare-word recognition for Domain (#122).
+
+    ``de`` is a common word, but as the whole input it stays recognized;
+    single-label scope then fails lookup qualification → INVALID (a MISSING
+    regression would mean the A0 exemption was bypassed).
+    """
+    result = canonicalize("de", Domain.create_contract(suppress_common_words=True))
+    assert result.status == Resolution.INVALID
+    assert result.canonicalized_value is None

@@ -396,6 +396,15 @@ Luhn MOD-10 plus brand IIN/length membership enabled by
 contracts are byte-identical. See the [CreditCard guide](capabilities/credit_card/)
 and the [Citations](citations/) ISO and Brand networks rows.
 
+### Unreleased — New capability: Domain (additive)
+
+`Domain` (lowercase ASCII A-label canonical, `unicode` offered U-label
+encoding, RFC 1034/1035 structure + UTS #46 statuses with STD3 rules +
+RFC 5893 Bidi plus IANA Root Zone Database membership) is registered by
+`register_all_shipped()` (now 27 shipped). No migration required — existing
+contracts are byte-identical. See the [Domain guide](capabilities/domain/)
+and the [Citations](citations/) IETF, IANA, and Unicode Consortium rows.
+
 ### Unreleased — BREAKING: `Element` → `ChemicalElement` rename
 
 The `element` capability is renamed to `chemical_element` to reserve the

@@ -41,6 +41,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "ISO 8601-1:2019 §5.2.1.1, derived conventions (US/European locale)",
     ),
     "doi": ("Digital object identifiers", "ISO 26324:2025"),
+    "domain": (
+        "Hostnames",
+        "RFC 1034, RFC 1035, UTS #46, RFC 5893, IANA Root Zone Database",
+    ),
     "email": ("Email addresses", "RFC 5322, RFC 6761"),
     "gtin": ("Trade item identifiers", "GS1 General Specifications 26.0"),
     "chemical_element": (
@@ -82,6 +86,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "currency": "Currency",
     "date": "Date",
     "doi": "DOI",
+    "domain": "Domain",
     "email": "Email",
     "gtin": "GTIN",
     "chemical_element": "ChemicalElement",

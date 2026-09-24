@@ -60,6 +60,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **DOI** — Paxman capability for Digital Object Identifiers (ISO 26324:2025). Canonical form is the bare lowercase `10.registrant/suffix` name; `url` offered. See [Capabilities](capabilities/).
 
+**Domain** — Paxman capability for hostnames (RFC 1034/1035, UTS #46, RFC 5893, IANA Root Zone Database). Canonical form is the lowercase ASCII A-label dotted name; `unicode` offered. See [Capabilities](capabilities/).
+
 **Domain vocabulary** — The shared types defined in `paxman/core/domain.py` (`Rule`, `Grammar`, `Provenance`, `Candidate`, `RecognizedRep`, `Resolution`, `VersionStamp`, …). See `paxman/core` knowledge base.
 
 ---

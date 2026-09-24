@@ -26,6 +26,8 @@ from paxman.capabilities.Date.contract import DateContract
 from paxman.capabilities.Date.notation import DateNotation
 from paxman.capabilities.DOI.capability import DOICapability
 from paxman.capabilities.DOI.contract import DOIContract
+from paxman.capabilities.Domain.capability import DomainCapability
+from paxman.capabilities.Domain.contract import DomainContract
 from paxman.capabilities.Email.capability import EmailCapability
 from paxman.capabilities.Email.contract import EmailContract
 from paxman.capabilities.Email.notation import EmailNotation
@@ -87,6 +89,12 @@ _CAPABILITY_SURFACES = [
         EmailContract,
         "email",
         id="email",
+    ),
+    pytest.param(
+        DomainCapability,
+        DomainContract,
+        "ascii",
+        id="domain",
     ),
     pytest.param(
         CreditCardCapability,
