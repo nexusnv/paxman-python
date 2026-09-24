@@ -42,7 +42,9 @@ class Stage(Protocol[NotationT]):
     to ``state.matches`` and update ``scratch``.
     """
 
-    def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]: ...
+    def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Consume a state and return the updated state with text unchanged."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +54,7 @@ class StandardPre(Generic[NotationT]):
     empty_guard: bool = True
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Return state unchanged, or empty matches for blank input."""
         if self.empty_guard and not state.text.strip():
             return PipelineState(
                 text=state.text, matches=[], scratch=dict(state.scratch)
@@ -69,9 +72,11 @@ class RegexStage(Generic[NotationT]):
     _compiled: re.Pattern[str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """Compile the shape pattern once into the cached regex."""
         object.__setattr__(self, "_compiled", re.compile(self.pattern, self.flags))
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Append one match per pattern hit, preserving text and scratch."""
         if self.notation_fn is None:
             return state
         new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)
@@ -103,12 +108,14 @@ class LexiconStage(Generic[NotationT]):
     _compiled: re.Pattern[str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """Build the lexicon alternation and wrap it with the guard."""
         alt = LexiconAlternation(
             tokens=self.tokens, longest_first=self.longest_first
         ).alternation
         object.__setattr__(self, "_compiled", self.boundary.wrap(alt, self.flags))
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Append one match per guarded lexicon hit, preserving text."""
         if self.notation_fn is None:
             return state
         new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)
@@ -145,6 +152,7 @@ class PostStage(Generic[NotationT]):
     ]
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Map each match through the transform, dropping Nones."""
         new_matches: list[RecognitionMatch[NotationT]] = []
         for m in state.matches:
             result = self.transform(m)
@@ -171,6 +179,7 @@ class WholeInputLookup(Generic[NotationT]):
     notation_fn: Callable[[str], NotationT] | None = None
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Emit one match when the trimmed input is a known key."""
         if self.notation_fn is None:
             return state
         trimmed = state.text.strip()

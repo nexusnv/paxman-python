@@ -30,6 +30,7 @@ __all__ = [
 
 
 def _run_matchers(text: str, compiled: Sequence[Any]) -> list[RecognitionMatch[Any]]:
+    """Build a ScanContext for text and run compiled matchers over it."""
     context = ScanContext.of(text)
     return _run_matchers_with_context(context, compiled)
 
@@ -50,6 +51,7 @@ _VIEW_REGISTRY: dict[str, Normalizer] = {
 
 
 def _resolve_view(context: ScanContext, view_name: str | None) -> Any:
+    """Return the cached normalized view for a matcher, or identity view."""
     if view_name is None:
         return context.view("__orig__", lambda t: (t, None, None))
     normalizer = _VIEW_REGISTRY.get(view_name)
@@ -86,6 +88,7 @@ def _run_matchers_with_context(
     *,
     suppressed_out: list[tuple[int, int]] | None = None,
 ) -> list[RecognitionMatch[Any]]:
+    """Run matchers with anchors, views, boundaries, and suppression."""
     text = context.text
     suppress_on = contract is not None and bool(
         getattr(contract, "suppress_common_words", False)

@@ -32,6 +32,8 @@ ScanFn = Callable[[View, int], tuple[int, Any] | None]
 
 @dataclass(frozen=True, slots=True)
 class ScannerMatcher:
+    """Position-scanning matcher with window and boundary enforcement."""
+
     scan: ScanFn
     view_name: str | None = None
     view: str | None = None
@@ -43,6 +45,7 @@ class ScannerMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        """Validate emit, check view aliases, and compute the digest."""
         _validate_emit(self.emit, type(self).__name__)
         if (
             self.view is not None

@@ -46,6 +46,7 @@ class RegexMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        """Validate emit, compile the pattern, and compute the digest."""
         _validate_emit(self.emit, type(self).__name__)
         try:
             compiled = re.compile(self.pattern, self.flags)
@@ -58,6 +59,7 @@ class RegexMatcher:
         object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Find all pattern spans in ``view`` subject with boundary checks."""
         out: list[tuple[int, int]] = []
         for m in self._compiled.finditer(view.subject):
             s, e = m.start(), m.end()

@@ -1,3 +1,5 @@
+"""Core public surface — domain vocabulary, contracts, registries, errors."""
+
 from paxman.core.capability import Capability
 from paxman.core.capability_contract import CapabilityContract
 from paxman.core.discovery import (

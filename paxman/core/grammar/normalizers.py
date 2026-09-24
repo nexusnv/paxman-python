@@ -23,18 +23,26 @@ class Normalizer(Protocol):
     """
 
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """View name this normalizer materializes."""
+        ...
 
     @property
-    def provenance(self) -> Provenance | None: ...
+    def provenance(self) -> Provenance | None:
+        """Provenance for this rewrite, or None when provenance-free."""
+        ...
 
     # Chars the normalizer strips that matchers may re-absorb into spans.
     @property
-    def stripped_chars(self) -> str | None: ...
+    def stripped_chars(self) -> str | None:
+        """Stripped chars matchers may re-absorb, or None when none."""
+        ...
 
     def normalize(
         self, text: str
-    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]: ...
+    ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Rewrite text into (subject, starts, ends) with source mapping."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,10 +63,12 @@ class NormalizerSequence:
 
     @property
     def name(self) -> str:
+        """Joined step names identifying the composed view."""
         return "+".join(s.name for s in self.steps)
 
     @property
     def provenance(self) -> Provenance | None:
+        """First non-None step provenance, or None when all are free."""
         for s in self.steps:
             if s.provenance is not None:
                 return s.provenance
@@ -67,6 +77,7 @@ class NormalizerSequence:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Thread text through each step, composing offset maps."""
         cur = text
         cur_starts: tuple[int, ...] | None = None
         cur_ends: tuple[int, ...] | None = None
@@ -203,6 +214,8 @@ class NormalizerSequence:
 
 @dataclass(frozen=True, slots=True)
 class CaseFold:
+    """Lowercase view for case-insensitive scanning with identity offsets."""
+
     name: str = "casefolded"
     provenance: Provenance | None = None
     stripped_chars: str | None = None
@@ -210,11 +223,14 @@ class CaseFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Lowercase text, returning identity (None, None) offsets."""
         return text.lower(), None, None
 
 
 @dataclass(frozen=True, slots=True)
 class SeparatorFold:
+    """BCP 47 view rewriting underscores to hyphens with identity offsets."""
+
     name: str = "normalized"
     provenance: Provenance | None = Provenance(
         authority="IETF",
@@ -230,11 +246,14 @@ class SeparatorFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Rewrite underscores to hyphens with identity offsets."""
         return text.replace("_", "-"), None, None
 
 
 @dataclass(frozen=True, slots=True)
 class AccentStrip:
+    """NFD accent-strip plus lowercase view with identity offsets."""
+
     name: str = "normalized"
     provenance: Provenance | None = Provenance(
         authority="CLDR",
@@ -250,6 +269,7 @@ class AccentStrip:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Strip Mn marks via NFD and lowercase with identity offsets."""
         nfd = unicodedata.normalize("NFD", text)
         stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
         return stripped.lower(), None, None
@@ -291,6 +311,7 @@ class CountryNameFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Fold to spaced lowercase alphanumerics with source offsets."""
         if not text:
             return "", (), ()
         nfd = unicodedata.normalize("NFD", text)
@@ -342,6 +363,8 @@ class CountryNameFold:
 
 @dataclass(frozen=True, slots=True)
 class SymbolFold:
+    """SI symbol view mapping superscripts and micro signs to ASCII."""
+
     name: str = "normalized"
     provenance: Provenance | None = Provenance(
         authority="BIPM",
@@ -365,6 +388,7 @@ class SymbolFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Apply the symbol table rewrites with identity offsets."""
         for src, dst in self._table:
             text = text.replace(src, dst)
         return text, None, None
@@ -372,6 +396,8 @@ class SymbolFold:
 
 @dataclass(frozen=True, slots=True)
 class StripSeparators:
+    """Compact view stripping spaces and phone separators with offsets."""
+
     name: str = "compact"
     provenance: Provenance | None = Provenance(
         authority="ITU-T",
@@ -387,6 +413,7 @@ class StripSeparators:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Strip space, paren, dot, and hyphen chars with source offsets."""
         subject_chars: list[str] = []
         starts: list[int] = []
         for i, ch in enumerate(text):
@@ -427,6 +454,7 @@ class IDNAFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
+        """Strip tab/LF/CR characters with source offsets."""
         cleaned_chars: list[str] = []
         starts: list[int] = []
         for idx, ch in enumerate(text):

@@ -22,10 +22,12 @@ _WORD_RE = re.compile(r"\w", re.UNICODE)
 
 
 def _default_emit(span: tuple[int, int], _ctx: Any) -> tuple[int, int]:
+    """Identity emit returning ``span`` unchanged."""
     return span
 
 
 def _build_trie(tokens: frozenset[str]) -> dict[str, Any]:
+    """Build a char trie from ``tokens`` with ``_end`` terminal markers."""
     trie: dict[str, Any] = {}
     for token in tokens:
         node: dict[str, Any] = trie
@@ -59,6 +61,7 @@ class LexiconMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        """Validate emit, pick trie/alternation, compile, compute digest."""
         _validate_emit(self.emit, type(self).__name__)
         tokens_digest = hashlib.sha256(
             "\x00".join(sorted(self.tokens)).encode("utf-8")
@@ -77,6 +80,7 @@ class LexiconMatcher:
             object.__setattr__(self, "_trie", trie)
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Match lexicon tokens with boundary checks, longest-first."""
         if self._chosen == "alternation":
             assert self._compiled is not None
             out: list[tuple[int, int]] = []

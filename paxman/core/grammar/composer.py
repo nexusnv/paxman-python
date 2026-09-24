@@ -68,6 +68,7 @@ class AmountComposer(Generic[NotationT]):
     _compiled: re.Pattern[str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """Compile the fused either-order lexicon-plus-amount regex."""
         if self.lexicon_tokens is None:
             alt = r"[A-Z]{3}"
         else:
@@ -85,6 +86,7 @@ class AmountComposer(Generic[NotationT]):
         object.__setattr__(self, "_compiled", re.compile(fused, self.flags))
 
     def run(self, state: PipelineState[NotationT]) -> PipelineState[NotationT]:
+        """Scan text with the fused regex, appending one match per hit."""
         if self.notation_fn is None or self.classify is None:
             return state
         new_matches: list[RecognitionMatch[NotationT]] = list(state.matches)

@@ -33,6 +33,7 @@ class LexiconAlternation:
     alternation: str = field(init=False)
 
     def __post_init__(self) -> None:
+        """Sort tokens and build the escaped alternation string."""
         toks = list(self.tokens)
         if self.longest_first:
             toks.sort(key=lambda t: (-len(t), -int(_is_qualified(t)), t))
