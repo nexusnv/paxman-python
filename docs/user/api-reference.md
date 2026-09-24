@@ -205,6 +205,7 @@ Current defaults and offered alternatives:
 | Timezone | `iana` | *(none — single format)* |
 | UtcOffset | `extended` | `basic` |
 | UUID | `hyphenated` | `compact`, `braced`, `urn` |
+| Domain | `ascii` | `unicode` |
 
 > The set of capabilities — and their offered formats — grows over time. Treat this table as the current release, not a closed list.
 
@@ -351,5 +352,6 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | UTC offset values | UtcOffset | `UtcOffset.create_contract(...)` |
 | UUIDs | UUID | `UUID.create_contract(...)` |
 | Digital object identifiers | DOI | `DOI.create_contract(...)` |
+| Hostnames | Domain | `Domain.create_contract(...)` |
 
 New capabilities appear in minor releases — check `paxman.capabilities` for the current set. Each per-capability guide under [Capabilities](capabilities/) details its recognized forms, output formats, contract flags, and provenance.

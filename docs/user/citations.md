@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 26 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 27 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -21,8 +21,8 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | Authority | Specifications | Capabilities | Rules |
 |-----------|---------------|--------------|-------|
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
-| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562 | Email, IP, Phone, Language, Coordinates, UUID | 9 |
-| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d | Language, Timezone | 6 |
+| **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562, RFC 1034, RFC 1035, RFC 5893 | Email, IP, Phone, Language, Coordinates, UUID, Domain | 12 |
+| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d; IANA Root Zone Database (tlds-alpha v2026092300) | Language, Timezone, Domain | 7 |
 | **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021, ISO 17442-1:2020, ISO/IEC 7812-1:2017 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN, LEI, CreditCard | 26 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ANNA** | ANNA ISIN Guidelines V25 (Dec 2025) | ISIN | 1 |
@@ -32,6 +32,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **ITU-T** | E.164 (2010) | Phone | 2 |
 | **NANPA** | North American Numbering Plan (NANP) (2024) | Phone | 2 |
 | **Unicode Consortium (CLDR)** | CLDR v45, Unicode CLDR v47, CLDR Language Display Names v46 | Country, Currency, Money, Language | 6 |
+| **Unicode Consortium** | UTS #46 v18.0.0 (shipped table 15.1.0) | Domain | 1 |
 | **SIL International (ISO 639-3 RA)** | ISO 639-3:2007 | Language | 2 |
 | **International ISBN Agency** | ISBN Users' Manual (2012), ISBN Range Message (2026-08-05) | ISBN | 2 |
 | **WHATWG** | URL Standard (Living Standard) | URL | 1 |
@@ -71,6 +72,9 @@ Specification: **SI Brochure: The International System of Units (SI)**, 9th edit
 | Coordinates | RFC 5870 | 2010 | `Section 3.3-geo-uri-validity` | Section 3.3 (Geo URI validity) | 2010 | https://www.rfc-editor.org/rfc/rfc5870.txt |
 | Coordinates | RFC 7946 | 2016 | `Section 3.1.1-position` | Section 3.1.1 (Position) | 2016 | https://www.rfc-editor.org/rfc/rfc7946.txt |
 | UUID | RFC 9562 | 2024 | `Section 4-uuid-format` | Section 4 (128-bit format; hex-and-dash ABNF, no checksum, no registry) | 2024 | https://www.rfc-editor.org/rfc/rfc9562 |
+| Domain | RFC 1034 | 1987 | `Section-3.1-name-syntax` | Section 3.1 (name syntax: ≥2 labels, no empty label) | 1987 | https://www.rfc-editor.org/rfc/rfc1034 |
+| Domain | RFC 1035 | 1987 | `Section-2.3.4-label-length` | Section 2.3.4 (63 octets/label, 253 chars/name post-encode) | 1987 | https://www.rfc-editor.org/rfc/rfc1035 |
+| Domain | RFC 5893 | 2010 | `Section-2-bidi-context` | Section 2 (Bidi rule six conditions, plus ContextJ) | 2010 | https://www.rfc-editor.org/rfc/rfc5893 |
 
 All IETF entries are `kind="specification"`, `lifecycle="active"`.
 
@@ -88,8 +92,11 @@ Specification: **IANA Language Subtag Registry**, Rolling File-Date 2026-08-08 �
 | Timezone | `Section link-resolution` | backward Link TARGET LINK-NAME lines (vendored File-Date 2026d) |
 | Timezone | `Section systemv-zones` | backward SystemV Zones EST5EDT/CST6CDT/MST7MDT/PST8PDT (vendored File-Date 2026d) |
 | Timezone | `Section abbreviation-refusal` | theory.html abbreviation ambiguity (IST/CST/PST) + backward short-caps Links carve set (vendored File-Date 2026d) |
+| Domain | `root-zone-membership` | tlds-alpha snapshot membership (encoded TLD must be delegated; 1,438 entries) |
 
 Specification for the Timezone rows: **IANA Time Zone Database**, release 2026d — `https://www.iana.org/time-zones` (membership/link/systemv) and `https://data.iana.org/time-zones/theory.html` (abbreviation refusal) — `kind="registry"`, `lifecycle="active"`, `publication_year=2026`.
+
+Specification for the Domain row: **IANA Root Zone Database** (tlds-alpha-by-domain.txt v2026092300) — `https://data.iana.org/TLD/tlds-alpha-by-domain.txt` — `kind="registry"`, `version="IANA tlds-alpha v2026092300"`, `lifecycle="active"`, `publication_year=2026`.
 
 ---
 
@@ -222,6 +229,14 @@ Specification: **North American Numbering Plan (NANP)**, `https://www.nanpa.com/
 | Language | CLDR Language Display Names | 46 | `Section-localized-names` | CLDR v46 localized language display names | 2025 | https://www.unicode.org/cldr/charts/46/summary/root.html | registry |
 
 Authority field in provenance is either `"Unicode"` (Country) or `"Unicode CLDR"` (Currency/Money/Language), both referring to the Unicode CLDR project. All are `lifecycle="active"`.
+
+## Unicode Consortium — UTS #46
+
+Specification: **UTS #46 v18.0.0**, Unicode IDNA Compatibility Processing — `https://www.unicode.org/reports/tr46/` — `kind="specification"`, `version="18.0.0"`, `lifecycle="active"`, `publication_year=2026`, `authority="Unicode"`. The shipped mapping table is UTS #46 15.1.0 (shared in-tree text with URL); STD3 rules ON, non-transitional processing.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| Domain | `UTS46-statuses` | Statuses + STD3 + hyphen checks + ACE round trip (shipped table 15.1.0) |
 
 ---
 

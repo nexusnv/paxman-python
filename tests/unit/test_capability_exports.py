@@ -281,6 +281,7 @@ class TestURLCapabilityExports:
             "Currency",
             "Date",
             "DOI",
+            "Domain",
             "Email",
             "GTIN",
             "IBAN",

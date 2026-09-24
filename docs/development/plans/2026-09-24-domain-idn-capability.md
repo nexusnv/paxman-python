@@ -931,7 +931,9 @@ Verify: `uv run pytest tests/property/test_reentry_invariant.py tests/property/t
       `test_bootstrap.py` — `"domain",` between "doi" (:37)/"email" (:38) and :74 `== 25` → `== 26`.
 - [ ] Benchmark: `benchmarks/scenarios.py` — `_domain_register` (after `_country_register` :10),
       `_domain_contract` (after :21), SCENARIOS row between `date` (:215) and `email`, keys
-      `capability/text/register/contract_factory`, input `"münchen.DE."`.
+      `capability/text/register/contract_factory`, input `"münchen.DE."`; bump
+      `tests/integration/test_benchmark_harness.py:40` `== 14` → `== 15` (eighth count surface —
+      found during implementation, not in the reference set).
 - [ ] Docs: README :69 table row + regenerate via
       `uv run python tools/generate_readme_table.py` (run only; the tool is unchanged); CONTEXT
       :76/:832/:1041 (capability count + Notation/table entries); ARCHITECTURE :83; AGENTS

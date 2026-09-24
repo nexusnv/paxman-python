@@ -93,6 +93,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **LEI** | Legal entity identifiers (ISO 17442) | compact 20-char codes, single-space forms, `LEI` labels, `urn:lei:` carriers | compact uppercase (`"5493000IBP32UQZ0KL24"`) |
 | **GTIN** | Trade item identifiers (GS1) | compact 8/12/13/14 runs, zero-padded 14-digit fields, space/hyphen groupings, `GTIN`/`UPC`/`EAN` labels, `(01)`/`AI 01` markers | 14-digit zero-padded (`"00614141999996"`); `native` offers the spelled length |
 | **CreditCard** | Payment card numbers (ISO/IEC 7812-1) | compact 12–19-digit runs, space/hyphen groupings (4-4-4-4, 4-6-5, 14-digit), `PAN` labels | contiguous digits (`"4111111111111111"`); `grouped` offers groups-of-four |
+| **Domain** | Hostnames (RFC 1034/1035, UTS #46, RFC 5893, IANA Root Zone) | bare FQDNs any case, root dots, U-labels, ACE labels, fullwidth/dot variants, embedded mentions | lowercase A-label (`"xn--mnchen-3ya.de"`); `unicode` offers the U-label rendering |
 
 > This table is an overview. Each capability's contract documents its specific flags (e.g. `include_localized` for Country, `default_country` for Phone). See [Contracts](contracts/) and the [README](https://github.com/nexusnv/paxman-python#readme) examples for per-capability details; each row is expanded into its own guide under [Capabilities](../capabilities/).
 

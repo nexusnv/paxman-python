@@ -58,6 +58,23 @@ def _date_contract() -> object:
     return Date.create_contract()
 
 
+def _domain_register() -> None:
+    from paxman.capabilities import Domain
+    from paxman.core.discovery import get_capability, register_capability
+    from paxman.core.errors import CapabilityError
+
+    try:
+        get_capability("domain")
+    except CapabilityError:
+        register_capability(Domain())
+
+
+def _domain_contract() -> object:
+    from paxman.capabilities import Domain
+
+    return Domain.create_contract()
+
+
 def _email_register() -> None:
     from paxman.capabilities import Email
     from paxman.core.discovery import get_capability, register_capability
@@ -217,6 +234,12 @@ SCENARIOS: list[dict] = [
         "text": "2026-01-15",
         "register": _date_register,
         "contract_factory": _date_contract,
+    },
+    {
+        "capability": "domain",
+        "text": "münchen.DE.",
+        "register": _domain_register,
+        "contract_factory": _domain_contract,
     },
     {
         "capability": "email",

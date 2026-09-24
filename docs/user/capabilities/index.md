@@ -49,6 +49,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `UTC+5`, `+05:30`, `Z` | [UtcOffset](utcoffset/) |
 | `6ba7b810-9dad-11d1-80b4-00c04fd430c8`, `{…}`, `urn:uuid:…` | [UUID](uuid/) |
 | `10.1038/nature12345`, `https://doi.org/10.1038/…`, `doi:10.1038/…` | [DOI](doi/) |
+| `example.com`, `münchen.de`, `XN--MNCHEN-3YA.de` | [Domain](domain/) |
 
 > The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
 

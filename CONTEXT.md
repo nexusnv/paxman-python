@@ -55,6 +55,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **SIUnit:** `SIUnitNotation(text, shape)` — `shape` is `"symbol"` / `"name"` / `"compound"` / `"split_word_prefix"` / `"split_symbol_prefix"`; `text` is the unit expression as written (symbols keep exact casing, names are grammar-folded to lowercase, compounds keep the written form)
 - **ChemicalElement:** `ChemicalElementNotation(token, shape)` — `shape` discriminates `"symbol"` / `"name"` / `"atomic_number"`; `token` is the grammar-normalized designation (symbols in IUPAC case e.g. `Fe`, names lowercase e.g. `iron`, atomic numbers bare digits e.g. `26`); symbol matching is case-exact (`FE` unclaimed), names case-insensitive, atomic numbers label-required (`element 26` / `Z=26` — bare `26` unclaimed)
 - **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
+- **Domain:** `DomainNotation(raw, labels, tld)` — `raw` is the matched span text verbatim (original case, original trailing dot); `labels` is the UTS #46 mapped, NFC-normalized tuple with one trailing empty label stripped; `tld` is the last mapped label; no `canonical` field — the A-label canonical is built by `finalize()` inside each `normalize()`
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
 ### Notation Type Example
@@ -73,7 +74,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-six built-in capabilities (26 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-seven built-in capabilities (27 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -84,6 +85,7 @@ Paxman ships twenty-six built-in capabilities (26 in `paxman/capabilities/__init
 | **Currency** | Currency identifiers | ISO 4217, CLDR |
 | **Date** | Dates | ISO 8601, US federal, EN 50160 |
 | **DOI** | Digital object identifiers | ISO 26324:2025 |
+| **Domain** | Hostnames | RFC 1034, RFC 1035, UTS #46, RFC 5893, IANA Root Zone Database |
 | **ChemicalElement** | Chemical elements | IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022 |
 | **Email** | Email addresses | RFC 5322, RFC 6761 |
 | **GTIN** | Trade item identifiers | GS1 General Specifications 26.0 |
@@ -829,7 +831,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (26 capabilities, alphabetical; paxman/capabilities/__init__.py exports 26), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (27 capabilities, alphabetical; paxman/capabilities/__init__.py exports 27), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1038,7 +1040,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (26 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (27 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

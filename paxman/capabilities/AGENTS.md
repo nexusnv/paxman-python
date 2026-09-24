@@ -1,7 +1,7 @@
 # CAPABILITIES KNOWLEDGE BASE
 
 ## OVERVIEW
-The deepest directory in the repo (349 py files): 26 shipped capability packages (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Email, GTIN, IBAN, IP, ISBN, ISIN, ISSN, Language, LEI, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
+The deepest directory in the repo (367 py files): 27 shipped capability packages (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISSN, Language, LEI, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID), each an independent recognize→validate→resolve mini-system wired into the shared pipeline via `paxman.core`. Each package is self-contained: grammars recognize representations, rules assign meaning with provenance, the contract selects what runs, and `format_value()` renders the result.
 
 **Authoritative spec:** the root `HOW_TO_ADD_NEW_CAPABILITY.md` (62KB — read it before touching this directory). This file is the compact governance reference: intended architecture, hard rules, and known legacy exceptions. Where the two differ, HOW_TO wins.
 
@@ -64,5 +64,5 @@ Every capability must conform to the same structural surface. `CapabilityContrac
 - When extending an existing capability, check whether the file you're touching is a flagged legacy exception before copying its style; new code follows the intended architecture.
 
 ## NOTES
-- `__init__.py` exports all twenty-six shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN, ISSN, ISIN, DOI, LEI, and CreditCard are the minimal-surface members (1 grammar + 1–2 rules each).
+- `__init__.py` exports all twenty-seven shipped capabilities; completeness is enforced by `tests/unit/test_capability_exports.py`. IBAN, ISSN, ISIN, DOI, LEI, and CreditCard are the minimal-surface members (1 grammar + 1–2 rules each).
 - Root AGENTS.md is authoritative for pipeline flow, domain objects, and quality gates; this file adds capability-package structure and governance specifics.
