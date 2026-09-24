@@ -44,7 +44,9 @@ def status_of(codepoint: int) -> str:
         start, end, status = _STATUS_INTERVALS[idx]
         if start <= codepoint <= end:
             return status
-    return "valid"
+    # Unreachable with the shipped table (verified gapless over
+    # 0x0-0x10FFFF); documents the UTS #46 unlisted-means-valid default.
+    return "valid"  # pragma: no cover
 
 
 def map_domain(text: str) -> tuple[str, ...]:

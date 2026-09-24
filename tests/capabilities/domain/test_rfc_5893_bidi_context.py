@@ -49,6 +49,23 @@ class TestRfc5893BidiContext:
     def test_rtl_label_rejects_an_en_mix(self) -> None:
         assert self.rule.matches(_notation("م٠2", "com"), self.contract) is False
 
+    def test_rtl_label_trailing_nsm_accepted(self) -> None:
+        # Conditions 3/6 allow zero or more trailing NSM (U+0300 here).
+        assert self.rule.matches(_notation("مثال\u0300", "com"), self.contract) is True
+
+    def test_bidi_skips_empty_label(self) -> None:
+        # Emptiness is rfc_1034's jurisdiction; bidi judges the rest.
+        assert bidi_ok(_notation("مثال", "", "com")) is True
+
+    def test_rtl_label_rejects_bad_end(self) -> None:
+        # Condition 3: RTL labels must end R/AL/EN/AN (+ NSM) — "!" is ON.
+        assert self.rule.matches(_notation("مثال!", "com"), self.contract) is False
+
+    def test_ltr_label_rejects_bad_end(self) -> None:
+        # Condition 6: LTR labels must end L/EN — "-" is ES (allowed inside).
+        # The name must be Bidi (an RTL label present) for conditions to apply.
+        assert self.rule.matches(_notation("ab-", "مثال"), self.contract) is False
+
     def test_contextj_join_control_rejected(self) -> None:
         # ZWNJ is deviation (kept by the non-transitional map); the six
         # conditions would pass (BN allowed) — the explicit ContextJ check

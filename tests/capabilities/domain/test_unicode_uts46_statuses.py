@@ -38,6 +38,9 @@ class TestUnicodeUts46Statuses:
     def test_rejects_ace_label_with_empty_payload(self) -> None:
         assert self.rule.matches(_notation("xn--", "com"), self.contract) is False
 
+    def test_rejects_ace_label_with_undecodable_payload(self) -> None:
+        assert self.rule.matches(_notation("xn--!!!!", "com"), self.contract) is False
+
     def test_rejects_underscore_std3(self) -> None:
         assert self.rule.matches(_notation("_dmarc", "com"), self.contract) is False
 

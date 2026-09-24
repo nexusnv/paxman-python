@@ -101,10 +101,26 @@ class TestIdnaProcessing:
 
         assert ace_decode_ok("xn--mnchen-3ya") is True
 
+    def test_ace_decode_ok_non_ace_passthrough(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        assert ace_decode_ok("example") is True
+
     def test_ace_decode_ok_rejects_empty_payload(self) -> None:
         from paxman.capabilities.Domain.idna_processing import ace_decode_ok
 
         assert ace_decode_ok("xn--") is False
+
+    def test_ace_decode_ok_rejects_undecodable_payload(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        assert ace_decode_ok("xn--!!!!") is False
+
+    def test_ace_decode_ok_rejects_empty_decode(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        # "-" decodes to "" — the empty-decode bypass guard.
+        assert ace_decode_ok("xn---") is False
 
     def test_ace_decode_ok_rejects_non_ascii_payload(self) -> None:
         from paxman.capabilities.Domain.idna_processing import ace_decode_ok
@@ -122,6 +138,21 @@ class TestIdnaProcessing:
         from paxman.capabilities.Domain.idna_processing import ace_decode
 
         assert ace_decode("xn--") == "xn--"
+
+    def test_ace_decode_non_ace_passthrough(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode
+
+        assert ace_decode("example") == "example"
+
+    def test_ace_decode_failure_returns_label(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode
+
+        assert ace_decode("xn--!!!!") == "xn--!!!!"
+
+    def test_ace_decode_empty_decode_returns_label(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode
+
+        assert ace_decode("xn---") == "xn---"
 
     def test_finalize_joins_ace_labels(self) -> None:
         from paxman.capabilities.Domain.idna_processing import finalize
