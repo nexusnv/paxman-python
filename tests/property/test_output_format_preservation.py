@@ -78,6 +78,7 @@ from paxman.capabilities import (
     Country,
     CreditCard,
     Date,
+    Domain,
     Language,
     MacAddress,
     Money,
@@ -157,6 +158,11 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     # re-enters the default contract onto the bare value via the host
     # carrier group (measured in TestDOICapability).
     ("doi", "url"): "encoding",
+    # -- Domain --------------------------------------------------------------
+    # unicode: Punycode decode of each xn-- label — same-entity encoding of
+    # the A-label canonical; decode∘encode is the identity on validated
+    # labels, so the rendering re-enters the default contract exactly.
+    ("domain", "unicode"): "encoding",
     # -- GTIN ----------------------------------------------------------------
     # native: encoding — zero-strip/zero-pad is reversible without side
     # input (canonicalize(W, default) re-pads string-exactly to V for every
@@ -320,6 +326,8 @@ class _InjectivityPair:
 # empirically). Quantized formats (Coordinates dms/dm) are deliberately
 # absent: sub-quantum neighbors may share a rendering there (their class).
 _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
+    # Domain unicode: distinct U-labels stay distinct after ACE round trip.
+    _InjectivityPair("domain", Domain, "unicode", "münchen.de", "straße.de", ""),
     # Language alpha2 carries subtags, so distinct regions stay distinct.
     _InjectivityPair(
         "language", Language, "alpha2", "en-US", "en-GB", "region subtags"
