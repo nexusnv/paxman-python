@@ -1,0 +1,1 @@
+"""domain capability tests (scaffold)."""

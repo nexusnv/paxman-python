@@ -814,7 +814,8 @@ Verify: `uv run pytest tests/capabilities/domain/test_iana_root_zone_membership.
       `from paxman.capabilities import (...)` between `Date,` (:25) and `Email,` (:26), and its
       `_SHIPPED` entry **exactly between the DOI (:49) and Email (:50) entries**.
       `paxman/capabilities/__init__.py` — three anchors: `__all__` after `Date` (:23), `_LAZY`
-      after `Date` (:58), TYPE_CHECKING import between `Date` (:92) and `DOI` (:93)
+      after `Date` (:58), TYPE_CHECKING import after `DOI` (ruff-isort ground truth:
+      case-insensitive `Date < DOI < Domain < Email`)
       (scaffolder may already have wired these — verify, don't duplicate).
 - [ ] CLI: `paxman/cli.py` — dispatch branch after the `doi` branch (ends :166), before
       `chemical_element` (:167):
