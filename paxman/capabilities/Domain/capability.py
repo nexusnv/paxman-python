@@ -9,7 +9,19 @@ from paxman.capabilities.Domain.grammar.ascii_hostname import (
     AsciiHostnameGrammar,
 )
 from paxman.capabilities.Domain.notation import DomainNotation
+from paxman.capabilities.Domain.rules.iana_root_zone_membership import (
+    IanaRootZoneMembership,
+)
 from paxman.capabilities.Domain.rules.rfc_1034_name_syntax import Rfc1034NameSyntax
+from paxman.capabilities.Domain.rules.rfc_1035_label_length import (
+    Rfc1035LabelLength,
+)
+from paxman.capabilities.Domain.rules.rfc_5893_bidi_context import (
+    Rfc5893BidiContext,
+)
+from paxman.capabilities.Domain.rules.unicode_uts46_statuses import (
+    UnicodeUts46Statuses,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
@@ -29,7 +41,13 @@ class DomainCapability(Capability[DomainNotation]):
 
     def get_rules(self) -> list[Rule[DomainNotation]]:
         """Return the default validation rule instances."""
-        return [Rfc1034NameSyntax()]
+        return [
+            Rfc1034NameSyntax(),
+            Rfc1035LabelLength(),
+            UnicodeUts46Statuses(),
+            Rfc5893BidiContext(),
+            IanaRootZoneMembership(),
+        ]
 
     @staticmethod
     def create_contract(
