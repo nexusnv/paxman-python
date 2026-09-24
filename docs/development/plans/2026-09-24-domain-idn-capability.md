@@ -677,8 +677,9 @@ Verify: `uv run pytest tests/capabilities/domain/test_grammar.py -q`.
       New file carries `pytestmark = pytest.mark.capability`.
 - [ ] `test_rfc_1035_label_length.py` (red): `test_accepts_63_octet_label`
       (`"a"*63` label ok), `test_rejects_64_octet_label` (`"a"*64` → False — E8),
-      `test_accepts_253_char_name` (3×63+62 = 253 → True), `test_rejects_254_char_name`
-      (E9 tuple → False), `test_length_is_post_encode`
+      `test_accepts_253_char_name` (labels 63/63/63/61 joined with dots = 253 → True),
+      `test_rejects_254_char_name` (E9 labels 63/63/63/62 joined = 254 → False — the plan's
+      "3×63+62 = 253" sketch miscounted the three dots), `test_length_is_post_encode`
       (`ace_encode` over labels before measuring: a Unicode label whose ACE form is 63 passes and
       64 fails — build labels around `xn--mnchen-3ya` padding), `test_public_predicate_label_lengths_ok`,
       `test_metadata` (name `Section-2.3.4-label-length`, PARSER, both semantics, empty features),
