@@ -16,9 +16,9 @@ class TestDomainCapability:
     def test_metadata(self) -> None:
         assert self.capability.name == "domain"
 
-    def test_get_grammars(self) -> None:
+    def test_get_grammars_returns_two(self) -> None:
         names = {g.name for g in self.capability.get_grammars()}
-        assert names == {"ascii_hostname"}
+        assert names == {"ascii_hostname", "idn_hostname"}
 
     def test_get_rules_returns_five(self) -> None:
         names = [r.name for r in self.capability.get_rules()]
@@ -34,6 +34,45 @@ class TestDomainCapability:
         contract = self.capability.create_contract()
         assert isinstance(contract, DomainContract)
         assert contract.output_format == "ascii"
+
+
+@pytest.mark.capability
+class TestDomainFormatValue:
+    """format_value() — the only presentation seam."""
+
+    def setup_method(self) -> None:
+        from paxman.capabilities.Domain.notation import DomainNotation
+
+        self.capability = DomainCapability()
+        self.notation = DomainNotation(
+            raw="XN--MNCHEN-3YA.de",
+            labels=("xn--mnchen-3ya", "de"),
+            tld="de",
+        )
+
+    def test_format_value_ascii_identity(self) -> None:
+        assert (
+            self.capability.format_value("xn--mnchen-3ya.de", "ascii", self.notation)
+            == "xn--mnchen-3ya.de"
+        )
+
+    def test_format_value_unicode_decodes_ace(self) -> None:
+        assert (
+            self.capability.format_value("xn--mnchen-3ya.de", "unicode", self.notation)
+            == "münchen.de"
+        )
+
+    def test_format_value_unicode_passes_ascii_through(self) -> None:
+        assert (
+            self.capability.format_value("example.com", "unicode", self.notation)
+            == "example.com"
+        )
+
+    def test_format_value_default_is_ascii(self) -> None:
+        assert (
+            self.capability.format_value("xn--mnchen-3ya.de", "ascii", self.notation)
+            == "xn--mnchen-3ya.de"
+        )
 
 
 @pytest.mark.capability

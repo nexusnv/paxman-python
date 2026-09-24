@@ -8,6 +8,10 @@ from paxman.capabilities.Domain.contract import DomainContract
 from paxman.capabilities.Domain.grammar.ascii_hostname import (
     AsciiHostnameGrammar,
 )
+from paxman.capabilities.Domain.grammar.idn_hostname import (
+    IdnHostnameGrammar,
+)
+from paxman.capabilities.Domain.idna_processing import ace_decode
 from paxman.capabilities.Domain.notation import DomainNotation
 from paxman.capabilities.Domain.rules.iana_root_zone_membership import (
     IanaRootZoneMembership,
@@ -37,7 +41,7 @@ class DomainCapability(Capability[DomainNotation]):
 
     def get_grammars(self) -> list[Grammar[DomainNotation]]:
         """Return the default grammar instances."""
-        return [AsciiHostnameGrammar()]
+        return [AsciiHostnameGrammar(), IdnHostnameGrammar()]
 
     def get_rules(self) -> list[Rule[DomainNotation]]:
         """Return the default validation rule instances."""
@@ -57,6 +61,7 @@ class DomainCapability(Capability[DomainNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        suppress_common_words: bool = False,
     ) -> DomainContract:
         """Factory method for creating contracts with proper defaults.
 
@@ -70,6 +75,7 @@ class DomainCapability(Capability[DomainNotation]):
             extra_grammars: Community grammar names (opt-in) to run
                 alongside the shipped grammars, in order (SEAM — the
                 surface guard's common block ends with this parameter).
+            suppress_common_words: Suppress common-word matches.
 
         Returns:
             Configured DomainContract instance.
@@ -80,9 +86,26 @@ class DomainCapability(Capability[DomainNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            suppress_common_words=suppress_common_words,
         )
 
-    # format_value: NOT overridden — the canonical value IS the default
-    # format, and there are no offered alternatives. The Capability base
-    # provides the identity formatter. TODO(scaffold): override if you offer
-    # alternative output formats.
+    def format_value(
+        self,
+        value: str,
+        output_format: str | None,
+        notation: DomainNotation,
+    ) -> str:
+        """Render the canonical value in the requested format.
+
+        The default ``"ascii"`` path is identity. ``"unicode"`` decodes
+        each ``xn--`` label to its U-label presentation of the same
+        canonical entity (decode failure leaves the label unchanged, so
+        this never raises). Never affects candidate identity or
+        provenance.
+        """
+        if output_format == "unicode":
+            return ".".join(
+                ace_decode(label) if label.startswith("xn--") else label
+                for label in value.split(".")
+            )
+        return value
