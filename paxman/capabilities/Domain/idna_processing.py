@@ -5,7 +5,8 @@ capability-root module so grammars and rules share a single implementation
 without importing each other (the purity scan bans grammar<->rules
 imports, not capability-root imports). Table-only mapping: the shipped
 15.1.0 table carries the case mapping itself (``0041;mapped;0061``), so no
-``str.casefold`` is applied — mapping, then NFC, then split.
+``str.casefold`` is applied — mapping, then NFC, then split, then
+well-formed ACE decode (so rules always validate the U-label form).
 """
 
 from __future__ import annotations
@@ -49,18 +50,10 @@ def status_of(codepoint: int) -> str:
     return "valid"  # pragma: no cover
 
 
-def map_domain(text: str) -> tuple[str, ...]:
-    """Map raw input to the mapped label tuple (non-transitional map step).
-
-    Per character: apply MAPPING for ``mapped`` rows (targets may be
-    space-separated multi-codepoint sequences — expand each), drop
-    ``ignored`` code points, keep ``deviation``/``disallowed`` verbatim
-    (deviation stays under non-transitional processing; disallowed is
-    rejected later by the statuses rule). Then NFC, split on ``.``,
-    strip ONE trailing empty label.
-    """
+def _map_single_label(label: str) -> str:
+    """Apply the per-character map step plus NFC to one dot-separated label."""
     mapped_chars: list[str] = []
-    for char in text:
+    for char in label:
         codepoint = ord(char)
         target = MAPPING.get(codepoint)
         if target is not None:
@@ -71,11 +64,34 @@ def map_domain(text: str) -> tuple[str, ...]:
             continue
         else:
             mapped_chars.append(char)
-    normalized = unicodedata.normalize("NFC", "".join(mapped_chars))
+    return unicodedata.normalize("NFC", "".join(mapped_chars))
+
+
+def map_domain(text: str) -> tuple[str, ...]:
+    """Map raw input to the mapped label tuple (non-transitional map step).
+
+    Per character: apply MAPPING for ``mapped`` rows (targets may be
+    space-separated multi-codepoint sequences — expand each), drop
+    ``ignored`` code points, keep ``deviation``/``disallowed`` verbatim
+    (deviation stays under non-transitional processing; disallowed is
+    rejected later by the statuses rule). Then NFC, split on ``.``,
+    strip ONE trailing empty label, and decode well-formed ACE labels
+    so every rule validates the U-label (malformed, ASCII-only,
+    NFC-unstable, or map-unstable ACE stays encoded for
+    ``ace_decode_ok`` to reject).
+    """
+    normalized = _map_single_label(text)
     labels = normalized.split(".")
     if labels and labels[-1] == "":
         labels = labels[:-1]
-    return tuple(labels)
+    return tuple(_decode_ace_label(label) for label in labels)
+
+
+def _decode_ace_label(label: str) -> str:
+    """Decode one well-formed ACE label to its U-label form, else keep it."""
+    if label.startswith("xn--") and ace_decode_ok(label):
+        return ace_decode(label)
+    return label
 
 
 def ace_encode(label: str) -> str:
@@ -86,11 +102,13 @@ def ace_encode(label: str) -> str:
 
 
 def ace_decode_ok(label: str) -> bool:
-    """Verify an ``xn--`` label is well-formed ACE (decode/re-encode round trip).
+    """Verify an ``xn--`` label is a well-formed ACE label.
 
     Non-ACE labels pass vacuously. Requires a non-empty ASCII payload, a
-    non-empty decode, and an exact ``"xn--" + reencode == label`` round trip
-    (guards the empty-decode bypass).
+    non-empty decode that is a genuine U-label (non-ASCII, NFC-stable,
+    map-stable — otherwise the label stays encoded and is rejected here),
+    and an exact ``"xn--" + reencode == label`` round trip (guards the
+    empty-decode bypass).
     """
     if not label.startswith("xn--"):
         return True
@@ -101,7 +119,11 @@ def ace_decode_ok(label: str) -> bool:
         decoded = payload.encode("ascii").decode("punycode")
     except UnicodeError:
         return False
-    if not decoded:
+    if not decoded or decoded.isascii():
+        return False
+    if unicodedata.normalize("NFC", decoded) != decoded:
+        return False
+    if _map_single_label(decoded) != decoded:
         return False
     return "xn--" + decoded.encode("punycode").decode("ascii") == label
 

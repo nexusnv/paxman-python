@@ -165,7 +165,9 @@ The shipped UTS #46 table (15.1.0) lives at
 3. **Patterns (final):** `_LABEL = r"[A-Za-z0-9-]+"`, `_LABEL0 = r"[A-Za-z0-9-]*"`,
    `_FQDN = rf"{_LABEL}(?:\.{_LABEL0})*\.*"` — trailing `\.*` (NOT `\.?`; `\.*` is what makes
    `example.com..` one span → INVALID instead of a sub-span carve → MISSING).
-   IDN: `_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,]"`, `_IDN_LABEL = rf"{_IDN_CHARS}+"`,
+   IDN: `_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,\"'()<>!{}|^`~=+&$]"` (free-text punct
+   excluded so wrapped names carve — PR #187 review; `-`/`_` stay in-class so
+   deferred-scope rejections still claim the whole span), `_IDN_LABEL = rf"{_IDN_CHARS}+"`,
    `_IDN_LABEL0 = rf"{_IDN_CHARS}*"`, `_IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"`
    (the class is factored out — splicing the `+`-suffixed label and re-quantifying would
    raise `multiple repeat`). ASCII grammar also accepts uppercase
@@ -201,16 +203,21 @@ The shipped UTS #46 table (15.1.0) lives at
    default `pinned_rules`/`excluded_rules`/`requires_features`). Tests: default contract → W10
    INVALID; `excluded_rules=("root-zone-membership",)` → vacuous lookup → W10 flips to SUCCESS
    (documents that qualification, not the parsers, is what rejects it).
-8. **Data flow (Task 3 API):** `paxman/capabilities/Domain/idna_processing.py` —
-   `status_of(cp)` (default `"valid"`, resolved from range keys), `map_domain(text)` (MAPPING for
-   `mapped` — values are the table target verbatim and may be space-separated multi-target
-   (1,018 rows, e.g. U+FB00 → `"0066 0066"`; expand each via `chr(int(h, 16))`) — `""` for
-   `ignored`, verbatim for `deviation`/`disallowed` per non-transitional pin;
+8. **Data flow (Task 3 API + PR #187 hardening):** `paxman/capabilities/Domain/idna_processing.py` —
+   `status_of(cp)` (default `"valid"`, resolved from range keys; the shipped table is gapless
+   over 0x0–0x10FFFF so the fallthrough carries `# pragma: no cover`), `map_domain(text)`
+   (MAPPING for `mapped` — values are the table target verbatim and may be space-separated
+   multi-target (1,018 rows, e.g. U+FB00 → `"0066 0066"`; expand each via `chr(int(h, 16))`) —
+   `""` for `ignored`, verbatim for `deviation`/`disallowed` per non-transitional pin;
    **no `str.casefold` — the shipped table carries the case mapping** (`0041;mapped;0061` etc.);
-   NFC; split `"."`; strip ONE trailing empty), `ace_encode(label)` (ASCII passthrough else
+   NFC; split `"."`; strip ONE trailing empty; then decode well-formed ACE labels to U-labels
+   so every rule validates the decoded form — malformed, ASCII-only, NFC-unstable, or
+   map-unstable ACE stays encoded for `ace_decode_ok` to reject),
+   `ace_encode(label)` (ASCII passthrough else
    `"xn--" + label.encode("punycode").decode("ascii")`), `ace_decode_ok(label)` (only meaningful
-   for `xn--` labels: non-empty ASCII payload, non-empty decode, `"xn--" + reencode == label`;
-   guards the `''.encode()==b''` bypass), `ace_decode(label)` (failure → label unchanged),
+   for `xn--` labels: non-empty ASCII payload, non-empty non-ASCII decode, NFC-stable,
+   map-stable, `"xn--" + reencode == label`; guards the `''.encode()==b''` bypass),
+   `ace_decode(label)` (failure → label unchanged),
    `finalize(labels)` (map-independent ACE encode + `".".join`).
 9. **Table versions (documented deviation from report §5.2/§7.2):** shipped table = **15.1.0**
    (`IDNA_VERSION` of the URL data module — the single in-tree `.txt`); rule provenance string
@@ -234,7 +241,7 @@ The shipped UTS #46 table (15.1.0) lives at
 
 | Class | file | `name` | strategy | `PUBLICATION` — exact field values |
 |---|---|---|---|---|
-| `Rfc1034NameSyntax` | `rfc_1034_name_syntax.py` | `Section-3.1-name-syntax` | PARSER | authority `"IETF"`, specification_name `"RFC 1034"`, kind `"specification"`, reference_url `https://www.rfc-editor.org/rfc/rfc1034`, version `"1987"`, lifecycle `"active"`, publication_year `1987`; citation `"RFC 1034 §3.1 name syntax"` |
+| `Rfc1034NameSyntax` | `rfc_1034_name_syntax.py` | `Section-3.1-name-syntax` | PARSER | authority `"IETF"`, specification_name `"RFC 1034"`, kind `"specification"`, reference_url `https://www.rfc-editor.org/rfc/rfc1034`, version `"1987"`, lifecycle `"active"`, publication_year `1987`; citation `"RFC 1034 §3.1 name syntax; ≥2-label minimum is Domain policy"` (PR #187 review: §3.5 permits single labels — verified against RFC text) |
 | `Rfc1035LabelLength` | `rfc_1035_label_length.py` | `Section-2.3.4-label-length` | PARSER | `"IETF"` / `"RFC 1035"` / `"specification"` / `https://www.rfc-editor.org/rfc/rfc1035` / `"1987"` / `"active"` / `1987`; citation `"RFC 1035 §2.3.4 size constraints"` |
 | `UnicodeUts46Statuses` | `unicode_uts46_statuses.py` | `UTS46-statuses` | PARSER | `"Unicode"` / `"UTS #46"` / `"specification"` / `https://www.unicode.org/reports/tr46/` / `"18.0.0"` / `"active"` / `2026`; citation `"UTS #46 processing with STD3 rules"` |
 | `Rfc5893BidiContext` | `rfc_5893_bidi_context.py` | `Section-2-bidi-context` | PARSER | `"IETF"` / `"RFC 5893"` / `"specification"` / `https://www.rfc-editor.org/rfc/rfc5893` / `"2010"` / `"active"` / `2010`; citation `"RFC 5893 §2 Bidi rule"` |
@@ -396,6 +403,10 @@ INVALID/MISSING).
 | X7 | `"example.com.."` | INVALID | `None` (`\.*` full-span; two empties, one stripped) |
 | X8 | `"exam\u202eple.com"` | INVALID | `None` (RLO `disallowed` — table `2028..202E`) |
 | X9 | `"a\u200cb.com"` | INVALID | `None` (ZWNJ `deviation` → ContextJ reject) |
+| X10 | `"(münchen.de)"` | SUCCESS | `xn--mnchen-3ya.de` (PR #187: wrapped IDN carves like ASCII) |
+| X11 | `"münchen.de"` (double-quoted) | SUCCESS | `xn--mnchen-3ya.de` (PR #187: quoted IDN carves) |
+| X12 | `"xn--zvg.com"` | INVALID | `None` (PR #187: ACE decoding to RLO — decoded U-label rejected) |
+| X13 | `"xn--munchen-gie.de"` | INVALID | `None` (PR #187: ACE decoding to non-NFC — kept encoded, rejected) |
 
 Idempotence note for the parametrize: every `(input, status, value)` triple is unique except the
 literal W13/E16 and W7/E18b duplicates — use `ids=` labels (`"W13"`, `"E16"`, …) on
@@ -673,7 +684,7 @@ Verify: `uv run pytest tests/capabilities/domain/test_grammar.py -q`.
       `.specification_name == "RFC 1034"`, `.kind == "specification"`,
       `.reference_url == "https://www.rfc-editor.org/rfc/rfc1034"`, `.version == "1987"`,
       `.lifecycle == "active"`, `.publication_year == 1987`, plus `rule.citation ==
-      "RFC 1034 §3.1 name syntax"`; construct `DomainNotation` directly (raw/labels/tld).
+      "RFC 1034 §3.1 name syntax; ≥2-label minimum is Domain policy"`; construct `DomainNotation` directly (raw/labels/tld).
       New file carries `pytestmark = pytest.mark.capability`.
 - [ ] `test_rfc_1035_label_length.py` (red): `test_accepts_63_octet_label`
       (`"a"*63` label ok), `test_rejects_64_octet_label` (`"a"*64` → False — E8),

@@ -16,7 +16,7 @@ from paxman.core.grammar import AnchorSet, BoundarySpec, PipelineGrammar, Standa
 from paxman.core.grammar.matchers.regex import RegexMatcher
 from paxman.core.grammar.scan_context import ScanContext
 
-_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,]"
+_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,\"'()<>!{}|^`~=+&$]"
 _IDN_LABEL = rf"{_IDN_CHARS}+"
 _IDN_LABEL0 = rf"{_IDN_CHARS}*"
 _IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"

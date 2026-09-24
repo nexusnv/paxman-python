@@ -1,8 +1,9 @@
 """RFC 1034 name-syntax validation rule — domain name shape.
 
-RFC 1034 §3.1: a domain name has at least two labels and no empty label.
-Single-label scope ("localhost"/intranet) is deliberately deferred: it
-arrives only as a requires_features-gated rule, never as a knob read here.
+RFC 1034 §3.1 reserves the null label for the root (no empty labels);
+the ≥2-label minimum is Domain scope policy, not RFC text (§3.5 permits
+single-label domains) — single-label scope ("localhost"/intranet) is
+deliberately deferred and arrives only as a requires_features-gated rule.
 """
 
 from __future__ import annotations
@@ -24,17 +25,17 @@ PUBLICATION = Provenance(
 
 
 def name_syntax_ok(notation: DomainNotation) -> bool:
-    """RFC 1034 §3.1 shape check: >= 2 labels and no empty label."""
+    """Shape check: no empty label (RFC 1034 §3.1) and ≥2 labels (policy)."""
     return len(notation.labels) >= 2 and all(label != "" for label in notation.labels)
 
 
 class Rfc1034NameSyntax(Rule[DomainNotation]):
-    """RFC 1034 Section 3.1 — name syntax (label count and emptiness)."""
+    """RFC 1034 Section 3.1 no-empty-label plus the Domain two-label minimum."""
 
     name = "Section-3.1-name-syntax"
     strategy = RuleStrategy.PARSER
     provenance = PUBLICATION
-    citation = "RFC 1034 §3.1 name syntax"
+    citation = "RFC 1034 §3.1 name syntax; ≥2-label minimum is Domain policy"
     target_semantics = frozenset({"ascii_hostname", "idn_hostname"})
     requires_features = frozenset()
 

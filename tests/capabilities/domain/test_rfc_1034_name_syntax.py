@@ -67,7 +67,9 @@ class TestRfc1034NameSyntax:
         assert self.rule.provenance.version == "1987"
         assert self.rule.provenance.lifecycle == "active"
         assert self.rule.provenance.publication_year == 1987
-        assert self.rule.citation == "RFC 1034 §3.1 name syntax"
+        assert self.rule.citation == (
+            "RFC 1034 §3.1 name syntax; ≥2-label minimum is Domain policy"
+        )
 
     def test_normalize_finalizes_labels(self) -> None:
         assert (

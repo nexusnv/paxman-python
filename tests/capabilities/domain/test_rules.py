@@ -80,6 +80,23 @@ class TestIdnaProcessing:
 
         assert map_domain("straße.de") == ("straße", "de")
 
+    def test_map_domain_decodes_well_formed_ace(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import map_domain
+
+        # Well-formed ACE (non-ASCII, NFC/map-stable) arrives decoded so
+        # every rule validates the U-label.
+        assert map_domain("XN--MNCHEN-3YA.de") == ("münchen", "de")
+
+    def test_map_domain_keeps_ascii_only_ace(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import map_domain
+
+        assert map_domain("xn--abc-.com") == ("xn--abc-", "com")
+
+    def test_map_domain_keeps_non_nfc_ace(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import map_domain
+
+        assert map_domain("xn--munchen-gie.de") == ("xn--munchen-gie", "de")
+
     def test_map_domain_expands_multi_target_mapping(self) -> None:
         from paxman.capabilities.Domain.idna_processing import map_domain
 
@@ -133,6 +150,22 @@ class TestIdnaProcessing:
         # Uppercase extension digits decode (case-insensitively) to münchen,
         # which re-encodes lowercase — payload and re-encoding differ.
         assert ace_decode_ok("xn--mnchen-3YA") is False
+
+    def test_ace_decode_ok_rejects_ascii_only_decode(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        assert ace_decode_ok("xn--abc-") is False
+
+    def test_ace_decode_ok_rejects_non_nfc_decode(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        assert ace_decode_ok("xn--munchen-gie") is False
+
+    def test_ace_decode_ok_rejects_map_unstable_decode(self) -> None:
+        from paxman.capabilities.Domain.idna_processing import ace_decode_ok
+
+        # Uppercase basic chars survive decoding ("MüNCHEN") but remap.
+        assert ace_decode_ok("xn--MNCHEN-3YA") is False
 
     def test_ace_decode_never_raises(self) -> None:
         from paxman.capabilities.Domain.idna_processing import ace_decode

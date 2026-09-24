@@ -80,6 +80,10 @@ _CASES = [
     ("example.com..", INVALID, None),
     ("exam\u202eple.com", INVALID, None),
     ("a\u200cb.com", INVALID, None),
+    ("(münchen.de)", SUCCESS, "xn--mnchen-3ya.de"),
+    ('"münchen.de"', SUCCESS, "xn--mnchen-3ya.de"),
+    ("xn--zvg.com", INVALID, None),
+    ("xn--munchen-gie.de", INVALID, None),
 ]
 
 _IDS = [
@@ -130,6 +134,10 @@ _IDS = [
     "X7",
     "X8",
     "X9",
+    "X10",
+    "X11",
+    "X12",
+    "X13",
 ]
 
 

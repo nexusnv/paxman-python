@@ -72,9 +72,9 @@ Specification: **SI Brochure: The International System of Units (SI)**, 9th edit
 | Coordinates | RFC 5870 | 2010 | `Section 3.3-geo-uri-validity` | Section 3.3 (Geo URI validity) | 2010 | https://www.rfc-editor.org/rfc/rfc5870.txt |
 | Coordinates | RFC 7946 | 2016 | `Section 3.1.1-position` | Section 3.1.1 (Position) | 2016 | https://www.rfc-editor.org/rfc/rfc7946.txt |
 | UUID | RFC 9562 | 2024 | `Section 4-uuid-format` | Section 4 (128-bit format; hex-and-dash ABNF, no checksum, no registry) | 2024 | https://www.rfc-editor.org/rfc/rfc9562 |
-| Domain | RFC 1034 | 1987 | `Section-3.1-name-syntax` | Section 3.1 (name syntax: ≥2 labels, no empty label) | 1987 | https://www.rfc-editor.org/rfc/rfc1034 |
+| Domain | RFC 1034 | 1987 | `Section-3.1-name-syntax` | Section 3.1 (null label reserved for root: no empty labels) + Domain policy (≥2-label minimum; single-label scope deferred) | 1987 | https://www.rfc-editor.org/rfc/rfc1034 |
 | Domain | RFC 1035 | 1987 | `Section-2.3.4-label-length` | Section 2.3.4 (63 octets/label, 253 chars/name post-encode) | 1987 | https://www.rfc-editor.org/rfc/rfc1035 |
-| Domain | RFC 5893 | 2010 | `Section-2-bidi-context` | Section 2 (Bidi rule six conditions, plus ContextJ) | 2010 | https://www.rfc-editor.org/rfc/rfc5893 |
+| Domain | RFC 5893 | 2010 | `Section-2-bidi-context` | Section 2 (Bidi rule six conditions); ContextJ join-control rejection per RFC 5892 contextual rules | 2010 | https://www.rfc-editor.org/rfc/rfc5893 |
 
 All IETF entries are `kind="specification"`, `lifecycle="active"`.
 

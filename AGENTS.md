@@ -15,7 +15,7 @@ paxman/
 ├── __main__.py     # python -m paxman entry
 ├── engine/         # run_capability() pipeline orchestrator
 ├── core/           # domain objects, Contract protocol, registry, extensions, errors (+ grammar/ shared machinery — kernel ScanContext/MatcherSpec/engine_loop/matchers/anchors/boundary_spec/normalizers + legacy stages)
-├── capabilities/   # 26 self-contained capability packages
+├── capabilities/   # 27 self-contained capability packages
 ├── shared_data/    # cross-capability source snapshots (currency_snapshot.json → Currency + Money data)
 └── py.typed        # PEP 561 marker
 benchmarks/         # harness.py (CI-run), grammar_stage_parity.py, baseline.json

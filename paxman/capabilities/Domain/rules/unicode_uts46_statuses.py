@@ -4,9 +4,13 @@ Owns every hyphen check (D13 ``CheckHyphens=true``): leading/trailing
 hyphen (RFC 1035 §2.3.1; RFC 1123 §2.1 relaxes the first character for
 digits only), ``--`` at the 3rd/4th position without an ``xn--`` prefix
 (RFC 5890 §2.3.2.1; RFC 5891 §4.2.3.1), the STD3 underscore rejection,
-and the ACE decode/re-encode round trip (RFC 3492; RFC 5891 §4) — plus
-the UTS #46 status check itself (allowed: ``valid`` and ``deviation``;
-STD3 rules ON, so ``disallowed_STD3_*`` rejects).
+and the ACE adjudication for labels that arrive still encoded
+(malformed, ASCII-only, NFC-unstable, or map-unstable decodes — the
+round trip plus U-label genuineness checks in ``ace_decode_ok``; RFC
+3492; RFC 5891 §4) — plus the UTS #46 status check itself (allowed:
+``valid`` and ``deviation``; STD3 rules ON, so ``disallowed_STD3_*``
+rejects). Well-formed ACE arrives already decoded (map step), so every
+check here sees the U-label form.
 """
 
 from __future__ import annotations
