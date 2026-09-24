@@ -169,8 +169,10 @@ The shipped UTS #46 table (15.1.0) lives at
    `_IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"`. ASCII grammar also accepts uppercase
    (case is recognition-neutral). **No ≥1-non-ASCII predicate in the idn grammar** (§4.3 overlap is
    resolved by same-span dedup, not by predicate).
-4. **Boundary:** module `_ASCII_KILL = ("\\w","\\.","\\*","@",":","/","\\\\","?","#","\\[","\\]","%","[^\\x00-\x7F]")`
-   on both `BoundarySpec.left`/`.right`; idn tuple = the same 13 minus the non-ASCII class (12
+4. **Boundary:** module `_ASCII_KILL = ("\\w","\\.","\\*","@",":","/","\\\\","\\?","#","\\[","\\]","%","[^\\x00-\\x7F]")`
+   on both `BoundarySpec.left`/`.right` (note `"\\?"` escaped — a bare `"?"` is a regex
+   quantifier and fails `BoundarySpec.__post_init__` compilation); idn tuple = the same 13
+   minus the non-ASCII class (12
    elements). Kills W14–W16, `nchen.de` sub-carve, NFD `mu\u0308nchen.de` sub-carve (leading
    combining mark caught by `\w`), `[::1]` → no span → MISSING.
 5. **Ownership:** `unicode_uts46_statuses` owns ALL hyphen checks (D13 `--`@idx2-3 w/o `xn--`

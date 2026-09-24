@@ -1,4 +1,4 @@
-"""Tests for the ASCII hostname recognition grammar (scaffold)."""
+"""Tests for the ASCII hostname recognition grammar (Task 4)."""
 
 import pytest
 
@@ -15,11 +15,42 @@ class TestAsciiHostnameGrammar:
     def setup_method(self) -> None:
         self.grammar: Grammar = AsciiHostnameGrammar()
 
-    def test_semantics(self) -> None:
+    def test_semantics_and_name(self) -> None:
+        assert self.grammar.name == "ascii_hostname"
         assert self.grammar.semantics == "ascii_hostname"
 
-    def test_single_value_false(self) -> None:
-        assert self.grammar.single_value is False
+    def test_single_value_true(self) -> None:
+        assert self.grammar.single_value is True
 
-    def test_recognize_returns_empty(self) -> None:
-        assert self.grammar.recognize("anything") == []
+    def test_recognizes_simple_fqdn(self) -> None:
+        results = self.grammar.recognize("example.com")
+        assert len(results) == 1
+        assert results[0].start == 0
+        assert results[0].end == 11
+        assert results[0].raw_text == "example.com"
+        assert results[0].notation.labels == ("example", "com")
+        assert results[0].notation.tld == "com"
+        assert results[0].notation.raw == "example.com"
+
+    def test_recognizes_uppercase_input(self) -> None:
+        results = self.grammar.recognize("EXAMPLE.COM")
+        assert len(results) == 1
+        assert results[0].notation.labels == ("example", "com")
+        assert results[0].raw_text == "EXAMPLE.COM"
+
+    def test_recognizes_trailing_dot(self) -> None:
+        results = self.grammar.recognize("example.com.")
+        assert len(results) == 1
+        assert results[0].start == 0
+        assert results[0].end == 12
+        assert results[0].notation.labels == ("example", "com")
+
+    def test_misses_in_container(self) -> None:
+        results = self.grammar.recognize("visit example.com today")
+        assert [(r.start, r.end) for r in results] == [(0, 5), (6, 17), (18, 23)]
+
+    def test_misses_left_dot_neighbor(self) -> None:
+        assert self.grammar.recognize(".example.com") == []
+
+    def test_misses_non_ascii_only_input(self) -> None:
+        assert self.grammar.recognize("münchen.de") == []
