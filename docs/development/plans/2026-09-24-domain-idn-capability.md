@@ -165,8 +165,10 @@ The shipped UTS #46 table (15.1.0) lives at
 3. **Patterns (final):** `_LABEL = r"[A-Za-z0-9-]+"`, `_LABEL0 = r"[A-Za-z0-9-]*"`,
    `_FQDN = rf"{_LABEL}(?:\.{_LABEL0})*\.*"` — trailing `\.*` (NOT `\.?`; `\.*` is what makes
    `example.com..` one span → INVALID instead of a sub-span carve → MISSING).
-   IDN: `_IDN_LABEL = r"[^\s.@:/\\?#\[\]%*;,]+"`, `_IDN_LABEL0 = rf"{_IDN_LABEL}*"`,
-   `_IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"`. ASCII grammar also accepts uppercase
+   IDN: `_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,]"`, `_IDN_LABEL = rf"{_IDN_CHARS}+"`,
+   `_IDN_LABEL0 = rf"{_IDN_CHARS}*"`, `_IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"`
+   (the class is factored out — splicing the `+`-suffixed label and re-quantifying would
+   raise `multiple repeat`). ASCII grammar also accepts uppercase
    (case is recognition-neutral). **No ≥1-non-ASCII predicate in the idn grammar** (§4.3 overlap is
    resolved by same-span dedup, not by predicate).
 4. **Boundary:** module `_ASCII_KILL = ("\\w","\\.","\\*","@",":","/","\\\\","\\?","#","\\[","\\]","%","[^\\x00-\\x7F]")`
@@ -637,10 +639,10 @@ Verify: `uv run pytest tests/capabilities/domain/test_grammar.py -q`.
 
 - [ ] Failing tests: `test_idn_semantics_and_name` (`name == "idn_hostname"`,
       `semantics == "idn_hostname"`), `test_idn_single_value_true`,
-      `test_idn_recognizes_unicode_labels` (`recognize("münchen.de")` → 1 span 0..13,
+      `test_idn_recognizes_unicode_labels` (`recognize("münchen.de")` → 1 span (0, 10),
       notation labels `("münchen","de")` — NFC'd at emit; **no ≥1-non-ASCII predicate**: it also
       matches `example.com`),
-      `test_idn_recognizes_fullwidth_dot` (`recognize("ｅxample。ｊｐ")` → span over full input,
+      `test_idn_recognizes_fullwidth_dot` (`recognize("ｅxample。ｊｐ")` → span (0, 10),
       labels `("example","jp")` — U+3002 is in-class, mapped at emit),
       `test_idn_misses_ascii_punctuation` (no span for `[::1]`, `user@example.com`,
       `https://example.com/` — every reserved ASCII excluded by `_IDN_LABEL`),

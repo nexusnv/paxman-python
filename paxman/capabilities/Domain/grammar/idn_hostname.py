@@ -1,22 +1,71 @@
-"""IDN hostname recognition grammar — stub (filled in Task 5).
+"""IDN hostname recognition grammar (kernel RegexMatcher).
 
-TODO(task-5): replace the stub with the real _IDN_FQDN recognizer that
-emits span-bearing RecognitionMatch objects.
+Recognizes dot-separated labels of any non-reserved characters (Unicode
+letters included, ASCII URL/reserved punctuation excluded) with an
+optional trailing-dot run. No non-ASCII predicate: ASCII-only input
+matches here too — same-span dedup with ascii_hostname resolves the
+overlap. Case/dot-variants fold at emit via :func:`map_domain`. Syntax
+only: never validates, never encodes to punycode.
 """
 
 from __future__ import annotations
 
+from paxman.capabilities.Domain.idna_processing import map_domain
 from paxman.capabilities.Domain.notation import DomainNotation
-from paxman.core.domain import Grammar, RecognitionMatch
+from paxman.core.grammar import AnchorSet, BoundarySpec, PipelineGrammar, StandardPre
+from paxman.core.grammar.matchers.regex import RegexMatcher
+from paxman.core.grammar.scan_context import ScanContext
+
+_IDN_CHARS = r"[^\s.@:/\\?#\[\]%*;,]"
+_IDN_LABEL = rf"{_IDN_CHARS}+"
+_IDN_LABEL0 = rf"{_IDN_CHARS}*"
+_IDN_FQDN = rf"{_IDN_LABEL}(?:\.{_IDN_LABEL0})*\.*"
+
+# == _ASCII_KILL minus the non-ASCII class: IDN text must match here.
+_IDN_KILL = (
+    "\\w",
+    "\\.",
+    "\\*",
+    "@",
+    ":",
+    "/",
+    "\\\\",
+    "\\?",
+    "#",
+    "\\[",
+    "\\]",
+    "%",
+)
 
 
-class IdnHostnameGrammar(Grammar[DomainNotation]):
-    """Stub grammar: idn_hostname."""
+def _emit_idn(span: tuple[int, int], ctx: ScanContext) -> DomainNotation:
+    s, e = span
+    raw = ctx.text[s:e]
+    # The pattern guarantees at least one in-class char; mapped ASCII
+    # fallbacks (case/dot variants) never vanish, so labels is non-empty.
+    labels = map_domain(raw)
+    return DomainNotation(raw=raw, labels=labels, tld=labels[-1])
+
+
+_IDN_MATCHER = RegexMatcher(
+    pattern=_IDN_FQDN,
+    boundary=BoundarySpec(left=_IDN_KILL, right=_IDN_KILL),
+    view=None,
+    anchors=AnchorSet(),
+    emit=_emit_idn,
+)
+
+
+class IdnHostnameGrammar(PipelineGrammar[DomainNotation]):
+    """Recognizes IDN hostname shapes (any script, mapped at emit).
+
+    Examples: "münchen.de", "ｅxample。ｊｐ", "example.com" (overlap).
+    Non-examples: "[::1]", "user@example.com" (reserved ASCII excluded).
+    """
 
     name = "idn_hostname"
     semantics = "idn_hostname"
-    single_value = False  # TODO(task-5): opt in when one mention per call
+    single_value = True
 
-    def recognize(self, text: str) -> list[RecognitionMatch[DomainNotation]]:
-        """TODO(task-5): return span-bearing matches for Domain input."""
-        return []
+    pre = StandardPre[DomainNotation](empty_guard=True)
+    matchers = (_IDN_MATCHER,)
