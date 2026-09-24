@@ -28,11 +28,13 @@ class URLCapability(Capability[URLNotation]):
     name = "url"
 
     def get_grammars(self) -> list[Grammar[URLNotation]]:
+        """Return the shipped URL recognition grammar."""
         return [
             AbsoluteUriRecognition(),
         ]
 
     def get_rules(self) -> list[Rule[URLNotation]]:
+        """Return the shipped URL validation rule."""
         return [
             WhatwgUrlStandard(),
         ]

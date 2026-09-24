@@ -42,6 +42,7 @@ ABBREVIATION_TOKENS: frozenset[str] = frozenset(
 
 
 def _emit(span: tuple[int, int], ctx: ScanContext) -> TimezoneNotation:
+    """Emit an abbreviation-family notation preserving the token."""
     s, e = span
     raw = ctx.text[s:e]
     return TimezoneNotation(key=raw, family="abbreviation", compact=raw)

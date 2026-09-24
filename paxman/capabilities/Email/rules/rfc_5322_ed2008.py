@@ -52,10 +52,12 @@ class Section341AddrSpec(Rule[EmailNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: EmailNotation, contract: Contract) -> bool:
+        """Return True when local and domain parts satisfy addr-spec."""
         return bool(
             _LOCAL_PATTERN.match(notation.local_part)
             and _DOMAIN_PATTERN.match(notation.domain_part)
         )
 
     def normalize(self, notation: EmailNotation, contract: Contract) -> str:
+        """Return ``local@domain`` with a lowercased domain part."""
         return f"{notation.local_part}@{notation.domain_part.lower()}"

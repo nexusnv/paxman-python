@@ -56,6 +56,7 @@ from paxman.core.grammar.scan_context import ScanContext
 
 
 def _iban_emit(span: tuple[int, int], ctx: ScanContext) -> IBANNotation:
+    """Build IBANNotation from a matched span, compacting to uppercase."""
     raw = ctx.text[span[0] : span[1]]
     m = _re.search(_IBAN_CORE, raw)
     raw_compact = m.group(0) if m is not None else raw

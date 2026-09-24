@@ -149,6 +149,7 @@ _BIC_PATTERN = (
 
 
 def _bic_notation(match: re.Match[str]) -> BICNotation:
+    """Map a BIC match to its decomposed notation."""
     raw_compact = match.group("compact")
     compact = "".join(ch for ch in raw_compact if ch.isascii() and ch.isalnum()).upper()
     bank_code = compact[0:4]

@@ -46,6 +46,7 @@ class SectionAbbreviationRefusal(Rule[TimezoneNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: TimezoneNotation, contract: Contract) -> bool:
+        """Return False; abbreviations are recognized but never validated."""
         # Refusal table: carved and ambiguous abbreviations alike are
         # recognized but never validated. Always False; recognized without
         # a candidate the engine reports INVALID downstream.
@@ -57,6 +58,7 @@ class SectionAbbreviationRefusal(Rule[TimezoneNotation]):
         return False
 
     def normalize(self, notation: TimezoneNotation, contract: Contract) -> str:
+        """Echo the mention best-effort; never a canonicalization path."""
         compact = notation.compact
         if not isinstance(compact, str):
             # defensive: never raise; unreachable after matches()

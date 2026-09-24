@@ -80,6 +80,7 @@ def _left_soft_run_digits(subject: str, body_start: int) -> int:
 
 
 def _pan_scan(view: View, pos: int) -> tuple[int, str] | None:
+    """Scan for a PAN body with optional label at the given position."""
     subject = view.subject
     label = _PAN_LABEL_RE.match(subject, pos)
     if label is not None:
@@ -107,6 +108,7 @@ def _pan_scan(view: View, pos: int) -> tuple[int, str] | None:
 
 
 def _pan_emit(span: tuple[int, int], ctx: ScanContext) -> PANNotation:
+    """Emit PAN notation from the ASCII digits in the span."""
     s, e = span
     digits = "".join(ch for ch in ctx.text[s:e] if "0" <= ch <= "9")
     return PANNotation(digits=digits, compact=digits)

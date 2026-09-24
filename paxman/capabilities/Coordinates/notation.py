@@ -1,3 +1,5 @@
+"""Coordinates notation — WGS 84 point token."""
+
 from dataclasses import dataclass
 
 _VALID_SHAPES = frozenset({"dd", "ddm", "dms", "iso6709", "geo_uri", "geojson"})
@@ -43,6 +45,7 @@ class CoordinatesNotation:
     defects: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate coord_shape and defects against known tables."""
         if self.coord_shape not in _VALID_SHAPES:
             raise ValueError(f"invalid coord_shape: {self.coord_shape!r}")
         for defect in self.defects:

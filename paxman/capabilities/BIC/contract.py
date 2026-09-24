@@ -24,4 +24,5 @@ class BICContract(CapabilityContract):
     capability_name: str = field(default="bic", init=False)
 
     def __post_init__(self) -> None:
+        """Validate the contract and resolve the output format."""
         super().__post_init__()

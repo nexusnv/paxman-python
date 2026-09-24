@@ -46,6 +46,7 @@ class DateContract(CapabilityContract):
     two_digit_base_year: int | None = None
 
     def __post_init__(self) -> None:
+        """Resolve legacy names and validate two_digit_base_year."""
         super().__post_init__()
         # Resolve legacy rule names so pinned_rules / excluded_rules remain
         # compatible with contracts that used Section-form identifiers.

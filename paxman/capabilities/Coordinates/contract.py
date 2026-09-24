@@ -1,3 +1,5 @@
+"""Coordinates contract — WGS 84 point configuration."""
+
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import ClassVar
@@ -41,6 +43,7 @@ def create_contract(  # re-exported on the capability in Task 8
     extra_grammars: Sequence[str] | None = None,
     suppress_common_words: bool = False,
 ) -> CoordinatesContract:
+    """Build a CoordinatesContract from keyword options."""
     return CoordinatesContract(
         excluded_rules=tuple(excluded_rules) if excluded_rules else (),
         pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,

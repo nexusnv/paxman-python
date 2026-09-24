@@ -53,6 +53,7 @@ class Section4CheckDigit(Rule[ISSNNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ISSNNotation, contract: Contract) -> bool:
+        """Return True for 8-char input with a valid mod-11 check."""
         if len(notation.digits) != 8:
             return False
         if not notation.digits[:7].isascii() or not notation.digits[:7].isdigit():
@@ -63,5 +64,6 @@ class Section4CheckDigit(Rule[ISSNNotation]):
         return last == _issn_check(notation.digits)
 
     def normalize(self, notation: ISSNNotation, contract: Contract) -> str:
+        """Return the hyphenated XXXX-XXXX form."""
         digits = notation.digits.upper()
         return f"{digits[:4]}-{digits[4:]}"

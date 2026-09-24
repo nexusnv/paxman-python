@@ -21,6 +21,7 @@ from paxman.core.grammar.scan_context import ScanContext
 
 
 def _emit(span: tuple[int, int], ctx: ScanContext) -> LanguageNotation:
+    """Build LanguageNotation from a bare 2-3 letter code span."""
     s, e = span
     raw = ctx.text[s:e]
     lower = raw.lower()

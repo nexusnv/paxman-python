@@ -39,6 +39,7 @@ class Section33GeoUriValidity(Rule[CoordinatesNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
+        """Accept defect-free geo_uri carriers with valid components."""
         try:
             if notation.defects:
                 return False
@@ -49,4 +50,5 @@ class Section33GeoUriValidity(Rule[CoordinatesNotation]):
         return components_valid(notation)
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
+        """Return the canonical compact decimal pair."""
         return normalize_compact(notation)

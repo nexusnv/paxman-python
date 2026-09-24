@@ -39,6 +39,7 @@ class Section6CoordinateStructure(Rule[CoordinatesNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
+        """Accept defect-free dd/ddm/dms/iso6709 with valid components."""
         try:
             # Structural facts recorded at recognition: a defective input has
             # no valid reading under this publication's coordinate law.
@@ -51,6 +52,7 @@ class Section6CoordinateStructure(Rule[CoordinatesNotation]):
         return components_valid(notation)
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
+        """Return the canonical compact decimal pair."""
         return normalize_compact(notation)
 
 
@@ -72,6 +74,7 @@ class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
+        """Accept defect-free iso6709 carriers with valid components."""
         try:
             if notation.defects:
                 return False
@@ -82,4 +85,5 @@ class SectionAnnexHStringExpression(Rule[CoordinatesNotation]):
         return components_valid(notation)
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
+        """Return the canonical compact decimal pair."""
         return normalize_compact(notation)

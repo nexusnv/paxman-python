@@ -32,6 +32,7 @@ from paxman.core.grammar.scan_context import ScanContext
 
 
 def _issn_emit(span: tuple[int, int], ctx: ScanContext) -> ISSNNotation:
+    """Emit an ISSN notation with uppercased digits."""
     raw = ctx.text[span[0] : span[1]]
     digits = "".join(ch for ch in raw if ch in "0123456789Xx").upper()
     return ISSNNotation(digits=digits)

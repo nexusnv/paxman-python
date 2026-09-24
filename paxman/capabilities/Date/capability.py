@@ -37,11 +37,13 @@ class DateCapability(Capability[DateNotation]):
     name = "date"
 
     def get_grammars(self) -> list[Grammar[DateNotation]]:
+        """Return the consolidated Date recognition grammar."""
         return [
             DateGrammar(),
         ]
 
     def get_rules(self) -> list[Rule[DateNotation]]:
+        """Return the shipped Date validation rules."""
         return [
             Section431CalendarDate(),
             Section1DateFormat(),

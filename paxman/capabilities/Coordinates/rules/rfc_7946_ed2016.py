@@ -38,6 +38,7 @@ class Section311Position(Rule[CoordinatesNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: CoordinatesNotation, contract: Contract) -> bool:
+        """Accept defect-free 2/3-element geojson with valid components."""
         try:
             if notation.defects:
                 return False
@@ -63,4 +64,5 @@ class Section311Position(Rule[CoordinatesNotation]):
         return True
 
     def normalize(self, notation: CoordinatesNotation, contract: Contract) -> str:
+        """Return the canonical compact decimal pair."""
         return normalize_compact(notation)

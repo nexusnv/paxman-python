@@ -177,9 +177,11 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
     name = "coordinates"
 
     def get_grammars(self) -> list[Grammar[CoordinatesNotation]]:
+        """Return the shipped Coordinates recognition grammar."""
         return [CoordinatesRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[CoordinatesNotation]]:
+        """Return the shipped Coordinates validation rules."""
         return [
             Section6CoordinateStructure(),
             SectionAnnexHStringExpression(),
@@ -197,6 +199,7 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
         extra_grammars: Sequence[str] | None = None,
         suppress_common_words: bool = False,
     ) -> CoordinatesContract:
+        """Create a CoordinatesContract with the given configuration."""
         return CoordinatesContract(
             excluded_rules=tuple(excluded_rules) if excluded_rules else (),
             pinned_rules=tuple(pinned_rules) if pinned_rules is not None else None,
@@ -230,6 +233,7 @@ class CoordinatesCapability(Capability[CoordinatesNotation]):
             return value
 
     def _render(self, fmt: str, value: str, lat: str, lon: str, alt: str | None) -> str:
+        """Render lat/lon/alt in the requested non-decimal format."""
         if fmt == "iso6709":
             return _format_iso(lat, lon, alt)
         if fmt == "geo_uri":

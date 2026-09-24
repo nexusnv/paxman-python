@@ -21,6 +21,7 @@ class EmailContract(CapabilityContract):
 
     @property
     def active_grammars(self) -> list[str]:
+        """Grammar names enabled by ``include_*`` flags."""
         grammar_rules: dict[str, bool] = {
             "standard_recognition": True,
             "obfuscated_recognition": self.include_obfuscated,

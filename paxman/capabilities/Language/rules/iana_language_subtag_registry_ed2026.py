@@ -67,15 +67,18 @@ _VARIANT_SET = frozenset(s.lower() for s in IANA_VARIANT_SUBTAGS)
 
 
 def _is_private_language(lang: str) -> bool:
+    """Return True when the language subtag is private-use qaa-qtz."""
     return "qaa" <= lang <= "qtz"
 
 
 def _is_private_script(script: str) -> bool:
+    """Return True when the script subtag is private-use Qaaa-Qabx."""
     low = script.lower()
     return "qaaa" <= low <= "qabx"
 
 
 def _is_private_region(region: str) -> bool:
+    """Return True when the region subtag is a private-use reservation."""
     low = region.lower()
     return low in {
         "aa",
@@ -124,6 +127,7 @@ def _is_private_region(region: str) -> bool:
 
 
 def _resolve_deprecated(lang: str) -> str:
+    """Follow the deprecated map chain to the preferred subtag."""
     seen: set[str] = set()
     cur = lang.lower()
     while cur in DEPRECATED_MAP and cur not in seen:
@@ -133,6 +137,7 @@ def _resolve_deprecated(lang: str) -> str:
 
 
 def _has_no_other_components(notation: LanguageNotation) -> bool:
+    """Return True when only a privateuse slot is populated."""
     return not (
         notation.language
         or notation.extlang

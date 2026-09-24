@@ -48,6 +48,7 @@ _IBAN_LENGTHS = IBAN_LENGTHS
 
 
 def _mod97(compact: str) -> int:
+    """Return the MOD 97-10 remainder of the rearranged compact IBAN."""
     rearranged = compact[4:] + compact[:4]
     expanded_chars: list[str] = []
     for ch in rearranged:
@@ -82,6 +83,7 @@ class Section4IBANStructureMOD97(Rule[IBANNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: IBANNotation, contract: Contract) -> bool:
+        """Accept registered CC with fixed length, DD 02-98, mod97 == 1."""
         c = notation.compact
         if not (15 <= len(c) <= 34):
             return False
@@ -101,4 +103,5 @@ class Section4IBANStructureMOD97(Rule[IBANNotation]):
         return _mod97(c) == 1
 
     def normalize(self, notation: IBANNotation, contract: Contract) -> str:
+        """Return the compact uppercase IBAN."""
         return notation.compact

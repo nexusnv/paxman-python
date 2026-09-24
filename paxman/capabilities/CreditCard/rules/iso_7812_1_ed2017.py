@@ -58,6 +58,7 @@ class Section5PANStructureLuhn(Rule[PANNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: PANNotation, contract: Contract) -> bool:
+        """Check whether the notation is a valid PAN with Luhn check."""
         digits = notation.digits
         compact = notation.compact
         if not isinstance(digits, str) or not isinstance(compact, str):
@@ -71,4 +72,5 @@ class Section5PANStructureLuhn(Rule[PANNotation]):
         return _luhn_valid(digits)
 
     def normalize(self, notation: PANNotation, contract: Contract) -> str:
+        """Normalize to the compact digit string."""
         return notation.digits

@@ -29,6 +29,7 @@ class EmailCapability(Capability[EmailNotation]):
     name = "email"
 
     def get_grammars(self) -> list[Grammar[EmailNotation]]:
+        """Return the shipped Email recognition grammars."""
         return [
             StandardEmailGrammar(),
             ObfuscatedEmailGrammar(),
@@ -36,6 +37,7 @@ class EmailCapability(Capability[EmailNotation]):
         ]
 
     def get_rules(self) -> list[Rule[EmailNotation]]:
+        """Return the shipped Email validation rules."""
         return [
             Section341AddrSpec(),
             Section63localhost(),

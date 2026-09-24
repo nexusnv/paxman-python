@@ -42,6 +42,7 @@ from paxman.core.grammar.scan_context import ScanContext
 
 
 def _emit_symbol(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
+    """Emit a symbol notation with proper-case folding."""
     s, e = span
     raw = ctx.text[s:e]
     return ChemicalElementNotation(
@@ -50,12 +51,14 @@ def _emit_symbol(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNota
 
 
 def _emit_name(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
+    """Emit a name notation with lowercase folding."""
     s, e = span
     raw = ctx.text[s:e]
     return ChemicalElementNotation(token=raw.lower(), shape="name")
 
 
 def _emit_z(span: tuple[int, int], ctx: ScanContext) -> ChemicalElementNotation:
+    """Emit an atomic-number notation with leading zeros stripped."""
     raw = ctx.text[span[0] : span[1]]
     # [0-9] matches ASCII digits only (unlike \d), so this re-search cannot
     # diverge from the (?a)-flagged pattern core into a Unicode digit run.

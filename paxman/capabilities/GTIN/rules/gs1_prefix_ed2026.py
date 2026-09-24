@@ -94,6 +94,7 @@ class Section2Gs1Prefix(Rule[GTINNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: GTINNotation, contract: Contract) -> bool:
+        """Check whether the GTIN carries an allocated GS1 prefix."""
         digits = notation.digits
         if not isinstance(digits, str):
             return False
@@ -108,4 +109,5 @@ class Section2Gs1Prefix(Rule[GTINNotation]):
         return _prefix_allocated(digits)
 
     def normalize(self, notation: GTINNotation, contract: Contract) -> str:
+        """Normalize to the 14-digit zero-padded form."""
         return notation.digits.rjust(14, "0")

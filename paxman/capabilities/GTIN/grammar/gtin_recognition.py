@@ -62,6 +62,7 @@ _GTIN_BODY = (
 
 
 def _gtin_emit(span: tuple[int, int], ctx: ScanContext) -> GTINNotation:
+    """Emit GTIN notation stripping labels and the AI 01 wrapper."""
     raw = ctx.text[span[0] : span[1]]
     rest = _GTIN_LABEL_RE.sub("", raw, count=1)
     ai_match = _GTIN_AI_RE.match(rest)

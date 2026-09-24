@@ -10,6 +10,8 @@ from paxman.core.grammar import PipelineGrammar, StandardPre
 
 
 class EuropeanDateGrammar(PipelineGrammar[DateNotation]):
+    """European DD/MM/YYYY recognition via the consolidated matcher."""
+
     name = "european_recognition"
     semantics = "european_calendar_date"
     single_value = True

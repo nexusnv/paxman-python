@@ -21,9 +21,11 @@ class BICCapability(Capability[BICNotation]):
     version = "1.0.0"
 
     def get_grammars(self) -> list[Grammar[BICNotation]]:
+        """Return the BIC recognition grammar."""
         return [BICRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[BICNotation]]:
+        """Return the BIC structure validation rule."""
         return [Section5BICStructureCountry()]
 
     @staticmethod
