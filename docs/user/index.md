@@ -104,7 +104,7 @@ Paxman ships with capabilities that each cover one kind of identifier. The set i
 - **URL** — absolute URIs and IRIs (WHATWG URL Standard)
 - **BIC** — business identifier codes (ISO 9362)
 - **Coordinates** — WGS 84 coordinates (ISO 6709, RFC 5870, RFC 7946)
-- **Element** — chemical elements (IUPAC Red Book, Periodic Table)
+- **ChemicalElement** — chemical elements (IUPAC Red Book, Periodic Table)
 - **IBAN** — bank account numbers (ISO 13616-1, MOD 97-10)
 - **ISSN** — serial identifiers (ISO 3297)
 - **Language** — language tags, codes, and names (BCP 47, ISO 639, IANA Registry, CLDR)
@@ -116,6 +116,9 @@ Paxman ships with capabilities that each cover one kind of identifier. The set i
 - **LEI** — legal entity identifiers (ISO 17442-1:2020, GLEIF LOU prefix list)
 - **GTIN** — trade item identifiers (GS1 General Specifications 26.0, GS1 Prefix allocation)
 - **CreditCard** — payment card numbers (ISO/IEC 7812-1:2017)
+- **UUID** — 128-bit identifiers (IETF RFC 9562)
+- **DOI** — digital object identifiers (ISO 26324:2025)
+- **Domain** — hostnames (RFC 1034/1035, UTS #46, RFC 5893, IANA Root Zone Database)
 
 You only load what you use — importing `paxman.capabilities.Email` does not load the others.
 

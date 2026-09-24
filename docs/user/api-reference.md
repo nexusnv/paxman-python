@@ -221,6 +221,9 @@ Current defaults and offered alternatives:
 | IP | `include_ipv6` | `bool` | `True` | IPv6 |
 | ISBN | `include_isbn10` | `bool` | `True` | Legacy ISBN-10 |
 | ISBN | `include_range_validation` | `bool` | `False` | Registrant-range provenance |
+| Language | `include_localized` | `bool` | `False` | CLDR localized display-name validation |
+| Language | `include_collective` | `bool` | `False` | ISO 639-5 collective-code validation |
+| Language | `include_private` | `bool` | `False` | Private-use subtag validation |
 | GTIN | `include_verified` | `bool` | `False` | Verified-by-GS1 liveness lookup |
 | CreditCard | `include_brand_validation` | `bool` | `False` | Brand IIN/length membership |
 | Money | `dollar_sign_currency` | `str \| None` | `None` | Resolve bare `$` amount to this alpha-3 code |

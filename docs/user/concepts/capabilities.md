@@ -79,7 +79,7 @@ The set below reflects the **current release** and is intentionally not presente
 | **URL** | Absolute URIs / IRIs | absolute URIs (WHATWG URL Standard) | WHATWG serialization (lowercased host, etc.) |
 | **BIC** | Business identifier codes (ISO 9362) | 8/11-character codes | `bic` form |
 | **Coordinates** | WGS 84 coordinates | decimal pairs, DMS, Geo URI, ISO 6709, GeoJSON | lat-first signed decimal degrees |
-| **Element** | Chemical elements (IUPAC) | symbols, names, labeled atomic numbers | proper-case symbol (`"Fe"`) |
+| **ChemicalElement** | Chemical elements (IUPAC) | symbols, names, labeled atomic numbers | proper-case symbol (`"Fe"`) |
 | **IBAN** | Bank account numbers (ISO 13616) | electronic compact, paper groups-of-four, labels | compact `electronic` form |
 | **ISSN** | Serial identifiers (ISO 3297) | hyphenated, compact, labels | `hyphenated` (`"0317-8471"`) |
 | **Language** | Language identifiers (BCP 47) | tags, codes, names | `bcp47` tag |

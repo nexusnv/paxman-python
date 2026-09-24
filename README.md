@@ -521,6 +521,24 @@ Every capability provides a `create_contract()` factory method with common and c
 | Timezone | `include_systemv` | `bool` | Enable SystemV zone validation (`EST5EDT` and kin; recognized but INVALID when off) |
 | UtcOffset | `output_format` | `str` | Output format (`"extended"` default, `"basic"`) |
 | UUID | `output_format` | `str` | Output format (`"hyphenated"` default, `"compact"`, `"braced"`, `"urn"`) |
+| BIC | `output_format` | `str` | Output format (`"bic"` default, `"grouped"`, `"bic11"`) |
+| ChemicalElement | `output_format` | `str` | Output format (`"symbol"` default, `"name"`) |
+| Coordinates | `output_format` | `str` | Output format (`"decimal"` default, `"iso6709"`, `"geo_uri"`, `"geojson_pair"`, `"dms"`, `"dm"`) |
+| CreditCard | `output_format` | `str` | Output format (`"pan"` default, `"grouped"`) |
+| CreditCard | `include_brand_validation` | `bool` | Enable brand IIN/length membership validation (default: `False`) |
+| Domain | `output_format` | `str` | Output format (`"ascii"` default, `"unicode"`) |
+| GTIN | `output_format` | `str` | Output format (`"gtin14"` default, `"native"`) |
+| GTIN | `include_verified` | `bool` | Enable Verified-by-GS1 liveness lookup (default: `False`) |
+| IBAN | `output_format` | `str` | Output format (`"electronic"` default, `"paper"`) |
+| ISIN | `output_format` | `str` | Output format (`"isin"` default, `"grouped"`) |
+| ISSN | `output_format` | `str` | Output format (`"hyphenated"` default, `"compact"`, `"urn"`) |
+| Language | `output_format` | `str` | Output format (`"bcp47"` default, `"alpha2"`, `"alpha3"`, `"alpha3-bib"`, `"name"`) |
+| Language | `include_localized` | `bool` | Enable CLDR localized display-name validation (default: `False`) |
+| Language | `include_collective` | `bool` | Enable ISO 639-5 collective-code validation (default: `False`) |
+| Language | `include_private` | `bool` | Enable private-use subtag validation (default: `False`) |
+| LEI | `output_format` | `str` | Output format (`"lei"` default, `"urn"`) |
+| MacAddress | `output_format` | `str` | Output format (`"colon"` default, `"hyphen"`, `"bare"`, `"cisco"`, `"eui64"`) |
+| ORCID | `output_format` | `str` | Output format (`"orcid"` default, `"uri"`, `"compact"`) |
 
 ### Rule Pinning and Exclusion
 

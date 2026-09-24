@@ -22,7 +22,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 |-----------|---------------|--------------|-------|
 | **BIPM** | SI Brochure: The International System of Units (SI), 9th ed. (2019) | SI Unit | 6 |
 | **IETF** | RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646, RFC 5870, RFC 7946, RFC 9562, RFC 1034, RFC 1035, RFC 5893 | Email, IP, Phone, Language, Coordinates, UUID, Domain | 12 |
-| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d; IANA Root Zone Database (tlds-alpha v2026092300) | Language, Timezone, Domain | 7 |
+| **IANA** | IANA Language Subtag Registry (Rolling File-Date 2026-08-08); IANA Time Zone Database 2026d; IANA Root Zone Database (tlds-alpha v2026092300) | Language, Timezone, Domain | 8 |
 | **ISO** | ISO 9362:2022, ISO 27729:2024, ISO 3166-1:2020, ISO 3166-3, ISO 4217, ISO 8601:2019, ISO 8601-1:2019, ISO 2108:2017, ISO 13616-1:2020, ISO 639-1/2/5, ISO 80000-1:2022, ISO 6709:2022, ISO 26324:2025, ISO 6166:2021, ISO 17442-1:2020, ISO/IEC 7812-1:2017 | BIC, ORCID, Country, Currency, Money, Date, ISBN, IBAN, Language, SI Unit, Coordinates, UtcOffset, DOI, ISIN, LEI, CreditCard | 26 |
 | **ISSN International Centre** | ISO 3297:2022 | ISSN | 1 |
 | **ANNA** | ANNA ISIN Guidelines V25 (Dec 2025) | ISIN | 1 |
@@ -88,6 +88,7 @@ Specification: **IANA Language Subtag Registry**, Rolling File-Date 2026-08-08 â
 |------------|------|----------|
 | Language | `Section-iana-registry` | IANA Registry Type language/script/region/variant Deprecated Preferred Prefix Suppress-Script |
 | Language | `Section-iana-registry-private` | IANA Registry private-use qaa-qtz/Qaaa-Qabx/QM-QZ/AA/XA-XZ/ZZ/x- |
+| Language | `Section-iana-registry-description` | IANA Registry compositional description phrases (`<Language> in <Script/Region>`, parenthesized forms) |
 | Timezone | `Section zone-key-membership` | zone1970.tab col 3 + backward Links + etcetera (vendored File-Date 2026d) |
 | Timezone | `Section link-resolution` | backward Link TARGET LINK-NAME lines (vendored File-Date 2026d) |
 | Timezone | `Section systemv-zones` | backward SystemV Zones EST5EDT/CST6CDT/MST7MDT/PST8PDT (vendored File-Date 2026d) |
@@ -102,7 +103,7 @@ Specification for the Domain row: **IANA Root Zone Database** (tlds-alpha-by-dom
 
 ## ISO â€” International Organization for Standardization
 
-Across 15 ISO publications (26 rules):
+Across 18 ISO publications (26 rules):
 
 | Capability | Specification | Version | Rule | Citation | Year | Reference |
 |------------|---------------|---------|------|----------|------|-----------|

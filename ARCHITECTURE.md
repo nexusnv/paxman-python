@@ -109,7 +109,7 @@ The outermost layer exposes the user-facing interface. It is intentionally minim
 
 ### Protocol-Based Contracts
 
-Contracts are defined as structural protocols (`Contract`), not inheritance-based base classes. Any class that satisfies the structural interface — providing the required attributes and methods — qualifies as a contract. This allows capability authors to design contract objects that fit their domain (using dataclasses, Pydantic models, etc.) without being constrained by a base class hierarchy. This prioritizes **user flexibility** and **decoupling**.
+Contracts are defined against a structural protocol (`Contract`) but instantiated through inheritance: public contracts MUST subclass `CapabilityContract` (never `Contract` directly), per ADR-0007. The `Contract` protocol is retained only for internal structural typing of the engine boundary and is NOT part of the public API — import `CapabilityContract` instead. This prioritizes **user flexibility** (a frozen dataclass per capability with its own domain flags) and **decoupling** (the engine reads the protocol surface, not concrete classes).
 
 ### ABC-Based Capabilities
 
