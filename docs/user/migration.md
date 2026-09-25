@@ -331,7 +331,7 @@ noise matters; keep bare-code `canonicalize()` contracts flag-off.
 
 ---
 
-## Unreleased — 0.5.0 behavior changes (minor)
+## Unreleased — toward 0.6.0 (minor)
 
 **Scope:** additive capabilities plus recognition/validation narrowings. No contract
 shape changes; existing contracts still validate. Result changes below are

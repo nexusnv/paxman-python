@@ -37,4 +37,6 @@ def test_harness_writes_json() -> None:
         main(["--output", str(out), "--iterations", "2"])
         data = json.loads(out.read_text(encoding="utf-8"))
         assert "scenarios" in data
-        assert len(data["scenarios"]) == 15
+        from benchmarks.scenarios import SCENARIOS
+
+        assert len(data["scenarios"]) == len(SCENARIOS)
