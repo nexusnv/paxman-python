@@ -33,6 +33,7 @@ class Section53Isbn13CheckDigit(Rule[ISBNNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ISBNNotation, contract: Contract) -> bool:
+        """Return True for an ISBN-13 with valid prefix and check digit."""
         if notation.shape != "isbn13" or len(notation.digits) != 13:
             return False
         if not notation.digits.isascii():
@@ -42,6 +43,7 @@ class Section53Isbn13CheckDigit(Rule[ISBNNotation]):
         return _isbn13_check_digit(notation.digits)
 
     def normalize(self, notation: ISBNNotation, contract: Contract) -> str:
+        """Return the bare 13-digit ISBN."""
         return notation.digits
 
 
@@ -62,6 +64,7 @@ class Section42Gs1Prefix(Rule[ISBNNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ISBNNotation, contract: Contract) -> bool:
+        """Return True when the GS1 prefix is issued with valid check digit."""
         if notation.shape != "isbn13" or len(notation.digits) != 13:
             return False
         if notation.digits[:3] not in _GS1_PREFIXES:
@@ -69,4 +72,5 @@ class Section42Gs1Prefix(Rule[ISBNNotation]):
         return _isbn13_check_digit(notation.digits)
 
     def normalize(self, notation: ISBNNotation, contract: Contract) -> str:
+        """Return the bare 13-digit ISBN."""
         return notation.digits

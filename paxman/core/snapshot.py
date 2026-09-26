@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class Snapshot:
+    """Typed frozen payload with source provenance for a data snapshot."""
+
     name: str
     source_url: str
     version: str

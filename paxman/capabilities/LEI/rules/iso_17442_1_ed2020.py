@@ -78,6 +78,7 @@ class Section4LEIStructureMOD9710(Rule[LEINotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LEINotation, contract: Contract) -> bool:
+        """Check whether the notation is a valid LEI structure."""
         compact = notation.compact
         if not isinstance(compact, str):
             return False
@@ -99,4 +100,5 @@ class Section4LEIStructureMOD9710(Rule[LEINotation]):
         return _mod97_10_valid(compact)
 
     def normalize(self, notation: LEINotation, contract: Contract) -> str:
+        """Normalize to the compact LEI form."""
         return notation.compact

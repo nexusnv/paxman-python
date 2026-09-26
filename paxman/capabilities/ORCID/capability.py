@@ -30,9 +30,11 @@ class ORCIDCapability(Capability[ORCIDNotation]):
     version = "1.0.0"
 
     def get_grammars(self) -> list[Grammar[ORCIDNotation]]:
+        """Return the default grammar instances."""
         return [ORCIDRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[ORCIDNotation]]:
+        """Return the default validation rule instances."""
         return [Section4OrcidStructure(), SectionAnnexAMod11Dash2()]
 
     @staticmethod

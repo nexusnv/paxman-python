@@ -46,6 +46,7 @@ _LEI_PATTERN = (
 
 
 def _lei_notation(match: re.Match[str]) -> LEINotation:
+    """Map a LEI match to its decomposed notation."""
     raw_compact = match.group("compact")
     compact = "".join(ch for ch in raw_compact if ch.isascii() and ch.isalnum()).upper()
     # compact is now exactly 20 alphanum ending in 2 digits; split structurally

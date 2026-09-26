@@ -17,6 +17,7 @@ _KNOWN_LANGUAGE_KEYS: frozenset[str] = frozenset(
 
 
 def _name_notation(trimmed: str) -> LanguageNotation:
+    """Build LanguageNotation from a whole-input language name."""
     lower = trimmed.lower()
     return LanguageNotation(
         language="",

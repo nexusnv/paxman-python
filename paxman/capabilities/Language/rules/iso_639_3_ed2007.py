@@ -24,6 +24,7 @@ PUBLICATION = Provenance(
 
 
 def _is_private_qaa(lang: str) -> bool:
+    """Return True when the alpha-3 code is private-use qaa-qtz."""
     return len(lang) == 3 and "qaa" <= lang <= "qtz"
 
 

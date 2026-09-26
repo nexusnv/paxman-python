@@ -296,6 +296,7 @@ class Section5BICStructureCountry(Rule[BICNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: BICNotation, contract: Contract) -> bool:
+        """Check whether the notation is a valid BIC structure."""
         c = notation.compact
         if len(c) not in (8, 11):
             return False
@@ -317,4 +318,5 @@ class Section5BICStructureCountry(Rule[BICNotation]):
         )
 
     def normalize(self, notation: BICNotation, contract: Contract) -> str:
+        """Normalize to the compact BIC form."""
         return notation.compact

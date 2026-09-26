@@ -98,6 +98,7 @@ _NAME_BOUNDARY = BoundarySpec(
 
 
 def _emit(span: tuple[int, int], ctx: ScanContext) -> TimezoneNotation:
+    """Emit a name-family notation preserving the as-written mention."""
     s, e = span
     raw = ctx.text[s:e]
     return TimezoneNotation(key=raw, family="name", compact=raw)

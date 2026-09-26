@@ -36,6 +36,7 @@ _ORCID_PATTERN = (
 
 
 def _orcid_notation(match: re.Match[str]) -> ORCIDNotation:
+    """Build an ORCID notation from a regex match."""
     raw = match.group("orcid").upper()
     if "-" in raw:
         hyphenated = raw

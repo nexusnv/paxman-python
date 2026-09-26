@@ -1,3 +1,5 @@
+"""Public API — canonicalize() and scan() entry points."""
+
 from paxman.api.canonicalize import canonicalize
 from paxman.api.scan import scan
 

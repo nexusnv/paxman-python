@@ -56,6 +56,9 @@ Capability-defined intermediate representation that Grammars must produce:
 - **ChemicalElement:** `ChemicalElementNotation(token, shape)` — `shape` discriminates `"symbol"` / `"name"` / `"atomic_number"`; `token` is the grammar-normalized designation (symbols in IUPAC case e.g. `Fe`, names lowercase e.g. `iron`, atomic numbers bare digits e.g. `26`); symbol matching is case-exact (`FE` unclaimed), names case-insensitive, atomic numbers label-required (`element 26` / `Z=26` — bare `26` unclaimed)
 - **IP:** `IPNotation(address)` — `address` is the raw matched address text (not normalized; grammars emit mixed `::ffff:192.0.2.1` and IPv4 `192.0.2.1` separately)
 - **Domain:** `DomainNotation(raw, labels, tld)` — `raw` is the matched span text verbatim (original case, original trailing dot); `labels` is the UTS #46 mapped, NFC-normalized tuple with one trailing empty label stripped; `tld` is the last mapped label; no `canonical` field — the A-label canonical is built by `finalize()` inside each `normalize()`
+- **Timezone:** `TimezoneNotation(key, family, compact)` — `key` is the as-written mention, `family` discriminates `"name"` / `"abbreviation"`, `compact` is the lookup key (rules restore canonical case and resolve Links)
+- **UtcOffset:** `UtcOffsetNotation(compact)` — `compact` is the grammar-normalized extended `+HH:MM` form (`Z` → `+00:00`); rules own range validation (`-12:00..+14:00`, `-00:00` refused)
+- **UUID:** `UUIDNotation(compact, hyphenated, urn, version)` — `compact` is the 32-hex lowercase form, `hyphenated` the `8-4-4-4-12` canonical, `urn` the `urn:uuid:` carrier, `version` the version nibble (informative, never gates)
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
 ### Notation Type Example
@@ -92,10 +95,10 @@ Paxman ships twenty-seven built-in capabilities (27 in `paxman/capabilities/__in
 | **IBAN** | Bank account numbers | ISO 13616-1:2020, ISO/IEC 7064:2003 (MOD 97-10) |
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
-| **ISIN** | International securities identification numbers | ISO 6166:2021 |
+| **ISIN** | International securities identification numbers | ISO 6166:2021, ANNA ISIN Guidelines |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
-| **LEI** | Legal entity identifiers | ISO 17442-1:2020 |
+| **LEI** | Legal entity identifiers | ISO 17442-1:2020, GLEIF LOU prefix list |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
@@ -767,7 +770,7 @@ for candidate in result.candidates:
 
 ### Capability Versioning
 - Capabilities do **not** declare their own versions — the `Capability` surface carries only `name`, grammars, rules, and the presentation seam.
- - Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.2.0"`); source of truth is `version = "0.2.0"` in `pyproject.toml`.
+ - Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.2.1"`); source of truth is `version = "0.5.0"` in `pyproject.toml`.
 - Referenced in `VersionStamp.paxman_version`
 
 ### Contract Protocol
@@ -884,7 +887,7 @@ paxman/
     │   └── rules/
     │       ├── rfc_5322_ed2008.py
     │       └── rfc_6761_ed2012.py
-    ├── Date/                      # grammar/ (1: date_recognition.py via CandidatesMatcher 4 candidates - iso8601, slash_iso, us, european, strategy all) + rules/ (3) — ISO 8601, US federal, EN 50160
+    ├── Date/                      # grammar/ (1: date_recognition.py via CandidatesMatcher 4 candidates - iso8601, slash_iso, us, european, strategy all) + rules/ (3) — ISO 8601, Derived US/European conventions
     │   ├── capability.py          # DateCapability
     │   ├── contract.py            # DateContract
     │   ├── notation.py            # DateNotation dataclass
@@ -970,7 +973,7 @@ paxman/
     │   ├── grammar/               # e164, tel_uri, international_00, national_recognition (+ common.py LEGACY)
     │   ├── rules/                 # e164_ed2010, rfc_3966_ed2004, nanp_ed2024
     │   └── rules/data/            # e164_country_codes, nanp_tables
-    ├── SIUnit/                    # grammar/ (5) + rules/ (3) + grammar/data/ + rules/data/ — BIPM SI Brochure, ISO 80000-1
+    ├── SIUnit/                    # grammar/ (3) + rules/ (3) + grammar/data/ + rules/data/ — BIPM SI Brochure, ISO 80000-1
     │   ├── capability.py          # SIUnitCapability
     │   ├── contract.py            # SIUnitContract
     │   ├── notation.py            # SIUnitNotation (text, shape)
@@ -999,12 +1002,50 @@ paxman/
     │   ├── notation.py            # UtcOffsetNotation (compact)
     │   ├── grammar/               # utc_offset_recognition
     │   └── rules/                 # iso8601_offset_ed2019
-    └── UUID/                      # grammar/ (1) + rules/ (1) — IETF RFC 9562
-        ├── capability.py          # UUIDCapability
-        ├── contract.py            # UUIDContract
-        ├── notation.py            # UUIDNotation (compact, hyphenated, urn, version)
-        ├── grammar/               # uuid_recognition
-        └── rules/                 # rfc_9562_ed2024
+    ├── UUID/                      # grammar/ (1) + rules/ (1) — IETF RFC 9562
+    │   ├── capability.py          # UUIDCapability
+    │   ├── contract.py            # UUIDContract
+    │   ├── notation.py            # UUIDNotation (compact, hyphenated, urn, version)
+    │   ├── grammar/               # uuid_recognition
+    │   └── rules/                 # rfc_9562_ed2024
+    ├── CreditCard/                # grammar/ (1) + rules/ (2) — ISO/IEC 7812-1:2017, brand IIN/length tables
+    │   ├── capability.py          # CreditCardCapability
+    │   ├── contract.py            # CreditCardContract (include_brand_validation)
+    │   ├── notation.py            # PANNotation (digits, compact)
+    │   ├── grammar/               # pan_recognition
+    │   └── rules/                 # iso_7812_1_ed2017, brand_prefix_ed2026
+    ├── Domain/                    # grammar/ (2) + rules/ (5) — RFC 1034, RFC 1035, UTS #46, RFC 5893, IANA Root Zone Database
+    │   ├── capability.py          # DomainCapability
+    │   ├── contract.py            # DomainContract (ascii/unicode output formats)
+    │   ├── notation.py            # DomainNotation (raw, labels, tld)
+    │   ├── grammar/               # ascii_hostname, idn_hostname
+    │   └── rules/                 # rfc_1034_name_syntax, rfc_1035_label_length, unicode_uts46_statuses, rfc_5893_bidi_context, iana_root_zone_membership
+    ├── GTIN/                      # grammar/ (1) + rules/ (3) — GS1 General Specifications 26.0, GS1 Prefix allocation, Verified by GS1
+    │   ├── capability.py          # GTINCapability
+    │   ├── contract.py            # GTINContract (include_verified)
+    │   ├── notation.py            # GTINNotation (digits, native_length, has_ai)
+    │   ├── grammar/               # gtin_recognition
+    │   └── rules/                 # gs1_genspecs_ed2026, gs1_prefix_ed2026, verified_by_gs1_ed2019
+    ├── ISIN/                      # grammar/ (1) + rules/ (2) — ISO 6166:2021, ANNA ISIN Guidelines
+    │   ├── capability.py          # ISINCapability
+    │   ├── contract.py            # ISINContract
+    │   ├── notation.py            # ISINNotation (country_code, nsin, check_digit, compact)
+    │   ├── grammar/               # isin_recognition
+    │   └── rules/                 # iso_6166_ed2021, anna_isin_guidelines_ed2025
+    ├── Language/                  # grammar/ (4) + rules/ (7) + grammar/data/ + rules/data/ — ISO 639, IANA Registry, BCP 47 RFC 5646, CLDR
+    │   ├── capability.py          # LanguageCapability
+    │   ├── contract.py            # LanguageContract (include_localized, include_collective, include_private)
+    │   ├── notation.py            # LanguageNotation (language, script, region, variant, extension, privateuse, compact, raw_value)
+    │   ├── grammar/               # bcp47_tag, language_code, language_name, language_description_recognition
+    │   ├── grammar/data/          # grandfathered_tags, english_names, localized_names, script_names, region_names
+    │   ├── rules/                 # bcp47_rfc5646, iso_639_1/2/3/5, iana_language_subtag_registry, cldr_language_display_name
+    │   └── rules/data/            # iana_language_subtags, iso_639 tables, english_display_names
+    └── LEI/                       # grammar/ (1) + rules/ (2) — ISO 17442-1:2020, GLEIF LOU prefix list
+        ├── capability.py          # LEICapability
+        ├── contract.py            # LEIContract
+        ├── notation.py            # LEINotation (lou_prefix, entity_block, check_digits, compact)
+        ├── grammar/               # lei_recognition
+        └── rules/                 # iso_17442_1_ed2020, gleif_lou_prefix_list_ed2026
 ```
 
 ### Package Responsibilities

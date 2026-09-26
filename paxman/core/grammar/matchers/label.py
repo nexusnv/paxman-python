@@ -25,6 +25,8 @@ from paxman.core.grammar.scan_context import View
 
 @dataclass(frozen=True, slots=True)
 class LabelMatcher:
+    """Optional label plus separator plus core pattern matcher."""
+
     labels: frozenset[str] = frozenset()
     separator: str = r"[\s:-]+"
     glued_policy: Literal["reject", "allow"] = "reject"
@@ -43,6 +45,7 @@ class LabelMatcher:
     _combined: re.Pattern[str] | None = field(init=False, repr=False, default=None)
 
     def __post_init__(self) -> None:
+        """Sync view aliases, compile regexes, and compute the digest."""
         if self.view is not None and self.view_name is None:
             object.__setattr__(self, "view_name", self.view)
         elif self.view_name is not None and self.view is None:
@@ -82,6 +85,7 @@ class LabelMatcher:
         object.__setattr__(self, "digest", digest_val)
 
     def matches_prefix(self, text: str) -> bool:
+        """Check whether ``text`` starts with a label plus separator."""
         sep_re = self._sep_re
         assert sep_re is not None
         for label in self.labels:
@@ -102,6 +106,7 @@ class LabelMatcher:
         return False
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Search for labeled or bare core-pattern spans with boundaries."""
         combined = self._combined
         if combined is None:
             return []

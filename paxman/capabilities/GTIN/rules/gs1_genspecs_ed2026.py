@@ -38,6 +38,7 @@ class Section1GtinStructureCheckDigit(Rule[GTINNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: GTINNotation, contract: Contract) -> bool:
+        """Check whether the notation is a valid GTIN with Mod-10 check."""
         digits = notation.digits
         if not isinstance(digits, str):
             return False
@@ -50,4 +51,5 @@ class Section1GtinStructureCheckDigit(Rule[GTINNotation]):
         return _gs1_mod10_is_valid(digits)
 
     def normalize(self, notation: GTINNotation, contract: Contract) -> str:
+        """Normalize to the 14-digit zero-padded form."""
         return notation.digits.rjust(14, "0")

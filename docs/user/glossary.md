@@ -36,11 +36,15 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **Canonicalized value** — `ExecutionResult.canonicalized_value`: the `str` on `SUCCESS`, `None` otherwise. Never infer success from its truthiness — branch on `status`. See [Execution Result](concepts/execution-result/).
 
+**ChemicalElement** — Paxman capability for chemical elements (IUPAC Red Book 2005, IUPAC Periodic Table 04 May 2022). Canonical form is the proper-case symbol (`Fe`); `name` offered. See [Capabilities](capabilities/).
+
 **Citation** — Human-readable section reference on a rule (e.g. `Section 3.4.1 (addr-spec)`, `CLDR v47 currency symbols`). Together with `Provenance` it forms a complete citable claim. See [Provenance](concepts/provenance/) and [Citations](citations/).
 
 **CLDR** — Unicode Common Locale Data Repository. Authorities `"Unicode"` and `"Unicode CLDR"` in provenance both refer to CLDR. Cited by Country (v45), Currency/Money (v47), Language (v46 display names). See [Citations](citations/).
 
 **Contract** — User-facing frozen configuration for one capability. Common fields: `excluded_rules`, `pinned_rules`, `year`, `output_format`, `extra_grammars`, `suppress_common_words`; capability-specific `include_*`/`allow_*`/`default_*` flags gate grammars or validation. Created via `SomeCapability.create_contract(...)`. See [Concepts — Contracts](concepts/contracts/).
+
+**Coordinates** — Paxman capability for WGS 84 coordinates (ISO 6709:2022, RFC 5870, RFC 7946). Canonical form is lat-first signed decimal degrees; `iso6709`, `geo_uri`, `geojson_pair`, `dms`, `dm` offered. See [Capabilities](capabilities/).
 
 **Country** — Paxman capability for ISO 3166 country codes/names, with optional CLDR localized and historical coverage. See per-capability guide under [Capabilities](capabilities/).
 
@@ -139,6 +143,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 ---
 
 ## M
+
+**MacAddress** — Paxman capability for MAC addresses (IEEE Std 802-2024). Canonical form is uppercase colon-separated; `hyphen`, `bare`, `cisco`, `eui64` offered. See [Capabilities](capabilities/).
 
 **MISSING** — A `Resolution` status. No grammar recognized the input, or a recognized match was suppressed (`suppressed_count > 0` tells the two apart). Consider toggling an `include_*` flag. Distinct from `INVALID`. See [Execution Result](concepts/execution-result/).
 

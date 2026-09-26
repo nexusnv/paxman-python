@@ -71,6 +71,7 @@ class Section4IsinStructureCheckDigit(Rule[ISINNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ISINNotation, contract: Contract) -> bool:
+        """Check whether the notation is a valid ISIN with check digit."""
         compact = notation.compact
         if not isinstance(compact, str):
             return False
@@ -87,4 +88,5 @@ class Section4IsinStructureCheckDigit(Rule[ISINNotation]):
         return _luhn_valid(_expand(compact))
 
     def normalize(self, notation: ISINNotation, contract: Contract) -> str:
+        """Normalize to the compact ISIN form."""
         return notation.compact

@@ -22,6 +22,7 @@ from paxman.core.grammar.scan_context import ScanContext
 
 
 def _iso_emit(span: tuple[int, int], ctx: ScanContext) -> DateNotation:
+    """Emit strict YYYY-MM-DD notation from an ISO match span."""
     raw = ctx.text[span[0] : span[1]]
     m = re.match(r"(\d{4})-(\d{2})-(\d{2})", raw)
     assert m is not None
@@ -29,6 +30,7 @@ def _iso_emit(span: tuple[int, int], ctx: ScanContext) -> DateNotation:
 
 
 def _slash_emit(span: tuple[int, int], ctx: ScanContext) -> DateNotation:
+    """Emit lenient YYYY/M/D notation from a slash-ISO match span."""
     raw = ctx.text[span[0] : span[1]]
     m = re.match(r"(\d{4})/(\d{1,2})/(\d{1,2})", raw)
     assert m is not None
@@ -36,6 +38,7 @@ def _slash_emit(span: tuple[int, int], ctx: ScanContext) -> DateNotation:
 
 
 def _slash_us_eu_emit(span: tuple[int, int], ctx: ScanContext) -> DateNotation:
+    """Emit slash M/D/Y notation shared by the US/EU candidates."""
     raw = ctx.text[span[0] : span[1]]
     m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})", raw)
     assert m is not None

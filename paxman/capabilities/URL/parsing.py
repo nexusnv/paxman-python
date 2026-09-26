@@ -492,6 +492,7 @@ class _Parsed:
     )
 
     def __init__(self, scheme: str) -> None:
+        """Initialize an empty URL record for ``scheme``."""
         self.scheme = scheme
         self.username = ""
         self.password = ""
@@ -613,6 +614,7 @@ def _parse_path_and_rest(parsed: _Parsed, source: str, pos: int, special: bool) 
     pending_separator = False
 
     def append_segment(segment: str) -> None:
+        """Append a segment with dot-segment and drive-letter handling."""
         if _is_single_dot(segment):
             return
         if _is_double_dot(segment):
@@ -626,6 +628,7 @@ def _parse_path_and_rest(parsed: _Parsed, source: str, pos: int, special: bool) 
         segments.append(segment)
 
     def flush_at_terminator() -> None:
+        """Flush the pending buffer at a path terminator or end of input."""
         if buffer:
             text = "".join(buffer)
             if _is_single_dot(text):

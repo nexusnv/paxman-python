@@ -72,6 +72,7 @@ _MAC_PATTERN = _MAC_GUARD.lookbehind + _MAC_BODY + _MAC_GUARD.lookahead
 
 
 def _mac_notation(match: re.Match[str]) -> MacAddressNotation:
+    """Build a notation from a regex match (stripped uppercase hex)."""
     raw_compact = match.group("compact")
     compact = "".join(ch for ch in raw_compact if ch.isascii() and ch.isalnum()).upper()
     shape = "eui64" if len(compact) == 16 else "eui48"

@@ -35,6 +35,7 @@ class Section6Isbn10CheckDigit(Rule[ISBNNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ISBNNotation, contract: Contract) -> bool:
+        """Return True for an ISBN-10 with a valid mod-11 check digit."""
         if notation.shape != "isbn10" or len(notation.digits) != 10:
             return False
         if not notation.digits.isascii():

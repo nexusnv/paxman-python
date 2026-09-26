@@ -81,9 +81,11 @@ class ISBNCapability(Capability[ISBNNotation]):
     name = "isbn"
 
     def get_grammars(self) -> list[Grammar[ISBNNotation]]:
+        """Return the default grammar instances."""
         return [ISBN13RecognitionGrammar(), ISBN10RecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[ISBNNotation]]:
+        """Return the default validation rule instances."""
         return [
             Section53Isbn13CheckDigit(),
             Section42Gs1Prefix(),

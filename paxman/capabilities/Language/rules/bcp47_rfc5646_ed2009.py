@@ -52,6 +52,7 @@ _BCP47_WELL_FORMED = re.compile(
 
 
 def _is_well_formed(tag: str) -> bool:
+    """Return True when the tag matches BCP 47 well-formed ABNF."""
     if not tag or tag.startswith("-") or tag.endswith("-") or "--" in tag:
         return False
     if len(tag) == 1 and tag.lower() != "x":

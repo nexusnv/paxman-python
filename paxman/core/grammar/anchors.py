@@ -20,11 +20,13 @@ class AnchorSet:
     )
 
     def __post_init__(self) -> None:
+        """Compile class patterns into cached regexes."""
         object.__setattr__(
             self, "_class_res", tuple(re.compile(p) for p in self.classes)
         )
 
     def passes(self, text: str, ctx: ScanContext) -> bool:
+        """Return True when all literal, class, and key-set guards hold."""
         for lit in self.literals:
             if lit not in text:
                 return False
@@ -50,6 +52,7 @@ class HasDigit:
     """Class anchor for digit presence."""
 
     def as_set(self) -> AnchorSet:
+        """Return an AnchorSet requiring a digit in the input."""
         return AnchorSet(
             literals=frozenset(),
             classes=(r"\d",),
@@ -64,6 +67,7 @@ class LiteralAnchor:
     literal: str
 
     def as_set(self) -> AnchorSet:
+        """Return an AnchorSet requiring this literal substring."""
         return AnchorSet(literals=frozenset({self.literal}))
 
 
@@ -74,4 +78,5 @@ class KeySetAnchor:
     keys: frozenset[str]
 
     def as_set(self) -> AnchorSet:
+        """Return an AnchorSet requiring a word-initial key character."""
         return AnchorSet(literals=frozenset(), classes=(), key_sets=(self.keys,))

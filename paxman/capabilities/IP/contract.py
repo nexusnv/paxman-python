@@ -33,6 +33,7 @@ class IPContract(CapabilityContract):
 
     @property
     def active_grammars(self) -> list[str]:
+        """Grammar names enabled by the ``include_ipv6`` flag."""
         grammars: list[str] = ["ipv4_recognition"]
         if self.include_ipv6:
             grammars.append("ipv6_recognition")

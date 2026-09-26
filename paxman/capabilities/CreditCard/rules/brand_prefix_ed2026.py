@@ -80,6 +80,7 @@ class Section1BrandPrefixMembership(Rule[PANNotation]):
     requires_features = frozenset({"include_brand_validation"})
 
     def matches(self, notation: PANNotation, contract: Contract) -> bool:
+        """Check whether the PAN matches an allowlisted brand prefix."""
         digits = notation.digits
         compact = notation.compact
         if not isinstance(digits, str) or not isinstance(compact, str):
@@ -93,4 +94,5 @@ class Section1BrandPrefixMembership(Rule[PANNotation]):
         return bool(matching_brands(digits))
 
     def normalize(self, notation: PANNotation, contract: Contract) -> str:
+        """Normalize to the compact digit string."""
         return notation.digits

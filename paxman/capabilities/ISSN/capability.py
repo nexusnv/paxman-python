@@ -37,9 +37,11 @@ class ISSNCapability(Capability[ISSNNotation]):
     version = "1.0.0"
 
     def get_grammars(self) -> list[Grammar[ISSNNotation]]:
+        """Return the default grammar instances."""
         return [ISSNRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[ISSNNotation]]:
+        """Return the default validation rule instances."""
         return [Section4CheckDigit()]
 
     @staticmethod

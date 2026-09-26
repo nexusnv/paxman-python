@@ -50,6 +50,7 @@ class Section82EUIStructure(Rule[MacAddressNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: MacAddressNotation, contract: Contract) -> bool:
+        """Return True for 12/16 uppercase hex with agreeing shape."""
         compact = notation.compact
         if not isinstance(compact, str):
             return False
@@ -60,6 +61,7 @@ class Section82EUIStructure(Rule[MacAddressNotation]):
         return notation.shape == _SHAPE_BY_LENGTH[len(compact)]
 
     def normalize(self, notation: MacAddressNotation, contract: Contract) -> str:
+        """Return the uppercase colon-separated canonical form."""
         compact = notation.compact
         if not isinstance(compact, str):
             # defensive: never raise (HOW_TO §5b, paxman/capabilities/AGENTS.md)

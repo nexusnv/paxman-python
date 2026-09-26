@@ -24,6 +24,7 @@ _frozen: bool = False
 
 
 def _ensure_not_frozen() -> None:
+    """Raise CapabilityError if the extension registries are frozen."""
     if _frozen:
         raise CapabilityError(
             "Extension registries are frozen. Cannot register grammars or "

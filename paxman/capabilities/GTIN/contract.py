@@ -50,4 +50,5 @@ class GTINContract(CapabilityContract):
     include_verified: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the contract and resolve the output format."""
         super().__post_init__()

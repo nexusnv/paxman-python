@@ -42,6 +42,7 @@ _OFFSET_RE = re.compile(r"^(?:UTC|GMT)?([+-])(\d{1,2})(?::?(\d{2}))?$", re.IGNOR
 
 
 def _offset_emit(span: tuple[int, int], ctx: ScanContext) -> UtcOffsetNotation:
+    """Build a notation normalized to canonical extended +HH:MM."""
     s, e = span
     raw = ctx.text[s:e]
     if raw in ("Z", "z"):

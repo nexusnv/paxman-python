@@ -34,6 +34,7 @@ class PipelineGrammar(Grammar[NotationT]):
     matchers: ClassVar[tuple[Any, ...] | None] = None
 
     def recognize(self, text: str) -> list[RecognitionMatch[NotationT]]:
+        """Walk optional stages in fixed order, or delegate to matchers."""
         _matchers = getattr(self, "matchers", None)
         if _matchers is not None:
             from paxman.core.grammar.engine_loop import run_matchers

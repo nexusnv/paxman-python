@@ -36,6 +36,7 @@ _counts_ctx: Any = contextvars.ContextVar("_candidates_counts", default=None)
 
 
 def _tl_set_flat(matcher_id: int, flat: list[tuple[int, int, int]]) -> None:
+    """Store context-local flat spans for ``matcher_id`` and reset counts."""
     cur = _flat_ctx.get()
     m = dict(cur) if cur is not None else {}
     m[matcher_id] = flat
@@ -47,6 +48,7 @@ def _tl_set_flat(matcher_id: int, flat: list[tuple[int, int, int]]) -> None:
 
 
 def _tl_get_flat(matcher_id: int) -> list[tuple[int, int, int]] | None:
+    """Return context-local flat spans for ``matcher_id``, if any."""
     cur = _flat_ctx.get()
     if cur is None:
         return None
@@ -54,6 +56,7 @@ def _tl_get_flat(matcher_id: int) -> list[tuple[int, int, int]] | None:
 
 
 def _tl_get_counts(matcher_id: int) -> dict[tuple[int, int], int] | None:
+    """Return context-local emit counts for ``matcher_id``, if any."""
     cur = _counts_ctx.get()
     if cur is None:
         return None
@@ -61,6 +64,7 @@ def _tl_get_counts(matcher_id: int) -> dict[tuple[int, int], int] | None:
 
 
 def _tl_set_counts(matcher_id: int, counts: dict[tuple[int, int], int]) -> None:
+    """Store context-local emit counts for ``matcher_id``."""
     cur = _counts_ctx.get()
     m = dict(cur) if cur is not None else {}
     m[matcher_id] = counts
@@ -77,6 +81,8 @@ def get_flat_for_matcher(matcher: Any) -> list[tuple[int, int, int]]:
 
 @dataclass(frozen=True, slots=True)
 class CandidatesMatcher:
+    """Ordered candidate fan-out with per-candidate emit routing."""
+
     candidates: tuple[Any, ...] = ()
     strategy: Literal["first", "all"] = "all"
     view_name: str | None = None
@@ -106,6 +112,7 @@ class CandidatesMatcher:
     )
 
     def __post_init__(self) -> None:
+        """Sync view aliases, default emit, validate, digest, init routing."""
         if self.view is not None and self.view_name is None:
             object.__setattr__(self, "view_name", self.view)
         elif self.view_name is not None and self.view is None:
@@ -149,6 +156,7 @@ class CandidatesMatcher:
         object.__setattr__(self, "_emit_counts", {})
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Run each candidate, flatten, boundary-filter, apply strategy."""
         _tl_set_flat(id(self), [])
         per_candidate_spans: list[list[tuple[int, int]]] = []
         for cand in self.candidates:
@@ -216,6 +224,7 @@ class CandidatesMatcher:
         return result
 
     def _emit_match(self, span: tuple[int, int], ctx: ScanContext) -> Any:
+        """Dispatch ``span`` to the candidate emit that produced it."""
         flat = _tl_get_flat(id(self))
         if flat is None:
             flat = cast(list[tuple[int, int, int]], getattr(self, "_flat", []))

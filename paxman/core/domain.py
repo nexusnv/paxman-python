@@ -1,3 +1,5 @@
+"""Pipeline domain vocabulary — value objects plus Rule/Grammar ABCs."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -84,6 +86,7 @@ class RecognitionMatch(Generic[NotationT]):
     raw_text: str
 
     def __post_init__(self) -> None:
+        """Enforce span invariants (0 <= start <= end, raw_text matches span)."""
         if self.start < 0 or self.end < self.start:
             raise ValueError(  # pragma: no cover
                 f"Invalid span start={self.start}, end={self.end}: "
@@ -157,6 +160,7 @@ class Candidate:
 
     @property
     def provenance(self) -> tuple[Provenance, ...]:
+        """Return validated provenance tuple for this candidate."""
         return object.__getattribute__(self, "_provenance")
 
     def __init__(
@@ -167,6 +171,7 @@ class Candidate:
         provenance: Sequence[Provenance],
         span: tuple[int, int] | None = None,
     ) -> None:
+        """Store value, rule names, span, and tuple-ized provenance."""
         if span is not None and (span[0] < 0 or span[1] < span[0]):
             raise ValueError(
                 f"Invalid span start={span[0]}, end={span[1]}: "
@@ -198,6 +203,7 @@ class Mention:
     candidates: tuple[Candidate, ...] | None = None
 
     def __post_init__(self) -> None:
+        """Enforce covering-span invariant (0 <= start <= end)."""
         if self.span[0] < 0 or self.span[1] < self.span[0]:
             raise ValueError(  # pragma: no cover
                 f"Invalid span start={self.span[0]}, end={self.span[1]}: "
@@ -213,6 +219,7 @@ class ScanResult:
     mentions: dict[str, tuple[Mention, ...]]
 
     def __post_init__(self) -> None:
+        """Retain type shape without extra validation."""
         # Freeze inner tuples / dict for safety; dataclass is frozen.
         # No validation beyond type shape — callers own well-formedness.
         pass
@@ -271,14 +278,14 @@ class Rule(ABC, Generic[NotationT]):
             raise TypeError(f"{cls.__name__}.target_semantics must be non-empty")
 
     @abstractmethod
-    def matches(
-        self, notation: NotationT, contract: Contract
-    ) -> bool: ...  # pragma: no cover
+    def matches(self, notation: NotationT, contract: Contract) -> bool:
+        """Return whether notation satisfies this rule; never raise."""
+        ...  # pragma: no cover
 
     @abstractmethod
-    def normalize(
-        self, notation: NotationT, contract: Contract
-    ) -> str: ...  # pragma: no cover
+    def normalize(self, notation: NotationT, contract: Contract) -> str:
+        """Return canonical string for notation; never raise."""
+        ...  # pragma: no cover
 
 
 class Grammar(ABC, Generic[NotationT]):

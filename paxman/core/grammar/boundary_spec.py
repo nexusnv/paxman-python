@@ -61,6 +61,7 @@ def _parse_bracket_escape(content: str, i: int) -> tuple[str, int]:
 
 
 def _chars_from_bracket(content: str) -> frozenset[str]:
+    """Enumerate the BMP chars of a bracket interior without outer brackets."""
     res: set[str] = set()
     i = 0
     while i < len(content):
@@ -275,6 +276,7 @@ class BoundarySpec:
     )
 
     def __post_init__(self) -> None:
+        """Lower fragments into char sets, multi-char regexes, and fallbacks."""
         lc: set[str] = set()
         lm: list[tuple[int | None, re.Pattern[str]]] = []
         rc: set[str] = set()
@@ -310,6 +312,7 @@ class BoundarySpec:
 
     @property
     def is_consuming(self) -> bool:
+        """Return True when this spec uses consuming token boundaries."""
         return self.mode == "consuming"
 
     # Preset table — assigned after class body to avoid dataclass field capture.

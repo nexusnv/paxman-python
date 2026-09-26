@@ -73,6 +73,7 @@ class Section1LOUPrefixMembership(Rule[LEINotation]):
     requires_features = frozenset()
 
     def matches(self, notation: LEINotation, contract: Contract) -> bool:
+        """Check whether the notation has an accredited LOU prefix."""
         compact = notation.compact
         if not isinstance(compact, str):
             return False
@@ -96,4 +97,5 @@ class Section1LOUPrefixMembership(Rule[LEINotation]):
         return _mod97_10_valid(compact)
 
     def normalize(self, notation: LEINotation, contract: Contract) -> str:
+        """Normalize to the compact LEI form."""
         return notation.compact

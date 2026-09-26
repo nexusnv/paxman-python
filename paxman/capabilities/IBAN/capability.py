@@ -29,9 +29,11 @@ class IBANCapability(Capability[IBANNotation]):
     name = "iban"
 
     def get_grammars(self) -> list[Grammar[IBANNotation]]:
+        """Return the default grammar instances."""
         return [IBANRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[IBANNotation]]:
+        """Return the default validation rule instances."""
         return [Section4IBANStructureMOD97()]
 
     @staticmethod
@@ -57,6 +59,7 @@ class IBANCapability(Capability[IBANNotation]):
     def format_value(
         self, value: str, output_format: str | None, notation: IBANNotation
     ) -> str:
+        """Render compact electronic or space-separated paper quartets."""
         if output_format == "paper":
             return " ".join(value[i : i + 4] for i in range(0, len(value), 4))
         return value

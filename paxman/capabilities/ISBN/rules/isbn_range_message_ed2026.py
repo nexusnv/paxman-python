@@ -32,6 +32,7 @@ class Section4RegistrantRange(Rule[ISBNNotation]):
     requires_features = frozenset({"include_range_validation"})
 
     def matches(self, notation: ISBNNotation, contract: Contract) -> bool:
+        """Return True when the ISBN falls in an issued registrant range."""
         digits = self._to_isbn13(notation)
         if digits is None:
             return False
@@ -49,6 +50,7 @@ class Section4RegistrantRange(Rule[ISBNNotation]):
         return _find_length(registrant_rules, rest[group_len:]) is not None
 
     def normalize(self, notation: ISBNNotation, contract: Contract) -> str:
+        """Return the 13-digit form used for range lookup."""
         digits = self._to_isbn13(notation)
         if digits is None:
             return notation.digits
@@ -56,6 +58,7 @@ class Section4RegistrantRange(Rule[ISBNNotation]):
 
     @staticmethod
     def _to_isbn13(notation: ISBNNotation) -> str | None:
+        """Convert the notation to ISBN-13 digits, or None if unconvertible."""
         if notation.shape == "isbn13":
             return notation.digits
         if notation.shape == "isbn10" and len(notation.digits) == 10:

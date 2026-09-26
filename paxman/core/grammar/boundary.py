@@ -37,10 +37,12 @@ class BoundaryGuard:
     # Factory constructors — one per distinct semantic variant.
     @classmethod
     def word_sign(cls) -> BoundaryGuard:
+        """Guard rejecting word, hyphen, plus, and minus-sign neighbors."""
         return cls(lookbehind=r"(?<![\w\-+\u2212])", lookahead=r"(?![\w\-+\u2212])")
 
     @classmethod
     def degree_word_sign(cls) -> BoundaryGuard:
+        """Word-sign guard also rejecting degree, slash, and dot neighbors."""
         # SIUnit degree prefix: ° must be preserved in the lookbehind.
         return cls(
             lookbehind=r"(?<![°\w\-+\u2212/·⋅])", lookahead=r"(?![\w\-+\u2212/·⋅])"
@@ -48,14 +50,17 @@ class BoundaryGuard:
 
     @classmethod
     def digit(cls) -> BoundaryGuard:
+        """Guard rejecting digit neighbors on both sides."""
         return cls(lookbehind=r"(?<!\d)", lookahead=r"(?!\d)")
 
     @classmethod
     def word_only(cls) -> BoundaryGuard:
+        """Guard rejecting word-character neighbors on both sides."""
         return cls(lookbehind=r"(?<!\w)", lookahead=r"(?!\w)")
 
     @classmethod
     def e164(cls) -> BoundaryGuard:
+        """Left guard rejecting word, colon, and dot before the hit."""
         return cls(lookbehind=r"(?<![\w:.])", lookahead=r"")
 
     @classmethod
@@ -69,10 +74,12 @@ class BoundaryGuard:
 
     @classmethod
     def scheme_char(cls) -> BoundaryGuard:
+        """Left guard rejecting URI scheme characters before the hit."""
         return cls(lookbehind=r"(?<![A-Za-z0-9+.\-])", lookahead=r"")
 
     @classmethod
     def phone_national(cls) -> BoundaryGuard:
+        """Guard blocking national numbers glued to a prior phone fragment."""
         # 4-lookbehind chain: blocks a national number that is itself preceded
         # by a digit/+, a separator, an opening paren, or a digit/paren pair.
         return cls(
@@ -87,6 +94,7 @@ class BoundaryGuard:
 
     @classmethod
     def mac_midrun(cls) -> BoundaryGuard:
+        """Word guard also rejecting a hex-plus-separator mid-run start."""
         # MAC address guard: word_only plus rejection of a claim start
         # preceded by hex + separator — the tail of a longer colon/hyphen
         # run ("00:1A:2B:3C:4D:5E:66" must not yield "1A:2B:3C:4D:5E:66").
@@ -96,6 +104,7 @@ class BoundaryGuard:
 
     @classmethod
     def ipv6_token(cls) -> BoundaryGuard:
+        """Consuming token delimiter for IPv6 (RegexStage only)."""
         # Token boundary for IPv6: start/end of string or a delimiter class.
         # NOTE: Unlike the other guards, this is a *consuming* anchor pair
         # (``(?:^|(?<=...))`` / ``(?:$|(?=...))``) rather than a zero-width
@@ -110,6 +119,7 @@ class BoundaryGuard:
 
     @classmethod
     def isbn_trail(cls) -> BoundaryGuard:
+        """Left guard rejecting whitespace, colon, or hyphen before ISBN."""
         # Trailing guard for ISBN-13/ISBN-10: the address must not be
         # immediately preceded by a separator (whitespace, colon, hyphen),
         # which would mean it is glued to surrounding label text.
@@ -117,6 +127,7 @@ class BoundaryGuard:
 
     @classmethod
     def isbn10_lead(cls) -> BoundaryGuard:
+        """Left guard rejecting digits glued to an ISBN-10 candidate."""
         # Leading guard for ISBN-10: the address must not be immediately
         # preceded by a digit or a digit followed by a separator, which would
         # mean it is glued to surrounding digits (e.g. an ID run).

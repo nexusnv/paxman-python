@@ -47,4 +47,5 @@ class CreditCardContract(CapabilityContract):
     include_brand_validation: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the contract and resolve the output format."""
         super().__post_init__()

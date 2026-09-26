@@ -35,4 +35,5 @@ class ChemicalElementContract(CapabilityContract):
     capability_name: str = field(default="chemical_element", init=False)
 
     def __post_init__(self) -> None:
+        """Resolve output format via the base contract."""
         super().__post_init__()

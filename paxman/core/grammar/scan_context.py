@@ -83,6 +83,7 @@ class View:
 
 
 def _views_factory() -> dict[str, View]:
+    """Return a fresh empty cache for materialized ScanContext views."""
     return {}
 
 

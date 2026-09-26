@@ -33,12 +33,14 @@ class IPCapability(Capability[IPNotation]):
     name = "ip"
 
     def get_grammars(self) -> list[Grammar[IPNotation]]:
+        """Return the shipped IP recognition grammars (IPv4, IPv6)."""
         return [
             IPv4Grammar(),
             IPv6Grammar(),
         ]
 
     def get_rules(self) -> list[Rule[IPNotation]]:
+        """Return the shipped IP validation rules (IPv4, IPv6)."""
         return [
             Section3Dot2IPv4Address(),
             Section4IPv6TextRepresentation(),

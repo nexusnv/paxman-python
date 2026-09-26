@@ -46,6 +46,7 @@ def _is_valid_orcid(notation: ORCIDNotation) -> bool:
 
 
 def _normalize(notation: ORCIDNotation) -> str:
+    """Return the hyphenated 4-4-4-4 form."""
     compact = notation.compact.upper()
     return f"{compact[:4]}-{compact[4:8]}-{compact[8:12]}-{compact[12:]}"
 
@@ -61,9 +62,11 @@ class Section4OrcidStructure(Rule[ORCIDNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ORCIDNotation, contract: Contract) -> bool:
+        """Return True for 16-char input with a valid MOD 11-2 check."""
         return _is_valid_orcid(notation)
 
     def normalize(self, notation: ORCIDNotation, contract: Contract) -> str:
+        """Return the hyphenated canonical ORCID."""
         return _normalize(notation)
 
 
@@ -78,7 +81,9 @@ class SectionAnnexAMod11Dash2(Rule[ORCIDNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: ORCIDNotation, contract: Contract) -> bool:
+        """Return True for 16-char input with a valid MOD 11-2 check."""
         return _is_valid_orcid(notation)
 
     def normalize(self, notation: ORCIDNotation, contract: Contract) -> str:
+        """Return the hyphenated canonical ORCID."""
         return _normalize(notation)

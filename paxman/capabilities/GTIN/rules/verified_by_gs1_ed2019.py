@@ -39,6 +39,7 @@ class Section3VerifiedLiveness(Rule[GTINNotation]):
     requires_features = frozenset({"include_verified"})
 
     def matches(self, notation: GTINNotation, contract: Contract) -> bool:
+        """Check whether the GTIN is in the issued snapshot."""
         digits = notation.digits
         if not isinstance(digits, str):
             return False
@@ -54,4 +55,5 @@ class Section3VerifiedLiveness(Rule[GTINNotation]):
         return canonical in verified_snapshot.ISSUED_GTINS
 
     def normalize(self, notation: GTINNotation, contract: Contract) -> str:
+        """Normalize to the 14-digit zero-padded form."""
         return notation.digits.rjust(14, "0")

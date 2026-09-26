@@ -137,6 +137,7 @@ _COORDS_PATTERN = (
 
 
 def _quantize(v: Decimal) -> str:
+    """Quantize to 6dp half-even, strip zeros, fold -0 to "0"."""
     q = v.quantize(Decimal("0.000001"), rounding=ROUND_HALF_EVEN).normalize()
     if q == 0:
         q = Decimal(0)
@@ -144,6 +145,7 @@ def _quantize(v: Decimal) -> str:
 
 
 def _normalize_alt(s: str) -> str:
+    """Normalize an altitude string, folding -0 to "0"."""
     d = Decimal(s)
     nd = d.normalize()
     if nd == 0:
@@ -152,6 +154,7 @@ def _normalize_alt(s: str) -> str:
 
 
 def _iso_component_to_decimal(val_str: str, is_lat: bool) -> Decimal:
+    """Convert an ISO 6709 component to decimal degrees."""
     if "." in val_str:
         int_part, frac_part = val_str.split(".", 1)
         frac = "." + frac_part
@@ -238,6 +241,7 @@ def _iso_width_invalid(lat_val: str, lon_val: str) -> tuple[bool, bool]:
 
 
 def _notation(match: re.Match[str]) -> CoordinatesNotation:
+    """Build a CoordinatesNotation from a recognition regex match."""
     gd = match.groupdict()
     # Geo branch
     if gd.get("geo") is not None:
@@ -366,6 +370,7 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
     # whitespace-separator alternative suffixes its groups with "_w");
     # read whichever set matched.
     def _pg(name: str) -> str | None:
+        """Read a pair-branch group from either separator alternative."""
         value = gd.get(name)
         return value if value is not None else gd.get(f"{name}_w")
 
@@ -438,6 +443,7 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
         hemi: str | None,
         sign: str | None,
     ) -> Decimal:
+        """Combine deg/min/sec groups into signed decimal degrees."""
         # deg_str is unsigned digits maybe with dot (for dd)
         # For DMS case, deg_str is integer without fraction, but we treat generically
         # Determine base magnitude
@@ -500,6 +506,8 @@ def _notation(match: re.Match[str]) -> CoordinatesNotation:
 
 
 class CoordinatesRecognitionGrammar(PipelineGrammar[CoordinatesNotation]):
+    """Recognize decimal/DMS/DM pairs plus ISO/geo/GeoJSON carriers."""
+
     name = "coordinates_recognition"
     semantics = "coordinates_recognition"
     single_value = True

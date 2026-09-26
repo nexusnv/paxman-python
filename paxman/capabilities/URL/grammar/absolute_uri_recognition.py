@@ -97,6 +97,7 @@ def _url_scan(view: View, pos: int) -> tuple[int, URLNotation] | None:
 
 
 def _url_emit(span: tuple[int, int], ctx: ScanContext) -> URLNotation:
+    """Build a notation from the original-text span at emit time."""
     s, e = span
     # Trailing \t\n\r extension now handled by kernel engine_loop
     # (view.stripped_chars data-driven), so no per-emit loop needed.

@@ -17,12 +17,14 @@ _GRANDFATHERED_SORTED: tuple[str, ...] = tuple(
 
 
 def _is_variant(subtag: str) -> bool:
+    """Return True when the subtag has BCP 47 variant shape."""
     return (5 <= len(subtag) <= 8 and subtag.isalnum()) or (
         len(subtag) == 4 and subtag[0].isdigit() and subtag[1:].isalnum()
     )
 
 
 def _notation_from_tag(tag: str) -> LanguageNotation:
+    """Parse a BCP 47 tag into its LanguageNotation components."""
     lower_tag = tag.lower()
     if lower_tag in _GRANDFATHERED_SET:
         return LanguageNotation(
@@ -149,6 +151,7 @@ def _notation_from_tag(tag: str) -> LanguageNotation:
 
 
 def _is_valid_langtag(tag: str) -> bool:
+    """Return True when the tag is a well-formed BCP 47 langtag."""
     parts = tag.split("-")
     if not parts or any(p == "" for p in parts):
         return False
@@ -225,6 +228,7 @@ def _is_valid_langtag(tag: str) -> bool:
 
 
 def _is_bare_language(tag: str) -> bool:
+    """Return True when the tag is a bare language-range shape."""
     return (
         (2 <= len(tag) <= 3 and tag.isalpha())
         or (len(tag) == 4 and tag.isalpha())
@@ -233,6 +237,7 @@ def _is_bare_language(tag: str) -> bool:
 
 
 def _is_valid_tag(tag: str) -> bool:
+    """Return True for grandfathered, private-use, or valid langtag."""
     lower = tag.lower()
     if lower in _GRANDFATHERED_SET:
         return True
@@ -247,6 +252,7 @@ def _is_valid_tag(tag: str) -> bool:
 
 
 def _bcp47_scan(view: View, pos: int) -> tuple[int, LanguageNotation] | None:
+    """Scan the maximal run, returning the longest valid tag match."""
     subj = view.subject
     n = len(subj)
     if pos < 0 or pos >= n:
@@ -284,6 +290,7 @@ def _bcp47_scan(view: View, pos: int) -> tuple[int, LanguageNotation] | None:
 
 
 def _bcp47_emit(span: tuple[int, int], ctx: ScanContext) -> LanguageNotation:
+    """Build LanguageNotation from a span, folding underscores to hyphens."""
     s, e = span
     raw = ctx.text[s:e]
     normalized = raw.replace("_", "-")

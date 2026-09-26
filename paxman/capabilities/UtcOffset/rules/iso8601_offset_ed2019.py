@@ -113,9 +113,11 @@ class SectionOffsetStructure(Rule[UtcOffsetNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: UtcOffsetNotation, contract: Contract) -> bool:
+        """Check whether the notation parses as an in-range offset."""
         return _parse_offset(notation.compact) is not None
 
     def normalize(self, notation: UtcOffsetNotation, contract: Contract) -> str:
+        """Normalize to canonical extended +HH:MM."""
         parsed = _parse_offset(notation.compact)
         if parsed is None:
             # defensive: never raise; unreachable after matches()

@@ -24,6 +24,7 @@ class RecognitionError(PaxmanError):
     def __init__(
         self, rule: str, message: str, original_error: Exception | None = None
     ) -> None:
+        """Store rule and original error; render as "[rule] message"."""
         self.rule = rule
         self.original_error = original_error
         super().__init__(f"[{rule}] {message}")
@@ -51,6 +52,7 @@ class ValidationError(PaxmanError):
     """Raised when validation rule encounters unexpected error."""
 
     def __init__(self, rule: str, message: str, original_error: Exception) -> None:
+        """Store rule and original error; render as "[rule] message"."""
         self.rule = rule
         self.original_error = original_error
         super().__init__(f"[{rule}] {message}")

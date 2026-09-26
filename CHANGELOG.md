@@ -350,7 +350,7 @@ and `docs/adr/0009-recognition-kernel.md` for the full guide.
   Publishing OIDC, `paxman/py.typed` PEP 561, `pyproject.toml` version
   `0.1.0`, tag `v0.1.0`).
 
-[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/nexusnv/paxman-python/compare/v0.5.0...HEAD
 [0.3.2]: https://github.com/nexusnv/paxman-python/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/nexusnv/paxman-python/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/nexusnv/paxman-python/compare/v0.2.2...v0.3.0

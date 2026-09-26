@@ -22,6 +22,7 @@ from paxman.core.grammar.scan_context import View
 
 
 def _collect_leaves(expr: Any, out: list[Any]) -> None:
+    """Collect leaf matchers from ``expr`` tree into ``out`` in order."""
     if isinstance(expr, tuple):
         t = cast(tuple[Any, ...], expr)
         if (
@@ -228,6 +229,8 @@ def _eval_expr(
 
 @dataclass(frozen=True, slots=True)
 class CombinatorMatcher:
+    """Seq/alt/opt/rep/label expression tree over child matchers."""
+
     expr: Any  # expr tree: ("seq", [...]) etc.
     view_name: str | None = None
     view: str | None = None
@@ -241,6 +244,7 @@ class CombinatorMatcher:
     digest: str = field(init=False, repr=False, default="")
 
     def __post_init__(self) -> None:
+        """Validate emit, sync view aliases, and compute the digest."""
         _validate_emit(self.emit, type(self).__name__)
         if self.view is not None and self.view_name is None:
             object.__setattr__(self, "view_name", self.view)
@@ -268,6 +272,7 @@ class CombinatorMatcher:
         object.__setattr__(self, "digest", digest_val)
 
     def match(self, view: View) -> list[tuple[int, int]]:
+        """Evaluate ``expr`` left-to-right, returning non-overlapping spans."""
         leaves: list[Any] = []
         _collect_leaves(self.expr, leaves)
         seen: set[int] = set()

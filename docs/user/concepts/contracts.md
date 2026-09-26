@@ -94,6 +94,11 @@ Beyond the common fields, each contract adds flags that make sense for its domai
 | SI Unit | `allow_multi_solidus` | `bool` | `False` | Preserve `kg/m/s` instead of rejecting it |
 | Date | `two_digit_base_year` | `int \| None` | `None` | Base year for 2-digit year expansion |
 | Timezone | `include_systemv` | `bool` | `False` | Validate SystemV zones (`EST5EDT` and kin; recognized but `INVALID` when off) |
+| GTIN | `include_verified` | `bool` | `False` | Verified-by-GS1 snapshot liveness lookup (adds a candidate when the snapshot hits; never vetoes) |
+| CreditCard | `include_brand_validation` | `bool` | `False` | Brand IIN/length membership (prefix and length must fall in the eight-brand allowlist) |
+| Language | `include_localized` | `bool` | `False` | CLDR localized display-name validation (e.g. `allemand` → `de`) |
+| Language | `include_collective` | `bool` | `False` | ISO 639-5 collective-code validation (e.g. `aav`) |
+| Language | `include_private` | `bool` | `False` | Private-use subtag validation (e.g. `qaa`, `x-…`) |
 | Date / ISBN / Phone / … | `output_format` | `str` | capability default | See capability-specific offered formats |
 
 > This table reflects the **current release**. As new capabilities are added, each will document its own flags in the same way — the common fields above stay the same.

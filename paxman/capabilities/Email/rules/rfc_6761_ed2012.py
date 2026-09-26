@@ -43,7 +43,9 @@ class Section63localhost(Rule[EmailNotation]):
     requires_features = frozenset()
 
     def matches(self, notation: EmailNotation, contract: Contract) -> bool:
+        """Return True when the domain part is exactly ``localhost``."""
         return notation.domain_part == "localhost"
 
     def normalize(self, notation: EmailNotation, contract: Contract) -> str:
+        """Return ``local@localhost`` preserving the local part."""
         return f"{notation.local_part}@localhost"

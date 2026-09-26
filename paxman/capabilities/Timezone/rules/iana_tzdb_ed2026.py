@@ -62,6 +62,7 @@ class SectionZoneKeyMembership(Rule[TimezoneNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: TimezoneNotation, contract: Contract) -> bool:
+        """Check whether the notation is a known IANA zone identifier."""
         if notation.family != "name":
             return False
         compact = notation.compact
@@ -73,6 +74,7 @@ class SectionZoneKeyMembership(Rule[TimezoneNotation]):
         return folded in _FOLDED_TO_CANONICAL
 
     def normalize(self, notation: TimezoneNotation, contract: Contract) -> str:
+        """Return the canonical-case zone identifier."""
         compact = notation.compact
         if not isinstance(compact, str):
             # defensive: never raise; unreachable after matches()
@@ -91,6 +93,7 @@ class SectionLinkResolution(Rule[TimezoneNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset()
 
     def matches(self, notation: TimezoneNotation, contract: Contract) -> bool:
+        """Check whether the notation is a known IANA Link alias."""
         if notation.family != "name":
             return False
         compact = notation.compact
@@ -106,6 +109,7 @@ class SectionLinkResolution(Rule[TimezoneNotation]):
         return folded in _FOLDED_LINKS
 
     def normalize(self, notation: TimezoneNotation, contract: Contract) -> str:
+        """Resolve the Link alias to its canonical zone identifier."""
         compact = notation.compact
         if not isinstance(compact, str):
             # defensive: never raise; unreachable after matches()
@@ -132,6 +136,7 @@ class SectionSystemVZones(Rule[TimezoneNotation]):
     requires_features: ClassVar[frozenset[str]] = frozenset({"include_systemv"})
 
     def matches(self, notation: TimezoneNotation, contract: Contract) -> bool:
+        """Check whether the notation is a SystemV zone key."""
         if notation.family != "name":
             return False
         compact = notation.compact
@@ -140,6 +145,7 @@ class SectionSystemVZones(Rule[TimezoneNotation]):
         return compact.lower() in _SYSTEMV_ZONES
 
     def normalize(self, notation: TimezoneNotation, contract: Contract) -> str:
+        """Return the canonical uppercase SystemV zone."""
         compact = notation.compact
         if not isinstance(compact, str):
             # defensive: never raise; unreachable after matches()
