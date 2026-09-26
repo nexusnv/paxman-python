@@ -214,7 +214,11 @@ class NormalizerSequence:
 
 @dataclass(frozen=True, slots=True)
 class CaseFold:
-    """Lowercase view for case-insensitive scanning with identity offsets."""
+    """Lowercase view for case-insensitive scanning.
+
+    Identity offsets when folding preserves length; explicit per-char maps
+    when it reshapes (e.g. İ U+0130 lowercases to two code points).
+    """
 
     name: str = "casefolded"
     provenance: Provenance | None = None
@@ -223,8 +227,31 @@ class CaseFold:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
-        """Lowercase text, returning identity (None, None) offsets."""
-        return text.lower(), None, None
+        """Lowercase text; explicit offsets only when folding changes length."""
+        lowered = text.lower()
+        if len(lowered) == len(text):
+            return lowered, None, None
+        # Length-changing fold: identity offsets would mis-map view spans to
+        # source ranges, so emit explicit per-char maps covering the subject
+        # exactly once, in order. Each subject char is consumed by the source
+        # char whose own lowering produced it (verified via startswith); a
+        # context-sensitive divergence (final sigma, dotted-i contraction)
+        # falls back to positional consumption, which stays correct because
+        # such rewrites never change length.
+        starts: list[int] = []
+        ends: list[int] = []
+        si = 0
+        for idx, ch in enumerate(text):
+            part = ch.lower()
+            if si < len(lowered) and lowered.startswith(part, si):
+                take = len(part)
+            else:
+                take = 1 if si < len(lowered) else 0
+            for _ in range(take):
+                starts.append(idx)
+                ends.append(idx + 1)
+            si += take
+        return lowered, tuple(starts), tuple(ends)
 
 
 @dataclass(frozen=True, slots=True)
@@ -252,7 +279,12 @@ class SeparatorFold:
 
 @dataclass(frozen=True, slots=True)
 class AccentStrip:
-    """NFD accent-strip plus lowercase view with identity offsets."""
+    """NFD accent-strip plus lowercase view.
+
+    Identity offsets when every source char yields exactly one subject char;
+    explicit per-char maps otherwise (stripping and ligature NFD expansions
+    both reshape the text).
+    """
 
     name: str = "normalized"
     provenance: Provenance | None = Provenance(
@@ -269,10 +301,27 @@ class AccentStrip:
     def normalize(
         self, text: str
     ) -> tuple[str, tuple[int, ...] | None, tuple[int, ...] | None]:
-        """Strip Mn marks via NFD and lowercase with identity offsets."""
+        """Strip Mn marks via NFD and lowercase; explicit offsets on reshape."""
         nfd = unicodedata.normalize("NFD", text)
         stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
-        return stripped.lower(), None, None
+        subject = stripped.lower()
+        # Per-char kept counts via cached NFD segments (whole-text NFD equals
+        # concatenated per-char NFD). Lowercasing cannot expand post-strip
+        # output (U+0130 decomposes, so no expander survives stripping), so
+        # the walk below always covers the subject exactly.
+        one_to_one = True
+        starts: list[int] = []
+        ends: list[int] = []
+        for idx, ch in enumerate(text):
+            kept = sum(1 for c in _nfd_char(ch) if unicodedata.category(c) != "Mn")
+            if kept != 1:
+                one_to_one = False
+            for _ in range(kept):
+                starts.append(idx)
+                ends.append(idx + 1)
+        if one_to_one and len(subject) == len(text):
+            return subject, None, None
+        return subject, tuple(starts), tuple(ends)
 
 
 @lru_cache(maxsize=8192)

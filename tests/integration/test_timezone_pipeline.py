@@ -119,6 +119,22 @@ class TestTimezonePipelineSuccess:
         assert result.canonicalized_value == "America/New_York"
         assert result.span == (2, 18)
 
+    @pytest.mark.integration
+    def test_length_changing_fold_maps_span_to_source(self) -> None:
+        """İ U+0130 expands under CaseFold: the mention span stays in source.
+
+        The casefolded view is one char longer than the input here; identity
+        offsets would shift the mention and fail recognition. Previously
+        raised RecognitionError.
+        """
+        paxman.register_all_shipped()
+        contract = TimezoneCapability.create_contract()
+        result = paxman.canonicalize("İ america/new_york", contract)
+
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "America/New_York"
+        assert result.span == (2, 18)
+
 
 class TestTimezonePipelineSystemV:
     """§8 rows 3-4 + §9 gated-off row + semantic matrix SystemV row."""

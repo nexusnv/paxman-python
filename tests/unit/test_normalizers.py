@@ -97,3 +97,37 @@ def test_sequence_composable() -> None:
 def test_protocol_shape() -> None:
     assert isinstance(CaseFold(), Normalizer)
     assert isinstance(SeparatorFold(), Normalizer)
+
+
+def test_casefold_expanding_fold_emits_explicit_maps() -> None:
+    # İ U+0130 lowercases to two code points: identity offsets would mis-map
+    # view spans to source ranges (previously a RecognitionError downstream).
+    subject, starts, ends = CaseFold().normalize("Aİ")
+    assert subject == "a" + "i̇"
+    assert starts == (0, 1, 1)
+    assert ends == (1, 2, 2)
+    assert len(starts) == len(subject) and len(ends) == len(subject)
+
+
+def test_casefold_maps_cover_subject_exactly() -> None:
+    # Greedy consumption covers the subject exactly once, in order — even
+    # with the dotted-i contraction (i + U+0307 lowers to one char).
+    texts = ["İ", "AİB", "i" + "̇x", "ΟΣ", "Hello"]
+    for text in texts:
+        subject, starts, ends = CaseFold().normalize(text)
+        if len(subject) == len(text):
+            assert starts is None and ends is None
+        else:
+            assert starts is not None and ends is not None
+            assert len(starts) == len(subject)
+            assert len(ends) == len(subject)
+            assert all(s < e for s, e in zip(starts, ends, strict=True))
+
+
+def test_accentstrip_reshape_emits_explicit_maps() -> None:
+    # Combining mark with no base char: stripping reshapes the text, so
+    # identity offsets would mis-map.
+    subject, starts, ends = AccentStrip().normalize("e" + "́")
+    assert subject == "e"
+    assert starts == (0,)
+    assert ends == (1,)
