@@ -35,7 +35,7 @@ class TestISNINotation:
         )
         with pytest.raises(dataclasses.FrozenInstanceError):
             n.compact = "other"  # type: ignore[misc]
-        assert ISNINotation.__dataclass_params__.slots is True
+        assert hasattr(n, "__slots__")
         assert hash(n) == hash(
             ISNINotation(
                 compact="0000000121032683",
