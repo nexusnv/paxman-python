@@ -1,0 +1,1 @@
+"""ISNI recognition grammars."""

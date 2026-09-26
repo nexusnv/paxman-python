@@ -2,11 +2,11 @@
 
 > **Purpose:** Roadmap guidance for capabilities to bring into Paxman, ordered by priority.
 > This table is a planning aid — details need not be exactly accurate in terms of implementation.
-> 23 capabilities are shipped (BIC, ChemicalElement, Coordinates, Country, Currency, Date, DOI, Email, IBAN, IP, ISBN, ISIN, ISSN, Language, MacAddress, Money, ORCID, Phone, SIUnit, Timezone, URL, UtcOffset, UUID) and are listed in §1 only — they are excluded from the future roadmap in §2.
+> 28 capabilities are shipped (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISNI, ISSN, Language, LEI, MacAddress, Money, ORCID, Phone, SIUnit, Timezone, URL, UtcOffset, UUID) and are listed in §1 only — they are excluded from the future roadmap in §2.
 
 ---
 
-## 1. Delivered Capabilities (23 shipped)
+## 1. Delivered Capabilities (28 shipped)
 
 Verified against `paxman/capabilities/__init__.py` + `paxman/api/bootstrap.py:_SHIPPED` (alphabetical bootstrap order) and `paxman/capabilities/<Name>/rules/` provenance constants. Examples were re-checked through `canonicalize()` on 2026-09-22.
 
@@ -35,6 +35,11 @@ Verified against `paxman/capabilities/__init__.py` + `paxman/api/bootstrap.py:_S
 | 21 | **URL** | WHATWG URL Living Standard | "HTTPS://Example.COM:443/a/../b" → "https://example.com/b" | `research/2026-08-06-url-canonicalization.md`, `plans/2026-08-06-url-capability.md` |
 | 22 | **UtcOffset** | ISO 8601-1:2019, RFC 3339 | "UTC+5:30" → "+05:30" | — |
 | 23 | **UUID** | RFC 9562:2024 (obsoletes RFC 4122) | "urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8" → "6ba7b810-9dad-11d1-80b4-00c04fd430c8" | `research/2026-09-16-uuid-canonicalization.md`, `plans/2026-09-17-uuid-capability.md` |
+| 24 | **CreditCard** | ISO/IEC 7812-1:2017 | "4111-1111-1111-1111" → "4111111111111111" | `research/2026-09-23-credit-card-number-canonicalization.md`, `plans/2026-09-23-credit-card-capability.md` |
+| 25 | **Domain** | RFC 1034, RFC 1035, UTS #46, RFC 5893, IANA Root Zone Database | "Example.COM" → "example.com" | `research/2026-09-24-domain-name-canonicalization.md`, `plans/2026-09-24-domain-idn-capability.md` |
+| 26 | **GTIN** | GS1 General Specifications 26.0 | "590 1234 12345 7" → "05901234123457" | `research/2026-09-22-gtin-canonicalization.md`, `plans/2026-09-22-gtin-capability.md` |
+| 27 | **LEI** | ISO 17442-1:2020, GLEIF LOU prefix list | "5493000IBP32UQZ0KL24" → "5493000IBP32UQZ0KL24" | `research/2026-09-22-lei-canonicalization.md`, `plans/2026-09-22-lei-capability.md` |
+| 28 | **ISNI** | ISO 27729:2024 (MOD 11-2) | "ISNI 0000 0001 2103 2683" → "0000 0001 2103 2683" | `research/2026-09-26-isni-canonicalization.md`, `plans/2026-09-26-isni-capability.md` |
 
 Notes on §1:
 
@@ -48,15 +53,14 @@ Notes on §1:
 
 ### 2A. Retained candidates (carried over — still unbuilt)
 
+> Shipped since this list was written (see §1): Domain name / IDN (#1), LEI (#6), Credit card number (#7) — rows removed.
+
 | # | Capability | Why this capability? | Grammar strategy | Provenance publications | Example input → canonical_value |
 |---|-----------|---------------------|------------------|------------------------|-------------------------------|
-| 1 | **Domain name / IDN** | Hostnames mix case, trailing dots, Unicode vs punycode. Overlaps the URL IDNA table but no standalone host capability exists. | PARSER (lowercase, IDNA 2008 punycode-encode, strip trailing dot) | RFC 1034, RFC 1035, RFC 5890/5891 (IDNA 2008), IANA Root Zone Database | "Example.COM" → "example.com", "münchen.de" → "xn--mnchen-3ya.de" |
 | 2 | **MIME media type** | Content-Type headers vary in case and legacy aliases ("TEXT/HTML", "image/jpg"). IANA registry is authoritative. | LOOKUP_TABLE (case-insensitive IANA registry + alias resolution) | IANA Media Types registry, RFC 6838, RFC 2045 | "Text/Plain" → "text/plain", "image/jpg" → "image/jpeg" |
 | 3 | **Character encoding** | Encoding labels vary wildly ("UTF8", "latin1", "unicode"). IANA charset registry + WHATWG Encoding give canonical names. | LOOKUP_TABLE (case-insensitive alias resolution) | IANA Character Sets registry, WHATWG Encoding Standard | "UTF8" → "utf-8", "latin1" → "windows-1252" (verify against registry; iso-8859-1 alias per WHATWG) |
 | 4 | **HTTP header name** | Header field names are case-insensitive but conventionally cased ("Content-Type" vs "content-type"). RFC 9110 normalizes. | PARSER (lowercase, preserve hyphens) | RFC 9110 (HTTP Semantics), RFC 9111 (Caching) | "Content-Type" → "content-type" |
 | 5 | **Unicode normalization** | Visually identical strings differ in combining sequences and compatibility forms. UAX #15 defines NFC/NFD/NFKC/NFKD. | PARSER (NFC default; NFKC/NFD as offered formats) | Unicode UAX #15 | "e + combining acute" → "é" (NFC) |
-| 6 | **LEI** | Legal-entity IDs for finance; natural sibling to shipped BIC/IBAN/ISIN. 20-char alphanumeric with LOU prefix and 2 MOD 97-10 check digits. | PARSER (uppercase, strip spaces, LOU-prefix structure) | ISO 17442-1:2020, GLEIF registry (deferred live lookup) | "5493 001K JTII GC8Y 1R12" → "5493001KJTIIGC8Y1R12" |
-| 7 | **Credit card number (PAN)** | PANs appear spaced, dashed, continuous. ISO/IEC 7812 + Luhn gives deterministic validation. Note PCI-DSS handling caveats. | PARSER (strip separators, Luhn check, compact canonical) | ISO/IEC 7812-1:2017 | "4111-1111-1111-1111" → "4111111111111111" |
 | 8 | **SPDX license** | License strings vary ("MIT License", "GPLv3", "Apache-2.0"). SPDX License List is the authority. | LOOKUP_TABLE (case-insensitive + deprecated-ID mapping) | SPDX License List, SPDX Specification v3.x | "MIT License" → "MIT", "GPLv3" → "GPL-3.0-only" |
 | 9 | **Semantic version** | Version strings carry "v" prefixes and partial triples ("v1.0", "1.0.0-beta.1"). SemVer 2.0.0 defines canonical form. | PARSER (strip "v", three-part normalization, preserve pre-release/build) | SemVer 2.0.0 (semver.org) | "v1.0.0" → "1.0.0" |
 | 10 | **TLD** | Suffixes appear with/without dot and mixed case (".COM", "org"). IANA root zone is authoritative; consider folding into Domain-name work. | LOOKUP_TABLE (case-insensitive IANA root zone, lowercase with leading dot) | IANA Root Zone Database, RFC 1591 | ".COM" → ".com" |
@@ -66,16 +70,16 @@ Notes on §1:
 
 ### 2B. Newly surfaced candidates (websearch 2026-09-22)
 
+> Shipped since this list was written (see §1): GTIN / EAN / UPC (#14), ISNI (#19) — rows removed.
+
 Screened for Paxman fit: ambiguous human representations, stable authority, deterministic checkable canonical form, no network inference.
 
 | # | Capability | Why this capability? | Grammar strategy | Provenance publications | Example input → canonical_value |
 |---|-----------|---------------------|------------------|------------------------|-------------------------------|
-| 14 | **GTIN / EAN / UPC** | Product identifiers appear as GTIN-8/12/13/14 with spaces/hyphens and missing leading zeros. GS1 check digit makes them self-validating; natural sibling to ISBN/ISSN. | PARSER (strip separators, zero-pad to GTIN-14 for validation, GS1 Mod-10 check, canonical GTIN-13/14) | GS1 General Specifications (GenSpecs), GS1 check-digit calculator | "590 1234 12345 7" → "05901234123457" |
 | 15 | **VIN** | 17-char vehicle IDs appear lowercased/spaced; letters I/O/Q excluded. ISO 3779 defines structure; FMVSS 115 check digit (pos. 9, transliteration-weighted) applies to NA-market VINs. | PARSER (uppercase, strip separators, charset guard, transliteration check where applicable) | ISO 3779:2009, ISO 4030, SAE J272 / 49 CFR 565 (check digit) | "1m8gdm9axkp042788" → "1M8GDM9AXKP042788" |
 | 16 | **CAS Registry Number** | Chemistry data cites CAS RNs with/without hyphens and wrong check digits. Short `2–7 digits – 2 digits – 1 check` format with MOD-10 check is deterministic. | PARSER (hyphen normalization, MOD-10 check) | CAS Registry (CAS.org check-digit documentation) | "58 08 2" → "58-08-2" |
 | 17 | **InChI / InChIKey** | Structures are shared as non-standard InChI, bare Keys, or prefixed strings. IUPAC InChI is the open standard; Key is a fixed 27-char SHA-256 hash — canonical by construction. Pairs with shipped ChemicalElement. | PARSER (validate `InChI=1S/` prefix and layer syntax; Key `AAAAAAAAAAAAAA-BBBBBBBBFV-P` shape) | IUPAC InChI (InChI Trust, `iupac.org/inchi`), Heller et al. J. Cheminformatics 2015 | "inchi=1s/c2h5no2/c3-1-2(4)5/h1,3h2,(h,4,5)" → "InChI=1S/C2H5NO2/c3-1-2(4)5/h1,3H2,(H,4,5)" |
 | 18 | **ISMN / ISRC** | Music-edition and recording codes are the ISBN/ISSN siblings for audio: ISMN-13 (979-0 prefix, EAN-13 check) and ISRC (12-char `CC-XXX-YY-NNNNN`). Both have ISO standing and IFPI handbooks. | PARSER (ISMN: 979-0 handling + EAN-13 check; ISRC: uppercase + hyphen canonicalization) | ISO 10957:2021 (ISMN), ISO 3901:2001 + IFPI ISRC Handbook (ISRC) | "979-0-2600-0043-8" → "9790260000438"; "usrc17607839" → "US-RC1-76-07839" |
-| 19 | **ISNI** | Public-identity IDs for creators/organizations; same 16-digit MOD 11-2 family as shipped ORCID (ISO 27729). Display varies spaced/hyphenated/compact/URI. | PARSER (strip spaces/hyphens/URI, MOD 11-2 check, spaced-quad canonical) | ISO 27729:2012 (ISNI), isni.org | "0000000121032683" → "0000 0001 2103 2683" |
 | 20 | **ROR ID** | Affiliation strings ("MIT", "Max Planck") need org-identifier normalization; ROR is the open CC0 registry with URL-form IDs. Registry snapshot required. | LOOKUP_TABLE (registry snapshot) + PARSER (URL normalization to `https://ror.org/…`) | ROR Registry (ror.org, CC0 data dump/API) | "ror.org/04aj4c181" → "https://ror.org/04aj4c181" |
 | 21 | **UN/LOCODE** | Port/location codes in logistics data vary in case/spacing ("usnyc", "US NYC"). 5-char `CCLLL` over ~100k entries; UNECE publishes CSV/TXT. | LOOKUP_TABLE (CC + LLL snapshot; uppercase compact canonical) | UNECE UN/LOCODE 2025-1, ISO 3166-1 (country) / ISO 3166-2 (subdivision) | "usnyc" → "USNYC" |
 | 22 | **IMEI** | Device IDs appear hyphen/space grouped; 15 digits with Luhn check per 3GPP. Natural sibling to MAC/IP/Phone. | PARSER (strip separators, length + Luhn check) | 3GPP TS 22.016 (GSM 02.16), GSMA Device Check guidance | "49-015420-323751-8" → "490154203237518" |

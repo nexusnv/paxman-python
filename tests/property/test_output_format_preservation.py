@@ -69,6 +69,7 @@ from paxman.capabilities import (
     IBAN,
     ISBN,
     ISIN,
+    ISNI,
     ISSN,
     LEI,
     ORCID,
@@ -183,6 +184,14 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("isin", "grouped"): "encoding",
     ("issn", "compact"): "encoding",
     ("issn", "urn"): "encoding",
+    # isni compact: space-strip re-encoding of the spaced canonical; the
+    # rendering re-enters the default contract onto the spaced value via
+    # the compact branch (measured in TestISNICapability).
+    ("isni", "compact"): "encoding",
+    # isni urn: carrier-only re-encoding of the compact canonical; the
+    # rendering re-enters the default contract onto the spaced value via
+    # the urn:isni: carrier branch (measured in TestISNICapability).
+    ("isni", "urn"): "encoding",
     # lei urn: carrier-only re-encoding of the compact canonical; the
     # rendering re-enters the default contract onto the compact value via
     # the urn:lei: carrier branch (measured in TestLEICapability).
@@ -451,6 +460,10 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "gtin", GTIN, "native", "614141999996", "5012345670003", "UPC-A vs EAN-13"
     ),
     _InjectivityPair("isin", ISIN, "grouped", "US0378331005", "GB0002634946", ""),
+    _InjectivityPair(
+        "isni", ISNI, "compact", "0000000121032683", "000000012146438X", ""
+    ),
+    _InjectivityPair("isni", ISNI, "urn", "0000000121032683", "000000012146438X", ""),
     _InjectivityPair(
         "lei", LEI, "urn", "5493000IBP32UQZ0KL24", "213800KUD8LAJWSQ9D15", ""
     ),

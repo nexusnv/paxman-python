@@ -113,6 +113,7 @@ Paxman ships with capabilities that each cover one kind of identifier. The set i
 - **Timezone** — IANA time zone identifiers (IANA Time Zone Database 2026d)
 - **UtcOffset** — UTC offset values (ISO 8601-1:2019, RFC 3339)
 - **ISIN** — securities identification numbers (ISO 6166:2021, ANNA ISIN Guidelines)
+- **ISNI** — public-identity identifiers (ISO 27729:2024, MOD 11-2)
 - **LEI** — legal entity identifiers (ISO 17442-1:2020, GLEIF LOU prefix list)
 - **GTIN** — trade item identifiers (GS1 General Specifications 26.0, GS1 Prefix allocation)
 - **CreditCard** — payment card numbers (ISO/IEC 7812-1:2017)

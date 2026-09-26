@@ -1,0 +1,1 @@
+"""isni capability tests (scaffold)."""

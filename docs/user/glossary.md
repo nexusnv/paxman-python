@@ -120,6 +120,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **ISIN** — International Securities Identification Number (ISO 6166:2021, ANNA ISIN Guidelines). Paxman capability. See [Citations](citations/).
 
+**ISNI** — International Standard Name Identifier (ISO 27729:2024). Paxman capability with spaced-quad canonical (`0000 0001 2103 2683`); `compact`, `urn` offered. See [Citations](citations/).
+
 **LEI** — Legal Entity Identifier (ISO 17442-1:2020, GLEIF LOU prefix list). Paxman capability. See [Citations](citations/).
 
 **IETF** — Internet Engineering Task Force. Authority for RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646. See [Citations](citations/).

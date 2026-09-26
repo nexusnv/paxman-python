@@ -58,6 +58,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "International securities identification numbers",
         "ISO 6166:2021, ANNA ISIN Guidelines",
     ),
+    "isni": (
+        "Researcher/organization identifiers",
+        "ISO 27729:2024, MOD 11-2",
+    ),
     "issn": ("Serial identifiers", "ISO 3297:2022"),
     "lei": (
         "Legal entity identifiers",
@@ -94,6 +98,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "ip": "IP",
     "isbn": "ISBN",
     "isin": "ISIN",
+    "isni": "ISNI",
     "issn": "ISSN",
     "lei": "LEI",
     "language": "Language",

@@ -367,6 +367,10 @@ check digit plus ANNA ISIN Guidelines V25 prefix allowlist) is registered by
 contracts are byte-identical. See the [ISIN guide](capabilities/isin/) and
 the [Citations](citations/) ISO/ANNA rows.
 
+### Unreleased — New capability: ISNI (additive)
+
+`ISNI` (spaced display `XXXX XXXX XXXX XXXC` canonical, `compact` 16-char and `urn` `urn:isni:<compact>` offered re-encodings, ISO 27729:2024 structure + MOD 11-2 check digit) is registered by `register_all_shipped()` (now 28 shipped). No migration required — existing contracts are byte-identical. See the [ISNI guide](capabilities/isni/) and the [Citations](citations/) ISO row.
+
 ### Unreleased — New capability: LEI (additive)
 
 `LEI` (compact uppercase `LOU4+entity14+check2` canonical, `urn` `urn:lei:<compact>`
