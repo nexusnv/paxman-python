@@ -16,7 +16,7 @@ Canonicalizes **one ISNI mention** per call — a spaced display (`0000 0001 210
 | Compact 16-char (`0000000121032683`, Wikidata/VIAF dumps) | Wrong lengths (15/17-char runs) → `MISSING` (length guard) |
 | Hyphenated (`0000-0001-2103-2683` — ORCID-style input normalizes to spaced) | `X` mid-run (`000X 0001 …`) → `MISSING` (check position 16 only) |
 | `ISNI` label with separator (`ISNI: …`, `ISNI-…` — case-insensitive) | Glued label (`ISNI0000…`, no separator) → `MISSING` |
-| `isni.org` URIs (`https://isni.org/isni/…`, `http://`, `www.` variants) | MARC `(isni)…` / VIAF `ISNI\|…` pipes → inner compact still resolves; no dedicated pipe pattern in v1 |
+| `isni.org` URIs (`https://isni.org/isni/…`, `http://`, `www.` variants) | MARC `(isni)…` / VIAF `ISNI\|…` wrappers — inner compact mention still resolves as an embedded mention (no dedicated wrapper pattern in v1) |
 | `urn:isni:` carrier (`urn:isni:0000000121241960`) | Fullwidth digits → `MISSING` (ASCII only, no autocorrection) |
 | Lowercase `x` check (`…955x` → `…955X`) | Glued surroundings (`X0000…`, `…2683Y`) → `MISSING` (word boundary) |
 | Embedded mentions (`see ISNI 0000 0001 2103 2683 (Shakespeare)`) | Prose without an ISNI shape (`not an isni`) → `MISSING` |
@@ -94,7 +94,7 @@ flowchart TB
     style MISS fill:#fff5f5,stroke:#cc3333
 ```
 
-**Sibling note:** a hyphenated 16-digit string also matches the ORCID shape — each side resolves under its own contract (ISNI `SUCCESS` spaced, ORCID `SUCCESS` hyphenated). Unassigned-but-shaped numbers read `SUCCESS` (storable, no registry — UUID precedent).
+**Sibling note:** a hyphenated 16-digit string also matches the ORCID shape — each side resolves under its own contract (ISNI `SUCCESS` spaced, ORCID `SUCCESS` hyphenated). The same holds for `ORCID:`-labeled or `urn:orcid:`-carried digits: ORCID iDs are ISNI-compatible by design, so structurally valid digits resolve as ISNI with ISO 27729 provenance (symmetric with shipped ORCID claiming `ISNI:` labels). Unassigned-but-shaped numbers read `SUCCESS` (storable, no registry — UUID precedent).
 
 ---
 

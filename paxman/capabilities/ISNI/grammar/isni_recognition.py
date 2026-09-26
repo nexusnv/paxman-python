@@ -30,12 +30,18 @@ _ISNI_GLUED_GUARD = r"(?!(?ai:ISNI[0-9]))"
 # claim the first four, but a compact run followed by space+digit is a
 # separate mention ("<16 digits> <16 digits>" → two mentions), so the
 # compact branch carries no trailing guard.
+# Continuation lookbehinds are branch-local: a spaced (hyphenated) payload
+# starting right after `<digit><space>` (`<digit>-`) is the suffix window of
+# a longer run ("0000 0000 0001 2103 2683"), never a fresh mention — finditer
+# would otherwise restart inside the run and claim the valid suffix. The
+# compact branch carries no such guard: "<16 digits> <16 digits>" is two
+# separate mentions (word_only already blocks digit-glued starts).
 _ISNI_SPACED = r"(?ai:\d{4}(?: \d{4}){2} \d{3}[\dX])(?![ ]\d)"
 _ISNI_COMPACT = r"(?ai:\d{15}[\dX])"
 _ISNI_HYPHEN = r"(?ai:\d{4}(?:-\d{4}){2}-\d{3}[\dX])(?![-]\d)"
 _ISNI_BODY = (
     rf"{_ISNI_LABEL}{_ISNI_HOST}{_ISNI_CARRIER}{_ISNI_GLUED_GUARD}"
-    rf"(?P<isni>{_ISNI_SPACED}|{_ISNI_COMPACT}|{_ISNI_HYPHEN})"
+    rf"(?P<isni>(?<![\d] ){_ISNI_SPACED}|{_ISNI_COMPACT}|(?<![\d]-){_ISNI_HYPHEN})"
 )
 # word_only guards block left glue X0000... and right glue ...2683Y.
 # The negative lookahead blocks glued label without separator.

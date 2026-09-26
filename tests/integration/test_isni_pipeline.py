@@ -46,6 +46,11 @@ class TestISNIPipelineSuccess:
             ),
             ("urn:isni:0000000121032683", "0000 0001 2103 2683", (0, 25)),
             ("0000 0001 2281 955x", "0000 0001 2281 955X", (0, 19)),
+            # Revised §13.7: ORCID-labeled/carried structurally valid digits
+            # resolve (ORCID ⊂ ISNI-compatible space; symmetric with ORCID
+            # claiming ISNI: labels).
+            ("ORCID: 0000-0001-2103-2683", "0000 0001 2103 2683", (7, 26)),
+            ("urn:orcid:0000000121032683", "0000 0001 2103 2683", (10, 26)),
         ],
     )
     def test_success_rows(
@@ -109,6 +114,8 @@ class TestISNIPipelineReject:
             "0000  0001 2103 2683",
             "000000012103268",
             "00000001210326833",
+            "0000 0000 0001 2103 2683",
+            "0000-0000-0001-2103-2683",
             "not an isni",
         ],
     )

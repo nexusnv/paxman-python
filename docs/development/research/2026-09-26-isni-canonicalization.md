@@ -52,7 +52,7 @@ From the Phase 1C survey (isni.org pages, IANA URN registration, MARC/LOC practi
 | `urn:isni:` carrier | `urn:isni:0000000121241960` | IANA urn-formal/isni (2025-10-15) | official carrier | RECOGNIZE | optional carrier prefix (ties to offered `urn` format) |
 | `ISNI:` / `ISNI -` label variants | `ISNI: 0000 0001 2103 2683` | Authority boxes (`ISNI : …`); MARC `$0ISNI …` | common | RECOGNIZE | fused label `[\s:-]+` |
 | Lowercase `x` check | `0000 0001 2281 955x` | IANA ("strictly non-conformant but may treat as upper-case") | rare | RECOGNIZE | inline `(?ai:)` + `.upper()` fold |
-| MARC `(isni)…` / VIAF `ISNI\|…` pipes | `(isni)1234567899999799`, `ISNI\|000000012146438X` | Wikipedia format section; VIAF dumps | rare | DEFER | `extra_grammars` community extension |
+| MARC `(isni)…` / VIAF `ISNI\|…` pipes | `(isni)1234567899999799`, `ISNI\|000000012146438X` | Wikipedia format section; VIAF dumps | rare | DEFER (no dedicated wrapper pattern; the inner compact still resolves as an embedded mention) | `extra_grammars` community extension for wrapper-aware spans |
 | Bare short runs / truncated | `0000 0001 2281` (12) | stdnum `InvalidLength` | reject-shape | REJECT (MISSING) | length guard, never 12/15/17 |
 
 A v1 that does NOT recognize hyphenated input must state that explicitly — it does not: hyphenated is claimed because validation (not separators) decides identity, and stdnum consensus strips hyphens.
@@ -100,7 +100,7 @@ spaced = f"{compact[:4]} {compact[4:8]} {compact[8:12]} {compact[12:]}"
 ### 2.3 What input is NOT an ISNI mention
 - ORCID-shaped hyphenated strings ARE claimed (same 16-digit family; each resolves under its own contract — cross-capability overlap is normal, cf. UUID/IBAN bare-32 note).
 - 15-char runs, 12-char truncations, `X` mid-run — MISSING (length/charset guard, never carved).
-- `ISNI|` pipes / `(isni)` MARC wrappers — MISSING in v1 (DEFERRED extension).
+- `ISNI|` pipes / `(isni)` MARC wrappers — no dedicated wrapper pattern in v1 (DEFERRED extension); the inner compact resolves as an embedded mention.
 - Bare names ("Shakespeare") — different domain entirely (no name grammar; ISNI assigns opaque numbers).
 
 ### 2.4 Single-mention vs multi-mention input
@@ -535,7 +535,7 @@ No `rules/data/` in v1 (no registry layer). No `grammar/data/` (regex shape, no 
 | 4 | Single grammar vs split | Single `isni_recognition` with branches | Avoids cross-grammar spurious AMBIGUOUS |
 | 5 | Hyphenated input disposition | RECOGNIZE, normalize to spaced | stdnum strips hyphens; validation decides identity |
 | 6 | MARC/VIAF pipe forms | DEFER to `extra_grammars` | Rare, carrier-specific; community-extension shape |
-| 7 | `ORCID`-labeled ISNI digits | REJECT (MISSING) — do not claim `ORCID:` labels | Label asserts ORCID semantics; ISNI grammar must not poach (mirror of ORCID's glued-guard discipline) |
+| 7 | `ORCID`-labeled ISNI digits | RECOGNIZE (revised post-review: an `ORCID:`-labeled 16-digit string with valid MOD 11-2 is structurally a valid ISNI — ORCID iDs are ISNI-compatible by design per the 2013 joint statement — so the digits resolve with ISO 27729 provenance; the contract determines presentation, and cross-capability overlap is normal) | ORCID ⊂ ISNI-compatible space; symmetric with shipped ORCID claiming `ISNI:` labels; value and provenance are correct either way |
 | 8 | `single_value` | `True` initially | Shipped precedent; segmentation for batches |
 | 9 | Double-space/tab quad separators | MISSING (single-space only) | Bounded absorption (ISIN/LEI precedent) |
 | 10 | Lowercase `x` | RECOGNIZE (fold to `X`) | IANA tolerance note; stdnum uppercases |
