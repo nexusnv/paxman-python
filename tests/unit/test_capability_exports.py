@@ -288,6 +288,7 @@ class TestURLCapabilityExports:
             "IP",
             "ISBN",
             "ISIN",
+            "ISNI",
             "ISSN",
             "LEI",
             "Language",

@@ -32,6 +32,7 @@ For the shared concepts behind these pages see [Contracts](../concepts/contracts
 | `9780306406157`, `0306406152` | [ISBN](isbn/) |
 | `0317-8471`, `0378-5955` | [ISSN](issn/) |
 | `US0378331005`, `GB0002634946` | [ISIN](isin/) |
+| `0000 0001 2103 2683`, `0000000121032683`, `urn:isni:…` | [ISNI](isni/) |
 | `5493000IBP32UQZ0KL24`, `LEI: 213800KUD8LAJWSQ9D15` | [LEI](lei/) |
 | `en`, `en-US`, `zh-Hans-CN`, `German` | [Language](language/) |
 | `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money/) |

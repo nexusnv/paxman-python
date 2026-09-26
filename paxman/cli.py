@@ -198,6 +198,10 @@ def _create_contract(
         from paxman.capabilities import ISIN
 
         return ISIN.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "isni":
+        from paxman.capabilities import ISNI
+
+        return ISNI.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "issn":
         from paxman.capabilities import ISSN
 

@@ -279,6 +279,23 @@ def _issn_contract() -> object:
     return ISSN.create_contract()
 
 
+def _isni_register() -> None:
+    from paxman.capabilities import ISNI
+    from paxman.core.discovery import get_capability, register_capability
+    from paxman.core.errors import CapabilityError
+
+    try:
+        get_capability("isni")
+    except CapabilityError:
+        register_capability(ISNI())
+
+
+def _isni_contract() -> object:
+    from paxman.capabilities import ISNI
+
+    return ISNI.create_contract()
+
+
 def _language_register() -> None:
     from paxman.capabilities import Language
     from paxman.core.discovery import get_capability, register_capability
@@ -578,6 +595,12 @@ SCENARIOS: list[dict] = [
         "text": "US0378331005",
         "register": _isin_register,
         "contract_factory": _isin_contract,
+    },
+    {
+        "capability": "isni",
+        "text": "ISNI 0000 0001 2103 2683",
+        "register": _isni_register,
+        "contract_factory": _isni_contract,
     },
     {
         "capability": "issn",

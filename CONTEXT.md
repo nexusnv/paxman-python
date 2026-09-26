@@ -46,6 +46,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **ISBN:** `ISBNNotation(shape, digits)` — `shape` is `"isbn10"` / `"isbn13"`, `digits` is the digit string (`X` only as final char of an isbn10 shape)
 - **ISSN:** `ISSNNotation(digits)` — `digits` is the 8-character hyphen/space-stripped, uppercased string (grammar folds `x`→`X`); single lexical shape, no discriminator
 - **ISIN:** `ISINNotation(country_code, nsin, check_digit, compact)` — `country_code` is the 2-letter prefix (ISO 3166-1 alpha-2 or an attested special prefix such as `XS`/`EU`/`EZ`/`XT`), `nsin` the 9-character alphanumeric national identifier, `check_digit` the single numeric position-12 character, `compact` the grammar-normalized candidate (≡ cc+nsin+check, uppercased with single-space groupings stripped; grammar never validates the check digit or prefix membership — rules own both)
+- **ISNI:** `ISNINotation(compact, spaced, uri, check, is_uri)` — `compact` is the 16-char separator-free uppercase form (15 digits + check `0-9`/`X`), `spaced` the `XXXX XXXX XXXX XXXC` canonical display, `uri` the `https://isni.org/isni/` link, `check` the final character, `is_uri` `"true"` when the raw span carried an `isni.org` prefix or `urn:isni:` carrier; grammar never validates MOD 11-2 — rules own it
 - **LEI:** `LEINotation(lou_prefix, entity_block, check_digits, compact)` — `lou_prefix` is the 4-character accredited-LOU issuer block, `entity_block` the 14-character entity-specific block (positions 5–6 carry no enforceable constraint), `check_digits` the 2-digit MOD 97-10 pair, `compact` the grammar-normalized candidate (≡ lou+entity+check, uppercased with single spaces stripped; grammar never validates the check digits or prefix membership — rules own both)
 - **Language:** `LanguageNotation(language, extlang, script, region, variant, extension, privateuse, grandfathered, compact, raw_value)` — `language` 2-8 lower, `extlang` 3-letter hyphen-joined (e.g. `cmn` for `zh-cmn`), `script` Title 4, `region` Upper 2|3-digit, `variant` lower prefix-constrained via `VARIANT_PREFIXES` dict (`sl-nedis` ok, `de-nedis` rejected), `grandfathered` lower (preferred via `GRANDFATHERED_PREFERRED`), `compact` BCP47 case-canonical tag or bare lower, `raw_value` trimmed lower for lexicon; grammar strips case/underscore via `StandardPre` (`_`→`-` in PipelineState, `raw_text` preserves original), rules own registry + Prefix + Deprecated chain + Suppress-Script (informative, never rejects)
 - **BIC:** `BICNotation(bank_code, country_code, location_code, branch_code, compact)` — `bank_code` 4-char A-Z0-9, `country_code` 2-letter ISO 3166-1 plus XK, `location_code` 2-char A-Z0-9, `branch_code` 3-char or empty when BIC8, `compact` full 8 or 11 equals bank+country+location+branch, grammar uppercases and strips label, location second char 0/1/2 informative only
@@ -77,7 +78,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-seven built-in capabilities (27 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-eight built-in capabilities (28 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -96,6 +97,7 @@ Paxman ships twenty-seven built-in capabilities (27 in `paxman/capabilities/__in
 | **IP** | IP addresses | RFC 791 (RFC 1123 §2.1), RFC 4291 §2.2, RFC 5952 |
 | **ISBN** | ISBNs | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISIN** | International securities identification numbers | ISO 6166:2021, ANNA ISIN Guidelines |
+| **ISNI** | Researcher/organization identifiers | ISO 27729:2024, MOD 11-2 |
 | **ISSN** | Serial identifiers | ISO 3297:2022 |
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
 | **LEI** | Legal entity identifiers | ISO 17442-1:2020, GLEIF LOU prefix list |
@@ -834,7 +836,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (27 capabilities, alphabetical; paxman/capabilities/__init__.py exports 27), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (28 capabilities, alphabetical; paxman/capabilities/__init__.py exports 28), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1032,6 +1034,12 @@ paxman/
     │   ├── notation.py            # ISINNotation (country_code, nsin, check_digit, compact)
     │   ├── grammar/               # isin_recognition
     │   └── rules/                 # iso_6166_ed2021, anna_isin_guidelines_ed2025
+    ├── ISNI/                      # grammar/ (1) + rules/ (2) — ISO 27729:2024, MOD 11-2
+    │   ├── capability.py          # ISNICapability
+    │   ├── contract.py            # ISNIContract (isni/compact/urn output formats)
+    │   ├── notation.py            # ISNINotation (compact, spaced, uri, check, is_uri)
+    │   ├── grammar/               # isni_recognition
+    │   └── rules/                 # iso_27729_ed2024 (structure + MOD 11-2)
     ├── Language/                  # grammar/ (4) + rules/ (7) + grammar/data/ + rules/data/ — ISO 639, IANA Registry, BCP 47 RFC 5646, CLDR
     │   ├── capability.py          # LanguageCapability
     │   ├── contract.py            # LanguageContract (include_localized, include_collective, include_private)
@@ -1081,7 +1089,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (27 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (28 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

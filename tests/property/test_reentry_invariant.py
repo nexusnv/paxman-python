@@ -56,6 +56,7 @@ from paxman.capabilities import (
     IP,
     ISBN,
     ISIN,
+    ISNI,
     ISSN,
     LEI,
     ORCID,
@@ -174,6 +175,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # the offered grouped rendering re-enters via the spaced-carrier group
     # (measured: "US 037833 100 5" strips to compact, re-renders grouped).
     _row(ISIN, "US0378331005", "US0378331005"),
+    # ISNI: tests/capabilities/isni/test_capability.py — spaced canonical;
+    # the offered compact rendering re-enters via the compact branch and
+    # urn via the urn:isni: carrier branch.
+    _row(ISNI, "ISNI 0000 0001 2103 2683", "0000 0001 2103 2683"),
     # LEI: tests/capabilities/lei/test_capability.py — compact canonical;
     # the offered urn rendering re-enters via the urn:lei: carrier branch
     # (measured: "urn:lei:5493000IBP32UQZ0KL24" strips to compact).

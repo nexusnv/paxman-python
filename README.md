@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twenty-seven built-in capabilities (27 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with twenty-eight built-in capabilities (28 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -85,6 +85,7 @@ Paxman ships with twenty-seven built-in capabilities (27 in `paxman/capabilities
 | **IP** | IP addresses | 2 (ipv4, ipv6) | 2 | RFC 791, RFC 5952 |
 | **ISBN** | ISBNs | 2 (isbn13, isbn10) | 4 | ISO 2108, ISBN Users' Manual, ISBN Range Message |
 | **ISIN** | International securities identification numbers | 1 (isin) | 2 | ISO 6166:2021, ANNA ISIN Guidelines |
+| **ISNI** | Researcher/organization identifiers | 1 (isni) | 2 | ISO 27729:2024, MOD 11-2 |
 | **ISSN** | Serial identifiers | 1 (issn) | 1 | ISO 3297:2022 |
 | **Language** | Language identifiers | 4 (bcp47_tag, language_code, language_name, language_description) | 11 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
 | **LEI** | Legal entity identifiers | 1 (lei) | 2 | ISO 17442-1:2020, GLEIF LOU prefix list |
@@ -573,7 +574,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with twenty-seven built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with twenty-eight built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re
