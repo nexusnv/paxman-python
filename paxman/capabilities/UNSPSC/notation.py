@@ -1,7 +1,4 @@
-"""UNSPSC notation — scaffolded placeholder.
-
-TODO(scaffold): shape the notation per your domain.
-"""
+"""UNSPSC notation — grammar-normalized digit form."""
 
 from __future__ import annotations
 
@@ -10,10 +7,20 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class UNSPSCNotation:
-    """Scaffolded notation for UNSPSC.
+    """UNSPSC notation — grammar-normalized digit form.
 
-    TODO(scaffold): replace the single ``value`` field with domain-shaped
-    fields (one ``str``/typed component per recognition capture group).
+    ``digits`` is the 8-digit zero-padded code (a 6-digit class shorthand
+    is padded +"00" by the grammar; a 10-digit input keeps its 8-digit
+    stem here).
+    ``level`` is one of "segment" | "family" | "class" | "commodity",
+    derived from trailing-00 pairs (no authority lookup).
+    ``function`` is the 2-digit business-function suffix, or "" when the
+    input was 6/8 digits (trace-only, never affects validity).
+    ``native_length`` is the spelled digit length (6, 8, or 10),
+    retained as a facet for the ``native`` offered format.
     """
 
-    value: str  # TODO(scaffold): replace with domain fields
+    digits: str
+    level: str
+    function: str
+    native_length: int
