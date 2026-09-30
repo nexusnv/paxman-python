@@ -75,13 +75,6 @@ class TestUNSPSCSuccess:
         assert (
             paxman.canonicalize(
                 "44103103",
-                UNSPSCCapability.create_contract(output_format="segmented"),
-            ).canonicalized_value
-            == "44-10-31-03"
-        )
-        assert (
-            paxman.canonicalize(
-                "44103103",
                 UNSPSCCapability.create_contract(output_format="labeled"),
             ).canonicalized_value
             == "UNSPSC 44103103"
@@ -91,6 +84,12 @@ class TestUNSPSCSuccess:
                 "441217", UNSPSCCapability.create_contract(output_format="native")
             ).canonicalized_value
             == "441217"
+        )
+        assert (
+            paxman.canonicalize(
+                "4410310314", UNSPSCCapability.create_contract(output_format="native")
+            ).canonicalized_value
+            == "4410310314"
         )
 
     def test_determinism(self) -> None:

@@ -73,6 +73,7 @@ from paxman.capabilities import (
     ISSN,
     LEI,
     ORCID,
+    UNSPSC,
     UUID,
     ChemicalElement,
     Coordinates,
@@ -231,6 +232,15 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("uuid", "compact"): "encoding",
     ("uuid", "braced"): "encoding",
     ("uuid", "urn"): "encoding",
+    # -- UNSPSC --------------------------------------------------------------
+    # labeled: fixed "UNSPSC " carrier-only re-encoding of the wire stem;
+    # the rendering re-enters the default contract onto the stem via the
+    # fused label lane (measured in TestUNSPSCCapability).
+    ("unspsc", "labeled"): "encoding",
+    # native: spelling-preserving re-encoding (6-digit alias unpadded,
+    # 10-digit keeps its suffix); injective across length lanes and
+    # re-enters via the 6/8/10 alternation (measured).
+    ("unspsc", "native"): "encoding",
 }
 
 _CLASS_VALUES: frozenset[str] = frozenset(
@@ -520,6 +530,15 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "10.1038/nature12345",
         "10.1000/182",
         "",
+    ),
+    _InjectivityPair("unspsc", UNSPSC, "labeled", "44103103", "43211503", ""),
+    _InjectivityPair(
+        "unspsc",
+        UNSPSC,
+        "native",
+        "441217",
+        "43211503",
+        "alias vs commodity lanes",
     ),
 )
 

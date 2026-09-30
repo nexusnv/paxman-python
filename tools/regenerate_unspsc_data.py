@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import textwrap
 from pathlib import Path
 from typing import cast
 
@@ -45,8 +46,8 @@ def _load_snapshot() -> dict[str, object]:
 
 
 def _render_module(version: str, count: int, synth: list[str], stems: list[str]) -> str:
-    lines = [
-        f'"""{_GENERATED_HEADER}',
+    doc_lines = [
+        _GENERATED_HEADER,
         "",
         "UNDP UNSPSC codeset snapshot (live-directory subset).",
         "Source: UNGM Public/UNSPSC Excel export, fetched 2026-09-30.",
@@ -57,25 +58,27 @@ def _render_module(version: str, count: int, synth: list[str], stems: list[str])
         "codeset absence beyond this pinned snapshot.",
     ]
     if synth:
-        lines.append(
-            f"Synthesized family ancestors ({len(synth)}, flagged in the "
-            "snapshot): " + ", ".join(synth) + "."
+        doc_lines.append(
+            "Synthesized family ancestors "
+            f"({len(synth)}, flagged in the snapshot): " + ", ".join(synth) + "."
         )
-    lines += [
+    doc_lines += [
         "",
         "Regenerate with: uv run python tools/regenerate_unspsc_data.py",
-        '"""',
-        "",
-        "from __future__ import annotations",
-        "",
+    ]
+    wrapped = ['"""']
+    for line in doc_lines:
+        wrapped += textwrap.wrap(line, width=88) if line else [""]
+    wrapped += ['"""', "", "from __future__ import annotations", ""]
+    wrapped += [
         f'CODESET_VERSION: str = "{version}"',
         "",
         "LIVE_STEMS: frozenset[str] = frozenset(",
         "    {",
     ]
-    lines += [f'        "{stem}",' for stem in stems]
-    lines += ["    }", ")", ""]
-    return "\n".join(lines)
+    wrapped += [f'        "{stem}",' for stem in stems]
+    wrapped += ["    }", ")", ""]
+    return "\n".join(wrapped)
 
 
 def _modules() -> list[tuple[Path, str]]:

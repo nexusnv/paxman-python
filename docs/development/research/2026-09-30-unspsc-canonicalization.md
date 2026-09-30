@@ -419,9 +419,14 @@ with the common block as keyword-only `Sequence[str] | None = None`. See §6.2.
 | output_format | Value example | Meaning |
 |---------------|---------------|---------|
 | `unspsc` (default) | `43211503` | 8-digit zero-padded wire form |
-| `segmented` | `43-21-15-03` | Pair-hyphenated display expansion (same entity) |
-| `labeled` | `UNSPSC 43211503` | Label-prefixed display expansion (same entity) |
+| `labeled` | `UNSPSC 43211503` | Label-prefixed display encoding (same entity) |
 | `native` | `441217` / `4410310314` | Spelling-preserving encoding (6-digit alias unpadded, 10-digit with suffix) |
+
+> **Implementation note (2026-09-30):** the `segmented` (`SS-FF-CC-MM`)
+> display form proposed here was dropped before implementation — the
+> grammar rejects internal hyphens by design, so a segmented rendering
+> could never re-enter (ADR-0010 fixed-point). Offered: `labeled` +
+> `native` only.
 
 ### 6.2 Capability (HOW_TO_ADD_NEW_CAPABILITY.md §6)
 

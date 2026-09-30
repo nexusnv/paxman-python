@@ -1,7 +1,7 @@
 {
  "source": "UNGM Public/UNSPSC Excel export (https://www.ungm.org/Public/UNSPSC/Excel)",
  "fetched": "2026-09-30",
- "codeset_version": "UNGM live export 2026-09-30 (13,490 live 8-digit stems incl. 8 synthesized family ancestors; partial: UNDP v26.0801 XLSX gated 403, full 158,448-row codeset unfetchable)",
+ "codeset_version": "UNGM live export 2026-09-30 (13,490 live stems)",
  "full_codeset_note": "UNDP v26.0801 (2023-08-14, 158,448 items) remains the reference release; this snapshot holds the live-directory subset until the full XLSX can be ingested.",
  "stem_count": 13490,
  "stems": [
