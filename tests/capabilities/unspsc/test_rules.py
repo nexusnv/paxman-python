@@ -4,6 +4,9 @@ import pytest
 
 from paxman.capabilities.UNSPSC.contract import UNSPSCContract
 from paxman.capabilities.UNSPSC.notation import UNSPSCNotation
+from paxman.capabilities.UNSPSC.rules.undp_unspsc_codeset_ed2026 import (
+    Section3CodesetMembership,
+)
 from paxman.capabilities.UNSPSC.rules.undp_unspsc_structure_ed2025 import (
     Section1HierarchyStructure,
     Section2LevelPadding,
@@ -117,3 +120,48 @@ class TestSection2LevelPadding:
 
     def test_normalize_returns_stem(self) -> None:
         assert self.rule.normalize(_notation("43211503"), self.contract) == "43211503"
+
+
+@pytest.mark.capability
+class TestSection3CodesetMembership:
+    """Section 3-codeset-membership: stem + live ancestors in the snapshot."""
+
+    def setup_method(self) -> None:
+        self.rule = Section3CodesetMembership()
+        self.contract = UNSPSCContract()
+
+    def test_metadata(self) -> None:
+        assert self.rule.name == "Section 3-codeset-membership"
+        assert self.rule.strategy is RuleStrategy.LOOKUP_TABLE
+        assert self.rule.target_semantics == frozenset({"unspsc_recognition"})
+        assert self.rule.requires_features == frozenset()
+        assert self.rule.provenance.kind == "registry"
+        assert self.rule.provenance.version.startswith("UNGM live export")
+
+    @pytest.mark.parametrize(
+        "digits",
+        [
+            "44103103",
+            "43211503",
+            "10101501",
+            "25101703",
+            "43000000",
+            "43210000",
+            "43211500",
+            "44121700",
+        ],
+    )
+    def test_accepts_issued(self, digits: str) -> None:
+        assert self.rule.matches(_notation(digits), self.contract) is True
+
+    @pytest.mark.parametrize("digits", ["44103199", "99999999", "43111503"])
+    def test_rejects_unissued(self, digits: str) -> None:
+        assert self.rule.matches(_notation(digits), self.contract) is False
+
+    def test_requires_live_ancestors(self) -> None:
+        # Synthetic stem with a dead family ancestor: well-formed and
+        # 8-digit but no live row for the stem or its ancestors.
+        assert self.rule.matches(_notation("43991503"), self.contract) is False
+
+    def test_normalize_returns_stem(self) -> None:
+        assert self.rule.normalize(_notation("44103103"), self.contract) == "44103103"

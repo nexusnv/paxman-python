@@ -9,6 +9,9 @@ from paxman.capabilities.UNSPSC.grammar.unspsc_recognition import (
     UNSPSCRecognitionGrammar,
 )
 from paxman.capabilities.UNSPSC.notation import UNSPSCNotation
+from paxman.capabilities.UNSPSC.rules.undp_unspsc_codeset_ed2026 import (
+    Section3CodesetMembership,
+)
 from paxman.capabilities.UNSPSC.rules.undp_unspsc_structure_ed2025 import (
     Section1HierarchyStructure,
     Section2LevelPadding,
@@ -32,7 +35,11 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
 
     def get_rules(self) -> list[Rule[UNSPSCNotation]]:
         """Return the default validation rule instances."""
-        return [Section1HierarchyStructure(), Section2LevelPadding()]
+        return [
+            Section1HierarchyStructure(),
+            Section2LevelPadding(),
+            Section3CodesetMembership(),
+        ]
 
     @staticmethod
     def create_contract(

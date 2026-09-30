@@ -25,7 +25,11 @@ class TestUNSPSCCapability:
 
     def test_get_rules(self) -> None:
         names = [r.name for r in self.capability.get_rules()]
-        assert names == ["Section 1-hierarchy-structure", "Section 2-level-padding"]
+        assert names == [
+            "Section 1-hierarchy-structure",
+            "Section 2-level-padding",
+            "Section 3-codeset-membership",
+        ]
 
     def test_create_contract_defaults(self) -> None:
         contract = self.capability.create_contract()
