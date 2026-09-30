@@ -296,7 +296,7 @@ The registry entry is `kind="registry"`; the Red Book entry is `kind="specificat
 
 Specification: **UNSPSC Code Structure (UNGM Help Center)** — `https://help.ungm.org/hc/en-us/articles/360012816160-What-are-UNSPSC-codes-` — `kind="specification"`, `version="2025-07-08"`, `lifecycle="active"`, `publication_year=2025`.
 
-**UNSPSC Codeset (UNGM live export)** — `https://www.ungm.org/Public/UNSPSC` — `kind="registry"`, `version="UNGM live export 2026-09-30 (13,490 live stems)"`, `lifecycle="active"`, `publication_year=2026`. Partial: the UNDP v26.0801 XLSX (158,448 items) is access-gated; the table holds the live-directory subset.
+**UNSPSC Codeset (UNGM live export)** — `https://www.ungm.org/Public/UNSPSC` — `kind="registry"`, `version="UNGM live export 2026-09-30 (13,482 stems)"`, `lifecycle="active"`, `publication_year=2026`. Partial: the UNDP v26.0801 XLSX (158,448 items) is access-gated; the table holds the live-directory subset.
 
 | Capability | Rule | Citation |
 |------------|------|----------|

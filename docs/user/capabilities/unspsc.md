@@ -60,7 +60,7 @@ contract = UNSPSC.create_contract(
 
 - One grammar: `unspsc_recognition` (6/8/10 lanes + fused label, longest-first).
 - Four rules: `Section 1-hierarchy-structure` + `Section 2-level-padding` (UNGM structure; both PARSER, always-active), `Section 3-codeset-membership` (UNDP codeset snapshot; LOOKUP_TABLE, always-active), `Section 4-business-function-suffix` (UNECE guidelines; PARSER, gated by `include_business_function`).
-- Deterministic by snapshot: same input + contract + library snapshot → same output. The snapshot pins the UNGM live export of 2026-09-30 (13,490 live stems); a code moved or inactivated after that export resolves `INVALID` under the pinned snapshot, not silently `SUCCESS`.
+- Deterministic by snapshot: same input + contract + library snapshot → same output. The snapshot pins the UNGM live export of 2026-09-30 (13,482 live stems); a code moved or inactivated after that export resolves `INVALID` under the pinned snapshot, not silently `SUCCESS`.
 
 ---
 
@@ -134,7 +134,7 @@ for text in rows:
 ## Provenance
 
 - **United Nations Development Programme, UNSPSC Code Structure (UNGM Help Center)** (specification, 2025-07-08; four-level positional definition) — `Section 1-hierarchy-structure`, `Section 2-level-padding`
-- **United Nations Development Programme, UNSPSC Codeset (UNGM live export 2026-09-30)** (registry, 13,490 live stems; partial — UNDP v26.0801 XLSX gated) — `Section 3-codeset-membership`
+- **United Nations Development Programme, UNSPSC Codeset (UNGM live export 2026-09-30)** (registry, 13,482 live stems; partial — UNDP v26.0801 XLSX gated) — `Section 3-codeset-membership`
 - **United Nations Economic Commission for Europe, Classification Guidelines (Business Function Identifiers)** (specification, v2.04; suffix informative-only, no value table cited) — `Section 4-business-function-suffix`
 
 Each candidate's `validation_rule` carries the section, and `candidate.provenance[0].publication_year` the year.

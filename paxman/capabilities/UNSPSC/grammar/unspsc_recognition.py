@@ -17,7 +17,7 @@ import re
 from paxman.capabilities.UNSPSC.notation import UNSPSCNotation
 from paxman.core.grammar import PipelineGrammar, RegexStage, StandardPre
 
-_LOOKBEHIND = r"(?<!\d)(?<![A-Za-z])"
+_LOOKBEHIND = r"(?<!\d)(?<![A-Za-z])(?<!\d-)"
 _LOOKAHEAD = r"(?!\d)(?![A-Za-z])"
 _UNSPSC_LABEL = r"(?:UNSPSC(?:0*\.?)?(?:\s+code)?[\s:#|\-.]*?)?"
 _UNSPSC_BODY = (
@@ -36,8 +36,11 @@ _UNSPSC_PATTERN = (
 )
 # Trailing (?![-]\d) mirrors the ISBN-13 fix: a hyphen+digit continuation
 # (e.g. "44103103-14", an attempted hyphenated BFI suffix) means the digit
-# run is not a standalone code — no carving. Dot+digit still matches the
-# stem ("44103103.0" float damage leaves ".0" outside the span).
+# run is not a standalone code — no carving. The symmetric (?<!\d-)
+# lookbehind rejects a digit-hyphen prefix (e.g. "44-44103103", an
+# attempted hyphen-grouped code): hyphens are not UNSPSC separators on
+# either side. Dot+digit still matches the stem ("44103103.0" float damage
+# leaves ".0" outside the span).
 
 
 def _unspsc_notation(match: re.Match[str]) -> UNSPSCNotation:

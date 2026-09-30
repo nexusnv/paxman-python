@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -87,10 +88,12 @@ class TestCodesetData:
         assert missing == []
 
     def test_regenerate_check_is_clean(self) -> None:
+        root = Path(__file__).resolve().parents[3]
+        script = str(root / "tools" / "regenerate_unspsc_data.py")
         proc = subprocess.run(
-            [sys.executable, "tools/regenerate_unspsc_data.py", "--check"],
+            [sys.executable, script, "--check"],
             capture_output=True,
             text=True,
-            cwd=".",
+            cwd=root,
         )
         assert proc.returncode == 0, proc.stderr or proc.stdout
