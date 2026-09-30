@@ -84,7 +84,6 @@ _LAZY: dict[str, tuple[str, str]] = {
 
 if TYPE_CHECKING:
     from paxman.capabilities.BIC.capability import BICCapability as BIC
-    from paxman.capabilities.UNSPSC.capability import UNSPSCCapability as UNSPSC
     from paxman.capabilities.ChemicalElement.capability import (
         ChemicalElementCapability as ChemicalElement,
     )
@@ -117,6 +116,7 @@ if TYPE_CHECKING:
     from paxman.capabilities.Phone.capability import PhoneCapability as Phone
     from paxman.capabilities.SIUnit.capability import SIUnitCapability as SIUnit
     from paxman.capabilities.Timezone.capability import TimezoneCapability as Timezone
+    from paxman.capabilities.UNSPSC.capability import UNSPSCCapability as UNSPSC
     from paxman.capabilities.URL.capability import URLCapability as URL
     from paxman.capabilities.UtcOffset.capability import (
         UtcOffsetCapability as UtcOffset,

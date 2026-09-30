@@ -16,6 +16,7 @@ from paxman.capabilities import (
     ISSN,
     LEI,
     ORCID,
+    UNSPSC,
     URL,
     UUID,
     ChemicalElement,
@@ -32,7 +33,6 @@ from paxman.capabilities import (
     Phone,
     SIUnit,
     Timezone,
-    UNSPSC,
     UtcOffset,
 )
 from paxman.core.capability import Capability

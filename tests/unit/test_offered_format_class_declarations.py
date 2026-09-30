@@ -53,6 +53,7 @@ from paxman.capabilities import (
     Phone,
     SIUnit,
     Timezone,
+    UNSPSC,
     UtcOffset,
 )
 
@@ -86,6 +87,7 @@ _FACTORIES = {
     "chemical_element": ChemicalElement,
     "si_unit": SIUnit,
     "timezone": Timezone,
+    "unspsc": UNSPSC,
     "url": URL,
     "utc_offset": UtcOffset,
     "uuid": UUID,
