@@ -6,10 +6,13 @@ from collections.abc import Sequence
 
 from paxman.capabilities.UNSPSC.contract import UNSPSCContract
 from paxman.capabilities.UNSPSC.grammar.unspsc_recognition import (
-    UNSPSCRecognition,
+    UNSPSCRecognitionGrammar,
 )
 from paxman.capabilities.UNSPSC.notation import UNSPSCNotation
-from paxman.capabilities.UNSPSC.rules.united_nations_development_programme_ed2023 import UNSPSCRule
+from paxman.capabilities.UNSPSC.rules.undp_unspsc_structure_ed2025 import (
+    Section1HierarchyStructure,
+    Section2LevelPadding,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
@@ -25,11 +28,11 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
 
     def get_grammars(self) -> list[Grammar[UNSPSCNotation]]:
         """Return the default grammar instances."""
-        return [UNSPSCRecognition()]
+        return [UNSPSCRecognitionGrammar()]
 
     def get_rules(self) -> list[Rule[UNSPSCNotation]]:
         """Return the default validation rule instances."""
-        return [UNSPSCRule()]
+        return [Section1HierarchyStructure(), Section2LevelPadding()]
 
     @staticmethod
     def create_contract(

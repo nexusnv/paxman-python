@@ -42,9 +42,7 @@ class TestUNSPSCNotation:
             "43211503": "commodity",
         }
         for digits, level in cases.items():
-            n = UNSPSCNotation(
-                digits=digits, level=level, function="", native_length=8
-            )
+            n = UNSPSCNotation(digits=digits, level=level, function="", native_length=8)
             assert n.level == level
 
     def test_native_length_lane(self) -> None:

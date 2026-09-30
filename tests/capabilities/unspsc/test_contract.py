@@ -33,8 +33,8 @@ class TestUNSPSCContract:
 
     def test_offered_formats(self) -> None:
         assert UNSPSCContract.DEFAULT_OUTPUT_FORMAT == "unspsc"
-        assert UNSPSCContract.OFFERED_OUTPUT_FORMATS == frozenset(
-            {"segmented", "labeled", "native"}
+        assert frozenset({"segmented", "labeled", "native"}) == (
+            UNSPSCContract.OFFERED_OUTPUT_FORMATS
         )
         assert "unspsc" not in UNSPSCContract.OFFERED_OUTPUT_FORMATS
         assert (
