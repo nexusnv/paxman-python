@@ -38,13 +38,17 @@ class TestUNSPSCContract:
         )
         assert "unspsc" not in UNSPSCContract.OFFERED_OUTPUT_FORMATS
         assert (
-            UNSPSCCapability.create_contract(output_format="segmented").output_format
-            == "segmented"
+            UNSPSCCapability.create_contract(output_format="labeled").output_format
+            == "labeled"
         )
         assert (
             UNSPSCCapability.create_contract(output_format="native").output_format
             == "native"
         )
+
+    def test_segmented_not_offered(self) -> None:
+        with pytest.raises(ContractError):
+            UNSPSCCapability.create_contract(output_format="segmented")
 
     def test_rejects_unknown_format(self) -> None:
         with pytest.raises(ContractError):
