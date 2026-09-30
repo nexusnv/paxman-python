@@ -24,10 +24,11 @@ from paxman.core.domain import Grammar, Rule
 
 
 class UNSPSCCapability(Capability[UNSPSCNotation]):
-    """UNSPSC canonicalization capability (scaffold).
+    """UNSPSC canonicalization capability.
 
-    TODO(scaffold): describe what this capability recognizes and the
-    authoritative specification(s) it validates against.
+    Recognizes 6/8/10-digit UNSPSC mentions (bare, labelled, MDM
+    ``UNSPSC000.`` IDs) and validates them against the UNGM structure
+    article, the UNDP codeset snapshot, and the UNECE BFI guidelines.
     """
 
     name = "unspsc"
@@ -84,7 +85,27 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
             include_live_membership=include_live_membership,
         )
 
-    # format_value: NOT overridden — the canonical value IS the default
-    # format, and there are no offered alternatives. The Capability base
-    # provides the identity formatter. TODO(scaffold): override if you offer
-    # alternative output formats.
+    def format_value(
+        self,
+        value: str,
+        output_format: str | None,
+        notation: UNSPSCNotation,
+    ) -> str:
+        """Render the 8-digit stem in the requested format.
+
+        The default ``"unspsc"`` path is the identity. ``"segmented"``
+        pair-hyphenates, ``"labeled"`` prefixes ``UNSPSC ``, ``"native"``
+        restores the spelled length (6-digit alias or 10-digit suffix).
+        Never affects candidate identity or provenance.
+        """
+        if output_format == "segmented":
+            return f"{value[0:2]}-{value[2:4]}-{value[4:6]}-{value[6:8]}"
+        if output_format == "labeled":
+            return f"UNSPSC {value}"
+        if output_format == "native":
+            if notation.native_length == 6:
+                return value[:6]
+            if notation.native_length == 10:
+                return value + notation.function
+            return value
+        return value
