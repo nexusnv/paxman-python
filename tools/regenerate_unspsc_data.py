@@ -39,7 +39,8 @@ _GENERATED_HEADER = (
 
 
 def _load_snapshot() -> dict[str, object]:
-    return json.loads(SNAPSHOT.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+    data: dict[str, object] = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    return data
 
 
 def _render_module(version: str, count: int, synth: list[str], stems: list[str]) -> str:
@@ -79,8 +80,12 @@ def _render_module(version: str, count: int, synth: list[str], stems: list[str])
 def _modules() -> list[tuple[Path, str]]:
     snap = _load_snapshot()
     version = str(snap["codeset_version"])
-    stems = sorted(str(s) for s in snap["stems"])  # type: ignore[union-attr]
-    synth = sorted(str(s) for s in snap.get("synthesized_ancestors", []))
+    raw_stems = snap["stems"]
+    assert isinstance(raw_stems, list)
+    stems = sorted(str(s) for s in raw_stems)
+    raw_synth = snap.get("synthesized_ancestors", [])
+    assert isinstance(raw_synth, list)
+    synth = sorted(str(s) for s in raw_synth)
     for stem in stems:
         if len(stem) != 8 or not stem.isascii() or not stem.isdigit():
             raise SystemExit(f"snapshot holds non-8-digit stem: {stem!r}")
