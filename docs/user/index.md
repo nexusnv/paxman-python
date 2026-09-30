@@ -120,6 +120,7 @@ Paxman ships with capabilities that each cover one kind of identifier. The set i
 - **UUID** — 128-bit identifiers (IETF RFC 9562)
 - **DOI** — digital object identifiers (ISO 26324:2025)
 - **Domain** — hostnames (RFC 1034/1035, UTS #46, RFC 5893, IANA Root Zone Database)
+- **UNSPSC** — product/service codes (UNDP UNSPSC, UNGM live-export snapshot, UNECE BFI)
 
 You only load what you use — importing `paxman.capabilities.Email` does not load the others.
 

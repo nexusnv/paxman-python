@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twenty-eight built-in capabilities (28 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with twenty-nine built-in capabilities (29 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -95,6 +95,7 @@ Paxman ships with twenty-eight built-in capabilities (28 in `paxman/capabilities
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | 3 (symbol, name, compound) | 7 | BIPM SI Brochure, ISO 80000-1 |
 | **Timezone** | Timezone identifiers | 2 (timezone_name, timezone_abbreviation) | 4 | IANA Time Zone Database |
+| **UNSPSC** | Product/service codes | 1 (unspsc) | 4 | UNDP UNSPSC (UNGM structure, UNGM live-export snapshot, UNECE BFI) |
 | **URL** | URLs | 1 (absolute_uri) | 1 | WHATWG URL Standard |
 | **UtcOffset** | UTC offsets | 1 (utc_offset) | 1 | ISO 8601-1:2019, RFC 3339 |
 | **UUID** | UUIDs | 1 (uuid) | 1 | IETF RFC 9562 |
@@ -574,7 +575,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with twenty-eight built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with twenty-nine built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re
