@@ -73,6 +73,9 @@ jobs:
       - name: Check generated Language data drift
         run: uv run python tools/regenerate_language_data.py --check
 
+      - name: Check generated UNSPSC codeset data drift
+        run: uv run python tools/regenerate_unspsc_data.py --check
+
       - name: Verify no generated data drift (git diff)
         run: git diff --exit-code
 
