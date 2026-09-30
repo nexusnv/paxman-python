@@ -23,6 +23,7 @@ from paxman.capabilities import (  # isort: skip
     Phone,
     SIUnit,
     Timezone,
+    UNSPSC,
     URL,
     UtcOffset,
 )
@@ -244,6 +245,18 @@ class TestTimezoneCapabilityExports:
         assert Timezone.name == "timezone"
 
 
+class TestUNSPSCCapabilityExports:
+    @pytest.mark.unit
+    def test_unspsc_capability_importable(self) -> None:
+        """UNSPSC capability is importable from paxman.capabilities."""
+        assert UNSPSC is not None
+
+    @pytest.mark.unit
+    def test_unspsc_capability_name(self) -> None:
+        """UNSPSC capability has correct name."""
+        assert UNSPSC.name == "unspsc"
+
+
 class TestUtcOffsetCapabilityExports:
     @pytest.mark.unit
     def test_utc_offset_capability_importable(self) -> None:
@@ -298,6 +311,7 @@ class TestURLCapabilityExports:
             "Phone",
             "SIUnit",
             "Timezone",
+            "UNSPSC",
             "URL",
             "UUID",
             "UtcOffset",

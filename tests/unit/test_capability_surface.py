@@ -21,11 +21,11 @@ from paxman.capabilities.CreditCard.contract import CreditCardContract
 from paxman.capabilities.Currency.capability import CurrencyCapability
 from paxman.capabilities.Currency.contract import CurrencyContract
 from paxman.capabilities.Currency.notation import CurrencyNotation
+from paxman.capabilities.DOI.capability import DOICapability
+from paxman.capabilities.DOI.contract import DOIContract
 from paxman.capabilities.Date.capability import DateCapability
 from paxman.capabilities.Date.contract import DateContract
 from paxman.capabilities.Date.notation import DateNotation
-from paxman.capabilities.DOI.capability import DOICapability
-from paxman.capabilities.DOI.contract import DOIContract
 from paxman.capabilities.Domain.capability import DomainCapability
 from paxman.capabilities.Domain.contract import DomainContract
 from paxman.capabilities.Email.capability import EmailCapability
@@ -48,10 +48,10 @@ from paxman.capabilities.ISNI.contract import ISNIContract
 from paxman.capabilities.ISSN.capability import ISSNCapability
 from paxman.capabilities.ISSN.contract import ISSNContract
 from paxman.capabilities.ISSN.notation import ISSNNotation
-from paxman.capabilities.Language.capability import LanguageCapability
-from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.LEI.capability import LEICapability
 from paxman.capabilities.LEI.contract import LEIContract
+from paxman.capabilities.Language.capability import LanguageCapability
+from paxman.capabilities.Language.contract import LanguageContract
 from paxman.capabilities.MacAddress.capability import MacAddressCapability
 from paxman.capabilities.MacAddress.contract import MacAddressContract
 from paxman.capabilities.Money.capability import MoneyCapability
@@ -67,13 +67,15 @@ from paxman.capabilities.SIUnit.contract import SIUnitContract
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
 from paxman.capabilities.Timezone.capability import TimezoneCapability
 from paxman.capabilities.Timezone.contract import TimezoneContract
+from paxman.capabilities.UNSPSC.capability import UNSPSCCapability
+from paxman.capabilities.UNSPSC.contract import UNSPSCContract
 from paxman.capabilities.URL.capability import URLCapability
 from paxman.capabilities.URL.contract import URLCapabilityContract
 from paxman.capabilities.URL.notation import URLNotation
-from paxman.capabilities.UtcOffset.capability import UtcOffsetCapability
-from paxman.capabilities.UtcOffset.contract import UtcOffsetContract
 from paxman.capabilities.UUID.capability import UUIDCapability
 from paxman.capabilities.UUID.contract import UUIDContract
+from paxman.capabilities.UtcOffset.capability import UtcOffsetCapability
+from paxman.capabilities.UtcOffset.contract import UtcOffsetContract
 from paxman.core.capability import ContractFactory
 from paxman.core.capability_contract import CapabilityContract
 
@@ -235,6 +237,12 @@ _CAPABILITY_SURFACES = [
         URLCapabilityContract,
         "url",
         id="url",
+    ),
+    pytest.param(
+        UNSPSCCapability,
+        UNSPSCContract,
+        "unspsc",
+        id="unspsc",
     ),
     pytest.param(
         TimezoneCapability,

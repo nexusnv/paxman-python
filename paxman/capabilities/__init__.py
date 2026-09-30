@@ -38,6 +38,7 @@ __all__ = [
     "Phone",
     "SIUnit",
     "Timezone",
+    "UNSPSC",
     "URL",
     "UUID",
     "UtcOffset",
@@ -75,6 +76,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "Phone": ("paxman.capabilities.Phone.capability", "PhoneCapability"),
     "SIUnit": ("paxman.capabilities.SIUnit.capability", "SIUnitCapability"),
     "Timezone": ("paxman.capabilities.Timezone.capability", "TimezoneCapability"),
+    "UNSPSC": ("paxman.capabilities.UNSPSC.capability", "UNSPSCCapability"),
     "URL": ("paxman.capabilities.URL.capability", "URLCapability"),
     "UUID": ("paxman.capabilities.UUID.capability", "UUIDCapability"),
     "UtcOffset": ("paxman.capabilities.UtcOffset.capability", "UtcOffsetCapability"),
@@ -82,6 +84,7 @@ _LAZY: dict[str, tuple[str, str]] = {
 
 if TYPE_CHECKING:
     from paxman.capabilities.BIC.capability import BICCapability as BIC
+    from paxman.capabilities.UNSPSC.capability import UNSPSCCapability as UNSPSC
     from paxman.capabilities.ChemicalElement.capability import (
         ChemicalElementCapability as ChemicalElement,
     )

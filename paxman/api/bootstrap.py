@@ -32,6 +32,7 @@ from paxman.capabilities import (
     Phone,
     SIUnit,
     Timezone,
+    UNSPSC,
     UtcOffset,
 )
 from paxman.core.capability import Capability
@@ -66,6 +67,7 @@ _SHIPPED: tuple[type[Capability[Any]], ...] = (
     Phone,
     SIUnit,
     Timezone,
+    UNSPSC,
     URL,
     UtcOffset,
     UUID,

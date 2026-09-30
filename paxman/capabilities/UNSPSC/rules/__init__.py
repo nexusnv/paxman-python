@@ -1,0 +1,1 @@
+"""UNSPSC validation rules."""
