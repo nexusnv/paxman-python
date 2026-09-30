@@ -16,6 +16,9 @@ from paxman.capabilities.UNSPSC.rules.undp_unspsc_structure_ed2025 import (
     Section1HierarchyStructure,
     Section2LevelPadding,
 )
+from paxman.capabilities.UNSPSC.rules.unece_bfi_ed2005 import (
+    Section4BusinessFunctionSuffix,
+)
 from paxman.core.capability import Capability
 from paxman.core.domain import Grammar, Rule
 
@@ -39,6 +42,7 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
             Section1HierarchyStructure(),
             Section2LevelPadding(),
             Section3CodesetMembership(),
+            Section4BusinessFunctionSuffix(),
         ]
 
     @staticmethod

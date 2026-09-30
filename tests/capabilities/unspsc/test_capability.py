@@ -29,6 +29,7 @@ class TestUNSPSCCapability:
             "Section 1-hierarchy-structure",
             "Section 2-level-padding",
             "Section 3-codeset-membership",
+            "Section 4-business-function-suffix",
         ]
 
     def test_create_contract_defaults(self) -> None:

@@ -11,6 +11,9 @@ from paxman.capabilities.UNSPSC.rules.undp_unspsc_structure_ed2025 import (
     Section1HierarchyStructure,
     Section2LevelPadding,
 )
+from paxman.capabilities.UNSPSC.rules.unece_bfi_ed2005 import (
+    Section4BusinessFunctionSuffix,
+)
 from paxman.core.domain import RuleStrategy
 
 
@@ -165,3 +168,45 @@ class TestSection3CodesetMembership:
 
     def test_normalize_returns_stem(self) -> None:
         assert self.rule.normalize(_notation("44103103"), self.contract) == "44103103"
+
+
+@pytest.mark.capability
+class TestSection4BusinessFunctionSuffix:
+    """Section 4-business-function-suffix: informative-only suffix lane."""
+
+    def setup_method(self) -> None:
+        self.rule = Section4BusinessFunctionSuffix()
+        self.contract = UNSPSCContract()
+
+    def test_metadata(self) -> None:
+        assert self.rule.name == "Section 4-business-function-suffix"
+        assert self.rule.strategy is RuleStrategy.PARSER
+        assert self.rule.target_semantics == frozenset({"unspsc_recognition"})
+        assert self.rule.requires_features == frozenset({"include_business_function"})
+        assert (
+            self.rule.provenance.authority
+            == "United Nations Economic Commission for Europe"
+        )
+        assert self.rule.provenance.kind == "specification"
+        assert self.rule.provenance.version == "v2.04"
+
+    @pytest.mark.parametrize("function", ["00", "14", "99"])
+    def test_passes_any_suffix(self, function: str) -> None:
+        notation = _notation("44103103", 10, function)
+        assert self.rule.matches(notation, self.contract) is True
+
+    @pytest.mark.parametrize(
+        ("digits", "native_length"),
+        [("44103103", 8), ("44121700", 6)],
+    )
+    def test_ignores_short_lanes(self, digits: str, native_length: int) -> None:
+        notation = _notation(digits, native_length)
+        assert self.rule.matches(notation, self.contract) is True
+
+    def test_rejects_malformed_suffix(self) -> None:
+        notation = _notation("44103103", 10, "1")
+        assert self.rule.matches(notation, self.contract) is False
+
+    def test_normalize_returns_stem(self) -> None:
+        notation = _notation("44103103", 10, "14")
+        assert self.rule.normalize(notation, self.contract) == "44103103"
