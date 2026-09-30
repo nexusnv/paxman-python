@@ -238,6 +238,10 @@ def _create_contract(
         from paxman.capabilities import Timezone
 
         return Timezone.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "unspsc":
+        from paxman.capabilities import UNSPSC
+
+        return UNSPSC.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "url":
         from paxman.capabilities import URL
 
