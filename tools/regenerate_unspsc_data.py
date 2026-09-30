@@ -26,6 +26,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "paxman" / "shared_data" / "unspsc_snapshot.json"
@@ -80,12 +81,10 @@ def _render_module(version: str, count: int, synth: list[str], stems: list[str])
 def _modules() -> list[tuple[Path, str]]:
     snap = _load_snapshot()
     version = str(snap["codeset_version"])
-    raw_stems = snap["stems"]
-    assert isinstance(raw_stems, list)
-    stems = sorted(str(s) for s in raw_stems)
-    raw_synth = snap.get("synthesized_ancestors", [])
-    assert isinstance(raw_synth, list)
-    synth = sorted(str(s) for s in raw_synth)
+    raw_stems = cast("list[str]", snap["stems"])
+    stems = sorted(raw_stems)
+    raw_synth = cast("list[str]", snap.get("synthesized_ancestors", []))
+    synth = sorted(raw_synth)
     for stem in stems:
         if len(stem) != 8 or not stem.isascii() or not stem.isdigit():
             raise SystemExit(f"snapshot holds non-8-digit stem: {stem!r}")
