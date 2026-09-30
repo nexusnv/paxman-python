@@ -39,6 +39,8 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
         year: int | None = None,
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
+        include_business_function: bool = True,
+        include_live_membership: bool = False,
     ) -> UNSPSCContract:
         """Factory method for creating contracts with proper defaults.
 
@@ -52,6 +54,8 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
             extra_grammars: Community grammar names (opt-in) to run
                 alongside the shipped grammars, in order (SEAM — the
                 surface guard's common block ends with this parameter).
+            include_business_function: Gate the BFI-suffix rule.
+            include_live_membership: Rolling-liveness interpretation.
 
         Returns:
             Configured UNSPSCContract instance.
@@ -62,6 +66,8 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
             year=year,
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
+            include_business_function=include_business_function,
+            include_live_membership=include_live_membership,
         )
 
     # format_value: NOT overridden — the canonical value IS the default
