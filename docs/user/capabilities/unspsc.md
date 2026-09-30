@@ -54,7 +54,6 @@ print(paxman.canonicalize("44103103", UNSPSC.create_contract(output_format="labe
 contract = UNSPSC.create_contract(
     output_format=None,  # "unspsc" (default); None/"default"/"unspsc" all resolve to it
     include_business_function=True,  # gate the BFI-suffix rule (dropped rule removes the suffix candidate, not the verdict)
-    include_live_membership=False,  # rolling-liveness interpretation selector (pinned snapshot is the default truth)
     # plus every common field: suppress_common_words / excluded_rules / pinned_rules / year / extra_grammars
 )
 ```
@@ -76,6 +75,7 @@ contract = UNSPSC.create_contract(
 | `43001503` / `00101501` | defaults | `INVALID` | mid-zero padding breaks the lattice |
 | `44103199` / `99999999` | defaults | `INVALID` | well-formed but unissued |
 | `11101803` (Wikidata-cited platinum) | defaults | `INVALID` | absent from the pinned snapshot by design — not a claim about the full UNDP codeset |
+| `57110000` (synthesized ancestor) | defaults | `INVALID` | serves the ancestor walk only, never stem membership |
 | `4410310314` | `include_business_function=False` | `SUCCESS` | `"44103103"` (suffix candidate dropped; stem still validates — ISBN range-validation precedent) |
 | `43 21 15 03` / `43.21.15.03` / `43` | defaults | `MISSING` | no grammar claims these shapes |
 | two distinct codes | defaults | raises `MultipleMentionsError` | un-segmented multi-entity input (`single_value=True`) |

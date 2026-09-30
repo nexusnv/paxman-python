@@ -139,12 +139,15 @@ class TestUNSPSCInvalid:
             "44103199",
             "99999999",
             "11101803",
+            "57110000",
         ],
     )
     def test_invalid_rows(self, text: str) -> None:
         # "11101803" (Wikidata-cited platinum) is absent from the pinned
         # UNGM-export snapshot, so it is INVALID under this snapshot by
         # design — not a claim about the full UNDP codeset.
+        # "57110000" is a synthesized ancestor: it serves the ancestor walk
+        # only, never stem membership.
         paxman.register_all_shipped()
         contract = UNSPSCCapability.create_contract()
         result = paxman.canonicalize(text, contract)
@@ -170,6 +173,24 @@ class TestUNSPSCInvalid:
                 "4410310314", UNSPSCCapability.create_contract()
             ).candidates
         )
+
+    def test_year_filter_drops_structure_and_codeset(self) -> None:
+        # year=2023 drops the 2025/2026 rules, leaving only the 2005 BFI
+        # rule: 8-digit inputs go INVALID (Section 4 abstains off-lane).
+        paxman.register_all_shipped()
+        contract = UNSPSCCapability.create_contract(year=2023)
+        result = paxman.canonicalize("44103103", contract)
+        assert result.status == Resolution.INVALID
+
+    def test_year_filter_leaves_bfi_shape_alone(self) -> None:
+        # Residual (disclosed in the Section 4 module docstring): with only
+        # the 2005 rule standing, a 10-digit input SUCCESSes on suffix shape
+        # alone with no codeset check (ADR-0012 vacuity).
+        paxman.register_all_shipped()
+        contract = UNSPSCCapability.create_contract(year=2023)
+        result = paxman.canonicalize("4410310314", contract)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "44103103"
 
 
 @pytest.mark.integration

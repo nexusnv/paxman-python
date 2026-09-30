@@ -56,13 +56,11 @@ def _render_module(version: str, count: int, synth: list[str], stems: list[str])
         "access-gated; this table holds the live-directory subset until the",
         "full codeset can be ingested. Do not cite stem absence as",
         "codeset absence beyond this pinned snapshot.",
-    ]
-    if synth:
-        doc_lines.append(
-            "Synthesized family ancestors "
-            f"({len(synth)}, flagged in the snapshot): " + ", ".join(synth) + "."
-        )
-    doc_lines += [
+        "SYNTHESIZED_ANCESTORS are family rows absent from the export but",
+        "implied by live classes beneath them (flagged in the snapshot).",
+        "They serve ancestor-liveness ONLY — never stem membership — so a",
+        "synthesized code alone resolves INVALID while classes beneath it",
+        "still pass the ancestor walk.",
         "",
         "Regenerate with: uv run python tools/regenerate_unspsc_data.py",
     ]
@@ -77,6 +75,14 @@ def _render_module(version: str, count: int, synth: list[str], stems: list[str])
         "    {",
     ]
     wrapped += [f'        "{stem}",' for stem in stems]
+    wrapped += [
+        "    }",
+        ")",
+        "",
+        "SYNTHESIZED_ANCESTORS: frozenset[str] = frozenset(",
+        "    {",
+    ]
+    wrapped += [f'        "{stem}",' for stem in synth]
     wrapped += ["    }", ")", ""]
     return "\n".join(wrapped)
 
@@ -91,6 +97,11 @@ def _modules() -> list[tuple[Path, str]]:
     for stem in stems:
         if len(stem) != 8 or not stem.isascii() or not stem.isdigit():
             raise SystemExit(f"snapshot holds non-8-digit stem: {stem!r}")
+    for stem in synth:
+        if len(stem) != 8 or not stem.isascii() or not stem.isdigit():
+            raise SystemExit(f"snapshot holds non-8-digit ancestor: {stem!r}")
+    if set(stems) & set(synth):
+        raise SystemExit("snapshot stems and synthesized ancestors overlap")
     text = _render_module(version, len(stems), synth, stems)
     return [(OUTPUT, text)]
 

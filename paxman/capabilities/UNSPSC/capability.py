@@ -55,7 +55,6 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
         output_format: str | None = None,
         extra_grammars: Sequence[str] | None = None,
         include_business_function: bool = True,
-        include_live_membership: bool = False,
         suppress_common_words: bool = False,
     ) -> UNSPSCContract:
         """Factory method for creating contracts with proper defaults.
@@ -71,7 +70,6 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
                 alongside the shipped grammars, in order (SEAM — the
                 surface guard's common block ends with this parameter).
             include_business_function: Gate the BFI-suffix rule.
-            include_live_membership: Rolling-liveness interpretation.
             suppress_common_words: Suppress common-word boundary claims.
 
         Returns:
@@ -84,7 +82,6 @@ class UNSPSCCapability(Capability[UNSPSCNotation]):
             output_format=output_format,
             extra_grammars=tuple(extra_grammars) if extra_grammars else (),
             include_business_function=include_business_function,
-            include_live_membership=include_live_membership,
             suppress_common_words=suppress_common_words,
         )
 

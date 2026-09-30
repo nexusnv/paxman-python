@@ -35,10 +35,9 @@ class UNSPSCContract(CapabilityContract):
         extra_grammars: Community grammar names (opt-in) to run alongside
             the shipped grammars, in order (SEAM — inherited from base).
         include_business_function: Gate for the 10-digit business-function
-            suffix rule (default True; dropped rule → INVALID for 10-digit
-            inputs, never MISSING).
-        include_live_membership: Rolling-liveness interpretation selector
-            (default False; pinned v26.0801 snapshot is the default truth).
+            suffix rule (default True; dropped rule removes the suffix
+            candidate/provenance while the stem still validates via
+            Sections 1-3, so the verdict stays SUCCESS).
     """
 
     DEFAULT_OUTPUT_FORMAT: ClassVar[str] = "unspsc"
@@ -46,7 +45,6 @@ class UNSPSCContract(CapabilityContract):
 
     capability_name: str = field(default="unspsc", init=False)
     include_business_function: bool = True
-    include_live_membership: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()

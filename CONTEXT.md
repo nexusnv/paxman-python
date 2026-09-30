@@ -1052,7 +1052,7 @@ paxman/
     │   └── rules/data/            # iana_language_subtags, iso_639 tables, english_display_names
     ├── UNSPSC/                    # grammar/ (1) + rules/ (3) + rules/data/ — UNGM structure, UNDP codeset (UNGM live export), UNECE BFI
     │   ├── capability.py          # UNSPSCCapability
-    │   ├── contract.py            # UNSPSCContract (unspsc/labeled/native output formats; include_business_function, include_live_membership)
+    │   ├── contract.py            # UNSPSCContract (unspsc/labeled/native output formats; include_business_function)
     │   ├── notation.py            # UNSPSCNotation (digits, level, function, native_length)
     │   ├── grammar/               # unspsc_recognition
     │   └── rules/                 # undp_unspsc_structure_ed2025, undp_unspsc_codeset_ed2026, unece_bfi_ed2005 (+ data/unspsc_codeset)

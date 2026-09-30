@@ -35,7 +35,6 @@ class TestUNSPSCCapability:
         assert isinstance(contract, UNSPSCContract)
         assert contract.output_format == "unspsc"
         assert contract.include_business_function is True
-        assert contract.include_live_membership is False
 
     @pytest.mark.parametrize(
         ("value", "output_format", "notation", "expected"),

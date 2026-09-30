@@ -166,6 +166,12 @@ class TestSection3CodesetMembership:
         # 8-digit but no live row for the stem or its ancestors.
         assert self.rule.matches(_notation("43991503"), self.contract) is False
 
+    def test_synthesized_ancestor_alone_is_invalid(self) -> None:
+        # 57110000 serves the ancestor walk only — not stem membership.
+        assert self.rule.matches(_notation("57110000"), self.contract) is False
+        # Classes beneath a synthesized ancestor still pass the walk.
+        assert self.rule.matches(_notation("57111100"), self.contract) is True
+
     def test_normalize_returns_stem(self) -> None:
         assert self.rule.normalize(_notation("44103103"), self.contract) == "44103103"
 
@@ -199,9 +205,12 @@ class TestSection4BusinessFunctionSuffix:
         ("digits", "native_length"),
         [("44103103", 8), ("44121700", 6)],
     )
-    def test_ignores_short_lanes(self, digits: str, native_length: int) -> None:
+    def test_rejects_short_lanes(self, digits: str, native_length: int) -> None:
+        # The rule speaks only to the 10-digit lane: on shorter lanes it
+        # abstains (False), so no UNECE provenance attaches to suffix-less
+        # inputs and a pinned-Section-4 contract cannot validate garbage.
         notation = _notation(digits, native_length)
-        assert self.rule.matches(notation, self.contract) is True
+        assert self.rule.matches(notation, self.contract) is False
 
     def test_rejects_malformed_suffix(self) -> None:
         notation = _notation("44103103", 10, "1")

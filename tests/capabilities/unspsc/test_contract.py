@@ -21,7 +21,6 @@ class TestUNSPSCContract:
         assert contract.year is None
         assert contract.extra_grammars == ()
         assert contract.include_business_function is True
-        assert contract.include_live_membership is False
 
     def test_inherits_capability_contract(self) -> None:
         assert issubclass(UNSPSCContract, CapabilityContract)
@@ -59,9 +58,7 @@ class TestUNSPSCContract:
             excluded_rules=("Section 1-hierarchy-structure",),
             year=2023,
             include_business_function=False,
-            include_live_membership=True,
         )
         assert contract.excluded_rules == ("Section 1-hierarchy-structure",)
         assert contract.year == 2023
         assert contract.include_business_function is False
-        assert contract.include_live_membership is True

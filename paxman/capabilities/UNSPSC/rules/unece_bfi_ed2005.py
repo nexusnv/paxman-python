@@ -1,11 +1,15 @@
-"""UNECE business-function rule: optional 2-digit suffix, informative only.
+"""UNECE business-function rule: the 10-digit suffix lane, informative only.
 
-Any ``00``–``99`` suffix value passes when this rule runs; the suffix is
-a routing hint, not validity. No value table is cited (the UNECE PDF
-direct fetch is access-gated; retail/wholesale corroboration is
-secondary). Gating is engine-side via ``requires_features``: with
-``include_business_function=False`` the rule drops and 10-digit inputs
-resolve INVALID, never MISSING.
+The rule speaks ONLY to the 10-digit lane: any ``00``–``99`` suffix value
+passes, and shorter lanes abstain (False) so no UNECE provenance attaches
+to suffix-less inputs and a pinned-Section-4 contract cannot validate
+garbage (GTIN/ISNI full-conjunction precedent). Gating is engine-side via
+``requires_features``: with ``include_business_function=False`` the rule
+drops and the stem still validates via Sections 1–3, so the verdict stays
+SUCCESS with the suffix candidate removed (ISBN corroborating-rule
+precedent). Residual: ``year`` filtering that drops the 2025/2026 rules
+leaves this 2005 PARSER standing alone on 10-digit shape (ADR-0012
+vacuity) — disclosed, not closed.
 """
 
 from __future__ import annotations
@@ -28,9 +32,9 @@ PUBLICATION = Provenance(
 
 
 def _is_suffix_coherent(notation: UNSPSCNotation) -> bool:
-    """10-digit lane carries a 2-digit suffix; shorter lanes are vacuous."""
+    """10-digit lane carries a well-formed 2-digit suffix; other lanes abstain."""
     if notation.native_length != 10:
-        return True
+        return False
     function = notation.function
     return len(function) == 2 and function.isascii() and function.isdigit()
 

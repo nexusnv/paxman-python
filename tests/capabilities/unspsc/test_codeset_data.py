@@ -15,6 +15,7 @@ import pytest
 from paxman.capabilities.UNSPSC.rules.data.unspsc_codeset import (
     CODESET_VERSION,
     LIVE_STEMS,
+    SYNTHESIZED_ANCESTORS,
 )
 
 KNOWN_LIVE = (
@@ -49,9 +50,41 @@ class TestCodesetData:
             assert stem not in LIVE_STEMS, stem
 
     def test_all_stems_are_8_ascii_digits(self) -> None:
-        assert len(LIVE_STEMS) > 10_000
+        assert len(LIVE_STEMS) == 13482
         for stem in LIVE_STEMS:
             assert len(stem) == 8 and stem.isascii() and stem.isdigit(), stem
+
+    def test_synthesized_ancestors_flagged_and_disjoint(self) -> None:
+        assert (
+            frozenset(
+                {
+                    "57110000",
+                    "57220000",
+                    "57330000",
+                    "57440000",
+                    "57550000",
+                    "57660000",
+                    "57770000",
+                    "57880000",
+                }
+            )
+            == SYNTHESIZED_ANCESTORS
+        )
+        assert not (SYNTHESIZED_ANCESTORS & LIVE_STEMS)
+
+    def test_prefix_closure_over_union(self) -> None:
+        live = LIVE_STEMS | SYNTHESIZED_ANCESTORS
+        missing = [
+            ancestor
+            for stem in live
+            for ancestor in (
+                stem[:2] + "000000",
+                stem[:4] + "0000",
+                stem[:6] + "00",
+            )
+            if ancestor not in live
+        ]
+        assert missing == []
 
     def test_regenerate_check_is_clean(self) -> None:
         proc = subprocess.run(

@@ -1,12 +1,12 @@
 """UNDP UNSPSC codeset rule: stem membership plus ancestor liveness.
 
 The stem must exist in the pinned snapshot AND every pair-prefix
-ancestor (``SS000000``, ``SSFF0000``, ``SSFFCC00``) must itself be a live
-row. Hierarchy truth lives in the snapshot, not the type: the snapshot
-is closure-clean (every stem's ancestors present, 8 segment-57 family
-ancestors synthesized and flagged), so a live stem always has live
-ancestors and ``43001503``-style mid-zero anomalies fail here even when
-padding-consistent.
+ancestor (``SS000000``, ``SSFF0000``, ``SSFFCC00``) must resolve against
+the live rows plus the flagged synthesized ancestors. Hierarchy truth
+lives in the snapshot, not the type: ``43001503``-style mid-zero
+anomalies fail here even when padding-consistent, and a synthesized
+ancestor alone (e.g. ``57110000``) is INVALID — synthesis serves the
+ancestor walk only, never stem membership.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from paxman.capabilities.UNSPSC.notation import UNSPSCNotation
 from paxman.capabilities.UNSPSC.rules.data.unspsc_codeset import (
     CODESET_VERSION,
     LIVE_STEMS,
+    SYNTHESIZED_ANCESTORS,
 )
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
@@ -36,13 +37,18 @@ def _ancestors(stem: str) -> tuple[str, str, str]:
 
 
 def _is_member(notation: UNSPSCNotation) -> bool:
-    """Stem plus all pair-prefix ancestors are live rows."""
+    """Stem is a live row and all pair-prefix ancestors resolve.
+
+    Synthesized ancestors serve the ancestor walk ONLY: a synthesized
+    code alone is not a live row and resolves INVALID.
+    """
     stem = notation.digits
     if len(stem) != 8 or not stem.isascii() or not stem.isdigit():
         return False
     if stem not in LIVE_STEMS:
         return False
-    return all(ancestor in LIVE_STEMS for ancestor in _ancestors(stem))
+    live = LIVE_STEMS | SYNTHESIZED_ANCESTORS
+    return all(ancestor in live for ancestor in _ancestors(stem))
 
 
 class Section3CodesetMembership(Rule[UNSPSCNotation]):

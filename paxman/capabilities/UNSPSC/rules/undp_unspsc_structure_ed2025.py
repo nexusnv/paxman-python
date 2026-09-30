@@ -2,7 +2,7 @@
 
 Both rule classes validate the positional shape only — no authority table
 is consulted. Codeset membership (including ancestor liveness) is owned by
-``undp_unspsc_codeset_ed2023.Section3CodesetMembership``.
+``undp_unspsc_codeset_ed2026.Section3CodesetMembership``.
 """
 
 from __future__ import annotations

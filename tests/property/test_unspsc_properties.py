@@ -86,9 +86,9 @@ def test_alias_and_padded_share_normalize(stem: str) -> None:
     notation = UNSPSCNotation(
         digits=stem, level="commodity", function="", native_length=8
     )
-    assert {
-        rule.normalize(notation, contract) for rule in capability.get_rules()
-    } == {stem}
+    assert {rule.normalize(notation, contract) for rule in capability.get_rules()} == {
+        stem
+    }
 
 
 @given(stem=st.sampled_from(_STEMS), pos=st.integers(0, 7))
@@ -99,12 +99,17 @@ def test_nondigit_mutation_never_matches(stem: str, pos: int) -> None:
 
 
 def test_snapshot_prefix_closure() -> None:
-    """Every stem's pair-prefix ancestors are live rows (closure-clean)."""
+    """Every stem's pair-prefix ancestors resolve (live + synthesized)."""
+    from paxman.capabilities.UNSPSC.rules.data.unspsc_codeset import (
+        SYNTHESIZED_ANCESTORS,
+    )
+
+    live = LIVE_STEMS | SYNTHESIZED_ANCESTORS
     missing = [
         ancestor
-        for stem in LIVE_STEMS
+        for stem in live
         for ancestor in (stem[:2] + "000000", stem[:4] + "0000", stem[:6] + "00")
-        if ancestor not in LIVE_STEMS
+        if ancestor not in live
     ]
     assert missing == []
 
