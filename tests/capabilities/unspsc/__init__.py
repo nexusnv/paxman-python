@@ -1,0 +1,1 @@
+"""unspsc capability tests (scaffold)."""

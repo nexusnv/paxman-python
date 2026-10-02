@@ -60,6 +60,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **Timezone:** `TimezoneNotation(key, family, compact)` — `key` is the as-written mention, `family` discriminates `"name"` / `"abbreviation"`, `compact` is the lookup key (rules restore canonical case and resolve Links)
 - **UtcOffset:** `UtcOffsetNotation(compact)` — `compact` is the grammar-normalized extended `+HH:MM` form (`Z` → `+00:00`); rules own range validation (`-12:00..+14:00`, `-00:00` refused)
 - **UUID:** `UUIDNotation(compact, hyphenated, urn, version)` — `compact` is the 32-hex lowercase form, `hyphenated` the `8-4-4-4-12` canonical, `urn` the `urn:uuid:` carrier, `version` the version nibble (informative, never gates)
+- **UNSPSC:** `UNSPSCNotation(digits, level, function, native_length)` — `digits` is the 8-digit zero-padded stem (6-digit class alias padded `+"00"` by the grammar; 10-digit input keeps its 8-digit stem), `level` is `"segment"` / `"family"` / `"class"` / `"commodity"` from trailing-`00` pairs (no authority lookup), `function` the 2-digit BFI suffix or `""`, `native_length` the spelled digit length (6/8/10, retained as the `native` format facet); grammar never validates membership — rules own it
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
 ### Notation Type Example
@@ -78,7 +79,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-eight built-in capabilities (28 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships twenty-nine built-in capabilities (29 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -107,6 +108,7 @@ Paxman ships twenty-eight built-in capabilities (28 in `paxman/capabilities/__in
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
 | **SI Unit** | SI unit expressions | BIPM SI Brochure, ISO 80000-1 |
 | **Timezone** | Timezone identifiers | IANA Time Zone Database |
+| **UNSPSC** | Product/service codes | UNDP UNSPSC Code Structure (UNGM), UNDP Codeset (UNGM live export 2026-09-30), UNECE BFI Guidelines v2.04 |
 | **URL** | URLs | WHATWG URL Standard |
 | **UtcOffset** | UTC offsets | ISO 8601, RFC 3339 |
 | **UUID** | UUIDs | IETF RFC 9562 |
@@ -836,7 +838,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (28 capabilities, alphabetical; paxman/capabilities/__init__.py exports 28), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (29 capabilities, alphabetical; paxman/capabilities/__init__.py exports 29), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1048,6 +1050,12 @@ paxman/
     │   ├── grammar/data/          # grandfathered_tags, english_names, localized_names, script_names, region_names
     │   ├── rules/                 # bcp47_rfc5646, iso_639_1/2/3/5, iana_language_subtag_registry, cldr_language_display_name
     │   └── rules/data/            # iana_language_subtags, iso_639 tables, english_display_names
+    ├── UNSPSC/                    # grammar/ (1) + rules/ (3) + rules/data/ — UNGM structure, UNDP codeset (UNGM live export), UNECE BFI
+    │   ├── capability.py          # UNSPSCCapability
+    │   ├── contract.py            # UNSPSCContract (unspsc/labeled/native output formats; include_business_function)
+    │   ├── notation.py            # UNSPSCNotation (digits, level, function, native_length)
+    │   ├── grammar/               # unspsc_recognition
+    │   └── rules/                 # undp_unspsc_structure_ed2025, undp_unspsc_codeset_ed2026, unece_bfi_ed2005 (+ data/unspsc_codeset)
     └── LEI/                       # grammar/ (1) + rules/ (2) — ISO 17442-1:2020, GLEIF LOU prefix list
         ├── capability.py          # LEICapability
         ├── contract.py            # LEIContract
@@ -1089,7 +1097,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (28 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (29 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

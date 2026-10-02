@@ -198,6 +198,7 @@ Current defaults and offered alternatives:
 | ISIN | `isin` | `grouped` |
 | ISNI | `isni` | `compact`, `urn` |
 | LEI | `lei` | `urn` |
+| UNSPSC | `unspsc` | `labeled`, `native` |
 | GTIN | `gtin14` | `native` |
 | CreditCard | `pan` | `grouped` |
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
@@ -347,6 +348,7 @@ Statuses vs exceptions: statuses are domain answers returned inside `ExecutionRe
 | Serial identifiers | ISSN | `ISSN.create_contract(...)` |
 | Securities identification numbers | ISIN | `ISIN.create_contract(...)` |
 | Researcher/organization identifiers | ISNI | `ISNI.create_contract(...)` |
+| Product/service codes | UNSPSC | `UNSPSC.create_contract(...)` |
 | Legal entity identifiers | LEI | `LEI.create_contract(...)` |
 | Trade item identifiers | GTIN | `GTIN.create_contract(...)` |
 | Payment card numbers (PANs) | CreditCard | `CreditCard.create_contract(...)` |

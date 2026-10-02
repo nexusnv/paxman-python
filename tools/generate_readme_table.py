@@ -77,6 +77,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
     "phone": ("Phone numbers", "ITU-T E.164, RFC 3966, NANP"),
     "si_unit": ("SI unit expressions", "BIPM SI Brochure, ISO 80000-1"),
     "timezone": ("Timezone identifiers", "IANA Time Zone Database"),
+    "unspsc": (
+        "Product/service codes",
+        "UNDP UNSPSC (UNGM structure, UNGM live-export snapshot, UNECE BFI)",
+    ),
     "url": ("URLs", "WHATWG URL Standard"),
     "utc_offset": ("UTC offsets", "ISO 8601-1:2019, RFC 3339"),
     "uuid": ("UUIDs", "IETF RFC 9562"),
@@ -108,6 +112,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "phone": "Phone",
     "si_unit": "SI Unit",
     "timezone": "Timezone",
+    "unspsc": "UNSPSC",
     "url": "URL",
     "utc_offset": "UtcOffset",
     "uuid": "UUID",

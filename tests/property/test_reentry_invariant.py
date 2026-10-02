@@ -60,6 +60,7 @@ from paxman.capabilities import (
     ISSN,
     LEI,
     ORCID,
+    UNSPSC,
     URL,
     UUID,
     ChemicalElement,
@@ -242,6 +243,12 @@ ROWS: tuple[_ReEntryRow, ...] = (
         "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
         "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
     ),
+    # UNSPSC: tests/capabilities/unspsc/test_capability.py — 8-digit wire
+    # canonical; the offered labeled rendering re-enters via the fused
+    # label lane and native re-enters as the spelled lane (6/8/10 all
+    # recognized). Segmented display is deliberately unoffered (hyphens
+    # never re-enter by design).
+    _row(UNSPSC, "UNSPSC 44103103", "44103103"),
 )
 
 # ADR-0010, Consequences: a new capability cannot land without a re-entry row

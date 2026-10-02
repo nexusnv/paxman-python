@@ -38,6 +38,8 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **WHATWG** | URL Standard (Living Standard) | URL | 1 |
 | **IEEE** | IEEE Std 802-2024 | MacAddress | 1 |
 | **IUPAC** | IUPAC Periodic Table 04 May 2022, IUPAC Red Book 2005 Ch. IR-3 | ChemicalElement | 2 |
+| **UNDP** | UNSPSC Code Structure (UNGM Help Center); UNSPSC Codeset (UNGM live export 2026-09-30) | UNSPSC | 3 |
+| **UNECE** | Classification Guidelines (Business Function Identifiers) v2.04 | UNSPSC | 1 |
 | **Derived convention** | US locale — MM/DD/YYYY, European locale — DD/MM/YYYY | Date | 2 |
 
 > **Note on "Derived convention":** The two Date rules for `MM/DD/YYYY` and `DD/MM/YYYY` are locale conventions rather than an external standards publication. They are included here for completeness and carry `kind="convention"` with no `reference_url`.
@@ -289,6 +291,30 @@ All IEEE entries are `kind="specification"`, `lifecycle="active"`.
 | ChemicalElement | IUPAC Red Book 2005, Ch. IR-3 (Nomenclature of Inorganic Chemistry) | 2005 | `Section IR-3.1-names-and-symbols` | Chapter IR-3, Table I (names and symbols) | 2005 | https://iupac.qmul.ac.uk/RedBook2005.pdf |
 
 The registry entry is `kind="registry"`; the Red Book entry is `kind="specification"`; both are `lifecycle="active"`.
+
+## UNDP — United Nations Development Programme
+
+Specification: **UNSPSC Code Structure (UNGM Help Center)** — `https://help.ungm.org/hc/en-us/articles/360012816160-What-are-UNSPSC-codes-` — `kind="specification"`, `version="2025-07-08"`, `lifecycle="active"`, `publication_year=2025`.
+
+**UNSPSC Codeset (UNGM live export)** — `https://www.ungm.org/Public/UNSPSC` — `kind="registry"`, `version="UNGM live export 2026-09-30 (13,482 stems)"`, `lifecycle="active"`, `publication_year=2026`. Partial: the UNDP v26.0801 XLSX (158,448 items) is access-gated; the table holds the live-directory subset.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| UNSPSC | `Section 1-hierarchy-structure` | Four-level hierarchy, purely numeric codes |
+| UNSPSC | `Section 2-level-padding` | Level padding (segment 000000, family 0000, class 00) |
+| UNSPSC | `Section 3-codeset-membership` | Codeset membership (stem + SS000000/SSFF0000/SSFFCC00 live) |
+
+---
+
+## UNECE — United Nations Economic Commission for Europe
+
+Specification: **Classification Guidelines (Business Function Identifiers)** — `https://unece.org/fileadmin/DAM/trade/agr/meetings/ge.11/2005/2005_i04_UNSPSC.pdf` — `kind="specification"`, `version="v2.04"`, `lifecycle="active"`, `publication_year=2005`. Direct fetch is access-gated; no value table is cited — the suffix is informative-only.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| UNSPSC | `Section 4-business-function-suffix` | Business Function Identifiers (optional 2-digit suffix) |
+
+---
 
 ## Derived conventions — Date (non-authoritative)
 

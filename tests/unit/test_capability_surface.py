@@ -67,6 +67,8 @@ from paxman.capabilities.SIUnit.contract import SIUnitContract
 from paxman.capabilities.SIUnit.notation import SIUnitNotation
 from paxman.capabilities.Timezone.capability import TimezoneCapability
 from paxman.capabilities.Timezone.contract import TimezoneContract
+from paxman.capabilities.UNSPSC.capability import UNSPSCCapability
+from paxman.capabilities.UNSPSC.contract import UNSPSCContract
 from paxman.capabilities.URL.capability import URLCapability
 from paxman.capabilities.URL.contract import URLCapabilityContract
 from paxman.capabilities.URL.notation import URLNotation
@@ -235,6 +237,12 @@ _CAPABILITY_SURFACES = [
         URLCapabilityContract,
         "url",
         id="url",
+    ),
+    pytest.param(
+        UNSPSCCapability,
+        UNSPSCContract,
+        "unspsc",
+        id="unspsc",
     ),
     pytest.param(
         TimezoneCapability,
