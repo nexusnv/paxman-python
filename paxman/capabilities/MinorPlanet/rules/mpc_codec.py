@@ -193,10 +193,10 @@ def mpc_pack(designation: str) -> str | None:
                 # Degenerate cycle ("XA0", "TA05"): the packed field would
                 # collapse the leading zero and fail to re-enter.
                 return None
-            packed_year = _BASE62[int(year[:2]) if year[0] != "A" else 10] + year[2:]
             # A-prefix retrospective years have no standard packing lane.
             if year[0] == "A":
                 return None
+            packed_year = _BASE62[int(year[:2])] + year[2:]
             if num == "":
                 return f"{packed_year}{half}00{second}"
             if len(num) == 1:
