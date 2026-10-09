@@ -2,7 +2,7 @@
 
 > **Purpose:** Roadmap guidance for capabilities to bring into Paxman, ordered by priority.
 > This table is a planning aid — details need not be exactly accurate in terms of implementation.
-> 29 capabilities are shipped (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISNI, ISSN, Language, LEI, MacAddress, Money, ORCID, Phone, SIUnit, Timezone, UNSPSC, URL, UtcOffset, UUID) and are listed in §1 only — they are excluded from the future roadmap in §2.
+> 30 capabilities are shipped (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISNI, ISSN, Language, LEI, MacAddress, MinorPlanet, Money, ORCID, Phone, SIUnit, Timezone, UNSPSC, URL, UtcOffset, UUID) and are listed in §1 only — they are excluded from the future roadmap in §2.
 
 ---
 
@@ -41,6 +41,7 @@ Verified against `paxman/capabilities/__init__.py` + `paxman/api/bootstrap.py:_S
 | 27 | **LEI** | ISO 17442-1:2020, GLEIF LOU prefix list | "5493000IBP32UQZ0KL24" → "5493000IBP32UQZ0KL24" | `research/2026-09-22-lei-canonicalization.md`, `plans/2026-09-22-lei-capability.md` |
 | 28 | **ISNI** | ISO 27729:2024 (MOD 11-2) | "ISNI 0000 0001 2103 2683" → "0000 0001 2103 2683" | `research/2026-09-26-isni-canonicalization.md`, `plans/2026-09-26-isni-capability.md` |
 | 29 | **UNSPSC** | UNDP UNSPSC (UNGM structure, UNGM live-export snapshot, UNECE BFI) | "UNSPSC 44103103" → "44103103" | `research/2026-09-30-unspsc-canonicalization.md`, `plans/2026-09-30-unspsc-capability.md` |
+| 30 | **MinorPlanet** | MPC DesDoc, MPC PackedDes, MPC HowNamed | "J95X00A" → "1995 XA" | `research/2026-10-07-minor-planet-designation-canonicalization.md`, `plans/2026-10-07-minor-planet-capability.md` |
 
 Notes on §1:
 

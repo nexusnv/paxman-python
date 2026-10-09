@@ -776,7 +776,7 @@ for candidate in result.candidates:
 
 ### Capability Versioning
 - Capabilities do **not** declare their own versions — the `Capability` surface carries only `name`, grammars, rules, and the presentation seam.
- - Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.2.1"`); source of truth is `version = "0.5.0"` in `pyproject.toml`.
+ - Library version is resolved in `paxman/engine/orchestrator.py` — `PAXMAN_VERSION = _resolve_version()` reads the installed `paxman` package version via `importlib.metadata` (falling back to `"0.2.1"`); source of truth is `version = "0.6.0"` in `pyproject.toml`.
 - Referenced in `VersionStamp.paxman_version`
 
 ### Contract Protocol
