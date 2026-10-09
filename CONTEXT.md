@@ -61,6 +61,7 @@ Capability-defined intermediate representation that Grammars must produce:
 - **UtcOffset:** `UtcOffsetNotation(compact)` — `compact` is the grammar-normalized extended `+HH:MM` form (`Z` → `+00:00`); rules own range validation (`-12:00..+14:00`, `-00:00` refused)
 - **UUID:** `UUIDNotation(compact, hyphenated, urn, version)` — `compact` is the 32-hex lowercase form, `hyphenated` the `8-4-4-4-12` canonical, `urn` the `urn:uuid:` carrier, `version` the version nibble (informative, never gates)
 - **UNSPSC:** `UNSPSCNotation(digits, level, function, native_length)` — `digits` is the 8-digit zero-padded stem (6-digit class alias padded `+"00"` by the grammar; 10-digit input keeps its 8-digit stem), `level` is `"segment"` / `"family"` / `"class"` / `"commodity"` from trailing-`00` pairs (no authority lookup), `function` the 2-digit BFI suffix or `""`, `native_length` the spelled digit length (6/8/10, retained as the `native` format facet); grammar never validates membership — rules own it
+- **MinorPlanet:** `MinorPlanetNotation(designation, form, packed)` — `designation` is the syntax-normalized spelled form (unpacked lanes upper/single-space, packed lanes byte-for-byte), `form` the lane id (`provisional` | `packed` | `extended` | `survey` | `survey_packed` | `number` | `packed_number`), `packed` the spelled packed form for packed lanes else `""`; grammar never decodes — rules own coherence via `mpc_codec`
 - **Phone / URL:** capability-defined shapes for address / number / URI components
 
 ### Notation Type Example
@@ -79,7 +80,7 @@ class EmailNotation:
 
 ## The Capabilities
 
-Paxman ships twenty-nine built-in capabilities (29 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
+Paxman ships thirty built-in capabilities (30 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name), each wired to an authoritative specification:
 
 | Capability | Domain | Authorities |
 |------------|--------|-------------|
@@ -103,6 +104,7 @@ Paxman ships twenty-nine built-in capabilities (29 in `paxman/capabilities/__ini
 | **Language** | Language identifiers | ISO 639-1:2002, ISO 639-2:1998, ISO 639-3:2007, ISO 639-5:2008, BCP 47 RFC 5646, IANA Language Subtag Registry (File-Date 2026-08-08), CLDR (localized, gated) |
 | **LEI** | Legal entity identifiers | ISO 17442-1:2020, GLEIF LOU prefix list |
 | **MacAddress** | MAC addresses | IEEE Std 802-2024 |
+| **MinorPlanet** | Minor-planet designations | MPC DesDoc, MPC PackedDes, MPC HowNamed |
 | **Money** | Money amounts | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | ITU-T E.164, RFC 3966, NANP |
@@ -838,7 +840,7 @@ paxman/
 ├── __main__.py                    # python -m paxman entry point
 ├── api/
 │   ├── __init__.py
-│   ├── bootstrap.py               # _SHIPPED (29 capabilities, alphabetical; paxman/capabilities/__init__.py exports 29), register_all_shipped(), list_shipped_capabilities()
+│   ├── bootstrap.py               # _SHIPPED (30 capabilities, alphabetical; paxman/capabilities/__init__.py exports 30), register_all_shipped(), list_shipped_capabilities()
 │   └── canonicalize.py            # Public canonicalize() function → run_capability()
 ├── shared_data/
 │   └── currency_snapshot.json     # CLDR v47 + ISO 4217 snapshot → Currency + Money data via tools/regenerate_currency_data.py
@@ -1056,6 +1058,12 @@ paxman/
     │   ├── notation.py            # UNSPSCNotation (digits, level, function, native_length)
     │   ├── grammar/               # unspsc_recognition
     │   └── rules/                 # undp_unspsc_structure_ed2025, undp_unspsc_codeset_ed2026, unece_bfi_ed2005 (+ data/unspsc_codeset)
+    ├── MinorPlanet/               # grammar/ (1) + rules/ (4: 3 publications + codec) — MPC DesDoc, PackedDes, HowNamed
+    │   ├── capability.py          # MinorPlanetCapability
+    │   ├── contract.py            # MinorPlanetContract (designation/packed output formats)
+    │   ├── notation.py            # MinorPlanetNotation (designation, form, packed)
+    │   ├── grammar/               # minor_planet_recognition
+    │   └── rules/                 # mpc_unpacked_designation, mpc_packed_designation, mpc_numbering (+ mpc_codec)
     └── LEI/                       # grammar/ (1) + rules/ (2) — ISO 17442-1:2020, GLEIF LOU prefix list
         ├── capability.py          # LEICapability
         ├── contract.py            # LEIContract
@@ -1097,7 +1105,7 @@ tests/
 │   ├── test_capability_contract.py# CapabilityContract (output_format policy, defaults)
 │   ├── test_capability.py         # Capability ABC
 │   ├── test_capability_surface.py # Surface homogeneity across capabilities
-│   ├── test_capability_exports.py # __init__ export completeness (29 capabilities)
+│   ├── test_capability_exports.py # __init__ export completeness (30 capabilities)
 │   ├── test_version_stamp.py      # VersionStamp
 │   ├── test_discovery.py          # Registry register/freeze/reset
 │   ├── test_errors.py             # Exception hierarchy

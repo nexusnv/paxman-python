@@ -18,6 +18,7 @@ from paxman.capabilities import (  # isort: skip
     ISSN,
     Language,
     MacAddress,
+    MinorPlanet,
     Money,
     ORCID,
     Phone,
@@ -173,6 +174,18 @@ class TestMoneyCapabilityExports:
         assert Money.name == "money"
 
 
+class TestMinorPlanetCapabilityExports:
+    @pytest.mark.unit
+    def test_minor_planet_capability_importable(self) -> None:
+        """MinorPlanet capability is importable from paxman.capabilities."""
+        assert MinorPlanet is not None
+
+    @pytest.mark.unit
+    def test_minor_planet_capability_name(self) -> None:
+        """MinorPlanet capability has correct name."""
+        assert MinorPlanet.name == "minor_planet"
+
+
 class TestORCIDCapabilityExports:
     @pytest.mark.unit
     def test_orcid_capability_importable(self) -> None:
@@ -306,6 +319,7 @@ class TestURLCapabilityExports:
             "LEI",
             "Language",
             "MacAddress",
+            "MinorPlanet",
             "Money",
             "ORCID",
             "Phone",

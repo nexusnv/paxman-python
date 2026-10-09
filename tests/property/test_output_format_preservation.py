@@ -83,6 +83,7 @@ from paxman.capabilities import (
     Domain,
     Language,
     MacAddress,
+    MinorPlanet,
     Money,
     Phone,
     UtcOffset,
@@ -216,6 +217,11 @@ CLASS_MAP: dict[tuple[str, str], str] = {
     ("mac_address", "bare"): "encoding",
     ("mac_address", "cisco"): "encoding",
     ("mac_address", "hyphen"): "encoding",
+    # -- MinorPlanet -----------------------------------------------------------
+    # packed: case-exact wire re-encoding of the unpacked canonical; the
+    # rendering re-enters the default contract onto the same value
+    # (measured: "J95X00A" -> "1995 XA").
+    ("minor_planet", "packed"): "encoding",
     # -- Money / Phone -------------------------------------------------------
     ("money", "compact"): "encoding",
     ("phone", "rfc3966"): "encoding",
@@ -532,6 +538,14 @@ _INJECTIVITY_PAIRS: tuple[_InjectivityPair, ...] = (
         "",
     ),
     _InjectivityPair("unspsc", UNSPSC, "labeled", "44103103", "43211503", ""),
+    _InjectivityPair(
+        "minor_planet",
+        MinorPlanet,
+        "packed",
+        "1995 XA",
+        "1995 XB",
+        "distinct provisional renderings",
+    ),
     _InjectivityPair(
         "unspsc",
         UNSPSC,

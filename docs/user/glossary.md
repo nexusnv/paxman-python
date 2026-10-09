@@ -124,6 +124,8 @@ Common terms used throughout Paxman — in the library API, the pipeline, the ca
 
 **UNSPSC** — United Nations Standard Products and Services Code (UNDP). Paxman capability with 8-digit wire-stem canonical (`44103103`); `labeled`, `native` offered. See [Citations](citations/).
 
+**MinorPlanet** — Minor-planet designations (IAU Minor Planet Center). Paxman capability with unpacked canonical (`1995 XA`); `packed` offered. See [Citations](citations/).
+
 **LEI** — Legal Entity Identifier (ISO 17442-1:2020, GLEIF LOU prefix list). Paxman capability. See [Citations](citations/).
 
 **IETF** — Internet Engineering Task Force. Authority for RFC 5322, RFC 6761, RFC 791, RFC 5952, RFC 3966, BCP 47 RFC 5646. See [Citations](citations/).

@@ -1,0 +1,1 @@
+"""MinorPlanet validation rules."""

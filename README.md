@@ -66,7 +66,7 @@ If multiple specifications disagree on the canonical value, the status is `AMBIG
 
 ## Capabilities
 
-Paxman ships with twenty-nine built-in capabilities (29 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
+Paxman ships with thirty built-in capabilities (30 in `paxman/capabilities/__init__.py` and `paxman/api/bootstrap.py:_SHIPPED`, alphabetical by registry name):
 
 | Capability | Domain | Grammars | Rules | Description |
 |---|---|---|---|---|
@@ -90,6 +90,7 @@ Paxman ships with twenty-nine built-in capabilities (29 in `paxman/capabilities/
 | **Language** | Language identifiers | 4 (bcp47_tag, language_code, language_name, language_description) | 11 | ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR |
 | **LEI** | Legal entity identifiers | 1 (lei) | 2 | ISO 17442-1:2020, GLEIF LOU prefix list |
 | **MacAddress** | MAC addresses | 1 (mac_address) | 1 | IEEE Std 802-2024 |
+| **MinorPlanet** | Minor-planet designations | 1 (minor_planet) | 5 | MPC DesDoc, MPC PackedDes, MPC HowNamed |
 | **Money** | Money amounts | 3 (code, symbol, word) | 3 | ISO 4217, CLDR |
 | **ORCID** | Researcher identifiers | 1 (orcid) | 2 | ISO 27729:2024, MOD 11-2 |
 | **Phone** | Phone numbers | 4 (e164, tel_uri, international_00, national) | 5 | ITU-T E.164, RFC 3966, NANP |
@@ -575,7 +576,7 @@ result = paxman.canonicalize("2026-01-15", contract)
 
 ## Community Extensions
 
-Paxman ships with twenty-nine built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
+Paxman ships with thirty built-in capabilities, but a capability is closed for modification yet open for extension: you can add recognition and validation without touching the library. Register a `Grammar` subclass and the `Rule` subclass that validates it, then opt a contract into them by naming the grammar in `extra_grammars`:
 
 ```python
 import re

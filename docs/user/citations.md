@@ -2,7 +2,7 @@
 title: "Citations"
 ---
 
-Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 28 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
+Every validated value in Paxman carries **provenance** — the authority, specification, version, and section that vouches for it. This page is the curated, authority-grouped index of **all cited provenance** across the 30 shipped capabilities. Use it to audit results, write methods sections, or compare Paxman against another system.
 
 > **How to read provenance in code:** `result.candidates[n].provenance[0]` is a `Provenance` (`authority`, `specification_name`, `version`, `publication_year`, `reference_url`, `kind`, `lifecycle`) and `candidate.validation_rule` is the section citation (e.g. `Section 3.4.1-addr-spec`). See [Provenance](concepts/provenance/) for the object shape.
 
@@ -38,6 +38,7 @@ All entries below are derived from the `PUBLICATION` constants and `citation`/`n
 | **WHATWG** | URL Standard (Living Standard) | URL | 1 |
 | **IEEE** | IEEE Std 802-2024 | MacAddress | 1 |
 | **IUPAC** | IUPAC Periodic Table 04 May 2022, IUPAC Red Book 2005 Ch. IR-3 | ChemicalElement | 2 |
+| **Minor Planet Center** | New- And Old-Style Minor Planet Designations (DesDoc); Packed Provisional and Permanent Designations (PackedDes); How Are Minor Planets Named? (HowNamed) | MinorPlanet | 5 |
 | **UNDP** | UNSPSC Code Structure (UNGM Help Center); UNSPSC Codeset (UNGM live export 2026-09-30) | UNSPSC | 3 |
 | **UNECE** | Classification Guidelines (Business Function Identifiers) v2.04 | UNSPSC | 1 |
 | **Derived convention** | US locale — MM/DD/YYYY, European locale — DD/MM/YYYY | Date | 2 |
@@ -313,6 +314,24 @@ Specification: **Classification Guidelines (Business Function Identifiers)** —
 | Capability | Rule | Citation |
 |------------|------|----------|
 | UNSPSC | `Section 4-business-function-suffix` | Business Function Identifiers (optional 2-digit suffix) |
+
+---
+
+## Minor Planet Center — International Astronomical Union
+
+Specification: **New- And Old-Style Minor Planet Designations (DesDoc)** — `https://minorplanetcenter.net/iau/info/DesDoc.html` — `kind="specification"`, `version="living document (fetched 2026-10-07)"`, `lifecycle="active"`, `publication_year=2026`.
+
+Specification: **Packed Provisional and Permanent Designations (PackedDes)** — `https://minorplanetcenter.net/iau/info/PackedDes.html` — `kind="specification"`, `version="living document (fetched 2026-10-07)"`, `lifecycle="active"`, `publication_year=2026`.
+
+Specification: **How Are Minor Planets Named? (HowNamed)** — `https://minorplanetcenter.net/iau/info/HowNamed.html` — `kind="specification"`, `version="living document (fetched 2026-10-07)"`, `lifecycle="active"`, `publication_year=2026`.
+
+| Capability | Rule | Citation |
+|------------|------|----------|
+| MinorPlanet | `Section 1-unpacked-provisional-structure` | Year lane, half-month/second letter sets, cycle digits, `A/` lane |
+| MinorPlanet | `Section 2-survey-designation` | Palomar-Leiden / Trojan survey number + identifier |
+| MinorPlanet | `Section 3-packed-provisional` | 7-char, survey-pack, and extended decode coherence |
+| MinorPlanet | `Section 4-packed-number` | 5-char, letter, and tilde number decode coherence |
+| MinorPlanet | `Section 5-permanent-number` | Parenthesized positive integer, no leading zeros |
 
 ---
 

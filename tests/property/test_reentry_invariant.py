@@ -73,6 +73,7 @@ from paxman.capabilities import (
     Email,
     Language,
     MacAddress,
+    MinorPlanet,
     Money,
     Phone,
     SIUnit,
@@ -204,6 +205,10 @@ ROWS: tuple[_ReEntryRow, ...] = (
     # MacAddress: tests/capabilities/mac_address/test_capability.py
     # ::test_format_value_identity_default (colon)
     _row(MacAddress, "00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:5E"),
+    # MinorPlanet: tests/capabilities/minor_planet/test_capability.py —
+    # unpacked canonical; the offered packed rendering re-enters through
+    # the packed branch (J95X00A -> 1995 XA).
+    _row(MinorPlanet, "1995 XA", "1995 XA"),
     # Money: tests/capabilities/money/test_capability.py
     # ::test_code_amount_is_identity (canonical "CODE amount")
     _row(Money, "45.50 USD", "USD 45.50"),

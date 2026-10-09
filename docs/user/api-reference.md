@@ -203,6 +203,7 @@ Current defaults and offered alternatives:
 | CreditCard | `pan` | `grouped` |
 | Language | `bcp47` | `alpha2`, `alpha3`, `alpha3-bib`, `name` |
 | MacAddress | `colon` | `hyphen`, `bare`, `cisco`, `eui64` |
+| MinorPlanet | `designation` | `packed` |
 | ORCID | `orcid` | `uri`, `compact` |
 | Timezone | `iana` | *(none — single format)* |
 | UtcOffset | `extended` | `basic` |

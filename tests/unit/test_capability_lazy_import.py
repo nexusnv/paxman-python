@@ -77,6 +77,7 @@ def test_all_still_exported_via_all() -> None:
         "LEI",
         "Language",
         "MacAddress",
+        "MinorPlanet",
         "Money",
         "ORCID",
         "Phone",

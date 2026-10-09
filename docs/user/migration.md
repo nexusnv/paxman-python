@@ -367,6 +367,10 @@ check digit plus ANNA ISIN Guidelines V25 prefix allowlist) is registered by
 contracts are byte-identical. See the [ISIN guide](capabilities/isin/) and
 the [Citations](citations/) ISO/ANNA rows.
 
+### Unreleased — New capability: MinorPlanet (additive)
+
+`MinorPlanet` (unpacked canonical `1995 XA` / `(433)` / `2040 P-L`, `packed` offered re-encoding, MPC DesDoc + PackedDes + HowNamed structure-only, no registry) is registered by `register_all_shipped()` (now 30 shipped). No migration required — existing contracts are byte-identical. See the [MinorPlanet guide](capabilities/minor_planet/) and the [Citations](citations/) Minor Planet Center rows.
+
 ### Unreleased — New capability: UNSPSC (additive)
 
 `UNSPSC` (8-digit wire-stem canonical, `labeled` and `native` offered re-encodings, UNGM structure + UNDP codeset snapshot + UNECE BFI suffix) is registered by `register_all_shipped()` (now 29 shipped). No migration required — existing contracts are byte-identical. See the [UNSPSC guide](capabilities/unspsc/) and the [Citations](citations/) UNDP/UNECE rows.
