@@ -218,6 +218,10 @@ def _create_contract(
         from paxman.capabilities import MacAddress
 
         return MacAddress.create_contract(suppress_common_words=suppress_common_words)
+    if normalized == "minor_planet":
+        from paxman.capabilities import MinorPlanet
+
+        return MinorPlanet.create_contract(suppress_common_words=suppress_common_words)
     if normalized == "money":
         from paxman.capabilities import Money
 

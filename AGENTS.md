@@ -5,7 +5,7 @@
 **Branch:** chore/v0.2.0-release
 
 ## OVERVIEW
-Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 28 capabilities (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISNI, ISSN, Language, LEI, MacAddress, Money, ORCID, Phone, SI Unit, Timezone, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
+Paxman is a Python 3.11+ canonicalization library with a small CLI: takes ambiguous human input, returns what authoritative specs say it means, with full provenance. Deterministic, provenance-first. 30 capabilities (BIC, ChemicalElement, Coordinates, Country, CreditCard, Currency, Date, DOI, Domain, Email, GTIN, IBAN, IP, ISBN, ISIN, ISNI, ISSN, Language, LEI, MacAddress, MinorPlanet, Money, ORCID, Phone, SI Unit, Timezone, UNSPSC, URL, UtcOffset, UUID) — recognition via the Recognition Kernel (ADR-0009) with legacy pipeline stages retained for unmigrated grammars. Toolchain: uv + hatchling, ruff, strict pyright, import-linter, pytest at 95% coverage.
 
 ## STRUCTURE
 ```text
@@ -47,7 +47,7 @@ docs/               # adr/, development/, recipes/, user/
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
 | `canonicalize()` | function | `paxman/api/canonicalize.py` | Sole user entry point → `run_capability()` |
-| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 28 shipped capabilities; deterministic name list |
+| `register_all_shipped()` / `list_shipped_capabilities()` | functions | `paxman/api/bootstrap.py` | One-call registration of the 30 shipped capabilities; deterministic name list |
 | `list_registered_capabilities()` | function | `paxman/core/discovery.py` | Introspection of the live registry |
 | `register_capability()` | function | `paxman/core/discovery.py` | Registry add; freezes on first run |
 | `register_grammar()` / `register_rule()` | functions | `paxman/core/extensions.py` | Community extension seam (opt-in via contract `extra_grammars`) |

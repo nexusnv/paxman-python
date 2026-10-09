@@ -54,6 +54,8 @@ from paxman.capabilities.LEI.capability import LEICapability
 from paxman.capabilities.LEI.contract import LEIContract
 from paxman.capabilities.MacAddress.capability import MacAddressCapability
 from paxman.capabilities.MacAddress.contract import MacAddressContract
+from paxman.capabilities.MinorPlanet.capability import MinorPlanetCapability
+from paxman.capabilities.MinorPlanet.contract import MinorPlanetContract
 from paxman.capabilities.Money.capability import MoneyCapability
 from paxman.capabilities.Money.contract import MoneyContract
 from paxman.capabilities.Money.notation import MoneyNotation
@@ -177,6 +179,12 @@ _CAPABILITY_SURFACES = [
         MoneyContract,
         "code_amount",
         id="money",
+    ),
+    pytest.param(
+        MinorPlanetCapability,
+        MinorPlanetContract,
+        "designation",
+        id="minor_planet",
     ),
     pytest.param(
         ISNICapability,

@@ -72,6 +72,10 @@ _DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "ISO 639, IANA Language Subtag Registry, BCP 47 RFC 5646, CLDR",
     ),
     "mac_address": ("MAC addresses", "IEEE Std 802-2024"),
+    "minor_planet": (
+        "Minor-planet designations",
+        "MPC DesDoc, MPC PackedDes, MPC HowNamed",
+    ),
     "money": ("Money amounts", "ISO 4217, CLDR"),
     "orcid": ("Researcher identifiers", "ISO 27729:2024, MOD 11-2"),
     "phone": ("Phone numbers", "ITU-T E.164, RFC 3966, NANP"),
@@ -107,6 +111,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "lei": "LEI",
     "language": "Language",
     "mac_address": "MacAddress",
+    "minor_planet": "MinorPlanet",
     "money": "Money",
     "orcid": "ORCID",
     "phone": "Phone",
