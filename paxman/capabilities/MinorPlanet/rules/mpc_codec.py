@@ -136,8 +136,8 @@ def mpc_unpack(spelled: str) -> str | None:
 def mpc_pack(designation: str) -> str | None:
     """Encode a canonical unpacked designation to its packed form.
 
-    Returns ``None`` when no packed mapping is defined (the ``A/`` lane)
-    or the value is out of range. Case-exact output.
+    Returns ``None`` when no packed mapping is defined (the ``A/`` lane,
+    non-20xx extended range, or out-of-range value). Case-exact output.
     """
     try:
         if designation.startswith("(") and designation.endswith(")"):
@@ -205,6 +205,11 @@ def mpc_pack(designation: str) -> str | None:
             if obj_num < 15501:
                 return f"{packed_year}{half}{_BASE62[int(num[:-1])]}{num[-1]}{second}"
             if obj_num < 14791837:
+                if not year.startswith("20"):
+                    # Extended `_` lane drops the century (unpack hardcodes
+                    # 20xx): a non-20xx year here would re-enter as 20xx,
+                    # so refuse and let format_value fall back instead.
+                    return None
                 obj_num -= 15501
                 tail = _base62_encode(obj_num, 4)
                 if tail is None:

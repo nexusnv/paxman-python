@@ -277,6 +277,17 @@ class TestMpcCodec:
     def test_pack_none_for_a_lane(self) -> None:
         assert mpc_pack("A/2017 U1") is None
 
+    def test_pack_none_for_non_20xx_extended_range(self) -> None:
+        # Extended `_` lane drops the century (unpack hardcodes 20xx):
+        # a 19xx designation past the 7-char cycle range has no packed
+        # mapping, so pack refuses and format_value falls back.
+        assert mpc_pack("1950 AA1000") is None
+
+    def test_pack_19xx_small_cycle_still_packed(self) -> None:
+        # 19xx designations within the 7-char cycle range pack exactly
+        # (the century survives in the packed year letter).
+        assert mpc_pack("1950 AA619") == "J50Az9A"
+
     def test_unpack_none_for_incoherent(self) -> None:
         assert mpc_unpack("Q95X00A") is None
         assert mpc_unpack("J95I00A") is None

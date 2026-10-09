@@ -83,6 +83,15 @@ class TestMinorPlanetCapability:
             self.capability.format_value("A/2017 U1", "packed", notation) == "A/2017 U1"
         )
 
+    def test_format_value_packed_non_20xx_extended_fallback(self) -> None:
+        notation = MinorPlanetNotation(
+            designation="1950 AA1000", form="provisional", packed=""
+        )
+        assert (
+            self.capability.format_value("1950 AA1000", "packed", notation)
+            == "1950 AA1000"
+        )
+
 
 @pytest.mark.capability
 class TestMinorPlanetCapabilityPipeline:
@@ -100,3 +109,14 @@ class TestMinorPlanetCapabilityPipeline:
         result = canonicalize("scaffold probe", contract)
         assert result.status == Resolution.MISSING
         assert result.canonicalized_value is None
+
+    def test_packed_format_non_20xx_extended_falls_back_and_reenters(self) -> None:
+        register_capability(MinorPlanetCapability())
+        packed = MinorPlanetCapability.create_contract(output_format="packed")
+        result = canonicalize("1950 AA1000", packed)
+        assert result.status == Resolution.SUCCESS
+        assert result.canonicalized_value == "1950 AA1000"
+        default = MinorPlanetCapability.create_contract()
+        reentry = canonicalize("1950 AA1000", default)
+        assert reentry.status == Resolution.SUCCESS
+        assert reentry.canonicalized_value == "1950 AA1000"
