@@ -1,0 +1,105 @@
+---
+title: "Capabilities — Overview"
+slug: v0.6.0/capabilities/index
+---
+
+Each page below is a self-contained guide for one kind of identifier Paxman can canonicalize. Read the one that matches your data, copy the notebook snippet, and adapt the contract flags to your needs.
+
+All capabilities share the same call shape — only the import, the factory, and the domain vocabulary change:
+
+```python
+import paxman
+from paxman.capabilities import X  # Email, Country, ...
+
+paxman.register_all_shipped()  # once, before first use
+contract = X.create_contract(...)  # domain flags here
+result = paxman.canonicalize(text, contract)
+```
+
+For the shared concepts behind these pages see [Contracts](../concepts/contracts/), [Pipeline](../concepts/pipeline/), [Execution Result](../concepts/execution-result/), and the [API Reference](../api-reference/).
+
+---
+
+## Choose by what you have
+
+| Your data looks like… | Read |
+|-----------------------|------|
+| `user@example.com`, `user at example dot com` | [Email](email/) |
+| `2026-01-15`, `01/02/2026`, `2026/01/15` | [Date](date/) |
+| `US`, `United States`, `Alemania` | [Country](country/) |
+| `4111 1111 1111 1111`, `3782 822463 10005`, `PAN: 4716-2210-5188-5662` | [CreditCard](credit_card/) |
+| `USD`, `$`, `euro`, `¥` (identifiers without amounts) | [Currency](currency/) |
+| `192.168.1.1`, `2001:db8::1` | [IP](ip/) |
+| `9780306406157`, `0306406152` | [ISBN](isbn/) |
+| `0317-8471`, `0378-5955` | [ISSN](issn/) |
+| `US0378331005`, `GB0002634946` | [ISIN](isin/) |
+| `0000 0001 2103 2683`, `0000000121032683`, `urn:isni:…` | [ISNI](isni/) |
+| `5493000IBP32UQZ0KL24`, `LEI: 213800KUD8LAJWSQ9D15` | [LEI](lei/) |
+| `en`, `en-US`, `zh-Hans-CN`, `German` | [Language](language/) |
+| `USD 500`, `$500`, `1.000,50 EUR` (currency **with** amount) | [Money](money/) |
+| `+1 555 123 4567`, `(555) 234-5678`, `tel:+15551234567` | [Phone](phone/) |
+| `kg`, `m/s²`, `megahertz`, `kPa` | [SI Unit](si-unit/) |
+| `https://example.com`, `http://münchen.de` | [URL](url/) |
+| `DEUTDEFF`, `DEUTDEFF500` | [BIC](bic/) |
+| `00614141999996`, `GTIN: 00196618007309`, `6 14141 99999 6` | [GTIN](gtin/) |
+| `48.8566, 2.3522`, `geo:48.8566,2.3522` | [Coordinates](coordinates/) |
+| `Fe`, `iron`, `element 26` | [ChemicalElement](chemical_element/) |
+| `DE89370400440532013000` | [IBAN](iban/) |
+| `00:1A:2B:3C:4D:5E` | [MacAddress](mac_address/) |
+| `0000-0002-1825-0097` | [ORCID](orcid/) |
+| `America/New_York`, `US/Eastern` | [Timezone](timezone/) |
+| `UTC+5`, `+05:30`, `Z` | [UtcOffset](utcoffset/) |
+| `6ba7b810-9dad-11d1-80b4-00c04fd430c8`, `{…}`, `urn:uuid:…` | [UUID](uuid/) |
+| `10.1038/nature12345`, `https://doi.org/10.1038/…`, `doi:10.1038/…` | [DOI](doi/) |
+| `example.com`, `münchen.de`, `XN--MNCHEN-3YA.de` | [Domain](domain/) |
+| `UNSPSC 44103103`, `441217`, `UNSPSC000.44103103` | [UNSPSC](unspsc/) |
+| `1995 XA`, `J95X00A`, `(433)`, `2040 P-L` | [MinorPlanet](minor_planet/) |
+
+> The set above reflects the **current release**. New capabilities are added in minor releases — check `paxman.capabilities` or the latest release notes if you don't see what you need.
+
+```mermaid
+flowchart LR
+    A[Raw text] --> B{What kind?}
+    B -->|email| C[Email]
+    B -->|date| D[Date]
+    B -->|place| E[Country]
+    B -->|money / currency| F[Currency / Money]
+    B -->|network| G[IP / URL]
+    B -->|books| H[ISBN]
+    B -->|phones| I[Phone]
+    B -->|units| J[SI Unit]
+
+    style B fill:#fff8e1,stroke:#d4a017
+```
+
+---
+
+## What each page covers
+
+Every capability page answers the same questions in the same order:
+
+1. **What it canonicalizes** and what it explicitly does not.
+2. **Recognized forms** — what patterns match, with what grammars.
+3. **Canonical output & `output_format`** — default and offered renderings.
+4. **Contract flags** — which knobs change recognition and validation.
+5. **Statuses** — concrete `SUCCESS` / `MISSING` / `INVALID` / `AMBIGUOUS` examples.
+6. **Notebook snippet** — runnable cleaning loop for a column.
+7. **Provenance** — which specifications vouch for the answer.
+
+Start with the capability that matches your column; if you need more than one, register both and loop per cell (see the [Segmentation Recipe](https://github.com/nexusnv/paxman-python/blob/main/docs/recipes/segmentation.md) for text that mixes kinds).
+
+---
+
+## One mention per call
+
+Paxman resolves **one presumed entity per `canonicalize()` call** (see [Pipeline](../concepts/pipeline/)). Text that contains two different entities with different canonical values raises `MultipleMentionsError` rather than returning a merged answer — split first, then loop. To extract *every* mention in a longer text instead, use the batch API `paxman.scan()`, which returns per-capability `Mention` records (see [API reference](../api-reference/)).
+
+```python
+from paxman.core.errors import MultipleMentionsError
+
+try:
+    result = paxman.canonicalize("alice@example.com, bob@example.org", contract)
+except MultipleMentionsError:
+    # split the input and canonicalize each piece — see the segmentation recipe
+    ...
+```
