@@ -125,7 +125,7 @@ The scan shares one `ScanContext` (word spans and lazy views) across all contrac
 
 ```python
 import paxman
-from paxman.capabilities.Country import Country
+from paxman.capabilities import Country
 from paxman.core.errors import MultipleMentionsError
 
 paxman.register_all_shipped()

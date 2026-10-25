@@ -105,7 +105,7 @@ assert r.candidates[0].value == "::ffff:192.0.2.1"
 ```python
 # Exact value — unchanged:
 import paxman
-from paxman.capabilities.Country import Country
+from paxman.capabilities import Country
 
 paxman.register_all_shipped()
 contract = Country.create_contract()
