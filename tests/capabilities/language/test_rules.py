@@ -101,6 +101,18 @@ class TestISO6391:
     def test_normalize_lower(self) -> None:
         assert self.rule.normalize(_code_notation("EN"), self.contract) == "en"
 
+    def test_deprecated_resolution_respects_collective_gate(self) -> None:
+        """A deprecation into a gated collection stops at the ISO 639-1 code.
+
+        ``bh`` is a valid ISO 639-1:2002 alpha-2; the IANA deprecation points
+        at ``bih``, which is a collection available only under
+        ``include_collective``. Resolving across that gate emitted a canonical
+        the code lane then refused (E2 / Decision D4).
+        """
+        assert self.rule.normalize(_code_notation("bh"), self.contract) == "bh"
+        collective = LanguageContract(include_collective=True)
+        assert self.rule.normalize(_code_notation("bh"), collective) == "bih"
+
     def test_citation(self) -> None:
         assert "alpha-2" in self.rule.citation.lower()
 
@@ -368,12 +380,34 @@ class TestIANA:
 
     def test_metadata(self) -> None:
         assert self.rule.strategy is RuleStrategy.LOOKUP_TABLE
-        assert self.rule.target_semantics == frozenset({"bcp47_tag"})
+        assert self.rule.target_semantics == frozenset({"bcp47_tag", "language_code"})
         assert self.rule.requires_features == frozenset()
         assert self.private_rule.requires_features == frozenset({"include_private"})
         assert self.rule.provenance.authority == "IANA"
         assert self.rule.provenance.kind == "registry"
         assert self.rule.provenance.version == "Rolling File-Date 2026-08-08"
+
+    def test_bare_language_code_membership(self) -> None:
+        """Bare subtags validate against IANA, minus the gated collections.
+
+        ``sh`` is a current IANA macrolanguage with no ISO 639 table entry, so
+        the registry is its only authority — the name lane already emitted it
+        (E2). ``ber``/``bh`` are collection-scoped and belong to the
+        ``include_collective``-gated ISO 639-5 lane, so accepting them here
+        would bypass that gate (Decision D1/D2).
+        """
+        assert self.rule.matches(_code_notation("sh"), self.contract) is True
+        for gated in ("ber", "bih", "bh"):
+            assert self.rule.matches(_code_notation(gated), self.contract) is False, (
+                gated
+            )
+        assert self.rule.matches(_code_notation("zz"), self.contract) is False
+        # The tag lane is unchanged by the bare-code route.
+        n = _bcp47_notation("sl-nedis", language="sl", variant="nedis")
+        assert self.rule.matches(n, self.contract) is True
+        # An unguarded bare branch would short-circuit subtag validation.
+        n = _bcp47_notation("en-ZZ", language="en", region="ZZ")
+        assert self.rule.matches(n, self.contract) is False
 
     def test_sl_nedis_valid(self) -> None:
         n = _bcp47_notation("sl-nedis", language="sl", variant="nedis")
@@ -489,6 +523,20 @@ class TestEnglishNameMapping:
     def test_unknown_invalid(self) -> None:
         n = _name_notation("Klingon")
         assert self.rule.matches(n, self.contract) is False
+
+    def test_gated_collection_target_refused_without_flag(self) -> None:
+        """A name whose only canonical is a gated collection is not validated.
+
+        ``Bihari`` maps to ``bih``, an ISO 639-5 collection. Emitting it under
+        the default contract produced a canonical the code lane refused (E2 /
+        Decision D3); with ``include_collective`` on, the name resolves as
+        before.
+        """
+        n = _name_notation("Bihari")
+        assert self.rule.matches(n, self.contract) is False
+        collective = LanguageContract(include_collective=True)
+        assert self.rule.matches(n, collective) is True
+        assert self.rule.normalize(n, collective) == "bih"
 
 
 def _desc_notation(

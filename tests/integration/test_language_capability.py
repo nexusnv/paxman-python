@@ -1009,3 +1009,89 @@ def test_compositional_trailing_noun_no_false_success() -> None:
         assert result.status is Resolution.MISSING
         assert result.canonicalized_value is None
         assert result.candidates == ()
+
+
+@pytest.mark.integration
+def test_bare_macrolanguage_resolves() -> None:
+    """``sh`` validates against IANA, its only authority (E2 / Decision D2).
+
+    The name lane already emitted ``sh`` for "Serbo-Croatian", so the
+    canonical was one the capability refused as input — an ADR-0010
+    Property 2 violation.
+    """
+    _register()
+    r = paxman.canonicalize("sh", LanguageCapability.create_contract())
+    assert r.status == Resolution.SUCCESS
+    assert r.canonicalized_value == "sh"
+
+
+@pytest.mark.integration
+def test_bihari_requires_collective() -> None:
+    """A name whose only canonical is a gated collection agrees with its code.
+
+    ``bih`` is INVALID under the default contract; the name lane must not
+    bypass that gate by emitting it (E2 / Decision D3).
+    """
+    _register()
+    default = paxman.canonicalize("Bihari", LanguageCapability.create_contract())
+    assert default.status == Resolution.INVALID
+    assert default.canonicalized_value is None
+    collective = paxman.canonicalize(
+        "Bihari", LanguageCapability.create_contract(include_collective=True)
+    )
+    assert collective.status == Resolution.SUCCESS
+    assert collective.canonicalized_value == "bih"
+
+
+@pytest.mark.integration
+def test_region_codes_are_not_language_codes() -> None:
+    """``bu``/``yd`` are ISO 3166 region subtags, not language codes (D5).
+
+    They resolved to ``mm``/``ye`` — country codes emitted by a language
+    capability, and canonicals it then refused as input (E2).
+    """
+    _register()
+    contract = LanguageCapability.create_contract()
+    for text in ("bu", "yd"):
+        r = paxman.canonicalize(text, contract)
+        assert r.status == Resolution.INVALID, text
+        assert r.canonicalized_value is None, text
+
+
+@pytest.mark.integration
+def test_deprecated_bihari_code_respects_gate() -> None:
+    """``bh`` stays its ISO 639-1 code unless the collection lane is on (D4)."""
+    _register()
+    default = paxman.canonicalize("bh", LanguageCapability.create_contract())
+    assert default.status == Resolution.SUCCESS
+    assert default.canonicalized_value == "bh"
+    collective = paxman.canonicalize(
+        "bh", LanguageCapability.create_contract(include_collective=True)
+    )
+    assert collective.status == Resolution.SUCCESS
+    assert collective.canonicalized_value == "bih"
+
+
+@pytest.mark.integration
+def test_bare_code_carries_dual_provenance() -> None:
+    """A registered bare code validated by two authorities keeps both records.
+
+    ``en`` is ISO 639-1 *and* IANA-registered; both rules are LOOKUP_TABLE and
+    agree on the canonical, so status stays keyed on the value set (SUCCESS)
+    with two candidates carrying distinct provenance (Decision D7). ``sh`` has
+    only the registry authority, so it keeps a single record.
+    """
+    _register()
+    contract = LanguageCapability.create_contract()
+    en = paxman.canonicalize("en", contract)
+    assert en.status == Resolution.SUCCESS
+    assert en.canonicalized_value == "en"
+    assert len(en.candidates) == 2
+    assert {c.validation_rule for c in en.candidates} == {
+        "Section 4-alpha-2-code",
+        "Section-iana-registry",
+    }
+    sh = paxman.canonicalize("sh", contract)
+    assert sh.status == Resolution.SUCCESS
+    assert len(sh.candidates) == 1
+    assert sh.candidates[0].validation_rule == "Section-iana-registry"

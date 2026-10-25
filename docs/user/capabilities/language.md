@@ -12,9 +12,9 @@ Canonicalizes **one language mention** per call — a bare code, a BCP 47 tag, o
 
 | Recognizes (current release — growing) | Does not recognize |
 |----------------------------------------|--------------------|
-| Bare ISO 639 codes: alpha-2 (`en`, `de`), alpha-3 Term/Bib (`eng`/`ger`), comprehensive (`cmn`), collective (`aav` when `include_collective=True`), private `qaa` when `include_private=True` | Bare 4-letter codes (`abcd`) — 4 is script, not language; 1-letter (`x`); bare 5–8 runs (`hello`, `Xenon`) → `MISSING` (no hyphenless 5–8 primary in the shipped set) |
+| Bare ISO 639 codes: alpha-2 (`en`, `de`), alpha-3 Term/Bib (`eng`/`ger`), comprehensive (`cmn`), collective (`aav` when `include_collective=True`), private `qaa` when `include_private=True`; plus bare IANA-registered subtags that no ISO table covers (`sh` — a current macrolanguage, withdrawn from ISO 639-1). Collection-scoped registry subtags (`ber`, `bih`) still need `include_collective=True` | Bare 4-letter codes (`abcd`) — 4 is script, not language; 1-letter (`x`); bare 5–8 runs (`hello`, `Xenon`) → `MISSING` (no hyphenless 5–8 primary in the shipped set) |
 | BCP 47 tags (`en-US`, `zh-Hans-CN`, `es-419`, `sl-nedis`, `en-a-foo`, `x-private`, `art-lojban`→`jbo`, `en-GB-oed`→`en-GB-oxendict`) with `_`→`-` folding (`fr_FR`→`fr-FR`) | Inputs with no valid tag (`-en`, `--`, single `x`) → `MISSING`; overlong/double-hyphen inputs still yield `SUCCESS` via valid prefix (`en-US-123456789`→`en-US`) |
-| English display names — 60-entry curatorial subset (`German`→`de`, `Serbo Croatian`→`sh`, `Norwegian Bokmal`→`nb`, `Cherokee`→`chr`) | Names outside the 60 (`Klingonish`) → `MISSING` (grammar emits no match, not `INVALID`) |
+| English display names — 60-entry curatorial subset (`German`→`de`, `Serbo Croatian`→`sh`, `Norwegian Bokmal`→`nb`, `Cherokee`→`chr`); a name whose only canonical is a collection (`Bihari`→`bih`) is `INVALID` unless `include_collective=True` | Names outside the 60 (`Klingonish`) → `MISSING` (grammar emits no match, not `INVALID`) |
 | CLDR localized names — 24-entry subset (`allemand`→`de`, `deutsch`→`de`) — only when `include_localized=True` | Localized names when flag off — recognized but `INVALID` (no authority claims them) |
 | Grandfathered / deprecated Preferred-Value (`i-cherokee`→`chr`, `iw`→`he`, `scc`→`sr` historical) | Private subtags (`qaa`, `Qaaa`, `ZZ`) without `include_private` → `INVALID` |
 | Compositional descriptions — full-phrase spans only (`Singapore Chinese in traditional script`→`zh-Hant-SG`, `Chinese in simplified script`→`zh-Hans`, `Chinese in Singapore`→`zh-SG`; Wave 2: `German in Latin script`, `Armenian in Armenian script`, `German in Germany`, `Japanese in Japan` — `AMBIGUOUS` under default per note below, `SUCCESS` when suppressed) | Trailing content word (`Chinese in traditional dress` → `SUCCESS id` via bare `in` under default, `MISSING` when suppressed) |
@@ -23,6 +23,8 @@ Canonicalizes **one language mention** per call — a bare code, a BCP 47 tag, o
 > **Compositional contract note:** a compositional description is `AMBIGUOUS` under the default contract — the full-phrase reading (e.g. `zh-Hant-SG`) coexists with the bare-code `in`→`id` reading — and `SUCCESS` with `suppress_common_words=True` (the `in` claim is a suppressible common word).
 
 > **Subset disclaimer:** English 60 + localized 24 are hand-curated from `paxman/shared_data/language_snapshot.json` — not the full IANA Registry Description set (7,900+) or CLDR v46 root. Compositional script/region displays are a curated Wave 2 (7 scripts incl. the `armenian` collision class, 8 single-token regions; multi-token regions and `thai` deferred). Names outside are `MISSING`, not `INVALID`, so no false negative under current completeness. ISO 639 code tables are curated subsets of their authorities (alpha-2 184 comprehensive; alpha-3 T 420 + B 21; comprehensive 995; collective 84 — see `language_snapshot.json` _meta and per-rule data headers). Plan: generate full IANA Description + CLDR root via `tools/regenerate_language_data.py`.
+
+> **Tag-lane limitation (known, tracked):** the collection gate is enforced on the bare-code, name, and deprecated routes, but not yet on collection *primaries inside a tag* — `ber-Latn` is `SUCCESS` and `bh-Latn` is `AMBIGUOUS` under the default contract. Neither violates the re-entry invariant (a non-`SUCCESS` result emits no canonical), but tightening it is a contract change with its own migration cost, so it is deferred rather than silently applied.
 
 ---
 
@@ -69,6 +71,8 @@ paxman.canonicalize("en-US", Language.create_contract()).canonicalized_value  # 
 contract = Language.create_contract(
     include_private=False,  # bool, default False — qaa-qtz / Qaaa-Qabx / QM-QZ etc. + x-
     include_collective=False,  # bool, default False — ISO 639-5 families (aav, ber, gem…)
+    #                            also gates emitting one from a name (Bihari) or a
+    #                            deprecated code (bh → bih)
     include_localized=False,  # bool, default False — CLDR 24 localized display names
     output_format=None,  # "bcp47" (default), "alpha2", "alpha3", "alpha3-bib", "name"
     # plus every common field: suppress_common_words / excluded_rules / pinned_rules / year / extra_grammars
@@ -76,7 +80,7 @@ contract = Language.create_contract(
 ```
 
 - `include_private` gates `Section 4-private-alpha-3` and `Section-iana-registry-private`; without it `qaa` is `INVALID` (grammar claims, no rule validates).
-- `include_collective` gates `Section 4-collective-code`; without it `aav` is `INVALID`.
+- `include_collective` gates `Section 4-collective-code`; without it `aav` is `INVALID`. It also gates the routes that *emit* a collection from a bare code or a name: the English-name rule (`Bihari` → `INVALID`) and deprecated resolution (`bh` stays `bh` instead of becoming `bih`). One flag, one meaning across those three routes. The gate is **not yet enforced for a collection primary inside a tag** — `ber-Latn` is `SUCCESS` and `bh-Latn` is `AMBIGUOUS` (see the tag-lane limitation note above).
 - `include_localized` gates `Section-localized-names`; without it `allemand` is recognized but `INVALID`.
 - `year` filters by `publication_year`; e.g., `year=2008` drops BCP 47 RFC 5646 (2009) → `en-US` becomes `INVALID`.
 
@@ -94,6 +98,14 @@ contract = Language.create_contract(
 | `deutsch` | defaults | `INVALID` | recognized but no localized rule |
 | `aav` | defaults | `INVALID` | collective needs flag |
 | `aav` | `include_collective=True` | `SUCCESS` | `aav` |
+| `sh` | defaults | `SUCCESS` | `"sh"` (IANA macrolanguage; no ISO table covers it) |
+| `ber` | defaults | `INVALID` | collection-scoped registry subtag — needs flag |
+| `ber` | `include_collective=True` | `SUCCESS` | `ber` |
+| `Bihari` | defaults | `INVALID` | name maps to the collection `bih`, which the default contract refuses |
+| `Bihari` | `include_collective=True` | `SUCCESS` | `bih` |
+| `bh` | defaults | `SUCCESS` | `"bh"` (ISO 639-1 code; its deprecation target `bih` is gated) |
+| `bh` | `include_collective=True` | `SUCCESS` | `"bih"` |
+| `bu`, `yd` | any | `INVALID` | ISO 3166 region subtags (Burma/Myanmar, Yemen) — not language codes |
 | `qaa` | `include_private=True` | `SUCCESS` | `qaa` |
 | `en-US` | `year=2008` | `INVALID` | BCP 47 rule is 2009, dropped |
 | `de-nedis` | any | `INVALID` | variant prefix `nedis` requires `sl` |
@@ -109,7 +121,7 @@ flowchart TB
     G --> R3{ISO 639-3 comprehensive + private}
     G --> R4{ISO 639-5 collective if flag}
     G --> R5{BCP47 syntax + Prefix}
-    G --> R6{IANA registry + private}
+    G --> R6{IANA registry + bare codes + private}
     G --> R7{English name}
     G --> R8{CLDR localized if flag}
     R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 --> Q{Corroboration<br>(PARSER needs same-rep LOOKUP)}

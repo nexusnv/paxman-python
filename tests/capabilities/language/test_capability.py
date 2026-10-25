@@ -170,7 +170,9 @@ class TestLanguageCapabilityRules:
         assert targets["Section 4-private-alpha-3"] == frozenset({"language_code"})
         assert targets["Section 4-collective-code"] == frozenset({"language_code"})
         assert targets["Section 2.1-syntax"] == frozenset({"bcp47_tag"})
-        assert targets["Section-iana-registry"] == frozenset({"bcp47_tag"})
+        assert targets["Section-iana-registry"] == frozenset(
+            {"bcp47_tag", "language_code"}
+        )
         assert targets["Section-iana-registry-private"] == frozenset({"bcp47_tag"})
         assert targets["Section-iana-registry-description"] == frozenset(
             {"language_description"}

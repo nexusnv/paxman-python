@@ -4,6 +4,12 @@ Registry Type membership: language/script/region/variant + Prefix,
 Deprecated→Preferred, grandfathered preferred. Private-use reservations
 are validated by the engine-gated private rule
 ``SectionIANARegistryPrivate``; generic rejects private.
+
+The registry is an authority for bare language subtags as well as for whole
+tags: a 2–3 letter subtag that no ISO table covers (``sh``, a current
+macrolanguage withdrawn from ISO 639-1) validates through this rule on its
+own. Collection-scoped subtags are excluded — they belong to the
+``include_collective``-gated ``Section 4-collective-code``.
 """
 
 from __future__ import annotations
@@ -33,6 +39,7 @@ from paxman.capabilities.Language.rules.data.iana_variant_subtags import (
     IANA_VARIANT_SUBTAGS,
     VARIANT_PREFIXES,
 )
+from paxman.capabilities.Language.rules.data.iso_639_5 import ISO6395_CODES
 from paxman.core.contract import Contract
 from paxman.core.domain import Provenance, Rule, RuleStrategy
 
@@ -149,8 +156,32 @@ def _has_no_other_components(notation: LanguageNotation) -> bool:
     )
 
 
+def _is_bare_language(notation: LanguageNotation) -> bool:
+    """Return True when the notation is a lone language subtag.
+
+    The inverse shape of :func:`_has_no_other_components`: a language with no
+    extlang/script/region/variant/extension/privateuse/grandfathered part.
+    Bare codes take the registry's language-only authority; every composite
+    form stays on the tag lane.
+    """
+    return bool(notation.language) and not (
+        notation.extlang
+        or notation.script
+        or notation.region
+        or notation.variant
+        or notation.extension
+        or notation.privateuse
+        or notation.grandfathered
+    )
+
+
 class SectionIANARegistry(Rule[LanguageNotation]):
-    """IANA Registry — language/script/region/variant membership (non-private)."""
+    """IANA Registry — language/script/region/variant membership (non-private).
+
+    Also the authority for a bare registered language subtag: ``sh`` has no
+    ISO table entry but is a current IANA macrolanguage, so without this route
+    the name lane could emit a canonical the code lane refused (E2).
+    """
 
     name = "Section-iana-registry"
     strategy = RuleStrategy.LOOKUP_TABLE
@@ -159,7 +190,7 @@ class SectionIANARegistry(Rule[LanguageNotation]):
         "IANA Registry Type language/script/region/variant "
         "Deprecated Preferred Prefix Suppress-Script"
     )
-    target_semantics = frozenset({"bcp47_tag"})
+    target_semantics = frozenset({"bcp47_tag", "language_code"})
     requires_features = frozenset()
 
     def matches(self, notation: LanguageNotation, contract: Contract) -> bool:
@@ -176,6 +207,23 @@ class SectionIANARegistry(Rule[LanguageNotation]):
         if notation.privateuse:
             # privateuse suffix with other components → invalid for generic
             return False
+
+        # Bare language subtag — the registry is an authority in its own
+        # right, so a registered 2-3 letter subtag validates without a tag.
+        # The collection filter keeps the ISO 639-5 gate intact (D1/D2):
+        # ``ber`` is collection-scoped and ``bh`` resolves into the collection
+        # ``bih``, so both are reachable only through the
+        # ``include_collective``-gated Section 4-collective-code. Accepting
+        # them here would bypass that gate.
+        if _is_bare_language(notation):
+            lang = notation.language.lower()
+            if _is_private_language(lang):
+                return False
+            return (
+                lang in _LANGUAGE_SET
+                and lang not in ISO6395_CODES
+                and _resolve_deprecated(lang) not in ISO6395_CODES
+            )
 
         # Language
         lang = notation.language.lower() if notation.language else ""

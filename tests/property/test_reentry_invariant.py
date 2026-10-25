@@ -81,6 +81,7 @@ from paxman.capabilities import (
     UtcOffset,
 )
 from paxman.core.capability import ContractFactory
+from paxman.core.capability_contract import CapabilityContract
 from paxman.core.discovery import reset_registry
 from paxman.core.domain import Resolution
 
@@ -192,11 +193,20 @@ ROWS: tuple[_ReEntryRow, ...] = (
     _row(ISSN, "2049-3630", "2049-3630"),
     # Language: tests/capabilities/language/test_capability.py
     # ::test_bcp47_identity
-    # ADR-0012: the BCP 47 syntax-only ghost "serbo-croatian" is disqualified
-    # (Serbo-Croatian → SUCCESS "sh"), so it is never a canonical value and
-    # must never be used as a fixture here — Language rows stay
-    # registry-backed ("en", "en-US").
+    # ADR-0012 does disqualify the BCP 47 syntax-only ghost "serbo-croatian",
+    # but that ghost is a *different input* from the name "Serbo-Croatian" —
+    # a LOOKUP-backed mention that emits the canonical "sh". "sh" is
+    # therefore a canonical value and gets its own row: before the E2 fix the
+    # name lane emitted it while the code lane refused it, an ADR-0010
+    # violation the old comment rationalised away.
     _row(Language, "en", "en"),
+    _row(Language, "sh", "sh"),
+    # The tag lane already accepted "sh-Latn" while bare "sh" was INVALID;
+    # this row pins that the tag surface is unchanged by the bare-code route.
+    _row(Language, "sh-Latn", "sh-Latn"),
+    # "bh" is an ISO 639-1 code whose IANA deprecation points at the gated
+    # collection "bih"; under the default contract it stays itself (E2).
+    _row(Language, "bh", "bh"),
     # Language extended-tag surface (ADR-0011 Phase 3): code formats carry
     # subtags, so "en-US" pins the extended path beside the bare row. The
     # suite is W->W, which holds for every format including the waived
@@ -451,3 +461,75 @@ def test_a0_whole_input_common_word_domain() -> None:
     result = canonicalize("de", Domain.create_contract(suppress_common_words=True))
     assert result.status == Resolution.INVALID
     assert result.canonicalized_value is None
+
+
+# ---------------------------------------------------------------------------
+# Emittable-surface closure (0.6.0, experiment finding E2 / Decision D6)
+# ---------------------------------------------------------------------------
+
+
+def _language_emittable_surface() -> list[str]:
+    """Every input the Language rule data can name, plus gate-boundary probes.
+
+    The fixture table above is a hand-picked sample: it asserts W→W only for
+    canonicals a human listed, which is why five Language paths violated
+    Property 2 while the whole suite stayed green. This surface is derived
+    from the rule data instead — the names and codes the rules can *emit*
+    (map values) and the inputs that reach them (map keys) — so a new mapping
+    entry is covered the moment it lands, without anyone remembering to add a
+    row.
+    """
+    from paxman.capabilities.Language.rules.data.english_language_map import (
+        LOCALIZED_NAME_TO_CANONICAL,
+        NAME_TO_CANONICAL,
+    )
+    from paxman.capabilities.Language.rules.data.iana_deprecated_map import (
+        DEPRECATED_MAP,
+    )
+
+    surface = (
+        set(NAME_TO_CANONICAL)
+        | set(NAME_TO_CANONICAL.values())
+        | set(LOCALIZED_NAME_TO_CANONICAL)
+        | set(LOCALIZED_NAME_TO_CANONICAL.values())
+        | set(DEPRECATED_MAP)
+        | set(DEPRECATED_MAP.values())
+        # Probes with no map entry on either side: the macrolanguage and both
+        # sides of the collection gate (E2).
+        | {"sh", "ber", "bih", "bh", "bu", "yd", "qaa"}
+    )
+    return sorted(surface)
+
+
+_LANGUAGE_CONTRACT_VARIANTS: list[pytest.param] = [
+    pytest.param(Language.create_contract(), id="default"),
+    pytest.param(Language.create_contract(include_collective=True), id="collective"),
+    pytest.param(Language.create_contract(include_private=True), id="private"),
+    pytest.param(Language.create_contract(include_localized=True), id="localized"),
+]
+
+
+@pytest.mark.parametrize("contract", _LANGUAGE_CONTRACT_VARIANTS)
+def test_every_emittable_canonical_reenters(contract: CapabilityContract) -> None:
+    """ADR-0010 Property 2, closed over the Language emittable surface (D6).
+
+    For every input the rule data can name: if the pipeline emits a canonical
+    ``V``, feeding ``V`` back under the *same* contract must succeed and land
+    exactly on ``V``. Non-SUCCESS results are skipped — they emit no canonical,
+    so they carry no re-entry obligation. Violations are collected rather than
+    asserted inline so one red run names every broken path at once.
+    """
+    violations: list[tuple[str, str]] = []
+    for text in _language_emittable_surface():
+        first = canonicalize(text, contract)
+        if first.status is not Resolution.SUCCESS:
+            continue
+        value = first.canonicalized_value
+        assert value is not None
+        second = canonicalize(value, contract)
+        if (
+            second.status is not Resolution.SUCCESS
+            or second.canonicalized_value != value
+        ):
+            violations.append((text, value))
+    assert violations == [], f"re-entry violations: {violations}"

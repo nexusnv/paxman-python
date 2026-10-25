@@ -5,6 +5,11 @@ Reference: https://www.iana.org/assignments/language-subtag-registry/language-su
 File-Date: 2026-08-08
 Deprecated subtags with Preferred-Value; chain includes historical codes.
 
+Language subtags only. The registry also deprecates *region* subtags
+(``BU`` → ``MM``, ``YD`` → ``YE``), but ISO 3166 region deprecations belong
+to the Country capability's authority and must never be mirrored here: a
+language rule reading them emits a country code (E2).
+
 Separation: authority-backed tables serving rules only.
 """
 
@@ -39,7 +44,4 @@ DEPRECATED_MAP: dict[str, str] = {
     "slk": "sk",
     "sqi": "sq",
     "zho": "zh",
-    # Region deprecated: BU→MM (Burma/Myanmar), YD→YE (Yemen)
-    "bu": "mm",
-    "yd": "ye",
 }

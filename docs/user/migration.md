@@ -466,6 +466,37 @@ when a unit suffix can appear next to a country.
 Migrate: if you asserted `INVALID` for a token that is not a code, update
 goldens to `MISSING`. See the [Country guide](capabilities/country/).
 
+### Unreleased — Language code authority closed (changed)
+
+Every value the Language capability emits is now a value it accepts back.
+Five paths violated that rule (ADR-0010 Property 2, re-entry): the name and
+deprecated routes could produce a code the code lane refused, and two region
+subtags had been filed in the language deprecated map.
+
+| Input | Before | After |
+|-------|--------|-------|
+| `sh` | `INVALID` | `SUCCESS "sh"` — an IANA macrolanguage with no ISO table entry, now validated by `Section-iana-registry` |
+| `bh` | `SUCCESS "bih"` | `SUCCESS "bh"` — its deprecation target `bih` is a collection, gated by `include_collective` |
+| `bh` (`include_collective=True`) | `SUCCESS "bih"` | unchanged |
+| `Bihari` | `SUCCESS "bih"` | `INVALID` — the name now respects the same collection gate as the code; `include_collective=True` restores `SUCCESS "bih"` |
+| `bu` | `SUCCESS "mm"` | `INVALID` — `BU`/`YD` are ISO 3166 **region** subtags (Burma, Yemen), not language codes |
+| `yd` | `SUCCESS "ye"` | `INVALID` |
+| `Serbo-Croatian`, `sh-Latn` | `SUCCESS "sh"`, `SUCCESS "sh-Latn"` | unchanged |
+
+`Bihari` is the one lost resolution, and it is deliberate: `bih` was already
+`INVALID` under the default contract, so the name lane was emitting a value
+the capability refused. Set `include_collective=True` if you need it.
+
+**Provenance note:** the registry rule now also validates bare codes, so a
+code covered by an ISO table carries two candidates with the same value and
+different provenance (`Section 4-alpha-2-code` + `Section-iana-registry`).
+Status and `canonicalized_value` are unchanged — only `candidates` grows.
+
+Known limitation (unchanged by this fix): collection *primaries inside a tag*
+(`ber-Latn`, `bh-Latn`) are not yet subject to the collection gate.
+
+See the [Language guide](capabilities/language/).
+
 ### Unreleased — `recognition_revision` is now process-stable (changed)
 
 `VersionStamp.recognition_revision` is documented as hashing the compiled
